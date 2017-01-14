@@ -13,5 +13,6 @@ unmanagedResourceDirectories in Test <+=  baseDirectory ( _ /"target/web/public/
 resolvers += "scalaz-bintray" at "https://dl.bintray.com/scalaz/releases"
 
 libraryDependencies ++= Seq(
-  "com.gu" %% "scanamo" % "0.8.3"
+  "com.typesafe.play" %% "play-slick" % "2.0.2",
+  "com.typesafe.play" %% "play-slick-evolutions" % "2.0.2"
 )
