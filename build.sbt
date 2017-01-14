@@ -13,7 +13,8 @@ unmanagedResourceDirectories in Test <+=  baseDirectory ( _ /"target/web/public/
 resolvers += "scalaz-bintray" at "https://dl.bintray.com/scalaz/releases"
 
 libraryDependencies ++= Seq(
+  "postgresql" % "postgresql" % "9.1-901.jdbc3",
   "com.typesafe.play" %% "play-slick" % "2.0.2",
   "com.typesafe.play" %% "play-slick-evolutions" % "2.0.2",
-  "postgresql" % "postgresql" % "9.1-901.jdbc3"
+  "org.slf4j" % "slf4j-nop" % "1.6.4"
 )

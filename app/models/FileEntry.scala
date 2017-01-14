@@ -19,7 +19,7 @@ case class FileEntry(id: Option[Int], filepath: String, storageType: String, use
 }
 
 class FileEntryRow(tag:Tag) extends Table[FileEntry](tag, "FileEntry") {
-  def id = column[Int]("id",O.PrimaryKey, O.AutoInc)
+  def id = column[Int]("id",O.PrimaryKey) //Autoincrement generates invalid SQL for Postgres, not sure why
   def filepath = column[String]("filepath")
   def storageType = column[String]("storageType")
   def user = column[String]("user")

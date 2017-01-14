@@ -26,7 +26,10 @@ import play.api.mvc.BodyParsers
 
 class Files @Inject() (configuration: Configuration, dbConfigProvider: DatabaseConfigProvider) extends Controller {
   implicit val timestampReads: Reads[Timestamp] = JsPath.read[String].map(Timestamp.valueOf _)
-//  implicit val timestampWrites: Writes[Timestamp] = JsPath.write[String].map(_.asString)
+  object dateWrite extends Writes[Timestamp] {
+    override def writes(o: Timestamp): JsValue = JsString("some formatted date")
+  }
+  //implicit val timestampWrites: Writes[Timestamp] = JsPath.write[String]({v:Timestamp=>v.toString})
 
   /*https://www.playframework.com/documentation/2.5.x/ScalaJson*/
   implicit val fileWrites: Writes[FileEntry] = (
@@ -54,7 +57,12 @@ class Files @Inject() (configuration: Configuration, dbConfigProvider: DatabaseC
   val dbConfig = dbConfigProvider.get[JdbcProfile]
 
   def list = Action.async {
-    Future(Ok(""))
+    dbConfig.db.run(
+      TableQuery[FileEntryRow].result.asTry
+    ).map({
+      case Success(result)=>Ok(Json.obj("status"->"ok","result"->result))
+      case Failure(error)=>InternalServerError(Json.obj("status"->"error","detail"->error.toString))
+    })
   }
 
   def create = Action.async(BodyParsers.parse.json) { request =>
