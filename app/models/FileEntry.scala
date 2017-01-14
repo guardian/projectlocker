@@ -3,7 +3,7 @@ package models
 import org.joda.time.DateTime
 import play.api.db.Database
 // Use H2Driver to connect to an H2 database
-import slick.driver.H2Driver.api._
+import slick.driver.PostgresDriver.api._
 import java.sql.Timestamp
 import scala.concurrent.ExecutionContext.Implicits.global
 
@@ -19,7 +19,7 @@ case class FileEntry(id: Option[Int], filepath: String, storageType: String, use
 }
 
 class FileEntryRow(tag:Tag) extends Table[FileEntry](tag, "FileEntry") {
-  def id = column[Int]("id",O.PrimaryKey) //Autoincrement generates invalid SQL for Postgres, not sure why
+  def id = column[Int]("id",O.PrimaryKey, O.AutoInc) //Autoincrement generates invalid SQL for Postgres, not sure why
   def filepath = column[String]("filepath")
   def storageType = column[String]("storageType")
   def user = column[String]("user")

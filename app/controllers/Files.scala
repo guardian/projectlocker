@@ -5,17 +5,12 @@ import play.api.Configuration
 import play.api.db.slick.DatabaseConfigProvider
 import play.api.mvc.{Action, Controller}
 import slick.driver.JdbcProfile
-
 import scala.util.{Failure, Success}
-// Use H2Driver to connect to an H2 database
-import slick.driver.H2Driver.api._
-
-
 import scala.concurrent.Future
 import play.api.libs.json._
 import play.api.libs.functional.syntax._
 import java.sql.Timestamp
-
+import slick.driver.PostgresDriver.api._
 import scala.concurrent.ExecutionContext.Implicits.global
 import models.{FileEntry, FileEntryRow}
 import play.api.mvc.BodyParsers
@@ -26,9 +21,6 @@ import play.api.mvc.BodyParsers
 
 class Files @Inject() (configuration: Configuration, dbConfigProvider: DatabaseConfigProvider) extends Controller {
   implicit val timestampReads: Reads[Timestamp] = JsPath.read[String].map(Timestamp.valueOf _)
-  object dateWrite extends Writes[Timestamp] {
-    override def writes(o: Timestamp): JsValue = JsString("some formatted date")
-  }
   //implicit val timestampWrites: Writes[Timestamp] = JsPath.write[String]({v:Timestamp=>v.toString})
 
   /*https://www.playframework.com/documentation/2.5.x/ScalaJson*/
@@ -74,7 +66,7 @@ class Files @Inject() (configuration: Configuration, dbConfigProvider: DatabaseC
           dbConfig.db.run(
             (TableQuery[FileEntryRow] += FileEntry).asTry
           ).map({
-            case Success(result)=>Ok(Json.obj("status" -> "ok", "detail" -> "added", "id" -> "?"))
+            case Success(result)=>Ok(Json.obj("status" -> "ok", "detail" -> "added", "result" -> result))
             case Failure(error)=>InternalServerError(Json.obj("status"->"error", "detail"->error.toString))
           }
           )
