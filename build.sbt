@@ -15,5 +15,5 @@ resolvers += "scalaz-bintray" at "https://dl.bintray.com/scalaz/releases"
 libraryDependencies ++= Seq(
   "com.typesafe.play" %% "play-slick" % "2.0.2",
   "com.typesafe.play" %% "play-slick-evolutions" % "2.0.2",
-  "com.h2database" % "h2" % "1.4.193"
+  "postgresql" % "postgresql" % "9.1-901.jdbc3"
 )

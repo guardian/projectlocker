@@ -26,6 +26,7 @@ import play.api.mvc.BodyParsers
 
 class Files @Inject() (configuration: Configuration, dbConfigProvider: DatabaseConfigProvider) extends Controller {
   implicit val timestampReads: Reads[Timestamp] = JsPath.read[String].map(Timestamp.valueOf _)
+//  implicit val timestampWrites: Writes[Timestamp] = JsPath.write[String].map(_.asString)
 
   /*https://www.playframework.com/documentation/2.5.x/ScalaJson*/
   implicit val fileWrites: Writes[FileEntry] = (
@@ -79,5 +80,18 @@ class Files @Inject() (configuration: Configuration, dbConfigProvider: DatabaseC
 
   def delete(id: Int) = Action.async {
     Future(Ok(""))
+  }
+
+  def init = Action.async {
+    dbConfig.db.run(
+      DBIO.seq(
+        TableQuery[FileEntryRow].schema.create
+      ).asTry
+    ).map({
+      case Success(result)=>Ok(Json.obj("status"->"ok"))
+      case Failure(error)=>
+        error.printStackTrace()
+        InternalServerError(Json.obj("status"->"error", "detail"->error.toString))
+    })
   }
 }
