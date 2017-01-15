@@ -5,23 +5,37 @@ import play.api.Configuration
 import play.api.db.slick.DatabaseConfigProvider
 import play.api.mvc.{Action, Controller}
 import slick.driver.JdbcProfile
+
 import scala.util.{Failure, Success}
 import scala.concurrent.Future
 import play.api.libs.json._
 import play.api.libs.functional.syntax._
 import java.sql.Timestamp
+
 import slick.driver.PostgresDriver.api._
+
 import scala.concurrent.ExecutionContext.Implicits.global
 import models.{FileEntry, FileEntryRow}
+import org.joda.time.DateTime
 import play.api.mvc.BodyParsers
+
+import play.api.libs.json.Reads.jodaDateReads
+import play.api.libs.json.Writes.jodaDateWrites
 
 /**
   * Created by localhome on 14/01/2017.
   */
 
 class Files @Inject() (configuration: Configuration, dbConfigProvider: DatabaseConfigProvider) extends Controller {
-  implicit val timestampReads: Reads[Timestamp] = JsPath.read[String].map(Timestamp.valueOf _)
-  //implicit val timestampWrites: Writes[Timestamp] = JsPath.write[String]({v:Timestamp=>v.toString})
+  def timestampToDateTime(t: Timestamp): DateTime = new DateTime(t.getTime)
+  def dateTimeToTimestamp(dt: DateTime): Timestamp = new Timestamp(dt.getMillis)
+  implicit val dateWrites = jodaDateWrites("yyyy-MM-dd'T'HH:mm:ss.SSSZ") //this DOES take numeric timezones - Z means Zone, not literal letter Z
+  implicit val dateReads = jodaDateReads("yyyy-MM-dd'T'HH:mm:ss.SSSZ")
+
+  implicit val timestampFormat = new Format[Timestamp] {
+    def writes(t: Timestamp): JsValue = Json.toJson(timestampToDateTime(t))
+    def reads(json: JsValue): JsResult[Timestamp] = Json.fromJson[DateTime](json).map(dateTimeToTimestamp)
+  }
 
   /*https://www.playframework.com/documentation/2.5.x/ScalaJson*/
   implicit val fileWrites: Writes[FileEntry] = (
@@ -50,7 +64,7 @@ class Files @Inject() (configuration: Configuration, dbConfigProvider: DatabaseC
 
   def list = Action.async {
     dbConfig.db.run(
-      TableQuery[FileEntryRow].result.asTry
+      TableQuery[FileEntryRow].result.asTry //simple select *
     ).map({
       case Success(result)=>Ok(Json.obj("status"->"ok","result"->result))
       case Failure(error)=>InternalServerError(Json.obj("status"->"error","detail"->error.toString))
@@ -74,11 +88,18 @@ class Files @Inject() (configuration: Configuration, dbConfigProvider: DatabaseC
     )
   }
 
-  def update(id: Int) = Action.async {
+  def update(id: Int) = Action.async(BodyParsers.parse.json) { request =>
+    request.body.validate[FileEntry].fold(
+      errors=>Future(BadRequest(Json.obj("status"->"error","detail"->JsError.toJson(errors)))),
+      FileEntry=>{
+        val newFE = FileEntry.copy(Some(id))  //update file entry with the ID that we were given
+
+      }
+    )
     Future(Ok(""))
   }
 
-  def delete(id: Int) = Action.async {
+  def delete(id: Int) = Action.async(BodyParsers.parse.json) { request =>
     Future(Ok(""))
   }
 
