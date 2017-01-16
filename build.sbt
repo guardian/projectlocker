@@ -18,3 +18,29 @@ libraryDependencies ++= Seq(
   "com.typesafe.play" %% "play-slick-evolutions" % "2.0.2",
   "org.slf4j" % "slf4j-nop" % "1.6.4"
 )
+//
+//enablePlugins(UniversalPlugin)
+//
+//enablePlugins(LinuxPlugin)
+//
+//enablePlugins(RpmPlugin)
+
+//Generic Linux package build configuration
+
+packageSummary in Linux := "A system to manage, backup and archve multimedia project files"
+
+packageDescription in Linux := ""
+
+//RPM build configuration
+rpmVendor in Rpm := "Andy Gallagher <andy.gallagher@theguardian.com>"
+
+rpmUrl in Rpm := Some("https://github/fredex42/projectlocker")
+
+packageName in Rpm := "projectlocker"
+
+version in Rpm := version.toString
+
+rpmRelease in Rpm := "1"  //FIXME: replace with build number
+
+packageArchitecture in Rpm := "noarch"
+
