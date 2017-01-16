@@ -1,7 +1,7 @@
 package controllers
 
 import com.google.inject.Inject
-import models.{StorageEntry, StorageEntryRow}
+import models.{StorageEntry, StorageEntryRow, StorageSerializer}
 import play.api.Configuration
 import play.api.db.slick.DatabaseConfigProvider
 import play.api.libs.json._
@@ -13,32 +13,13 @@ import slick.driver.PostgresDriver.api._
 
 import scala.concurrent.Future
 import scala.util.{Failure, Success}
-
 import scala.concurrent.ExecutionContext.Implicits.global
 
-class StoragesController @Inject() (configuration: Configuration, dbConfigProvider: DatabaseConfigProvider) extends GenericDatabaseObjectController {
+class StoragesController @Inject()
+    (configuration: Configuration, dbConfigProvider: DatabaseConfigProvider)
+    extends GenericDatabaseObjectController with StorageSerializer {
   val dbConfig = dbConfigProvider.get[JdbcProfile]
 
-  /*https://www.playframework.com/documentation/2.5.x/ScalaJson*/
-  implicit val storageWrites:Writes[StorageEntry] = (
-    (JsPath \ "id").writeNullable[Int] and
-      (JsPath \ "rootpath").writeNullable[String] and
-      (JsPath \ "storageType").write[String] and
-      (JsPath \ "user").writeNullable[String] and
-      (JsPath \ "password").writeNullable[String] and
-      (JsPath \ "host").writeNullable[String] and
-      (JsPath \ "port").writeNullable[Int]
-  )(unlift(StorageEntry.unapply))
-
-  implicit val storageReads:Reads[StorageEntry] = (
-    (JsPath \ "id").readNullable[Int] and
-      (JsPath \ "rootpath").readNullable[String] and
-      (JsPath \ "storageType").read[String] and
-      (JsPath \ "user").readNullable[String] and
-      (JsPath \ "password").readNullable[String] and
-      (JsPath \ "host").readNullable[String] and
-      (JsPath \ "port").readNullable[Int]
-    )(StorageEntry.apply _)
 
   override def list = Action.async {
     dbConfig.db.run(
@@ -56,9 +37,9 @@ class StoragesController @Inject() (configuration: Configuration, dbConfigProvid
       },
       StorageEntry => {
         dbConfig.db.run(
-          (TableQuery[StorageEntryRow] += StorageEntry).asTry
+          (TableQuery[StorageEntryRow] returning TableQuery[StorageEntryRow].map(_.id) += StorageEntry).asTry
         ).map({
-          case Success(result)=>Ok(Json.obj("status" -> "ok", "detail" -> "added", "result" -> result))
+          case Success(result)=>Ok(Json.obj("status" -> "ok", "detail" -> "added", "id" -> result))
           case Failure(error)=>InternalServerError(Json.obj("status"->"error", "detail"->error.toString))
         }
         )
@@ -69,7 +50,7 @@ class StoragesController @Inject() (configuration: Configuration, dbConfigProvid
   override def update(id: Int) = Action.async(BodyParsers.parse.json) { request =>
     request.body.validate[StorageEntry].fold(
       errors=>Future(BadRequest(Json.obj("status"->"error","detail"->JsError.toJson(errors)))),
-      FileEntry=>Future(Ok(""))
+      StorageEntry=>Future(Ok(""))
     )
   }
 
