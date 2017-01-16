@@ -1,19 +1,11 @@
 package models
 
 import org.joda.time.DateTime
-import play.api.db.Database
-// Use H2Driver to connect to an H2 database
 import slick.driver.PostgresDriver.api._
 import java.sql.Timestamp
 import scala.concurrent.ExecutionContext.Implicits.global
 
-
-/**
-  * Created by localhome on 12/01/2017.
-  */
-
-case class FileEntry(id: Option[Int], filepath: String, storageType: String, user:String,
-                     isDir: Boolean,
+case class FileEntry(id: Option[Int], filepath: String, storage: StorageEntry, user:String,
                      ctime: Timestamp, mtime: Timestamp, atime: Timestamp) {
 
 }
@@ -21,13 +13,12 @@ case class FileEntry(id: Option[Int], filepath: String, storageType: String, use
 class FileEntryRow(tag:Tag) extends Table[FileEntry](tag, "FileEntry") {
   def id = column[Int]("id",O.PrimaryKey, O.AutoInc) //Autoincrement generates invalid SQL for Postgres, not sure why
   def filepath = column[String]("filepath")
-  def storageType = column[String]("storageType")
+  def storage = foreignKey("fk_storage","id",TableQuery[StorageEntry])
   def user = column[String]("user")
-  def isDir = column[Boolean]("isDir")
   def ctime = column[Timestamp]("ctime")
   def mtime = column[Timestamp]("mtime")
   def atime = column[Timestamp]("atime")
-  def * = (id.?,filepath,storageType,user,isDir,ctime,mtime,atime) <> (FileEntry.tupled, FileEntry.unapply)
+  def * = (id.?,filepath,storage,user,ctime,mtime,atime) <> (FileEntry.tupled, FileEntry.unapply)
 }
 
 
