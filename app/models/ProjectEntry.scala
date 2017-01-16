@@ -1,35 +1,61 @@
 package models
 
 import slick.driver.PostgresDriver.api._
-import org.joda.time.DateTime
 import java.sql.Timestamp
+
 import org.joda.time.DateTime
 import org.joda.time.DateTimeZone.UTC
+import slick.jdbc.JdbcBackend
 
-case class ProjectEntry (files: List[FileEntry], projectType: ProjectType, created:DateTime, user: String) {
+import scala.concurrent.Future
+import scala.util.{Failure, Success}
 
-}
+import scala.concurrent.ExecutionContext.Implicits.global
 
-class ProjectFileAssocationRow(tag: Tag) extends Table[(Int)](tag, "ProjectFileAssociation") {
-  def id=column[Int]("id",O.PrimaryKey,O.AutoInc)
-  def projectEntry=foreignKey("ProjectEntry","id",TableQuery[ProjectEntry])
-  def fileEntry=foreignKey("FileEntry","id",TableQuery[FileEntry])
+//object ProjectEntry extends Function5[Int,Int,ProjectType,DateTime,String,ProjectEntry] {
+//  def unapply(arg: ProjectEntry): Option[(Option[Int], List[FileEntry], ProjectType, DateTime, String)] = {
+//    Some(
+//      (
+//        arg.id,
+//        List(),
+//        arg.projectType,
+//        arg.created,
+//        arg.user
+//      )
+//    )
+//  }
+//
+//  override def apply(v1: Int, v2: Int, v3: ProjectType, v4: DateTime, v5: String) = {
+//    new ProjectEntry(Some(v1), List(), v3, v4, v5)
+//  }
+//
+//  override def apply(v1: Int) = {
+//
+//  }
+//}
 
-  def * = id
+case class ProjectEntry (id: Option[Int], fileAssociationId: Int, projectTypeId: Int, created:Timestamp, user: String) {
+  def associatedFiles(db: JdbcBackend.Database): Future[Seq[FileEntry]] = {
+    db.run(
+      TableQuery[FileAssociationRow].filter(_.projectEntry===fileAssociationId).result.asTry
+    ).map({
+      case Success(result)=>result.map(assocTuple=>FileEntry.entryFor(assocTuple._3, db))
+      case Failure(error)=> throw error
+    }).flatMap(Future.sequence(_))
+  }
 }
 
 class ProjectEntryRow(tag:Tag) extends Table[ProjectEntry](tag, "ProjectEntry") {
-//  implicit val DateTimeMapper: TypeMapper[DateTime] =
-//    base[DateTime, Timestamp](
-//      d => new Timestamp(d millis),
-//      t => new DateTime(t getTime, UTC)
-//    )
-  implicit val myIDColumnType =
-    MappedColumnType.base[DateTime, Timestamp](d=>new Timestamp(d.millis), new DateTime(_.getTime, UTC))
+  implicit val DateTimeTotimestamp =
+    MappedColumnType.base[DateTime, Timestamp]({d=>new Timestamp(d.getMillis)}, {t=>new DateTime(t.getTime, UTC)})
 
   def id=column[Int]("id",O.PrimaryKey,O.AutoInc)
-  def fileAssociationKey=foreignKey("ProjectFileAssociation","id",TableQuery[ProjectFileAssocationRow])
-  def projectType=foreignKey("ProjectType","id",TableQuery[ProjectType])
-  def created=column[DateTime]("created")
+  def fileAssociationId=column[Int]("ProjectFileAssociation")
+  def projectType=column[Int]("ProjectType")
+  def created=column[Timestamp]("created")
   def user=column[String]("user")
+
+  def fileAssociationKey=foreignKey("fk_ProjectFileAssociation",fileAssociationId,TableQuery[FileAssociationRow])(_.id,onUpdate=ForeignKeyAction.Restrict)
+  def projectTypeKey=foreignKey("ProjectType",projectType,TableQuery[ProjectTypeRow])(_.id)
+  def * = (id.?, fileAssociationId, projectType, created, user) <> (ProjectEntry.tupled, ProjectEntry.unapply)
 }

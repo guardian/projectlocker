@@ -27,7 +27,7 @@ libraryDependencies ++= Seq(
 
 //Generic Linux package build configuration
 
-packageSummary in Linux := "A system to manage, backup and archve multimedia project files"
+packageSummary in Linux := "A system to manage, backup and archive multimedia project files"
 
 packageDescription in Linux := ""
 

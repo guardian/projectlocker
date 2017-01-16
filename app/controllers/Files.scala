@@ -28,18 +28,7 @@ import java.util.concurrent.TimeUnit._
   * Created by localhome on 14/01/2017.
   */
 
-class Files @Inject() (configuration: Configuration, dbConfigProvider: DatabaseConfigProvider) extends Controller {
-  def timestampToDateTime(t: Timestamp): DateTime = new DateTime(t.getTime)
-  def dateTimeToTimestamp(dt: DateTime): Timestamp = new Timestamp(dt.getMillis)
-  implicit val dateWrites = jodaDateWrites("yyyy-MM-dd'T'HH:mm:ss.SSSZ") //this DOES take numeric timezones - Z means Zone, not literal letter Z
-  implicit val dateReads = jodaDateReads("yyyy-MM-dd'T'HH:mm:ss.SSSZ")
-
-  /* performs a conversion from java.sql.Timestamp to Joda DateTime and back again */
-  implicit val timestampFormat = new Format[Timestamp] {
-    def writes(t: Timestamp): JsValue = Json.toJson(timestampToDateTime(t))
-    def reads(json: JsValue): JsResult[Timestamp] = Json.fromJson[DateTime](json).map(dateTimeToTimestamp)
-  }
-
+class Files @Inject() (configuration: Configuration, dbConfigProvider: DatabaseConfigProvider) extends GenericDatabaseObjectController {
   /* performs a conversion from Int to StorageEntry and back again, doing a database lookup as necessary */
   implicit val storageEntryFormat = new Format[StorageEntry] {
     def writes(s: StorageEntry): JsValue = Json.toJson(s.id)
@@ -55,12 +44,14 @@ class Files @Inject() (configuration: Configuration, dbConfigProvider: DatabaseC
       }, 2 seconds)
     )
   }
+
   /*https://www.playframework.com/documentation/2.5.x/ScalaJson*/
   implicit val fileWrites: Writes[FileEntry] = (
     (JsPath \ "id").writeNullable[Int] and
       (JsPath \ "filepath").write[String] and
-      (JsPath \ "storage").write[StorageEntry] and
+      (JsPath \ "storage").write[Int] and
       (JsPath \ "user").write[String] and
+      (JsPath \ "version").write[Int] and
       (JsPath \ "ctime").write[Timestamp] and
       (JsPath \ "mtime").write[Timestamp] and
       (JsPath \ "atime").write[Timestamp]
@@ -69,8 +60,9 @@ class Files @Inject() (configuration: Configuration, dbConfigProvider: DatabaseC
   implicit val fileReads: Reads[FileEntry] = (
     (JsPath \ "id").readNullable[Int] and
       (JsPath \ "filepath").read[String] and
-      (JsPath \ "storage").read[StorageEntry] and
+      (JsPath \ "storage").read[Int] and
       (JsPath \ "user").read[String] and
+      (JsPath \ "version").read[Int] and
       (JsPath \ "ctime").read[Timestamp] and
       (JsPath \ "mtime").read[Timestamp] and
       (JsPath \ "atime").read[Timestamp]
@@ -78,7 +70,7 @@ class Files @Inject() (configuration: Configuration, dbConfigProvider: DatabaseC
 
   val dbConfig = dbConfigProvider.get[JdbcProfile]
 
-  def list = Action.async {
+  override def list = Action.async {
     dbConfig.db.run(
       TableQuery[FileEntryRow].result.asTry //simple select *
     ).map({
@@ -87,7 +79,7 @@ class Files @Inject() (configuration: Configuration, dbConfigProvider: DatabaseC
     })
   }
 
-  def create = Action.async(BodyParsers.parse.json) { request =>
+  override def create = Action.async(BodyParsers.parse.json) { request =>
     request.body.validate[FileEntry].fold(
       errors => {
         Future(BadRequest(Json.obj("status"->"error","detail"->JsError.toJson(errors))))
@@ -104,7 +96,7 @@ class Files @Inject() (configuration: Configuration, dbConfigProvider: DatabaseC
     )
   }
 
-  def update(id: Int) = Action.async(BodyParsers.parse.json) { request =>
+  override def update(id: Int) = Action.async(BodyParsers.parse.json) { request =>
     request.body.validate[FileEntry].fold(
       errors=>Future(BadRequest(Json.obj("status"->"error","detail"->JsError.toJson(errors)))),
       FileEntry=>{
@@ -115,7 +107,7 @@ class Files @Inject() (configuration: Configuration, dbConfigProvider: DatabaseC
     Future(Ok(""))
   }
 
-  def delete(id: Int) = Action.async(BodyParsers.parse.json) { request =>
+  override def delete(id: Int) = Action.async(BodyParsers.parse.json) { request =>
     Future(Ok(""))
   }
 
