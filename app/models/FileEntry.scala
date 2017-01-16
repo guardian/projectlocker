@@ -24,7 +24,7 @@ case class FileEntry(id: Option[Int], filepath: String, storageId: Int, user:Str
 }
 
 object FileEntry extends ((Option[Int], String, Int, String, Int, Timestamp, Timestamp, Timestamp)=>FileEntry) {
-  def entryFor(entryId: Int, db: JdbcBackend.Database):Future[FileEntry] =
+  def entryFor(implicit db: JdbcBackend.Database, entryId: Int):Future[FileEntry] =
     db.run(
       TableQuery[FileEntryRow].filter(_.id===entryId).result.asTry
     ).map({

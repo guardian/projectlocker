@@ -10,8 +10,8 @@ import scala.concurrent.ExecutionContext.Implicits.global
   * Created by localhome on 12/01/2017.
   */
 
-case class StorageEntry(id: Option[Int], rootpath: Option[String], storageType: String,
-                        user:Option[String], password:Option[String], host:Option[String], port:Option[Int]) {
+case class StorageEntry(override val id: Option[Int], rootpath: Option[String], storageType: String,
+                        user:Option[String], password:Option[String], host:Option[String], port:Option[Int])  extends GenericModel(id){
 
 }
 

@@ -28,7 +28,7 @@ import java.util.concurrent.TimeUnit._
   * Created by localhome on 14/01/2017.
   */
 
-class Files @Inject() (configuration: Configuration, dbConfigProvider: DatabaseConfigProvider) extends GenericDatabaseObjectController {
+class Files @Inject() (configuration: Configuration, dbConfigProvider: DatabaseConfigProvider) extends GenericDatabaseObjectController[FileEntry,FileEntryRow] {
   /* performs a conversion from Int to StorageEntry and back again, doing a database lookup as necessary */
   implicit val storageEntryFormat = new Format[StorageEntry] {
     def writes(s: StorageEntry): JsValue = Json.toJson(s.id)

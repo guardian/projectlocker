@@ -35,11 +35,11 @@ import scala.concurrent.ExecutionContext.Implicits.global
 //}
 
 case class ProjectEntry (id: Option[Int], fileAssociationId: Int, projectTypeId: Int, created:Timestamp, user: String) {
-  def associatedFiles(db: JdbcBackend.Database): Future[Seq[FileEntry]] = {
+  def associatedFiles(implicit db: JdbcBackend.Database): Future[Seq[FileEntry]] = {
     db.run(
-      TableQuery[FileAssociationRow].filter(_.projectEntry===fileAssociationId).result.asTry
+      TableQuery[FileAssociationRow].filter(_.projectEntry===fileAssociationId).sortBy(_.fileEntry).result.asTry
     ).map({
-      case Success(result)=>result.map(assocTuple=>FileEntry.entryFor(assocTuple._3, db))
+      case Success(result)=>result.map(assocTuple=>FileEntry.entryFor(db, assocTuple._3))
       case Failure(error)=> throw error
     }).flatMap(Future.sequence(_))
   }
@@ -57,5 +57,6 @@ class ProjectEntryRow(tag:Tag) extends Table[ProjectEntry](tag, "ProjectEntry") 
 
   def fileAssociationKey=foreignKey("fk_ProjectFileAssociation",fileAssociationId,TableQuery[FileAssociationRow])(_.id,onUpdate=ForeignKeyAction.Restrict)
   def projectTypeKey=foreignKey("ProjectType",projectType,TableQuery[ProjectTypeRow])(_.id)
+
   def * = (id.?, fileAssociationId, projectType, created, user) <> (ProjectEntry.tupled, ProjectEntry.unapply)
 }

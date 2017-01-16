@@ -16,11 +16,12 @@ import scala.util.{Failure, Success}
 
 import scala.concurrent.ExecutionContext.Implicits.global
 
-class StoragesController @Inject() (configuration: Configuration, dbConfigProvider: DatabaseConfigProvider) extends GenericDatabaseObjectController {
-  val dbConfig = dbConfigProvider.get[JdbcProfile]
+class StoragesController @Inject()
+    (override val configuration: Configuration, override val dbConfigProvider: DatabaseConfigProvider)
+    extends GenericDatabaseObjectController[StorageEntry,StorageEntryRow] {
 
   /*https://www.playframework.com/documentation/2.5.x/ScalaJson*/
-  implicit val storageWrites:Writes[StorageEntry] = (
+  implicit val mappingWrites:Writes[StorageEntry] = (
     (JsPath \ "id").writeNullable[Int] and
       (JsPath \ "rootpath").writeNullable[String] and
       (JsPath \ "storageType").write[String] and
@@ -30,7 +31,7 @@ class StoragesController @Inject() (configuration: Configuration, dbConfigProvid
       (JsPath \ "port").writeNullable[Int]
   )(unlift(StorageEntry.unapply))
 
-  implicit val storageReads:Reads[StorageEntry] = (
+  implicit val mappingReads:Reads[StorageEntry] = (
     (JsPath \ "id").readNullable[Int] and
       (JsPath \ "rootpath").readNullable[String] and
       (JsPath \ "storageType").read[String] and
@@ -40,40 +41,4 @@ class StoragesController @Inject() (configuration: Configuration, dbConfigProvid
       (JsPath \ "port").readNullable[Int]
     )(StorageEntry.apply _)
 
-  override def list = Action.async {
-    dbConfig.db.run(
-      TableQuery[StorageEntryRow].result.asTry //simple select *
-    ).map({
-      case Success(result)=>Ok(Json.obj("status"->"ok","result"->result))
-      case Failure(error)=>InternalServerError(Json.obj("status"->"error","detail"->error.toString))
-    })
-  }
-
-  override def create = Action.async(BodyParsers.parse.json) { request =>
-    request.body.validate[StorageEntry].fold(
-      errors => {
-        Future(BadRequest(Json.obj("status"->"error","detail"->JsError.toJson(errors))))
-      },
-      StorageEntry => {
-        dbConfig.db.run(
-          (TableQuery[StorageEntryRow] += StorageEntry).asTry
-        ).map({
-          case Success(result)=>Ok(Json.obj("status" -> "ok", "detail" -> "added", "result" -> result))
-          case Failure(error)=>InternalServerError(Json.obj("status"->"error", "detail"->error.toString))
-        }
-        )
-      }
-    )
-  }
-
-  override def update(id: Int) = Action.async(BodyParsers.parse.json) { request =>
-    request.body.validate[StorageEntry].fold(
-      errors=>Future(BadRequest(Json.obj("status"->"error","detail"->JsError.toJson(errors)))),
-      FileEntry=>Future(Ok(""))
-    )
-  }
-
-  override def delete(id: Int) = Action.async(BodyParsers.parse.json) { request =>
-    Future(Ok(""))
-  }
 }
