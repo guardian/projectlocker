@@ -11,6 +11,13 @@ PUT     /file/init                  @controllers.Files.init
 PUT     /file/:id                   @controllers.Files.update(id: Int)
 DELETE  /file/:id                   @controllers.Files.delete(id: Int)
 
+GET     /storage                       @controllers.StoragesController.list
+PUT     /storage                       @controllers.StoragesController.create
+PUT     /storage/:id                   @controllers.StoragesController.update(id: Int)
+DELETE  /storage/:id                   @controllers.StoragesController.delete(id: Int)
+
+POST    /system/init                @controllers.System.init
+
 # Map static resources from the /public folder to the /assets URL path
 GET     /assets/*file               controllers.Assets.at(path="/public", file)
 
