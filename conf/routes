@@ -3,7 +3,7 @@
 # ~~~~
 
 # Home page
-GET     /                           controllers.Application.index
+#GET     /                           controllers.Application.index
 
 GET     /file                       @controllers.Files.list
 PUT     /file                       @controllers.Files.create
