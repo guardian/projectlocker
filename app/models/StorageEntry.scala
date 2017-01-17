@@ -33,7 +33,7 @@ trait StorageSerializer {
 }
 
 case class StorageEntry(override val id: Option[Int], rootpath: Option[String], storageType: String,
-                        user:Option[String], password:Option[String], host:Option[String], port:Option[Int])  extends GenericModel(id){
+                        user:Option[String], password:Option[String], host:Option[String], port:Option[Int])  extends GenericModel(id, storageType){
 
 }
 

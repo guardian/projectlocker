@@ -1,7 +1,7 @@
 package controllers
 import java.sql.Timestamp
 
-import models._
+import models.{GenericModelRow, GenericModel}
 import org.joda.time.DateTime
 import play.api.libs.json.Reads.jodaDateReads
 import play.api.libs.json.Writes.jodaDateWrites
@@ -20,7 +20,7 @@ import slick.driver.JdbcProfile
 
 import scala.concurrent.ExecutionContext.Implicits.global
 
-abstract class GenericDatabaseObjectController[MyModelType:GenericModel,MyModelFRM:GenericModelRow] extends Controller {
+trait GenericDatabaseObjectController[GenericModel,GenericModelRow] extends Controller {
   /*these are injected in the constructor of an implementing class*/
   val configuration:Configuration
   val dbConfigProvider:DatabaseConfigProvider
@@ -40,18 +40,18 @@ abstract class GenericDatabaseObjectController[MyModelType:GenericModel,MyModelF
   }
 
   /*https://www.playframework.com/documentation/2.5.x/ScalaJson*/
-  implicit val mappingWrites:Writes[MyModelType]
+  implicit val mappingWrites:Writes[GenericModel]
 
-  implicit val mappingReads:Reads[MyModelType]
+  implicit val mappingReads:Reads[GenericModel]
 
   def create = Action.async(BodyParsers.parse.json) { request =>
-    request.body.validate[MyModelType].fold(
+    request.body.validate[GenericModel].fold(
       errors => {
         Future(BadRequest(Json.obj("status"->"error","detail"->JsError.toJson(errors))))
       },
       ModelEntry => {
         dbConfig.db.run(
-          (TableQuery[MyModelFRM] returning TableQuery[MyModelFRM].map(_.id) += ModelEntry).asTry
+          (TableQuery[GenericModelRow] returning TableQuery[GenericModelRow].map(_.id) += ModelEntry).asTry
         ).map({
           case Success(result)=>Ok(Json.obj("status" -> "ok", "detail" -> "added", "id" -> result))
           case Failure(error)=>InternalServerError(Json.obj("status"->"error", "detail"->error.toString))
@@ -63,7 +63,7 @@ abstract class GenericDatabaseObjectController[MyModelType:GenericModel,MyModelF
 
   def list = Action.async {
     dbConfig.db.run(
-      TableQuery[MyModelFRM].result.asTry //simple select *
+      TableQuery[GenericModelRow].result.asTry //simple select *
     ).map({
       case Success(result)=>Ok(Json.obj("status"->"ok","result"->result))
       case Failure(error)=>InternalServerError(Json.obj("status"->"error","detail"->error.toString))
@@ -71,7 +71,7 @@ abstract class GenericDatabaseObjectController[MyModelType:GenericModel,MyModelF
   }
 
   def update(id: Int) = Action.async(BodyParsers.parse.json) { request =>
-    request.body.validate[MyModelType].fold(
+    request.body.validate[GenericModelRow].fold(
       errors=>Future(BadRequest(Json.obj("status"->"error","detail"->JsError.toJson(errors)))),
       FileEntry=>Future(Ok(""))
     )
