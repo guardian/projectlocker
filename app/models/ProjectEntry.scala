@@ -5,34 +5,15 @@ import java.sql.Timestamp
 
 import org.joda.time.DateTime
 import org.joda.time.DateTimeZone.UTC
+import play.api.libs.functional.syntax._
+import play.api.libs.json.Reads.jodaDateReads
+import play.api.libs.json.Writes.jodaDateWrites
+import play.api.libs.json._
 import slick.jdbc.JdbcBackend
 
 import scala.concurrent.Future
 import scala.util.{Failure, Success}
-
 import scala.concurrent.ExecutionContext.Implicits.global
-
-//object ProjectEntry extends Function5[Int,Int,ProjectType,DateTime,String,ProjectEntry] {
-//  def unapply(arg: ProjectEntry): Option[(Option[Int], List[FileEntry], ProjectType, DateTime, String)] = {
-//    Some(
-//      (
-//        arg.id,
-//        List(),
-//        arg.projectType,
-//        arg.created,
-//        arg.user
-//      )
-//    )
-//  }
-//
-//  override def apply(v1: Int, v2: Int, v3: ProjectType, v4: DateTime, v5: String) = {
-//    new ProjectEntry(Some(v1), List(), v3, v4, v5)
-//  }
-//
-//  override def apply(v1: Int) = {
-//
-//  }
-//}
 
 case class ProjectEntry (id: Option[Int], fileAssociationId: Int, projectTypeId: Int, created:Timestamp, user: String) {
   def associatedFiles(db: JdbcBackend.Database): Future[Seq[FileEntry]] = {
@@ -58,4 +39,33 @@ class ProjectEntryRow(tag:Tag) extends Table[ProjectEntry](tag, "ProjectEntry") 
   def fileAssociationKey=foreignKey("fk_ProjectFileAssociation",fileAssociationId,TableQuery[FileAssociationRow])(_.id,onUpdate=ForeignKeyAction.Restrict)
   def projectTypeKey=foreignKey("ProjectType",projectType,TableQuery[ProjectTypeRow])(_.id)
   def * = (id.?, fileAssociationId, projectType, created, user) <> (ProjectEntry.tupled, ProjectEntry.unapply)
+}
+
+trait ProjectEntrySerializer {
+  def timestampToDateTime(t: Timestamp): DateTime = new DateTime(t.getTime)
+  def dateTimeToTimestamp(dt: DateTime): Timestamp = new Timestamp(dt.getMillis)
+  implicit val dateWrites = jodaDateWrites("yyyy-MM-dd'T'HH:mm:ss.SSSZ") //this DOES take numeric timezones - Z means Zone, not literal letter Z
+  implicit val dateReads = jodaDateReads("yyyy-MM-dd'T'HH:mm:ss.SSSZ")
+
+  /* performs a conversion from java.sql.Timestamp to Joda DateTime and back again */
+  implicit val timestampFormat = new Format[Timestamp] {
+    def writes(t: Timestamp): JsValue = Json.toJson(timestampToDateTime(t))
+    def reads(json: JsValue): JsResult[Timestamp] = Json.fromJson[DateTime](json).map(dateTimeToTimestamp)
+  }
+  /*https://www.playframework.com/documentation/2.5.x/ScalaJson*/
+  implicit val templateWrites:Writes[ProjectEntry] = (
+    (JsPath \ "id").writeNullable[Int] and
+      (JsPath \ "fileAssociationId").write[Int] and
+      (JsPath \ "projectTypeId").write[Int] and
+      (JsPath \ "created").write[Timestamp] and
+      (JsPath \ "user").write[String]
+    )(unlift(ProjectEntry.unapply))
+
+  implicit val templateReads:Reads[ProjectEntry] = (
+    (JsPath \ "id").readNullable[Int] and
+      (JsPath \ "fileAssociationId").read[Int] and
+      (JsPath \ "projectTypeId").read[Int] and
+      (JsPath \ "created").read[Timestamp] and
+      (JsPath \ "user").read[String]
+    )(ProjectEntry.apply _)
 }

@@ -5,22 +5,32 @@
 # Home page
 #GET     /                           controllers.Application.index
 
-GET     /file                       @controllers.Files.list
-PUT     /file                       @controllers.Files.create
-PUT     /file/:id                   @controllers.Files.update(id: Int)
-DELETE  /file/:id                   @controllers.Files.delete(id: Int)
+GET     /file                          @controllers.Files.list
+PUT     /file                          @controllers.Files.create
+PUT     /file/:id                      @controllers.Files.update(id: Int)
+DELETE  /file/:id                      @controllers.Files.delete(id: Int)
 
 GET     /storage                       @controllers.StoragesController.list
 PUT     /storage                       @controllers.StoragesController.create
 PUT     /storage/:id                   @controllers.StoragesController.update(id: Int)
 DELETE  /storage/:id                   @controllers.StoragesController.delete(id: Int)
 
-GET     /template                       @controllers.ProjectTemplateController.list
-PUT     /template                       @controllers.ProjectTemplateController.create
-PUT     /template/:id                   @controllers.ProjectTemplateController.update(id: Int)
-DELETE  /template/:id                   @controllers.ProjectTemplateController.delete(id: Int)
+GET     /template                      @controllers.ProjectTemplateController.list
+PUT     /template                      @controllers.ProjectTemplateController.create
+PUT     /template/:id                  @controllers.ProjectTemplateController.update(id: Int)
+DELETE  /template/:id                  @controllers.ProjectTemplateController.delete(id: Int)
 
-POST    /system/init                @controllers.System.init
+GET     /project                       @controllers.ProjectEntryController.list
+PUT     /project                       @controllers.ProjectEntryController.create
+PUT     /project/:id                   @controllers.ProjectEntryController.update(id: Int)
+DELETE  /project/:id                   @controllers.ProjectEntryController.delete(id: Int)
+
+GET     /projecttype                   @controllers.ProjectTypeController.list
+PUT     /projecttype                   @controllers.ProjectTypeController.create
+PUT     /projecttype/:id               @controllers.ProjectTypeController.update(id: Int)
+DELETE  /projecttype/:id               @controllers.ProjectTypeController.delete(id: Int)
+
+POST    /system/init                   @controllers.System.init
 
 # Map static resources from the /public folder to the /assets URL path
 GET     /assets/*file               controllers.Assets.at(path="/public", file)
