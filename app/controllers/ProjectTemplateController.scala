@@ -1,7 +1,7 @@
 package controllers
 
 import com.google.inject.Inject
-import models.{ProjectTemplateSerializer, ProjectTemplate, ProjectTemplateRow, StorageSerializer}
+import models._
 import play.api.Configuration
 import play.api.mvc._
 import play.api.db.slick.DatabaseConfigProvider
@@ -15,44 +15,16 @@ import scala.util.{Failure, Success}
 import scala.concurrent.ExecutionContext.Implicits.global
 
 class ProjectTemplateController @Inject() (config: Configuration, dbConfigProvider: DatabaseConfigProvider)
-  extends GenericDatabaseObjectController with ProjectTemplateSerializer with StorageSerializer{
+  extends GenericDatabaseObjectController[ProjectTemplate] with ProjectTemplateSerializer with StorageSerializer{
 
   val dbConfig = dbConfigProvider.get[JdbcProfile]
 
-  override def list = Action.async {
-    dbConfig.db.run(
-      TableQuery[ProjectTemplateRow].result.asTry //simple select *
-    ).map({
-      case Success(result)=>Ok(Json.obj("status"->"ok","result"->result))
-      case Failure(error)=>InternalServerError(Json.obj("status"->"error","detail"->error.toString))
-    })
-  }
+  override def validate(request: Request[JsValue]) = request.body.validate[ProjectTemplate]
 
-  override def create = Action.async(BodyParsers.parse.json) { request =>
-    request.body.validate[ProjectTemplate].fold(
-      errors => {
-        Future(BadRequest(Json.obj("status"->"error","detail"->JsError.toJson(errors))))
-      },
-      projectTemplate => {
-        dbConfig.db.run(
-          (TableQuery[ProjectTemplateRow] returning TableQuery[ProjectTemplateRow].map(_.id) += projectTemplate).asTry
-        ).map({
-          case Success(result)=>Ok(Json.obj("status" -> "ok", "detail" -> "added", "id" -> result))
-          case Failure(error)=>InternalServerError(Json.obj("status"->"error", "detail"->error.toString))
-        }
-        )
-      }
-    )
-  }
+  override def selectall = dbConfig.db.run(TableQuery[ProjectTemplateRow].result.asTry)
 
-  override def update(id: Int) = Action.async(BodyParsers.parse.json) { request =>
-    request.body.validate[ProjectTemplate].fold(
-      errors=>Future(BadRequest(Json.obj("status"->"error","detail"->JsError.toJson(errors)))),
-      StorageEntry=>Future(Ok(""))
-    )
-  }
+  override def insert(entry: ProjectTemplate) = dbConfig.db.run(
+    (TableQuery[ProjectTemplateRow] returning TableQuery[ProjectTemplateRow].map(_.id) += entry).asTry)
 
-  override def delete(id: Int) = Action.async(BodyParsers.parse.json) { request =>
-    Future(Ok(""))
-  }
+  override def jstranslate(result: Seq[ProjectTemplate]) = result
 }
