@@ -11,7 +11,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 
 trait StorageSerializer {
   /*https://www.playframework.com/documentation/2.5.x/ScalaJson*/
-  implicit val storageWrites:Writes[StorageEntry] = (
+  implicit val mappingWrites:Writes[StorageEntry] = (
     (JsPath \ "id").writeNullable[Int] and
       (JsPath \ "rootpath").writeNullable[String] and
       (JsPath \ "storageType").write[String] and
@@ -21,7 +21,7 @@ trait StorageSerializer {
       (JsPath \ "port").writeNullable[Int]
     )(unlift(StorageEntry.unapply))
 
-  implicit val storageReads:Reads[StorageEntry] = (
+  implicit val mappingReads:Reads[StorageEntry] = (
     (JsPath \ "id").readNullable[Int] and
       (JsPath \ "rootpath").readNullable[String] and
       (JsPath \ "storageType").read[String] and
@@ -33,7 +33,8 @@ trait StorageSerializer {
 }
 
 case class StorageEntry(override val id: Option[Int], rootpath: Option[String], storageType: String,
-                        user:Option[String], password:Option[String], host:Option[String], port:Option[Int])  extends GenericModel(id, storageType){
+                        user:Option[String], password:Option[String], host:Option[String], port:Option[Int])
+  extends GenericModel(id, storageType){
 
 }
 

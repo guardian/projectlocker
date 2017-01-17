@@ -1,7 +1,8 @@
 package controllers
 import java.sql.Timestamp
+import java.util.concurrent.Callable
 
-import models.{GenericModelRow, GenericModel}
+import models.{GenericModel, GenericModelRow}
 import org.joda.time.DateTime
 import play.api.libs.json.Reads.jodaDateReads
 import play.api.libs.json.Writes.jodaDateWrites
@@ -20,10 +21,13 @@ import slick.driver.JdbcProfile
 
 import scala.concurrent.ExecutionContext.Implicits.global
 
-trait GenericDatabaseObjectController[GenericModel,GenericModelRow] extends Controller {
+trait GenericDatabaseObjectController[M <: GenericModel,R <: GenericModelRow[M]] extends Controller {
   /*these are injected in the constructor of an implementing class*/
   val configuration:Configuration
   val dbConfigProvider:DatabaseConfigProvider
+  val tableTag:Tag=>R
+
+  val objects = TableQuery(tableTag)
 
   val dbConfig = dbConfigProvider.get[JdbcProfile]
 
@@ -39,19 +43,35 @@ trait GenericDatabaseObjectController[GenericModel,GenericModelRow] extends Cont
     def reads(json: JsValue): JsResult[Timestamp] = Json.fromJson[DateTime](json).map(dateTimeToTimestamp)
   }
 
-  /*https://www.playframework.com/documentation/2.5.x/ScalaJson*/
-  implicit val mappingWrites:Writes[GenericModel]
+  def companionOf[T : Manifest] : Option[AnyRef] = try{
+    val classOfT = implicitly[Manifest[T]].erasure
+    val companionClassName = classOfT.getName + "$"
+    val companionClass = Class.forName(companionClassName)
+    val moduleField = companionClass.getField("MODULE$")
+    Some(moduleField.get(null))
+  } catch {
+    case e => None
+  }
 
-  implicit val mappingReads:Reads[GenericModel]
+  /*https://www.playframework.com/documentation/2.5.x/ScalaJson*/
+  implicit val mappingWrites:Writes[M] = (
+    (JsPath \ "id").writeNullable[Int] and
+      (JsPath \ "name").write[String]
+  )(unlift(GenericModel.unapply))
+
+  implicit val mappingReads:Reads[M] = (
+    (JsPath \ "id").readNullable[Int] and
+      (JsPath \ "name").read[String]
+  )(companionOf[M].get.asInstanceOf[scala.Function].apply _)
 
   def create = Action.async(BodyParsers.parse.json) { request =>
-    request.body.validate[GenericModel].fold(
+    request.body.validate[M].fold(
       errors => {
         Future(BadRequest(Json.obj("status"->"error","detail"->JsError.toJson(errors))))
       },
       ModelEntry => {
         dbConfig.db.run(
-          (TableQuery[GenericModelRow] returning TableQuery[GenericModelRow].map(_.id) += ModelEntry).asTry
+          (objects returning objects.map(_.id) += ModelEntry).asTry
         ).map({
           case Success(result)=>Ok(Json.obj("status" -> "ok", "detail" -> "added", "id" -> result))
           case Failure(error)=>InternalServerError(Json.obj("status"->"error", "detail"->error.toString))
@@ -63,7 +83,7 @@ trait GenericDatabaseObjectController[GenericModel,GenericModelRow] extends Cont
 
   def list = Action.async {
     dbConfig.db.run(
-      TableQuery[GenericModelRow].result.asTry //simple select *
+      objects.result.asTry //simple select *
     ).map({
       case Success(result)=>Ok(Json.obj("status"->"ok","result"->result))
       case Failure(error)=>InternalServerError(Json.obj("status"->"error","detail"->error.toString))
@@ -71,7 +91,7 @@ trait GenericDatabaseObjectController[GenericModel,GenericModelRow] extends Cont
   }
 
   def update(id: Int) = Action.async(BodyParsers.parse.json) { request =>
-    request.body.validate[GenericModelRow].fold(
+    request.body.validate[R].fold(
       errors=>Future(BadRequest(Json.obj("status"->"error","detail"->JsError.toJson(errors)))),
       FileEntry=>Future(Ok(""))
     )
