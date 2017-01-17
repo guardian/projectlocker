@@ -1,11 +1,10 @@
 package controllers
 
 import com.google.inject.Inject
-import models.{StorageEntry, StorageEntryRow}
+import models.{StorageEntry, StorageEntryRow, StorageSerializer}
 import play.api.Configuration
 import play.api.db.slick.DatabaseConfigProvider
 import play.api.libs.json._
-import play.api.libs.functional.syntax._
 import play.api.mvc.{Action, BodyParsers}
 import slick.driver.JdbcProfile
 import slick.lifted.TableQuery
@@ -13,7 +12,6 @@ import slick.driver.PostgresDriver.api._
 
 import scala.concurrent.Future
 import scala.util.{Failure, Success}
-
 import scala.concurrent.ExecutionContext.Implicits.global
 
 class StoragesController @Inject()
