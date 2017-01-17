@@ -27,6 +27,7 @@ trait ProjectTemplateSerializer {
       (JsPath \ "storageId").read[Int]
     )(ProjectTemplate.apply _)
 }
+
 case class ProjectTemplate (id: Option[Int],name: String, projectTypeId: Int, filePath: String, storageId: Int) {
   def projectType(implicit db: JdbcBackend.Database):Future[ProjectType] = db.run(
     TableQuery[ProjectTypeRow].filter(_.id===projectTypeId).result.asTry
