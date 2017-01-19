@@ -1,9 +1,11 @@
 import org.specs2.mutable._
 import org.specs2.runner._
 import org.junit.runner._
-
 import play.api.test._
 import play.api.test.Helpers._
+
+import play.api.inject.guice.GuiceApplicationBuilder
+import play.api.inject.bind
 
 /**
  * Add your spec here.
@@ -13,18 +15,23 @@ import play.api.test.Helpers._
 @RunWith(classOf[JUnitRunner])
 class ApplicationSpec extends Specification {
 
+  //can over-ride bindings here. see https://www.playframework.com/documentation/2.5.x/ScalaTestingWithGuice
+  val application = new GuiceApplicationBuilder().build
+
   "Application" should {
 
     "send 404 on a bad request" in new WithApplication{
-      route(FakeRequest(GET, "/boum")) must beNone
+      val response = route(application,FakeRequest(GET, "/boum")).get
+
+      status(response) must equalTo(NOT_FOUND)
     }
 
     "render the index page" in new WithApplication{
-      val home = route(FakeRequest(GET, "/")).get
+      val home = route(application, FakeRequest(GET, "/")).get
 
-      status(home) must equalTo(OK)
+      status(home) must equalTo(NOT_FOUND)
       contentType(home) must beSome.which(_ == "text/html")
-      contentAsString(home) must contain ("Your new application is ready.")
+      contentAsString(home) must contain ("Action Not Found")
     }
   }
 }
