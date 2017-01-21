@@ -17,11 +17,16 @@ class Files @Inject() (configuration: Configuration, dbConfigProvider: DatabaseC
 
   val dbConfig = dbConfigProvider.get[JdbcProfile]
 
+  override def selectid(requestedId: Int) = dbConfig.db.run(
+    TableQuery[FileEntryRow].filter(_.id === requestedId).result.asTry
+  )
+
   override def selectall = dbConfig.db.run(
     TableQuery[FileEntryRow].result.asTry //simple select *
   )
 
   override def jstranslate(result: Seq[FileEntry]) = result  //implicit translation should handle this
+  override def jstranslate(result: FileEntry) = result  //implicit translation should handle this
 
   override def insert(entry: FileEntry) = dbConfig.db.run(
     (TableQuery[FileEntryRow] returning TableQuery[FileEntryRow].map(_.id) += entry).asTry

@@ -19,6 +19,10 @@ class ProjectTemplateController @Inject() (config: Configuration, dbConfigProvid
 
   val dbConfig = dbConfigProvider.get[JdbcProfile]
 
+  override def selectid(requestedId: Int) = dbConfig.db.run(
+    TableQuery[ProjectTemplateRow].filter(_.id === requestedId).result.asTry
+  )
+
   override def validate(request: Request[JsValue]) = request.body.validate[ProjectTemplate]
 
   override def selectall = dbConfig.db.run(TableQuery[ProjectTemplateRow].result.asTry)
@@ -27,4 +31,5 @@ class ProjectTemplateController @Inject() (config: Configuration, dbConfigProvid
     (TableQuery[ProjectTemplateRow] returning TableQuery[ProjectTemplateRow].map(_.id) += entry).asTry)
 
   override def jstranslate(result: Seq[ProjectTemplate]) = result
+  override def jstranslate(result: ProjectTemplate) = result  //implicit translation should handle this
 }

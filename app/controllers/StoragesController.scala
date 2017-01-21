@@ -1,7 +1,7 @@
 package controllers
 
 import com.google.inject.Inject
-import models.{StorageEntry, StorageEntryRow, StorageSerializer}
+import models.{ProjectEntryRow, StorageEntry, StorageEntryRow, StorageSerializer}
 import play.api.Configuration
 import play.api.db.slick.DatabaseConfigProvider
 import play.api.libs.json._
@@ -20,11 +20,16 @@ class StoragesController @Inject()
 
   val dbConfig = dbConfigProvider.get[JdbcProfile]
 
+  override def selectid(requestedId: Int) = dbConfig.db.run(
+    TableQuery[StorageEntryRow].filter(_.id === requestedId).result.asTry
+  )
+
   override def selectall = dbConfig.db.run(
     TableQuery[StorageEntryRow].result.asTry //simple select *
   )
 
   override def jstranslate(result: Seq[StorageEntry]) = result.asInstanceOf[Seq[StorageEntry]]  //implicit translation should handle this
+  override def jstranslate(result: StorageEntry) = result  //implicit translation should handle this
 
   override def insert(storageEntry: StorageEntry) = dbConfig.db.run(
     (TableQuery[StorageEntryRow] returning TableQuery[StorageEntryRow].map(_.id) += storageEntry).asTry

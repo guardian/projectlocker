@@ -21,10 +21,11 @@ trait GenericDatabaseObjectController[M] extends Controller {
   def validate(request:Request[JsValue]):JsResult[M]
 
   def selectall:Future[Try[Seq[M]]]
+  def selectid(requestedId: Int):Future[Try[Seq[M]]]
 
   def insert(entry: M):Future[Any]
   def jstranslate(result:Seq[M]):Json.JsValueWrapper
-
+  def jstranslate(result:M):Json.JsValueWrapper
 
   def list = Action.async {
     selectall.map({
@@ -46,6 +47,17 @@ trait GenericDatabaseObjectController[M] extends Controller {
         )
       }
     )
+  }
+
+  def getitem(requestedId: Int) = Action.async {
+    selectid(requestedId).map({
+      case Success(result)=>
+        if(result.isEmpty)
+         NotFound("")
+        else
+          Ok(Json.obj("status"->"ok","result"->this.jstranslate(result.head)))
+      case Failure(error)=>InternalServerError(Json.obj("status"->"error","detail"->error.toString))
+    })
   }
 
   def update(id: Int) = Action.async(BodyParsers.parse.json) { request =>

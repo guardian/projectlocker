@@ -18,11 +18,16 @@ class ProjectEntryController @Inject() (config: Configuration, dbConfigProvider:
 {
   val dbConfig = dbConfigProvider.get[JdbcProfile]
 
+  override def selectid(requestedId: Int) = dbConfig.db.run(
+    TableQuery[ProjectEntryRow].filter(_.id === requestedId).result.asTry
+  )
+
   override def selectall = dbConfig.db.run(
     TableQuery[ProjectEntryRow].result.asTry //simple select *
   )
 
   override def jstranslate(result: Seq[ProjectEntry]) = result
+  override def jstranslate(result: ProjectEntry) = result  //implicit translation should handle this
 
   override def insert(entry: ProjectEntry) = dbConfig.db.run(
     (TableQuery[ProjectEntryRow] returning TableQuery[ProjectEntryRow].map(_.id) += entry).asTry

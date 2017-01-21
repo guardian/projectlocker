@@ -1,7 +1,7 @@
 package controllers
 
 import com.google.inject.Inject
-import models.{ProjectType, ProjectTypeRow, ProjectTypeSerializer}
+import models.{ProjectEntryRow, ProjectType, ProjectTypeRow, ProjectTypeSerializer}
 import play.api.Configuration
 import play.api.db.slick.DatabaseConfigProvider
 import play.api.libs.json.JsValue
@@ -17,11 +17,16 @@ class ProjectTypeController @Inject() (config: Configuration, dbConfigProvider: 
   extends GenericDatabaseObjectController[ProjectType] with ProjectTypeSerializer{
   val dbConfig = dbConfigProvider.get[JdbcProfile]
 
+  override def selectid(requestedId: Int) = dbConfig.db.run(
+    TableQuery[ProjectTypeRow].filter(_.id === requestedId).result.asTry
+  )
+
   override def selectall = dbConfig.db.run(
     TableQuery[ProjectTypeRow].result.asTry //simple select *
   )
 
   override def jstranslate(result: Seq[ProjectType]) = result
+  override def jstranslate(result: ProjectType) = result  //implicit translation should handle this
 
   override def insert(entry: ProjectType) = dbConfig.db.run(
     (TableQuery[ProjectTypeRow] returning TableQuery[ProjectTypeRow].map(_.id) += entry).asTry
