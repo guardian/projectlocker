@@ -13,7 +13,7 @@ import play.api.test.Helpers._
 import play.api.test._
 import play.api.inject.bind
 import testHelpers.TestDatabase
-import play.api.Logger
+import play.api.{Application, Logger}
 import play.api.http.HttpEntity.Strict
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -25,19 +25,16 @@ import scala.concurrent.ExecutionContext.Implicits.global
  */
 @RunWith(classOf[JUnitRunner])
 class StorageControllerSpec extends Specification {
+  //needed for body.consumeData
   implicit val system = ActorSystem("storage-controller-spec")
   implicit val materializer = ActorMaterializer()
 
-  val logger: Logger = Logger(this.getClass())
+  val logger: Logger = Logger(this.getClass)
+
   //can over-ride bindings here. see https://www.playframework.com/documentation/2.5.x/ScalaTestingWithGuice
-  val application = new GuiceApplicationBuilder()
+  val application:Application = new GuiceApplicationBuilder()
     .overrides(bind[DatabaseConfigProvider].to[TestDatabase.testDbProvider])
     .build
-
-  val streamConsumer = new PartialFunction[ByteString,String] {
-    override def isDefinedAt(x: ByteString):Boolean = true
-    override def apply(input: ByteString):String = input.decodeString("UTF-8")
-  }
 
   "StorageController" should {
 
@@ -48,7 +45,6 @@ class StorageControllerSpec extends Specification {
     }
 
     "return valid data for a valid storage" in TestDatabase.withTestDatabase { db=>
-      logger.debug("Hello!")
       val response = route(application, FakeRequest(GET, "/storage/1")).get
       response.onComplete(maybeResult =>
         maybeResult.get.body.consumeData.onComplete(content=>

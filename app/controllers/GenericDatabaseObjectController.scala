@@ -3,6 +3,7 @@ import java.sql.Timestamp
 
 import models.{FileEntry, FileEntryRow, StorageEntry, StorageEntryRow}
 import org.joda.time.DateTime
+import play.api.Logger
 import play.api.db.slick.DatabaseConfigProvider
 import play.api.libs.functional.syntax._
 import play.api.libs.json.Reads.jodaDateReads
@@ -27,10 +28,14 @@ trait GenericDatabaseObjectController[M] extends Controller {
   def jstranslate(result:Seq[M]):Json.JsValueWrapper
   def jstranslate(result:M):Json.JsValueWrapper
 
+  val logger: Logger = Logger(this.getClass)
+
   def list = Action.async {
     selectall.map({
       case Success(result)=>Ok(Json.obj("status"->"ok","result"->this.jstranslate(result)))
-      case Failure(error)=>InternalServerError(Json.obj("status"->"error","detail"->error.toString))
+      case Failure(error)=>
+        logger.error(error.toString)
+        InternalServerError(Json.obj("status"->"error","detail"->error.toString))
     })
   }
 
@@ -42,7 +47,9 @@ trait GenericDatabaseObjectController[M] extends Controller {
       storageEntry => {
         this.insert(storageEntry).map({
           case Success(result)=>Ok(Json.obj("status" -> "ok", "detail" -> "added", "id" -> result.asInstanceOf[Int]))
-          case Failure(error)=>InternalServerError(Json.obj("status"->"error", "detail"->error.toString))
+          case Failure(error)=>
+            logger.error(error.toString)
+            InternalServerError(Json.obj("status"->"error", "detail"->error.toString))
         }
         )
       }
@@ -56,7 +63,9 @@ trait GenericDatabaseObjectController[M] extends Controller {
          NotFound("")
         else
           Ok(Json.obj("status"->"ok","result"->this.jstranslate(result.head)))
-      case Failure(error)=>InternalServerError(Json.obj("status"->"error","detail"->error.toString))
+      case Failure(error)=>
+        logger.error(error.toString)
+        InternalServerError(Json.obj("status"->"error","detail"->error.toString))
     })
   }
 
