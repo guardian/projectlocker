@@ -104,6 +104,20 @@ class StorageControllerSpec extends Specification {
       (jsondata \ "detail").as[String] must equalTo("deleted")
       (jsondata \ "id").as[Int] must equalTo(4)
     }
+
+    "return conflict (409) if attempting to delete something with sub-objects" in {
+      val response = route(application, FakeRequest(
+        method="DELETE",
+        uri="/storage/2",
+        headers=FakeHeaders(),
+        body="")
+      ).get
+
+      status(response) must equalTo(CONFLICT)
+      val jsondata = Await.result(bodyAsJsonFuture(response), 5.seconds).as[JsValue]
+      (jsondata \ "status").as[String] must equalTo("error")
+      (jsondata \ "detail").as[String] must equalTo("This is still referenced by sub-objects")
+    }
   }
   override val testGetId: Int = 1
   override val testGetDocument: String = """{"storageType": "filesystem", "user": "me"}"""

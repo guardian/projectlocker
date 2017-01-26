@@ -101,6 +101,5 @@ trait GenericDatabaseObjectController[M] extends Controller {
           else
             InternalServerError(Json.obj("status"->"error","detail"->error.toString))
       })
-
   }
 }
