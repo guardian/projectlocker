@@ -22,15 +22,14 @@ class ApplicationSpec extends Specification {
     .overrides(bind[DatabaseConfigProvider].to[TestDatabase.testDbProvider])
     .build
 
-//  private val injector:Injector = new GuiceApplicationBuilder()
-//    .overrides(bind[DatabaseConfigProvider].to[TestDatabase.testDbProvider])
-//    .injector()
-//
-//  def inject[T : ClassTag]: T = injector.instanceOf[T]
-//
-//  protected val databaseHelper:DatabaseHelper = inject[DatabaseHelper]
-
   "Application" should {
+
+    "send 404 on a bad request" in {
+      val response = route(application,FakeRequest(GET, "/boum")).get
+
+      status(response) must equalTo(NOT_FOUND)
+    }
+
     "render the index page" in  {
       val home = route(application, FakeRequest(GET, "/")).get
 
