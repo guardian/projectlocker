@@ -36,6 +36,14 @@ class StorageControllerSpec extends Specification {
     .overrides(bind[DatabaseConfigProvider].to[TestDatabase.testDbProvider])
     .build
 
+  def bodyAsJsonFuture(response:Future[play.api.mvc.Result]) = response.flatMap(result=>
+    result.body.consumeData.map(contentBytes=> {
+      logger.debug(contentBytes.decodeString("UTF-8"))
+      Json.parse(contentBytes.decodeString("UTF-8"))
+    }
+    )
+  )
+
   "StorageController" should {
 
     "return 400 on a bad request" in {
@@ -45,17 +53,9 @@ class StorageControllerSpec extends Specification {
     }
 
     "return valid data for a valid storage" in  {
-      val response = route(application, FakeRequest(GET, "/storage/1")).get
+      val response:Future[play.api.mvc.Result] = route(application, FakeRequest(GET, "/storage/1")).get
 
-      val jsonFuture = response.flatMap(result=>
-        result.body.consumeData.map(contentBytes=> {
-          logger.debug(contentBytes.decodeString("UTF-8"))
-          Json.parse(contentBytes.decodeString("UTF-8"))
-        }
-        )
-      )
-
-      val jsondata = Await.result(jsonFuture, 5.seconds).as[JsValue]
+      val jsondata = Await.result(bodyAsJsonFuture(response), 5.seconds).as[JsValue]
       (jsondata \ "status").as[String] must equalTo("ok")
       (jsondata \ "result" \ "id").as[Int] must equalTo(1)
       (jsondata \ "result" \ "storageType").as[String] must equalTo("filesystem")
@@ -72,35 +72,37 @@ class StorageControllerSpec extends Specification {
         body=test_json)
       ).get
 
-      val jsonFuture = response.flatMap(result=>
-        result.body.consumeData.map(contentBytes=> {
-          logger.debug(contentBytes.decodeString("UTF-8"))
-          Json.parse(contentBytes.decodeString("UTF-8"))
-        }
-        )
-      )
-
       status(response) must equalTo(OK)
-      val jsondata = Await.result(jsonFuture, 5.seconds).as[JsValue]
+      val jsondata = Await.result(bodyAsJsonFuture(response), 5.seconds).as[JsValue]
       (jsondata \ "status").as[String] must equalTo("ok")
       (jsondata \ "detail").as[String] must equalTo("added")
       (jsondata \ "id").as[Int] must greaterThan(3) //if we re-run the tests without blanking the database explicitly this goes up
 
       val newRecordId = (jsondata \ "id").as[Int]
       val checkResponse = route(application, FakeRequest(GET, s"/storage/$newRecordId")).get
-      val checkdata = Await.result(checkResponse.flatMap(result=>
-        result.body.consumeData.map(contentBytes=> {
-          logger.debug(contentBytes.decodeString("UTF-8"))
-          Json.parse(contentBytes.decodeString("UTF-8"))
-        }
-        )
-      ), 5.seconds)
+      val checkdata = Await.result(bodyAsJsonFuture(checkResponse), 5.seconds)
+
+      val parsed_test_json = Json.parse(test_json)
 
       (checkdata \ "status").as[String] must equalTo("ok")
       (checkdata \ "result" \ "id").as[Int] must equalTo(newRecordId)
-      (checkdata \ "result" \ "storageType").as[String] must equalTo("ftp")
-      (checkdata \ "result" \ "user").as[String] must equalTo("tests")
+      (checkdata \ "result" \ "storageType").as[String] must equalTo((parsed_test_json \ "storageType").as[String])
+      (checkdata \ "result" \ "user").as[String] must equalTo((parsed_test_json \ "user").as[String])
+    }
 
+    "delete a storage" in {
+      val response = route(application, FakeRequest(
+        method="DELETE",
+        uri="/storage/4",
+        headers=FakeHeaders(),
+        body="")
+      ).get
+
+      status(response) must equalTo(OK)
+      val jsondata = Await.result(bodyAsJsonFuture(response), 5.seconds).as[JsValue]
+      (jsondata \ "status").as[String] must equalTo("ok")
+      (jsondata \ "detail").as[String] must equalTo("deleted")
+      (jsondata \ "id").as[Int] must equalTo(4)
     }
   }
   override val testGetId: Int = 1
