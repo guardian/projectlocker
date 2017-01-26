@@ -22,7 +22,7 @@ BASEPATH=$(abspath "${BASH_SOURCE%/*}")
 
 #Run the script to set up the test db as the local postgres user
 if [ "${CIRCLECI}" != "" ]; then
-    ${BASEPATH}/setup_test_db_actions.sh #if we're in circleci the running user already has what we need
+    ${BASEPATH}/blank_test_db_actions.sh #if we're in circleci the running user already has what we need
 else
-    sudo su postgres -c "${BASEPATH}/setup_test_db_actions.sh" #otherwise run as the postgres user. this will probably prompt for password.
+    sudo su postgres -c "${BASEPATH}/blank_test_db_actions.sh" #otherwise run as the postgres user. this will probably prompt for password.
 fi

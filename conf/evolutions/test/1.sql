@@ -1,3 +1,4 @@
+# -- !Ups
 
 CREATE TABLE "FileEntry" (
     id integer NOT NULL,
@@ -199,4 +200,10 @@ REVOKE ALL ON SCHEMA public FROM postgres;
 GRANT ALL ON SCHEMA public TO postgres;
 GRANT ALL ON SCHEMA public TO PUBLIC;
 
-# -- !Downs
+-- # -- !Downs
+-- DROP TABLE "FileEntry" CASCADE;
+-- DROP TABLE "ProjectTemplate" CASCADE;
+-- DROP TABLE "ProjectEntry" CASCADE;
+-- DROP TABLE "ProjectFileAssociation" CASCADE;
+-- DROP TABLE "StorageEntry" CASCADE;
+-- DROP TABLE "ProjectType" CASCADE;

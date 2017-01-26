@@ -50,6 +50,6 @@ drop table "ProjectType" cascade;
 drop table "StorageEntry" cascade;
 EOF
 
-for x in `ls ${BASEPATH}/../conf/evolutions/test/*.sql`; do
-    psql projectlocker_test < "$x"
-done
+#for x in `ls ${BASEPATH}/../conf/evolutions/test/*.sql`; do
+#    psql projectlocker_test < "$x"
+#done

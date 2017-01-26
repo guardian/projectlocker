@@ -16,13 +16,17 @@ import testHelpers.TestDatabase
 import play.api.{Application, Logger}
 import play.api.http.HttpEntity.Strict
 
+import scala.concurrent.Await
 import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.duration._
 
 /**
  * Add your spec here.
  * You can mock out a whole application including requests, plugins etc.
  * For more information, consult the wiki.
  */
+import play.api.libs.json._
+
 @RunWith(classOf[JUnitRunner])
 class StorageControllerSpec extends Specification {
   //needed for body.consumeData
@@ -38,21 +42,29 @@ class StorageControllerSpec extends Specification {
 
   "StorageController" should {
 
-    "send 400 on a bad request" in TestDatabase.withTestDatabase { db=>
+    "return 400 on a bad request" in {
       val response = route(application,FakeRequest(GET, "/storage/boum")).get
 
       status(response) must equalTo(BAD_REQUEST)
     }
 
-    "return valid data for a valid storage" in TestDatabase.withTestDatabase { db=>
+    "return valid data for a valid storage" in  {
       val response = route(application, FakeRequest(GET, "/storage/1")).get
-      response.onComplete(maybeResult =>
-        maybeResult.get.body.consumeData.onComplete(content=>
-          logger.debug(content.getOrElse(ByteString("(no data)")).decodeString("UTF-8"))
+
+      val jsonFuture = response.flatMap(result=>
+        result.body.consumeData.map(contentBytes=> {
+          logger.debug(contentBytes.decodeString("UTF-8"))
+          Json.parse(contentBytes.decodeString("UTF-8"))
+        }
         )
       )
-      status(response) must equalTo(OK)
 
+      val jsondata = Await.result(jsonFuture, 5.seconds).as[JsValue]
+      (jsondata \ "status").as[String] must equalTo("ok")
+      (jsondata \ "result" \ "id").as[Int] must equalTo(1)
+      (jsondata \ "result" \ "storageType").as[String] must equalTo("filesystem")
+
+      status(response) must equalTo(OK)
     }
   }
 }

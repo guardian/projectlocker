@@ -23,13 +23,13 @@ class ApplicationSpec extends Specification {
 
   "Application" should {
 
-    "send 404 on a bad request" in TestDatabase.withTestDatabase { db=>
+    "send 404 on a bad request" in {
       val response = route(application,FakeRequest(GET, "/boum")).get
 
       status(response) must equalTo(NOT_FOUND)
     }
 
-    "render the index page" in TestDatabase.withTestDatabase { db=>
+    "render the index page" in  {
       val home = route(application, FakeRequest(GET, "/")).get
 
       status(home) must equalTo(NOT_FOUND)
