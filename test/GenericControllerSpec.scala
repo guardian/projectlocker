@@ -59,7 +59,6 @@ trait GenericControllerSpec extends Specification {
   componentName should {
 
     "return 400 on a bad request" in {
-      logger.debug(s"$uriRoot/boum")
       val response = route(application,FakeRequest(GET, s"$uriRoot/boum")).get
       status(response) must equalTo(BAD_REQUEST)
     }
@@ -72,7 +71,6 @@ trait GenericControllerSpec extends Specification {
       (jsondata \ "status").as[String] must equalTo("ok")
       (jsondata \ "result" \ "id").as[Int] must equalTo(1)
       testParsedJsonObject(jsondata \ "result", Json.parse(testGetDocument))
-
       status(response) must equalTo(OK)
     }
 

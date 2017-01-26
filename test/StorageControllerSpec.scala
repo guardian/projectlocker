@@ -12,6 +12,7 @@ class StorageControllerSpec extends GenericControllerSpec {
   override val uriRoot: String = "/api/storage"
 
   override def testParsedJsonObject(checkdata: JsLookupResult, parsed_test_json: JsValue) = {
+
     val object_keys = Seq("storageType","user")
     object_keys.map(key=>
       (checkdata \ key).as[String] must equalTo((parsed_test_json \ key).as[String])
