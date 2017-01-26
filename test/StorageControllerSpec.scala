@@ -16,7 +16,7 @@ import testHelpers.TestDatabase
 import play.api.{Application, Logger}
 import play.api.http.HttpEntity.Strict
 
-import scala.concurrent.Await
+import scala.concurrent.{Await, Future}
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
 
@@ -63,8 +63,48 @@ class StorageControllerSpec extends Specification {
       (jsondata \ "status").as[String] must equalTo("ok")
       (jsondata \ "result" \ "id").as[Int] must equalTo(1)
       (jsondata \ "result" \ "storageType").as[String] must equalTo("filesystem")
+      (jsondata \ "result" \ "user").as[String] must equalTo("me")
+      status(response) must equalTo(OK)
+    }
+
+    "accept new data to create a new storage" in {
+      val test_json = """{"storageType": "ftp", "user": "tests"}"""
+      val response = route(application, FakeRequest(
+        method="PUT",
+        uri="/storage",
+        headers=FakeHeaders(Seq(("Content-Type", "application/json"))),
+        body=test_json)
+      ).get
+
+      val jsonFuture = response.flatMap(result=>
+        result.body.consumeData.map(contentBytes=> {
+          logger.debug(contentBytes.decodeString("UTF-8"))
+          Json.parse(contentBytes.decodeString("UTF-8"))
+        }
+        )
+      )
 
       status(response) must equalTo(OK)
+      val jsondata = Await.result(jsonFuture, 5.seconds).as[JsValue]
+      (jsondata \ "status").as[String] must equalTo("ok")
+      (jsondata \ "detail").as[String] must equalTo("added")
+      (jsondata \ "id").as[Int] must greaterThan(3) //if we re-run the tests without blanking the database explicitly this goes up
+
+      val newRecordId = (jsondata \ "id").as[Int]
+      val checkResponse = route(application, FakeRequest(GET, s"/storage/$newRecordId")).get
+      val checkdata = Await.result(checkResponse.flatMap(result=>
+        result.body.consumeData.map(contentBytes=> {
+          logger.debug(contentBytes.decodeString("UTF-8"))
+          Json.parse(contentBytes.decodeString("UTF-8"))
+        }
+        )
+      ), 5.seconds)
+
+      (checkdata \ "status").as[String] must equalTo("ok")
+      (checkdata \ "result" \ "id").as[Int] must equalTo(newRecordId)
+      (checkdata \ "result" \ "storageType").as[String] must equalTo("ftp")
+      (checkdata \ "result" \ "user").as[String] must equalTo("tests")
+
     }
   }
 }
