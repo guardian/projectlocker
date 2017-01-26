@@ -7,7 +7,6 @@ SET client_min_messages = warning;
 
 SET search_path = public, pg_catalog;
 
-BEGIN;
 
 INSERT INTO "StorageEntry" (id, rootpath, "storageType", "user", password, host, port) VALUES (1, NULL, 'Local', 'me', NULL, NULL, NULL);
 INSERT INTO "StorageEntry" (id, rootpath, "storageType", "user", password, host, port) VALUES (2, '/backups/projectfiles', 'ftp', 'me', '123456abcde', 'ftp.mysite.com', 21);
@@ -33,15 +32,16 @@ INSERT INTO "ProjectFileAssociation" (id, "ProjectEntry", "FileEntry") VALUES (1
 SELECT pg_catalog.setval('"ProjectFileAssociation_id_seq"', 2, false);
 
 
-
-
 INSERT INTO "ProjectTemplate" (id, name, "ProjectType", filepath, storage) VALUES (1, 'Premiere test template 1', 1, '/srv/projectfiles/ProjectTemplatesDev/Premiere/premiere_template_2014.prproj', 1);
 INSERT INTO "ProjectTemplate" (id, name, "ProjectType", filepath, storage) VALUES (2, 'Another wonderful test template', 2, '/srv/projectfiles/ProjectTemplatesDev/Premiere/prelude_template_2014.prproj', 1);
 
 
 
 SELECT pg_catalog.setval('"ProjectTemplate_id_seq"', 2, true);
+INSERT INTO "ProjectTemplate" (id, name, "ProjectType", filepath, storage) VALUES (3, 'Premiere test template 1', 1, '/srv/projectfiles/ProjectTemplatesDev/Premiere/premiere_template_2014.prproj', 1);
 
+
+SELECT pg_catalog.setval('"ProjectTemplate_id_seq"', 3, true);
 
 
 SELECT pg_catalog.setval('"ProjectType_id_seq"', 3, true);
@@ -50,4 +50,3 @@ SELECT pg_catalog.setval('"ProjectType_id_seq"', 3, true);
 
 SELECT pg_catalog.setval('"StorageEntry_id_seq"', 3, true);
 
-COMMIT;

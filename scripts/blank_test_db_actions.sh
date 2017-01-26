@@ -48,7 +48,6 @@ drop table "ProjectEntry" cascade;
 drop table "ProjectTemplate" cascade;
 drop table "ProjectType" cascade;
 drop table "StorageEntry" cascade;
-drop table "play_evolutions" cascade;
 EOF
 
 #for x in `ls ${BASEPATH}/../conf/evolutions/test/*.sql`; do
