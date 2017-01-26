@@ -88,8 +88,12 @@ trait GenericDatabaseObjectController[M] extends Controller {
       case Success(result)=>
         Ok(Json.obj("status" -> "ok", "detail" -> "deleted", "id" -> requestedId))
       case Failure(error)=>
-        logger.error(error.toString)
-        InternalServerError(Json.obj("status"->"error","detail"->error.toString))
+        val errorString = error.toString
+        logger.error(errorString)
+        if(errorString.contains("violates foreign key constraint"))
+          Conflict(Json.obj("status"->"error","detail"->"This is still referenced by sub-objects"))
+        else
+          InternalServerError(Json.obj("status"->"error","detail"->error.toString))
     })
   }
 }
