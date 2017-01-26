@@ -1,7 +1,7 @@
 package controllers
 
 import com.google.inject.Inject
-import models.{ProjectEntry, ProjectEntryRow, ProjectEntrySerializer}
+import models.{ProjectEntry, ProjectEntryRow, ProjectEntrySerializer, StorageEntryRow}
 import play.api.Configuration
 import play.api.db.slick.DatabaseConfigProvider
 import play.api.libs.json.JsValue
@@ -17,6 +17,10 @@ class ProjectEntryController @Inject() (config: Configuration, dbConfigProvider:
   extends GenericDatabaseObjectController[ProjectEntry] with ProjectEntrySerializer
 {
   val dbConfig = dbConfigProvider.get[JdbcProfile]
+
+  override def deleteid(requestedId: Int) = dbConfig.db.run(
+    TableQuery[ProjectEntryRow].filter(_.id === requestedId).delete.asTry
+  )
 
   override def selectid(requestedId: Int) = dbConfig.db.run(
     TableQuery[ProjectEntryRow].filter(_.id === requestedId).result.asTry

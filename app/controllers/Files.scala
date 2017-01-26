@@ -17,6 +17,10 @@ class Files @Inject() (configuration: Configuration, dbConfigProvider: DatabaseC
 
   val dbConfig = dbConfigProvider.get[JdbcProfile]
 
+  override def deleteid(requestedId: Int) = dbConfig.db.run(
+    TableQuery[FileEntryRow].filter(_.id === requestedId).delete.asTry
+  )
+
   override def selectid(requestedId: Int) = dbConfig.db.run(
     TableQuery[FileEntryRow].filter(_.id === requestedId).result.asTry
   )

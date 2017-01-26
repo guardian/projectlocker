@@ -10,6 +10,7 @@ import play.api.libs.json.Reads.jodaDateReads
 import play.api.libs.json.Writes.jodaDateWrites
 import play.api.libs.json._
 import play.api.mvc.{Action, BodyParsers, Controller, Request}
+import slick.backend.DatabaseConfig
 import slick.driver.JdbcProfile
 import slick.lifted.TableQuery
 
@@ -23,6 +24,8 @@ trait GenericDatabaseObjectController[M] extends Controller {
 
   def selectall:Future[Try[Seq[M]]]
   def selectid(requestedId: Int):Future[Try[Seq[M]]]
+
+  def deleteid(requestedId: Int):Future[Try[Int]]
 
   def insert(entry: M):Future[Any]
   def jstranslate(result:Seq[M]):Json.JsValueWrapper
@@ -76,7 +79,17 @@ trait GenericDatabaseObjectController[M] extends Controller {
     )
   }
 
-  def delete(id: Int) = Action.async(BodyParsers.parse.json) { request =>
-    Future(Ok(""))
+  /*]Future(NotFound(Json.obj("status" -> "notfound", "id" -> requestedId)))
+
+
+   */
+  def delete(requestedId: Int) = Action.async { request =>
+    deleteid(requestedId).map({
+      case Success(result)=>
+        Ok(Json.obj("status" -> "ok", "detail" -> "deleted", "id" -> requestedId))
+      case Failure(error)=>
+        logger.error(error.toString)
+        InternalServerError(Json.obj("status"->"error","detail"->error.toString))
+    })
   }
 }
