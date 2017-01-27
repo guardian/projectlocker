@@ -27,7 +27,7 @@ class FileControllerSpec extends GenericControllerSpec {
   override val testGetId: Int = 1
   override val testGetDocument: String = """{"filepath":"/path/to/a/video.mxf","storage":2,"user":"me","version":1,"ctime":"2017-01-17T16:55:00.123+0000","mtime":"2017-01-17T16:55:00.123+0000","atime":"2017-01-17T16:55:00.123+0000"}"""
   override val testCreateDocument: String =  """{"filepath":"/path/to/some/other.project","storage":1,"user":"test","version":3,"ctime":"2017-03-17T13:51:00.123+0000","mtime":"2017-03-17T13:51:00.123+0000","atime":"2017-03-17T13:51:00.123+0000"}"""
-  override val minimumNewRecordId = 2
+  override val minimumNewRecordId = 4
   override val testDeleteId: Int = 2
   override val testConflictId: Int = 1
 }
