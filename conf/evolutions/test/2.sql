@@ -15,18 +15,16 @@ INSERT INTO "StorageEntry" (id, rootpath, "storageType", "user", password, host,
 
 
 INSERT INTO "FileEntry" (id, filepath, storage, "user", version, ctime, mtime, atime) VALUES (1, '/path/to/a/video.mxf', 2, 'me', 1, '2017-01-17 16:55:00.123', '2017-01-17 16:55:00.123', '2017-01-17 16:55:00.123');
+INSERT INTO "FileEntry" (id, filepath, storage, "user", version, ctime, mtime, atime) VALUES (2, '/path/to/a/file.project', 1, 'you', 1, '2016-12-11 12:21:11.021', '2016-12-11 12:21:11.021', '2016-12-11 12:21:11.021');
+INSERT INTO "FileEntry" (id, filepath, storage, "user", version, ctime, mtime, atime) VALUES (3, '/path/to/another/file.project', 1, 'you', 1, '2016-12-11 12:21:11.021', '2016-12-11 12:21:11.021', '2016-12-11 12:21:11.021');
 
 
 
-SELECT pg_catalog.setval('"FileEntry_id_seq"', 1, true);
+SELECT pg_catalog.setval('"FileEntry_id_seq"', 3, true);
 
 INSERT INTO "ProjectType" (id, name, "opensWith", "targetVersion") VALUES (1, 'Premiere 2014 test', 'AdobePremierePro.app', '14.0');
 INSERT INTO "ProjectType" (id, name, "opensWith", "targetVersion") VALUES (2, 'Prelude 2014 test', 'AdobePrelude.app', '14.0');
 INSERT INTO "ProjectType" (id, name, "opensWith", "targetVersion") VALUES (3, 'Cubase test', 'Cubase.app', '6.0');
-
-
-
-
 
 
 SELECT pg_catalog.setval('"ProjectEntry_id_seq"', 1, false);
