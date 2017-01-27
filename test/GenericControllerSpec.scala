@@ -34,13 +34,14 @@ trait GenericControllerSpec extends Specification {
   val componentName:String
   val uriRoot:String
 
-  def testParsedJsonObject(checkdata:JsLookupResult,test_parsed_json:JsValue):MatchResult[String]
+  def testParsedJsonObject(checkdata:JsLookupResult,test_parsed_json:JsValue):Seq[MatchResult[Any]]
 
   val testGetId:Int
   val testGetDocument:String
   val testCreateDocument:String
   val testDeleteId:Int
   val testConflictId:Int
+  val minimumNewRecordId:Int
 
   //can over-ride bindings here. see https://www.playframework.com/documentation/2.5.x/ScalaTestingWithGuice
   val application:Application = new GuiceApplicationBuilder()
@@ -58,8 +59,8 @@ trait GenericControllerSpec extends Specification {
   componentName should {
 
     "return 400 on a bad request" in {
+      logger.debug(s"$uriRoot/boum")
       val response = route(application,FakeRequest(GET, s"$uriRoot/boum")).get
-
       status(response) must equalTo(BAD_REQUEST)
     }
 
@@ -88,7 +89,7 @@ trait GenericControllerSpec extends Specification {
       (jsondata \ "status").as[String] must equalTo("ok")
       (jsondata \ "detail").as[String] must equalTo("added")
 
-      (jsondata \ "id").as[Int] must greaterThan(3) //if we re-run the tests without blanking the database explicitly this goes up
+      (jsondata \ "id").as[Int] must greaterThanOrEqualTo(minimumNewRecordId) //if we re-run the tests without blanking the database explicitly this goes up
 
       val newRecordId = (jsondata \ "id").as[Int]
       val checkResponse = route(application, FakeRequest(GET, s"$uriRoot/$newRecordId")).get
@@ -117,10 +118,10 @@ trait GenericControllerSpec extends Specification {
 
     "return conflict (409) if attempting to delete something with sub-objects" in {
       val response = route(application, FakeRequest(
-        method="DELETE",
-        uri=s"$uriRoot/$testConflictId",
-        headers=FakeHeaders(),
-        body="")
+        method = "DELETE",
+        uri = s"$uriRoot/$testConflictId",
+        headers = FakeHeaders(),
+        body = "")
       ).get
 
       status(response) must equalTo(CONFLICT)
