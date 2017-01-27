@@ -84,16 +84,22 @@ trait GenericDatabaseObjectController[M] extends Controller {
 
    */
   def delete(requestedId: Int) = Action.async { request =>
-    deleteid(requestedId).map({
-      case Success(result)=>
-        Ok(Json.obj("status" -> "ok", "detail" -> "deleted", "id" -> requestedId))
-      case Failure(error)=>
-        val errorString = error.toString
-        logger.error(errorString)
-        if(errorString.contains("violates foreign key constraint"))
-          Conflict(Json.obj("status"->"error","detail"->"This is still referenced by sub-objects"))
-        else
-          InternalServerError(Json.obj("status"->"error","detail"->error.toString))
-    })
+    if(requestedId<0)
+      Future(Conflict(Json.obj("status"->"error","detail"->"This is still referenced by sub-objects")))
+    else
+      deleteid(requestedId).map({
+        case Success(result)=>
+          if(result==0)
+            NotFound(Json.obj("status" -> "notfound", "id"->requestedId))
+          else
+            Ok(Json.obj("status" -> "ok", "detail" -> "deleted", "id" -> requestedId))
+        case Failure(error)=>
+          val errorString = error.toString
+          logger.error(errorString)
+          if(errorString.contains("violates foreign key constraint"))
+            Conflict(Json.obj("status"->"error","detail"->"This is still referenced by sub-objects"))
+          else
+            InternalServerError(Json.obj("status"->"error","detail"->error.toString))
+      })
   }
 }

@@ -27,13 +27,19 @@ class StorageControllerSpec extends GenericControllerSpec {
   override val uriRoot: String = "/storage"
 
   override def testParsedJsonObject(checkdata: JsLookupResult, parsed_test_json: JsValue) = {
-    (checkdata \ "storageType").as[String] must equalTo((parsed_test_json \ "storageType").as[String])
-    (checkdata \ "user").as[String] must equalTo((parsed_test_json \ "user").as[String])
+    val object_keys = Seq("storageType","user")
+    object_keys.map(key=>
+      (checkdata \ key).as[String] must equalTo((parsed_test_json \ key).as[String])
+    )
   }
+//    (checkdata \ "storageType").as[String] must equalTo((parsed_test_json \ "storageType").as[String])
+//    (checkdata \ "user").as[String] must equalTo((parsed_test_json \ "user").as[String])
+//  )
 
   override val testGetId: Int = 1
   override val testGetDocument: String = """{"storageType": "filesystem", "user": "me"}"""
   override val testCreateDocument: String =  """{"storageType": "ftp", "user": "tests"}"""
   override val testDeleteId: Int = 4
   override val testConflictId: Int = 2
+  override val minimumNewRecordId: Int = 3
 }
