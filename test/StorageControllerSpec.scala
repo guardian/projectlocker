@@ -13,6 +13,7 @@ class StorageControllerSpec extends GenericControllerSpec {
 
   override def testParsedJsonObject(checkdata: JsLookupResult, parsed_test_json: JsValue) = {
 
+
     val object_keys = Seq("storageType","user")
     object_keys.map(key=>
       (checkdata \ key).as[String] must equalTo((parsed_test_json \ key).as[String])
@@ -30,4 +31,6 @@ class StorageControllerSpec extends GenericControllerSpec {
   override val testDeleteId: Int = 4
   override val testConflictId: Int = 2
   override val minimumNewRecordId: Int = 3
+
+
 }

@@ -59,6 +59,7 @@ trait GenericControllerSpec extends Specification {
   componentName should {
 
     "return 400 on a bad request" in {
+      logger.debug(s"$uriRoot/boum")
       val response = route(application,FakeRequest(GET, s"$uriRoot/boum")).get
       status(response) must equalTo(BAD_REQUEST)
     }
