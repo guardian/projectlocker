@@ -11,6 +11,7 @@ dependencies:
     - wget -q https://dl.bintray.com/sbt/debian/sbt-0.13.12.deb
     - sudo dpkg -i sbt-0.13.12.deb
     - sudo apt-get install rpm librpmbuild3
+
   # Cache resolution-cache and streams for faster dependency resolution in sbt
   # Cache node_modules and bower_components for faster client-side build
   cache_directories:
@@ -33,4 +34,4 @@ deployment:
     branch: /.*/
     commands:
       - sbt rpm:packageBin
-      - aws s3 cp target/rpm/RPMS/noarch/projectlocker*.rpm s3://${DEPLOY_BUCKET}/projectlocker/${CIRCLE_BUILD_NUM}
+      - aws s3 cp target/rpm/RPMS/noarch/projectlocker/*.rpm s3://${DEPLOY_BUCKET}/projectlocker/${CIRCLE_BUILD_NUM}
