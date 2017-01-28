@@ -32,7 +32,7 @@ enablePlugins(RpmPlugin)
 
 packageSummary in Linux := "A system to manage, backup and archive multimedia project files"
 
-packageDescription in Linux := ""
+packageDescription in Linux := "A system to manage, backup and archive multimedia project files"
 
 //RPM build configuration
 rpmVendor in Rpm := "Andy Gallagher <andy.gallagher@theguardian.com>"
@@ -41,9 +41,10 @@ rpmUrl in Rpm := Some("https://github/fredex42/projectlocker")
 
 packageName in Rpm := "projectlocker"
 
-version in Rpm := version.toString
+version in Rpm := "1.0"
 
 rpmRelease in Rpm := "1"  //FIXME: replace with build number
 
 packageArchitecture in Rpm := "noarch"
 
+rpmLicense in Rpm := Some("custom")
