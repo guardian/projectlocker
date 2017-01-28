@@ -10,22 +10,21 @@ dependencies:
   pre:
     - wget -q https://dl.bintray.com/sbt/debian/sbt-0.13.12.deb
     - sudo dpkg -i sbt-0.13.12.deb
+    - apt-get install rpm librpmbuild3
   # Cache resolution-cache and streams for faster dependency resolution in sbt
   # Cache node_modules and bower_components for faster client-side build
   cache_directories:
     - "~/.sbt"
   override:
-    - sudo mkdir -p /var/log/cds_backend
-    - sudo chown ubuntu /var/log/cds_backend
     - sbt test:compile
 
 test:
   override:
     - sbt test
 
-#don't bother with deployment for time being.
-#deployment:
-#  riffraff_upload:
-#    branch: /.*/
-#    commands:
-#      - sbt riffRaffUpload
+deployment:
+  make_rpm:
+    branch: /.*/
+    commands:
+      - sbt rpm:packageBin
+      - aws s3 cp target/rpm/RPMS/noarch/projectlocker/*.rpm s3://${DEPLOY_BUCKET}/projectlocker/${CIRCLE_BUILD_NUM}
