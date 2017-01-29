@@ -35,11 +35,12 @@ SELECT pg_catalog.setval('"ProjectFileAssociation_id_seq"', 1, false);
 
 
 
-INSERT INTO "ProjectTemplate" (id, name, "ProjectType", filepath, storage) VALUES (3, 'Premiere test template 1', 1, '/srv/projectfiles/ProjectTemplatesDev/Premiere/premiere_template_2014.prproj', 1);
+INSERT INTO "ProjectTemplate" (id, name, "ProjectType", filepath, storage) VALUES (1, 'Premiere test template 1', 1, '/srv/projectfiles/ProjectTemplatesDev/Premiere/premiere_template_2014.prproj', 1);
+INSERT INTO "ProjectTemplate" (id, name, "ProjectType", filepath, storage) VALUES (2, 'Another wonderful test template', 2, '/srv/projectfiles/ProjectTemplatesDev/Premiere/prelude_template_2014.prproj', 1);
 
 
 
-SELECT pg_catalog.setval('"ProjectTemplate_id_seq"', 3, true);
+SELECT pg_catalog.setval('"ProjectTemplate_id_seq"', 2, true);
 
 
 
