@@ -1,12 +1,13 @@
 package models
 import play.api.libs.functional.syntax._
 import play.api.libs.json.{JsPath, Reads, Writes}
+import slick.backend.DatabaseConfig
+import slick.driver.JdbcProfile
 import slick.driver.PostgresDriver.api._
 import slick.jdbc.JdbcBackend
 
 import scala.concurrent.Future
 import scala.util.{Failure, Success}
-
 import scala.concurrent.ExecutionContext.Implicits.global
 
 trait ProjectTemplateSerializer {
@@ -29,14 +30,14 @@ trait ProjectTemplateSerializer {
 }
 
 case class ProjectTemplate (id: Option[Int],name: String, projectTypeId: Int, filePath: String, storageId: Int) {
-  def projectType(implicit db: JdbcBackend.Database):Future[ProjectType] = db.run(
+  def projectType(implicit dbConfig:DatabaseConfig[JdbcProfile]):Future[ProjectType] = dbConfig.db.run(
     TableQuery[ProjectTypeRow].filter(_.id===projectTypeId).result.asTry
   ).map({
     case Success(result)=>result.head
     case Failure(error)=>throw error
   })
 
-  def storage(implicit db: JdbcBackend.Database):Future[StorageEntry] = db.run(
+  def storage(implicit dbConfig:DatabaseConfig[JdbcProfile]):Future[StorageEntry] = dbConfig.db.run(
     TableQuery[StorageEntryRow].filter(_.id===storageId).result.asTry
   ).map({
     case Success(result)=>result.head
@@ -52,7 +53,7 @@ class ProjectTemplateRow(tag: Tag) extends Table[ProjectTemplate](tag,"ProjectTe
   def storage=column[Int]("storage")
 
   def fkProjectType=foreignKey("fk_ProjectType",projectType,TableQuery[ProjectTypeRow])(_.id)
-  def fkSourceDir=foreignKey("fk_SourceDir",storage,TableQuery[FileEntryRow])(_.id)
+  def fkStorage=foreignKey("fk_SourceDir",storage,TableQuery[StorageEntryRow])(_.id)
 
   def * = (id.?, name, projectType, filePath, storage) <> (ProjectTemplate.tupled, ProjectTemplate.unapply)
 }

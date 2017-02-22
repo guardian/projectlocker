@@ -6,10 +6,6 @@
 # gets executed. You can use this file to provide
 # environment variables
 
-# Available replacements
-
-#this is from template
-
 # Setting JAVA_OPTS
 # -----------------
 JAVA_OPTS="-Dpidfile.path=/var/run/{{app_name}}/play.pid $JAVA_OPTS"

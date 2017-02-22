@@ -17,10 +17,10 @@ dependencies:
 
   # Cache resolution-cache and streams for faster dependency resolution in sbt
   # Cache node_modules and bower_components for faster client-side build
-  cache_directories:
     - ~/.sbt
     - frontend/node_modules
-
+    - target/streams
+    - target/resolution-cache
   override:
     - cd frontend; npm install
     - cd frontend; npm run build
