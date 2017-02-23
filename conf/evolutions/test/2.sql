@@ -7,10 +7,11 @@ SET client_min_messages = warning;
 
 SET search_path = public, pg_catalog;
 
+BEGIN;
 
-INSERT INTO "StorageEntry" (id, rootpath, "storageType", "user", password, host, port) VALUES (1, NULL, 'filesystem', 'me', NULL, NULL, NULL);
-INSERT INTO "StorageEntry" (id, rootpath, "storageType", "user", password, host, port) VALUES (2, '/backups/projectfiles', 'ftp', 'me', '123456abcde', 'ftp.mysite.com', 21);
-INSERT INTO "StorageEntry" (id, rootpath, "storageType", "user", password, host, port) VALUES (3, '/backups/projectfiles', 'ftp', 'me', '123456abcde', 'ftp.mysite.com', 21);
+INSERT INTO "StorageEntry" (id, rootpath, "storageType", "user", password, host, port, "default") VALUES (1, NULL, 'filesystem', 'me', NULL, NULL, NULL,TRUE);
+INSERT INTO "StorageEntry" (id, rootpath, "storageType", "user", password, host, port, "default") VALUES (2, '/backups/projectfiles', 'ftp', 'me', '123456abcde', 'ftp.mysite.com', 21,FALSE);
+INSERT INTO "StorageEntry" (id, rootpath, "storageType", "user", password, host, port, "default") VALUES (3, '/backups/projectfiles', 'ftp', 'me', '123456abcde', 'ftp.mysite.com', 21,FALSE);
 
 
 
@@ -18,20 +19,18 @@ INSERT INTO "FileEntry" (id, filepath, storage, "user", version, ctime, mtime, a
 INSERT INTO "FileEntry" (id, filepath, storage, "user", version, ctime, mtime, atime) VALUES (2, '/path/to/a/file.project', 1, 'you', 1, '2016-12-11 12:21:11.021', '2016-12-11 12:21:11.021', '2016-12-11 12:21:11.021');
 INSERT INTO "FileEntry" (id, filepath, storage, "user", version, ctime, mtime, atime) VALUES (3, '/path/to/another/file.project', 1, 'you', 1, '2016-12-11 12:21:11.021', '2016-12-11 12:21:11.021', '2016-12-11 12:21:11.021');
 
-
-
 SELECT pg_catalog.setval('"FileEntry_id_seq"', 3, true);
 
 INSERT INTO "ProjectType" (id, name, "opensWith", "targetVersion") VALUES (1, 'Premiere 2014 test', 'AdobePremierePro.app', '14.0');
 INSERT INTO "ProjectType" (id, name, "opensWith", "targetVersion") VALUES (2, 'Prelude 2014 test', 'AdobePrelude.app', '14.0');
 INSERT INTO "ProjectType" (id, name, "opensWith", "targetVersion") VALUES (3, 'Cubase test', 'Cubase.app', '6.0');
 
+INSERT INTO "ProjectEntry" (id, "ProjectFileAssociation", "ProjectType", "created","user") VALUES (1, 1, 1, '2016-12-11 12:21:11.021', 'me');
+SELECT pg_catalog.setval('"ProjectEntry_id_seq"', 2, false);
 
-SELECT pg_catalog.setval('"ProjectEntry_id_seq"', 1, false);
+INSERT INTO "ProjectFileAssociation" (id, "ProjectEntry", "FileEntry") VALUES (1, 1,2);
+SELECT pg_catalog.setval('"ProjectFileAssociation_id_seq"', 2, false);
 
-
-
-SELECT pg_catalog.setval('"ProjectFileAssociation_id_seq"', 1, false);
 
 
 
@@ -50,3 +49,4 @@ SELECT pg_catalog.setval('"ProjectType_id_seq"', 3, true);
 
 SELECT pg_catalog.setval('"StorageEntry_id_seq"', 3, true);
 
+COMMIT;

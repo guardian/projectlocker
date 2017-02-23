@@ -175,25 +175,25 @@ ALTER TABLE ONLY "StorageEntry"
     ADD CONSTRAINT "StorageEntry_pkey" PRIMARY KEY (id);
 
 ALTER TABLE ONLY "ProjectEntry"
-    ADD CONSTRAINT "ProjectType" FOREIGN KEY ("ProjectType") REFERENCES "ProjectType"(id);
+    ADD CONSTRAINT "ProjectType" FOREIGN KEY ("ProjectType") REFERENCES "ProjectType"(id) DEFERRABLE INITIALLY DEFERRED;
 
 ALTER TABLE ONLY "ProjectFileAssociation"
-    ADD CONSTRAINT "fk_FileEntry" FOREIGN KEY ("FileEntry") REFERENCES "FileEntry"(id);
+    ADD CONSTRAINT "fk_FileEntry" FOREIGN KEY ("FileEntry") REFERENCES "FileEntry"(id) DEFERRABLE INITIALLY DEFERRED;
 
 ALTER TABLE ONLY "ProjectFileAssociation"
-    ADD CONSTRAINT "fk_ProjectEntry" FOREIGN KEY ("ProjectEntry") REFERENCES "ProjectEntry"(id);
+    ADD CONSTRAINT "fk_ProjectEntry" FOREIGN KEY ("ProjectEntry") REFERENCES "ProjectEntry"(id) DEFERRABLE INITIALLY DEFERRED;
 
 ALTER TABLE ONLY "ProjectEntry"
-    ADD CONSTRAINT "fk_ProjectFileAssociation" FOREIGN KEY ("ProjectFileAssociation") REFERENCES "ProjectFileAssociation"(id) ON UPDATE RESTRICT;
+    ADD CONSTRAINT "fk_ProjectFileAssociation" FOREIGN KEY ("ProjectFileAssociation") REFERENCES "ProjectFileAssociation"(id) ON UPDATE RESTRICT DEFERRABLE INITIALLY DEFERRED;
 
 ALTER TABLE ONLY "ProjectTemplate"
-    ADD CONSTRAINT "fk_ProjectType" FOREIGN KEY ("ProjectType") REFERENCES "ProjectType"(id);
+    ADD CONSTRAINT "fk_ProjectType" FOREIGN KEY ("ProjectType") REFERENCES "ProjectType"(id) DEFERRABLE INITIALLY DEFERRED;
 
 ALTER TABLE ONLY "ProjectTemplate"
-    ADD CONSTRAINT "fk_SourceDir" FOREIGN KEY (storage) REFERENCES "FileEntry"(id);
+    ADD CONSTRAINT "fk_SourceDir" FOREIGN KEY (storage) REFERENCES "FileEntry"(id) DEFERRABLE INITIALLY DEFERRED;
 
 ALTER TABLE ONLY "FileEntry"
-    ADD CONSTRAINT fk_storage FOREIGN KEY (storage) REFERENCES "StorageEntry"(id);
+    ADD CONSTRAINT fk_storage FOREIGN KEY (storage) REFERENCES "StorageEntry"(id) DEFERRABLE INITIALLY DEFERRED;
 
 REVOKE ALL ON SCHEMA public FROM PUBLIC;
 REVOKE ALL ON SCHEMA public FROM postgres;
