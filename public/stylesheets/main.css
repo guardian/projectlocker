@@ -2,3 +2,99 @@ div.leftmenu {
     float: left;
     width: 20%;
 }
+
+html, body, p, th, td, li, dd, dt, pre {
+    font: 1em Verdana, Arial, Helvetica, sans-serif;
+}
+
+div.login_bar {
+    z-index: 99999;
+    float:right; font-size:0.9em; border:1px;
+    line-height: 50px;	//size of the google+ user image
+vertical-align:top;
+}
+
+div.band {
+    width: 100%;
+    overflow: auto;
+}
+.error { color:#FF0000; }
+
+h1, h2, h3, h4, h5, h6 {
+    font-family: Verdana, Arial, Helvetica, sans-serif;
+}
+h1 { font-size: 1.7em; }
+h2 { font-size: 1.5em; }
+h3 { font-size: 1.3em ; }
+h4 { font-size: 1.1em; }
+h5 { font-size: 1.0em; margin:0; padding:0; }
+h6 { font-size: 1.0em; }
+
+/*http://stackoverflow.com/questions/248011/how-do-i-wrap-text-in-a-pre-tag*/
+
+pre {
+    white-space: pre-wrap;       /* CSS 3 */
+    white-space: -moz-pre-wrap;  /* Mozilla, since 1999 */
+    white-space: -o-pre-wrap;    /* Opera 7 */
+    word-wrap: break-word;       /* Internet Explorer 5.5+ */
+}
+
+p.descriptive { font-size:0.8em; margin:0; padding:0; }
+a:link { color: #00f; text-decoration: none }
+a:visited { color: #009; }
+a:hover { color: #06f; text-decoration: underline; }
+a:active { color: #0cf; text-decoration: underline; }
+
+td { vertical-align: top; }
+
+
+tr.odd { background-color: #FFFFFF; }
+tr.even { background-color: #CCCCCC; }
+
+.menupanel { display: block; border: 1.0px; border-color: black; background-color: #AAAAAA; padding:0.1em; }
+
+iframe { border:none; }
+
+A.menulink:link { text-decoration: none }
+A.menulink:visited { text-decoration: none }
+A.menulink:active { text-decoration:none; background-color: grey; }
+A.menulink:hover { color: white; background-color: blue; }
+
+div.editselector { text-align:right; border-right:1px solid; border-right-color:blue; top:2em; height:80%; overflow-y:auto;padding-right:0.2em}
+
+A.selectlink:link { text-decoration: none; color:black }
+A.selectlink:visited { text-decoration: none }
+A.selectlink:active { text-decoration:none; background-color: grey; }
+A.selectlink:hover { color: white; background-color: #CCCCCC; }
+
+div.edit_rhs { float:right; top:0; height:90%; }
+
+table.dashboardpanel {
+    border: 2px solid black;
+    border-collapse: collapse;
+    font: 0.8em "Lucida Console",Monaco,monospace;
+    border-spacing: 3px;
+    overflow: scroll;
+//  width:450px;
+}
+
+td.visible {
+    border: 1px solid black;
+    padding: 2px;
+    padding-left: 6px;
+    padding-right: 6px;
+}
+
+tr.dashboardheader {
+    font-size:1.1em;
+    font-weight: bold;
+    background-color: #AAAAFF;
+}
+
+img.smallicon {
+    width: 32px;
+}
+
+img.tinyicon {
+    width: 16px;
+}

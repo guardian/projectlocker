@@ -28,29 +28,29 @@ class StorageListComponent extends React.Component {
     }
 
     render() {
-        return (<table>
+        return (<table className="dashboardpanel">
             <thead>
-            <tr>
-                <td>ID</td>
-                <td>Storage Type</td>
-                <td>Root path</td>
-                <td>User</td>
-                <td>Password</td>
-                <td>Host</td>
-                <td>Port</td>
+            <tr className="dashboardheader">
+                <td className="visible">ID</td>
+                <td className="visible">Type</td>
+                <td className="visible">Root path</td>
+                <td className="visible">User</td>
+                <td className="visible">Password</td>
+                <td className="visible">Host</td>
+                <td className="visible">Port</td>
             </tr>
             </thead>
             <tbody>
             {this.state.storages.map(function(storage){
                 console.debug(storage);
                 return (<tr key={storage.id}>
-                    <td>{storage.id}</td>
-                    <td>{storage.storageType}</td>
-                    <td>{storage.rootpath}</td>
-                    <td>{storage.user}</td>
-                    <td>{storage.password}</td>
-                    <td>{storage.host}</td>
-                    <td>{storage.port}</td>
+                    <td className="visible">{storage.id}</td>
+                    <td className="visible">{storage.storageType}</td>
+                    <td className="visible">{storage.rootpath}</td>
+                    <td className="visible">{storage.user}</td>
+                    <td className="visible">{storage.password}</td>
+                    <td className="visible">{storage.host}</td>
+                    <td className="visible">{storage.port}</td>
                 </tr>);
             })}
             </tbody>
