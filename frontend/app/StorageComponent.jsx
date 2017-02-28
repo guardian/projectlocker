@@ -1,13 +1,52 @@
 import React from 'react';
 import axios from 'axios';
 
+class StorageListEntry extends React.Component {
+    constructor(props){
+        super(props);
+        this.state = {
+            'hovered': false,
+            'selected': false
+        }
+    }
+
+    mouseover(event) {
+        this.setState({'hovered': true});
+    }
+
+    mouseout(event) {
+        this.setState({'hovered': false});
+    }
+
+    clicked(event) {
+        alert("boo!");
+    }
+
+    render() {
+        const storage = this.props.storage;
+        return (<tr onMouseOver={this.mouseover.bind(this)}
+                    onMouseOut={this.mouseout.bind(this)}
+                    onClick={this.clicked.bind(this)}
+                    className={this.state.hovered ? "mouseover selectable-row":"selectable-row"}
+                    >
+            <td className="visible">{storage.id}</td>
+            <td className="visible">{storage.storageType}</td>
+            <td className="visible">{storage.rootpath}</td>
+            <td className="visible">{storage.user}</td>
+            <td className="visible">{storage.password}</td>
+            <td className="visible">{storage.host}</td>
+            <td className="visible">{storage.port}</td>
+        </tr>);
+    }
+}
+
 class StorageListComponent extends React.Component {
     constructor(props){
         super(props);
         this.state = {
-            'storages': []
+            'storages': [],
+            'hovered': false
         };
-
     }
 
     componentDidMount() {
@@ -18,7 +57,6 @@ class StorageListComponent extends React.Component {
         let component = this;
 
         axios.get('/storage').then(function(result){
-            console.log("completed storage ajax request: " + result.data.status + " with data " + result.data.result);
             component.setState({
                 'storages': result.data.result
             });
@@ -42,16 +80,7 @@ class StorageListComponent extends React.Component {
             </thead>
             <tbody>
             {this.state.storages.map(function(storage){
-                console.debug(storage);
-                return (<tr key={storage.id}>
-                    <td className="visible">{storage.id}</td>
-                    <td className="visible">{storage.storageType}</td>
-                    <td className="visible">{storage.rootpath}</td>
-                    <td className="visible">{storage.user}</td>
-                    <td className="visible">{storage.password}</td>
-                    <td className="visible">{storage.host}</td>
-                    <td className="visible">{storage.port}</td>
-                </tr>);
+                return <StorageListEntry key={storage.id} storage={storage}/>
             })}
             </tbody>
         </table>);

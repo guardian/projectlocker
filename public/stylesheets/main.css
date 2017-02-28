@@ -91,6 +91,13 @@ tr.dashboardheader {
     background-color: #AAAAFF;
 }
 
+.mouseover {
+    background-color: #aaaaaa;
+}
+
+.selectable-row {
+    cursor: pointer;
+}
 img.smallicon {
     width: 32px;
 }
