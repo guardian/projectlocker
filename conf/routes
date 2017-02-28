@@ -3,7 +3,7 @@
 # ~~~~
 
 # Home page
-#GET     /                           controllers.Application.index
+GET     /                           controllers.Application.index(path="/")
 
 GET     /file                          @controllers.Files.list
 PUT     /file                          @controllers.Files.create
@@ -39,5 +39,4 @@ POST    /system/init                   @controllers.System.init
 
 # Map static resources from the /public folder to the /assets URL path
 GET     /assets/*file               controllers.Assets.at(path="/public", file)
-
-    
+GET     /*tail                      @controllers.Application.index(tail)

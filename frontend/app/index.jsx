@@ -4,6 +4,7 @@ import StorageListComponent from './StorageComponent.jsx';
 
 class App extends React.Component {
     render () {
+        console.log("Current url path: " + location.pathname);
         return(
             <div>
                 <div id="leftmenu" className="leftmenu">
