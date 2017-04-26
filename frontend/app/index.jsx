@@ -3,6 +3,7 @@ import {render} from 'react-dom';
 import StorageListComponent from './StorageComponent.jsx';
 import DefaultComponent from './DefaultComponent.jsx';
 import RootComponent from './RootComponent.jsx';
+import ProjectTemplateIndex from './ProjectTemplateIndex.jsx';
 
 const M_UNKNOWN=-1;
 const M_ROOT=0;
@@ -32,7 +33,8 @@ class ComponentRouter extends React.Component {
             ['^/list/storages$',M_STORAGES,A_LIST],
             ['^/edit/storage/(\d+)$',M_STORAGES, A_EDIT],
             ['^/new/storage$',M_STORAGES, A_EDIT],
-            ['^/delete/storage/(\d+)$',M_STORAGES, A_DELETE]
+            ['^/delete/storage/(\d+)$',M_STORAGES, A_DELETE],
+            ['^/list/templates$',M_TEMPLATES, A_LIST]
         ];
 
         this.compiledRoutings = this.routings.map((entry)=>{
@@ -63,6 +65,8 @@ class ComponentRouter extends React.Component {
         switch(this.state.target[0]){
             case M_STORAGES:
                 return(<StorageListComponent mode={this.state.target[1]}/>);
+            case M_TEMPLATES:
+                return(<ProjectTemplateIndex mode={this.state.target[1]}/>);
             case M_ROOT:
                 return(<RootComponent mode={this.state.target[1]}/>);
             default:

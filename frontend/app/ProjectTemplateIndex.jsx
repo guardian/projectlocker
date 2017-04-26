@@ -2,10 +2,10 @@ import React from 'react';
 import SortableTable from 'react-sortable-table';
 import GeneralListComponent from './GeneralListComponent.jsx';
 
-class StorageListComponent extends GeneralListComponent {
+class ProjectTemplateIndex extends GeneralListComponent {
     constructor(props){
         super(props);
-        this.endpoint = '/storage';
+        this.endpoint = '/template';
     }
 
     render() {
@@ -17,32 +17,20 @@ class StorageListComponent extends GeneralListComponent {
                 dataProps: { className: 'align-right'}
             },
             {
-                header: "Type",
-                key: "type"
+                header: "",
+                key: "name"
             },
             {
-                header: "Root path",
-                key: "rootpath"
+                header: "Project type",
+                key: "projectType"
             },
             {
-                header: "Storage type",
-                key: "storageType"
+                header: "Filepath",
+                key: "filepath"
             },
             {
-                header: "User",
-                key: "user"
-            },
-            {
-                header: "Password",
-                key: "password"
-            },
-            {
-                header: "Host",
-                key: "host"
-            },
-            {
-                header: "Port",
-                key: "port"
+                header: "Storage",
+                key: "storage"
             }
         ];
 
@@ -62,10 +50,10 @@ class StorageListComponent extends GeneralListComponent {
                 columns={columns}
                 style={style}
                 iconStyle={iconStyle}
-                />
+            />
         );
 
     }
 }
 
-export default StorageListComponent;
+export default ProjectTemplateIndex;
