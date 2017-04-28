@@ -1,58 +1,23 @@
 import React from 'react';
-import SortableTable from 'react-sortable-table';
 import GeneralListComponent from './GeneralListComponent.jsx';
 
 class ProjectTemplateIndex extends GeneralListComponent {
     constructor(props){
         super(props);
         this.endpoint = '/template';
-    }
-
-    render() {
-        const columns = [
+        this.columns = [
             {
                 header: "Id",
                 key: "id",
                 defaultSorting: "desc",
-                dataProps: { className: 'align-right'}
+                dataProps: { className: 'align-right'},
+                headerProps: { className: 'dashboardheader'}
             },
-            {
-                header: "",
-                key: "name"
-            },
-            {
-                header: "Project type",
-                key: "projectType"
-            },
-            {
-                header: "Filepath",
-                key: "filepath"
-            },
-            {
-                header: "Storage",
-                key: "storage"
-            }
+            GeneralListComponent.standardColumn("Name","name"),
+            GeneralListComponent.standardColumn("Project type", "projectType"),
+            GeneralListComponent.standardColumn("Filepath", "filepath"),
+            GeneralListComponent.standardColumn("Storage","storage")
         ];
-
-        const style = {
-            backgroundColor: '#eee'
-        };
-
-        const iconStyle = {
-            color: '#aaa',
-            paddingLeft: '5px',
-            paddingRight: '5px'
-        };
-
-        return (
-            <SortableTable
-                data={ this.state.data}
-                columns={columns}
-                style={style}
-                iconStyle={iconStyle}
-            />
-        );
-
     }
 }
 

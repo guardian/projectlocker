@@ -6,65 +6,34 @@ class StorageListComponent extends GeneralListComponent {
     constructor(props){
         super(props);
         this.endpoint = '/storage';
-    }
-
-    render() {
-        const columns = [
+        this.columns = [
             {
                 header: "Id",
                 key: "id",
                 defaultSorting: "desc",
-                dataProps: { className: 'align-right'}
+                dataProps: { className: 'align-right'},
+                headerProps: { className: 'dashboardheader'}
             },
-            {
-                header: "Type",
-                key: "type"
-            },
-            {
-                header: "Root path",
-                key: "rootpath"
-            },
-            {
-                header: "Storage type",
-                key: "storageType"
-            },
-            {
-                header: "User",
-                key: "user"
-            },
+            GeneralListComponent.standardColumn("Type","type"),
+            GeneralListComponent.standardColumn("Root path","rootpath"),
+            GeneralListComponent.standardColumn("Storage type","storageType"),
+            GeneralListComponent.standardColumn("Username","user"),
             {
                 header: "Password",
-                key: "password"
+                key: "password",
+                headerProps: { className: 'dashboardheader'},
+                render: (passwd)=>{
+                    if(!passwd) return <span style={{fontStyle: "italic"}}>n/a</span>;
+                    let rtnstring="";
+                    for(let n=0;n<passwd.length;n+=1){
+                        rtnstring += "*";
+                    }
+                    return rtnstring;
+                }
             },
-            {
-                header: "Host",
-                key: "host"
-            },
-            {
-                header: "Port",
-                key: "port"
-            }
+            GeneralListComponent.standardColumn("Hostname (if applicable)","host"),
+            GeneralListComponent.standardColumn("Port","port")
         ];
-
-        const style = {
-            backgroundColor: '#eee'
-        };
-
-        const iconStyle = {
-            color: '#aaa',
-            paddingLeft: '5px',
-            paddingRight: '5px'
-        };
-
-        return (
-            <SortableTable
-                data={ this.state.data}
-                columns={columns}
-                style={style}
-                iconStyle={iconStyle}
-                />
-        );
-
     }
 }
 

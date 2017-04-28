@@ -5,6 +5,8 @@ import DefaultComponent from './DefaultComponent.jsx';
 import RootComponent from './RootComponent.jsx';
 import ProjectTemplateIndex from './ProjectTemplateIndex.jsx';
 
+window.React = require('react');
+
 const M_UNKNOWN=-1;
 const M_ROOT=0;
 const M_STORAGES=1;
