@@ -10,6 +10,8 @@ class GeneralListComponent extends React.Component {
             hovered: false
         };
 
+        this.gotDataCallback = this.gotDataCallback.bind(this);
+
         /* this must be supplied by a subclass */
         this.endpoint='/unknown';
 
@@ -49,12 +51,15 @@ class GeneralListComponent extends React.Component {
     reload(){
         const component = this;
 
-        axios.get(this.endpoint).then(function(result){
-            component.setState({
-                data: result.data.result
-            });
-        }).catch(function (error) {
+        axios.get(this.endpoint).then(component.gotDataCallback).catch(function (error) {
             console.error(error);
+        });
+    }
+
+    /* called when we receive data; can be over-ridden by a subclass to do something more clever */
+    gotDataCallback(result){
+        this.setState({
+            data: result.data.result
         });
     }
 
