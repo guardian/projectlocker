@@ -5,13 +5,15 @@
   "main": "index.js",
   "scripts": {
     "test": "mocha",
-    "build": "webpack -d",
-    "compile": "webpack -p",
-    "dev": "webpack -d --watch"
+    "buildmultistep": "scripts/fix-multistep.sh",
+    "build": "scripts/fix-multistep.sh && webpack -d",
+    "compile": "scripts/fix-multistep.sh && webpack -p",
+    "dev": "scripts/fix-multistep.sh && webpack -d --watch"
   },
   "author": "Andy Gallagher <andy.gallagher@theguardian.com>",
   "license": "ISC",
   "devDependencies": {
+    "babel-cli": "^6.24.1",
     "mocha": "^3.2.0"
   },
   "dependencies": {

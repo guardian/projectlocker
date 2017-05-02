@@ -13,6 +13,7 @@ DELETE  /file/:id                      @controllers.Files.delete(id: Int)
 
 GET     /storage                       @controllers.StoragesController.list
 PUT     /storage                       @controllers.StoragesController.create
+GET     /storage/knowntypes            @controllers.StoragesController.types
 GET     /storage/:id                   @controllers.StoragesController.getitem(id: Int)
 PUT     /storage/:id                   @controllers.StoragesController.update(id: Int)
 DELETE  /storage/:id                   @controllers.StoragesController.delete(id: Int)

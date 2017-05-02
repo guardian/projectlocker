@@ -4,9 +4,13 @@ import StorageListComponent from './StorageComponent.jsx';
 import DefaultComponent from './DefaultComponent.jsx';
 import RootComponent from './RootComponent.jsx';
 import ProjectTemplateIndex from './ProjectTemplateIndex.jsx';
+import FileEntryList from './FileEntryList.jsx';
+import ProjectEntryList from './ProjectEntryList.jsx';
+import ProjectTypeList from './ProjectTypeList.jsx';
+
+import StorageMultistep from './multistep/StorageMultistep.jsx';
 
 window.React = require('react');
-
 const M_UNKNOWN=-1;
 const M_ROOT=0;
 const M_STORAGES=1;
@@ -30,13 +34,25 @@ class ComponentRouter extends React.Component {
             'target': null
         };
 
+        this.verbAssociation = {
+            'list': A_LIST,
+            'edit': A_EDIT,
+            'new': A_EDIT,
+            'delete': A_DELETE
+        };
+
+        this.methodAssociation = {
+            'storages': M_STORAGES,
+            'types': M_TYPES,
+            'templates': M_TEMPLATES,
+            'projects': M_PROJECTS,
+            'files': M_FILES
+        };
+
         this.routings = [
             ['^/$',M_ROOT,A_UNKNOWN],
-            ['^/list/storages$',M_STORAGES,A_LIST],
-            ['^/edit/storage/(\d+)$',M_STORAGES, A_EDIT],
-            ['^/new/storage$',M_STORAGES, A_EDIT],
-            ['^/delete/storage/(\d+)$',M_STORAGES, A_DELETE],
-            ['^/list/templates$',M_TEMPLATES, A_LIST]
+            ['^/(\\w+)/(\\w+)$',-1,-1],
+            ['^/(\\w+)/(\\w+)/(\\d+)$',-1,-1],
         ];
 
         this.compiledRoutings = this.routings.map((entry)=>{
@@ -45,34 +61,61 @@ class ComponentRouter extends React.Component {
     }
 
     componentWillMount() {
-        this.setState({'target': this.match() })
+        this.setState({target: this.match() });
     }
 
     match() {
         console.log("Current url path: " + location.pathname);
-        const target = this.compiledRoutings.filter((entry)=>{
+
+        const target = this.compiledRoutings.map((entry)=>{
             const result = entry[0].exec(location.pathname);
-            console.debug("checking " + location.pathname + " against " + entry[0]);
-            console.debug(result);
-            return result!=null;
-        });
+            if(result==null) return null;
+
+            if(result[3]) return {
+                'verb': this.verbAssociation[result[1]],
+                'method': this.methodAssociation[result[2]],
+                'objectid': parseInt(result[3])
+            };
+            if(result[2]) return {
+                'verb': this.verbAssociation[result[1]],
+                'method': this.methodAssociation[result[2]],
+                'objectid': null
+            };
+            if(!result[1]) return {
+                'verb': entry[1],
+                'method': entry[2]
+            }
+        }).filter((entry)=>entry!=null);
+
         if(target.length==0) return [M_UNKNOWN, A_UNKNOWN];
         console.debug(target);
-        return [target[0][1], target[0][2]];
+        return target[0];
     }
 
     render() {
-        console.debug(this.state.target);
+        console.log(this.state.target);
+        console.log("Method is " + this.state.target.method);
+        console.log("Verb is " + this.state.target.verb);
 
-        switch(this.state.target[0]){
+        switch(this.state.target.method){
             case M_STORAGES:
-                return(<StorageListComponent mode={this.state.target[1]}/>);
+                if(this.state.target.verb==A_EDIT){
+                    return(<StorageMultistep mode={this.state.target.verb} currentEntry={this.state.target.objectid}/>)
+                } else {
+                    return (<StorageListComponent title="Storages" mode={this.state.target.verb}/>);
+                }
             case M_TEMPLATES:
-                return(<ProjectTemplateIndex mode={this.state.target[1]}/>);
+                return(<ProjectTemplateIndex title="Templates" mode={this.state.target[1]}/>);
             case M_ROOT:
-                return(<RootComponent mode={this.state.target[1]}/>);
+                return(<RootComponent title="None" mode={this.state.target[1]}/>);
+            case M_FILES:
+                return(<FileEntryList title="Files" mode={this.state.target[1]}/>);
+            case M_PROJECTS:
+                return(<ProjectEntryList title="Projects" mode={this.state.target[1]}/>);
+            case M_TYPES:
+                return(<ProjectTypeList title="Project Types" mode={this.state.target[1]}/>);
             default:
-                return(<DefaultComponent mode={this.state.target[1]}/>);
+                return(<DefaultComponent title="None" mode={this.state.target[1]}/>);
         }
     }
 }
@@ -82,7 +125,7 @@ class App extends React.Component {
         return(
             <div>
                 <div id="leftmenu" className="leftmenu">
-                    <ul>
+                    <ul className="leftmenu">
                         <li><a href="/list/storages">Storages...</a></li>
                         <li><a href="/list/types">Project Types...</a></li>
                         <li><a href="/list/templates">Project Templates...</a></li>

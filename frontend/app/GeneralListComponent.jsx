@@ -63,15 +63,27 @@ class GeneralListComponent extends React.Component {
         });
     }
 
+    /* called when the New button is clicked; can be over-ridden by a subclass to do something more clever */
+    newElementCallback(event){
+
+    }
+
     render() {
         return (
-            <SortableTable
-                data={ this.state.data}
-                columns={this.columns}
-                style={this.style}
-                iconStyle={this.iconStyle}
-                tableProps={ {className: "dashboardpanel"} }
-            />
+            <div>
+                <span className="list-title"><h2 className="list-title">{this.props.title}</h2></span>
+                <SortableTable
+                    data={ this.state.data}
+                    columns={this.columns}
+                    style={this.style}
+                    iconStyle={this.iconStyle}
+                    tableProps={ {className: "dashboardpanel"} }
+                />
+
+                <span className="banner-control">
+                    <button onClick={this.newElementCallback}>New</button>
+                </span>
+            </div>
         );
     }
 }

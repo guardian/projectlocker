@@ -4,6 +4,8 @@ machine:
     SBT_OPTS: "-Dfile.encoding=UTF8 -Xms512M -Xmx1024M -Xss1M -XX:+CMSClassUnloadingEnabled -XX:+UseCompressedOops -Dbuild.tag=\"$CIRCLE_TAG\" -Dbuild.number=$CIRCLE_BUILD_NUM -Dbuild.vcs.number=$CIRCLE_SHA1"
   java:
     version: oraclejdk8
+  node:
+    version: 6.10.0
 
 dependencies:
   # Install specific version of sbt - See https://circleci.com/docs/language-scala/
@@ -16,7 +18,11 @@ dependencies:
   # Cache node_modules and bower_components for faster client-side build
   cache_directories:
     - "~/.sbt"
+    - "frontend/node_modules"
+
   override:
+    - cd frontend; npm install
+    - cd frontend; npm run build
     - sbt test:compile
 
 database:

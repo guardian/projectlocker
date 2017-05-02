@@ -35,6 +35,10 @@ class StorageListComponent extends GeneralListComponent {
             GeneralListComponent.standardColumn("Port","port")
         ];
     }
+
+    newElementCallback(event) {
+        window.location = "/new/storages";
+    }
 }
 
 export default StorageListComponent;
