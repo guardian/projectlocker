@@ -7,6 +7,7 @@
 
 GET     /file                          @controllers.Files.list
 PUT     /file                          @controllers.Files.create
+GET     /file/:id                      @controllers.Files.getitem(id: Int)
 PUT     /file/:id                      @controllers.Files.update(id: Int)
 DELETE  /file/:id                      @controllers.Files.delete(id: Int)
 

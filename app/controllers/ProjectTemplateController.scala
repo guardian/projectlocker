@@ -19,6 +19,10 @@ class ProjectTemplateController @Inject() (config: Configuration, dbConfigProvid
 
   val dbConfig = dbConfigProvider.get[JdbcProfile]
 
+  override def deleteid(requestedId: Int) = dbConfig.db.run(
+    TableQuery[ProjectTemplateRow].filter(_.id === requestedId).delete.asTry
+  )
+
   override def selectid(requestedId: Int) = dbConfig.db.run(
     TableQuery[ProjectTemplateRow].filter(_.id === requestedId).result.asTry
   )

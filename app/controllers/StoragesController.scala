@@ -6,6 +6,7 @@ import play.api.Configuration
 import play.api.db.slick.DatabaseConfigProvider
 import play.api.libs.json._
 import play.api.mvc.{Action, BodyParsers, Request}
+import slick.backend.DatabaseConfig
 import slick.driver.JdbcProfile
 import slick.lifted.TableQuery
 import slick.driver.PostgresDriver.api._
@@ -18,10 +19,14 @@ class StoragesController @Inject()
     (configuration: Configuration, dbConfigProvider: DatabaseConfigProvider)
     extends GenericDatabaseObjectController[StorageEntry] with StorageSerializer {
 
-  val dbConfig = dbConfigProvider.get[JdbcProfile]
+  implicit val dbConfig:DatabaseConfig[JdbcProfile] = dbConfigProvider.get[JdbcProfile]
 
   override def selectid(requestedId: Int) = dbConfig.db.run(
     TableQuery[StorageEntryRow].filter(_.id === requestedId).result.asTry
+  )
+
+  override def deleteid(requestedId: Int) = dbConfig.db.run(
+    TableQuery[StorageEntryRow].filter(_.id === requestedId).delete.asTry
   )
 
   override def selectall = dbConfig.db.run(

@@ -1,0 +1,30 @@
+machine:
+  timezone: UTC
+  environment:
+    SBT_OPTS: "-Dfile.encoding=UTF8 -Xms512M -Xmx1024M -Xss1M -XX:+CMSClassUnloadingEnabled -XX:MaxPermSize=256M -XX:+UseCompressedOops -Dbuild.number=$CIRCLE_BUILD_NUM -Dbuild.vcs.number=$CIRCLE_SHA1"
+  java:
+    version: oraclejdk8
+
+dependencies:
+  # Install specific version of sbt - See https://circleci.com/docs/language-scala/
+  pre:
+    - wget -q https://dl.bintray.com/sbt/debian/sbt-0.13.12.deb
+    - sudo dpkg -i sbt-0.13.12.deb
+    - apt-get install rpm librpmbuild3
+  # Cache resolution-cache and streams for faster dependency resolution in sbt
+  # Cache node_modules and bower_components for faster client-side build
+  cache_directories:
+    - "~/.sbt"
+  override:
+    - sbt test:compile
+
+test:
+  override:
+    - sbt test
+
+deployment:
+  make_rpm:
+    branch: /.*/
+    commands:
+      - sbt rpm:packageBin
+      - aws s3 cp target/rpm/RPMS/noarch/projectlocker/*.rpm s3://${DEPLOY_BUCKET}/projectlocker/${CIRCLE_BUILD_NUM}

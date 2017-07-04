@@ -24,38 +24,7 @@ object TestDatabase {
 
   class testDbProvider @Inject() (app:Application) extends DatabaseConfigProvider {
     def get[P <: BasicProfile]: DatabaseConfig[P] = {
-      DatabaseConfigProvider.get("testDB")(app)
-    }
-  }
-
-  def withTestDatabase[T](block: Database => T)  = {
-    Databases.withInMemory(
-      name="testDB",
-      urlOptions = Map(
-        "MODE" -> "PostgreSQL"
-      ),
-      config = Map(
-        "logStatements"->true
-      )
-    ){ db =>
-       db.asInstanceOf[JdbcProfile#Backend#Database].run(
-        DBIO.seq(
-          (
-            TableQuery[FileAssociationRow].schema ++
-              TableQuery[FileEntryRow].schema ++
-              TableQuery[ProjectEntryRow].schema ++
-              TableQuery[ProjectTemplateRow].schema ++
-              TableQuery[ProjectTypeRow].schema ++
-              TableQuery[StorageEntryRow].schema
-            ).create
-        ).asTry
-      ).map({
-        case Success(result)=>
-          logger.info("Database succesfully initialised")
-        case Failure(error)=>
-          logger.error(error.toString)
-      })
-      block(db)
+      DatabaseConfigProvider.get("test")(app)
     }
   }
 
