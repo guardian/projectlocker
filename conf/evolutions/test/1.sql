@@ -1,5 +1,19 @@
 # -- !Ups
 
+SET statement_timeout = 0;
+SET client_encoding = 'UTF8';
+SET standard_conforming_strings = on;
+SET check_function_bodies = false;
+SET client_min_messages = warning;
+
+
+SET search_path = public, pg_catalog;
+
+SET default_tablespace = '';
+
+SET default_with_oids = false;
+
+
 CREATE TABLE "FileEntry" (
     id integer NOT NULL,
     filepath character varying NOT NULL,
@@ -21,6 +35,7 @@ CREATE SEQUENCE "FileEntry_id_seq"
     NO MINVALUE
     NO MAXVALUE
     CACHE 1;
+
 
 ALTER TABLE public."FileEntry_id_seq" OWNER TO projectlocker;
 
@@ -47,9 +62,7 @@ CREATE SEQUENCE "ProjectEntry_id_seq"
 
 ALTER TABLE public."ProjectEntry_id_seq" OWNER TO projectlocker;
 
-
 ALTER SEQUENCE "ProjectEntry_id_seq" OWNED BY "ProjectEntry".id;
-
 
 CREATE TABLE "ProjectFileAssociation" (
     id integer NOT NULL,
@@ -115,7 +128,6 @@ CREATE SEQUENCE "ProjectType_id_seq"
 
 ALTER TABLE public."ProjectType_id_seq" OWNER TO projectlocker;
 
-
 ALTER SEQUENCE "ProjectType_id_seq" OWNED BY "ProjectType".id;
 
 CREATE TABLE "StorageEntry" (
@@ -141,29 +153,36 @@ CREATE SEQUENCE "StorageEntry_id_seq"
 
 ALTER TABLE public."StorageEntry_id_seq" OWNER TO projectlocker;
 
-
 ALTER SEQUENCE "StorageEntry_id_seq" OWNED BY "StorageEntry".id;
 
 ALTER TABLE ONLY "FileEntry" ALTER COLUMN id SET DEFAULT nextval('"FileEntry_id_seq"'::regclass);
+
 
 ALTER TABLE ONLY "ProjectEntry" ALTER COLUMN id SET DEFAULT nextval('"ProjectEntry_id_seq"'::regclass);
 
 ALTER TABLE ONLY "ProjectFileAssociation" ALTER COLUMN id SET DEFAULT nextval('"ProjectFileAssociation_id_seq"'::regclass);
 
+
 ALTER TABLE ONLY "ProjectTemplate" ALTER COLUMN id SET DEFAULT nextval('"ProjectTemplate_id_seq"'::regclass);
+
 
 ALTER TABLE ONLY "ProjectType" ALTER COLUMN id SET DEFAULT nextval('"ProjectType_id_seq"'::regclass);
 
+
 ALTER TABLE ONLY "StorageEntry" ALTER COLUMN id SET DEFAULT nextval('"StorageEntry_id_seq"'::regclass);
+
 
 ALTER TABLE ONLY "FileEntry"
     ADD CONSTRAINT "FileEntry_pkey" PRIMARY KEY (id);
 
+
 ALTER TABLE ONLY "ProjectEntry"
     ADD CONSTRAINT "ProjectEntry_pkey" PRIMARY KEY (id);
 
+
 ALTER TABLE ONLY "ProjectFileAssociation"
     ADD CONSTRAINT "ProjectFileAssociation_pkey" PRIMARY KEY (id);
+
 
 ALTER TABLE ONLY "ProjectTemplate"
     ADD CONSTRAINT "ProjectTemplate_pkey" PRIMARY KEY (id);
@@ -171,39 +190,32 @@ ALTER TABLE ONLY "ProjectTemplate"
 ALTER TABLE ONLY "ProjectType"
     ADD CONSTRAINT "ProjectType_pkey" PRIMARY KEY (id);
 
+
 ALTER TABLE ONLY "StorageEntry"
     ADD CONSTRAINT "StorageEntry_pkey" PRIMARY KEY (id);
 
 ALTER TABLE ONLY "ProjectEntry"
-    ADD CONSTRAINT "ProjectType" FOREIGN KEY ("ProjectType") REFERENCES "ProjectType"(id) DEFERRABLE INITIALLY DEFERRED;
+    ADD CONSTRAINT "ProjectType" FOREIGN KEY ("ProjectType") REFERENCES "ProjectType"(id) DEFERRABLE INITIALLY IMMEDIATE;
 
 ALTER TABLE ONLY "ProjectFileAssociation"
-    ADD CONSTRAINT "fk_FileEntry" FOREIGN KEY ("FileEntry") REFERENCES "FileEntry"(id) DEFERRABLE INITIALLY DEFERRED;
+    ADD CONSTRAINT "fk_FileEntry" FOREIGN KEY ("FileEntry") REFERENCES "FileEntry"(id) DEFERRABLE INITIALLY IMMEDIATE;
 
 ALTER TABLE ONLY "ProjectFileAssociation"
-    ADD CONSTRAINT "fk_ProjectEntry" FOREIGN KEY ("ProjectEntry") REFERENCES "ProjectEntry"(id) DEFERRABLE INITIALLY DEFERRED;
+    ADD CONSTRAINT "fk_ProjectEntry" FOREIGN KEY ("ProjectEntry") REFERENCES "ProjectEntry"(id) DEFERRABLE INITIALLY IMMEDIATE;
 
 ALTER TABLE ONLY "ProjectEntry"
-    ADD CONSTRAINT "fk_ProjectFileAssociation" FOREIGN KEY ("ProjectFileAssociation") REFERENCES "ProjectFileAssociation"(id) ON UPDATE RESTRICT DEFERRABLE INITIALLY DEFERRED;
+    ADD CONSTRAINT "fk_ProjectFileAssociation" FOREIGN KEY ("ProjectFileAssociation") REFERENCES "ProjectFileAssociation"(id) ON UPDATE RESTRICT  DEFERRABLE INITIALLY IMMEDIATE;
 
 ALTER TABLE ONLY "ProjectTemplate"
-    ADD CONSTRAINT "fk_ProjectType" FOREIGN KEY ("ProjectType") REFERENCES "ProjectType"(id) DEFERRABLE INITIALLY DEFERRED;
+    ADD CONSTRAINT "fk_ProjectType" FOREIGN KEY ("ProjectType") REFERENCES "ProjectType"(id) DEFERRABLE INITIALLY IMMEDIATE;
 
 ALTER TABLE ONLY "ProjectTemplate"
-    ADD CONSTRAINT "fk_SourceDir" FOREIGN KEY (storage) REFERENCES "FileEntry"(id) DEFERRABLE INITIALLY DEFERRED;
+    ADD CONSTRAINT "fk_SourceDir" FOREIGN KEY (storage) REFERENCES "FileEntry"(id) DEFERRABLE INITIALLY IMMEDIATE;
 
 ALTER TABLE ONLY "FileEntry"
-    ADD CONSTRAINT fk_storage FOREIGN KEY (storage) REFERENCES "StorageEntry"(id) DEFERRABLE INITIALLY DEFERRED;
+    ADD CONSTRAINT fk_storage FOREIGN KEY (storage) REFERENCES "StorageEntry"(id) DEFERRABLE INITIALLY IMMEDIATE;
 
 REVOKE ALL ON SCHEMA public FROM PUBLIC;
 REVOKE ALL ON SCHEMA public FROM postgres;
 GRANT ALL ON SCHEMA public TO postgres;
 GRANT ALL ON SCHEMA public TO PUBLIC;
-
--- # -- !Downs
--- DROP TABLE "FileEntry" CASCADE;
--- DROP TABLE "ProjectTemplate" CASCADE;
--- DROP TABLE "ProjectEntry" CASCADE;
--- DROP TABLE "ProjectFileAssociation" CASCADE;
--- DROP TABLE "StorageEntry" CASCADE;
--- DROP TABLE "ProjectType" CASCADE;

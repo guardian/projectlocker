@@ -38,7 +38,7 @@ case class StorageEntry(id: Option[Int], rootpath: Option[String], storageType: 
 }
 
 class StorageEntryRow(tag:Tag) extends Table[StorageEntry](tag, "StorageEntry") {
-  def id = column[Int]("id",O.PrimaryKey, O.AutoInc) //Autoincrement generates invalid SQL for Postgres, not sure why
+  def id = column[Int]("id",O.PrimaryKey, O.AutoInc)
   def rootpath = column[Option[String]]("rootpath")
   def storageType = column[String]("storageType")
   def user = column[Option[String]]("user")
