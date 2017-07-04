@@ -3,6 +3,11 @@ package models
 import org.joda.time.DateTime
 import slick.driver.PostgresDriver.api._
 import java.sql.Timestamp
+
+import play.api.libs.functional.syntax._
+import play.api.libs.json.Reads.jodaDateReads
+import play.api.libs.json.Writes.jodaDateWrites
+import play.api.libs.json._
 import slick.jdbc.JdbcBackend
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -48,3 +53,38 @@ class FileEntryRow(tag:Tag) extends Table[FileEntry](tag, "FileEntry") {
 }
 
 
+trait FileEntrySerializer {
+  def timestampToDateTime(t: Timestamp): DateTime = new DateTime(t.getTime)
+  def dateTimeToTimestamp(dt: DateTime): Timestamp = new Timestamp(dt.getMillis)
+  implicit val dateWrites = jodaDateWrites("yyyy-MM-dd'T'HH:mm:ss.SSSZ") //this DOES take numeric timezones - Z means Zone, not literal letter Z
+  implicit val dateReads = jodaDateReads("yyyy-MM-dd'T'HH:mm:ss.SSSZ")
+
+  /* performs a conversion from java.sql.Timestamp to Joda DateTime and back again */
+  implicit val timestampFormat = new Format[Timestamp] {
+    def writes(t: Timestamp): JsValue = Json.toJson(timestampToDateTime(t))
+    def reads(json: JsValue): JsResult[Timestamp] = Json.fromJson[DateTime](json).map(dateTimeToTimestamp)
+  }
+
+  /*https://www.playframework.com/documentation/2.5.x/ScalaJson*/
+  implicit val fileWrites: Writes[FileEntry] = (
+    (JsPath \ "id").writeNullable[Int] and
+      (JsPath \ "filepath").write[String] and
+      (JsPath \ "storage").write[Int] and
+      (JsPath \ "user").write[String] and
+      (JsPath \ "version").write[Int] and
+      (JsPath \ "ctime").write[Timestamp] and
+      (JsPath \ "mtime").write[Timestamp] and
+      (JsPath \ "atime").write[Timestamp]
+    )(unlift(FileEntry.unapply))
+
+  implicit val fileReads: Reads[FileEntry] = (
+    (JsPath \ "id").readNullable[Int] and
+      (JsPath \ "filepath").read[String] and
+      (JsPath \ "storage").read[Int] and
+      (JsPath \ "user").read[String] and
+      (JsPath \ "version").read[Int] and
+      (JsPath \ "ctime").read[Timestamp] and
+      (JsPath \ "mtime").read[Timestamp] and
+      (JsPath \ "atime").read[Timestamp]
+    )(FileEntry.apply _)
+}

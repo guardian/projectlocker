@@ -1,35 +1,82 @@
 package controllers
 import java.sql.Timestamp
 
-import models.{FileEntry, FileEntryRow}
+import models.{FileEntry, FileEntryRow, StorageEntry, StorageEntryRow}
 import org.joda.time.DateTime
+import play.api.Logger
+import play.api.db.slick.DatabaseConfigProvider
+import play.api.libs.functional.syntax._
 import play.api.libs.json.Reads.jodaDateReads
 import play.api.libs.json.Writes.jodaDateWrites
 import play.api.libs.json._
-import play.api.mvc.{Action, BodyParsers, Controller}
+import play.api.mvc.{Action, BodyParsers, Controller, Request}
+import slick.driver.JdbcProfile
+import slick.lifted.TableQuery
 
 import scala.concurrent.Future
-import scala.util.{Failure, Success}
+import scala.util.{Failure, Success, Try}
+import scala.concurrent.ExecutionContext.Implicits.global
 
 
-trait GenericDatabaseObjectController extends Controller {
-  def timestampToDateTime(t: Timestamp): DateTime = new DateTime(t.getTime)
-  def dateTimeToTimestamp(dt: DateTime): Timestamp = new Timestamp(dt.getMillis)
-  implicit val dateWrites = jodaDateWrites("yyyy-MM-dd'T'HH:mm:ss.SSSZ") //this DOES take numeric timezones - Z means Zone, not literal letter Z
-  implicit val dateReads = jodaDateReads("yyyy-MM-dd'T'HH:mm:ss.SSSZ")
+trait GenericDatabaseObjectController[M] extends Controller {
+  def validate(request:Request[JsValue]):JsResult[M]
 
-  /* performs a conversion from java.sql.Timestamp to Joda DateTime and back again */
-  implicit val timestampFormat = new Format[Timestamp] {
-    def writes(t: Timestamp): JsValue = Json.toJson(timestampToDateTime(t))
-    def reads(json: JsValue): JsResult[Timestamp] = Json.fromJson[DateTime](json).map(dateTimeToTimestamp)
+  def selectall:Future[Try[Seq[M]]]
+  def selectid(requestedId: Int):Future[Try[Seq[M]]]
+
+  def insert(entry: M):Future[Any]
+  def jstranslate(result:Seq[M]):Json.JsValueWrapper
+  def jstranslate(result:M):Json.JsValueWrapper
+
+  val logger: Logger = Logger(this.getClass)
+
+  def list = Action.async {
+    selectall.map({
+      case Success(result)=>Ok(Json.obj("status"->"ok","result"->this.jstranslate(result)))
+      case Failure(error)=>
+        logger.error(error.toString)
+        InternalServerError(Json.obj("status"->"error","detail"->error.toString))
+    })
   }
 
-  def list:play.api.mvc.Action[play.api.mvc.AnyContent]
+  def create = Action.async(BodyParsers.parse.json) { request =>
+    this.validate(request).fold(
+      errors => {
+        Future(BadRequest(Json.obj("status"->"error","detail"->JsError.toJson(errors))))
+      },
+      storageEntry => {
+        this.insert(storageEntry).map({
+          case Success(result)=>Ok(Json.obj("status" -> "ok", "detail" -> "added", "id" -> result.asInstanceOf[Int]))
+          case Failure(error)=>
+            logger.error(error.toString)
+            InternalServerError(Json.obj("status"->"error", "detail"->error.toString))
+        }
+        )
+      }
+    )
+  }
 
-  def create:play.api.mvc.Action[play.api.libs.json.JsValue]
+  def getitem(requestedId: Int) = Action.async {
+    selectid(requestedId).map({
+      case Success(result)=>
+        if(result.isEmpty)
+         NotFound("")
+        else
+          Ok(Json.obj("status"->"ok","result"->this.jstranslate(result.head)))
+      case Failure(error)=>
+        logger.error(error.toString)
+        InternalServerError(Json.obj("status"->"error","detail"->error.toString))
+    })
+  }
 
-  def update(id: Int):play.api.mvc.Action[play.api.libs.json.JsValue]
+  def update(id: Int) = Action.async(BodyParsers.parse.json) { request =>
+    this.validate(request).fold(
+      errors=>Future(BadRequest(Json.obj("status"->"error","detail"->JsError.toJson(errors)))),
+      StorageEntry=>Future(Ok(""))
+    )
+  }
 
-  def delete(id: Int):play.api.mvc.Action[play.api.libs.json.JsValue]
-
+  def delete(id: Int) = Action.async(BodyParsers.parse.json) { request =>
+    Future(Ok(""))
+  }
 }

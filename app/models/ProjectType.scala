@@ -3,9 +3,26 @@ import org.joda.time.DateTime
 import slick.driver.PostgresDriver.api._
 import java.sql.Timestamp
 
-/**
-  * Created by localhome on 12/01/2017.
-  */
+import play.api.libs.functional.syntax._
+import play.api.libs.json.{JsPath, Reads, Writes}
+
+trait ProjectTypeSerializer {
+  /*https://www.playframework.com/documentation/2.5.x/ScalaJson*/
+  implicit val templateWrites:Writes[ProjectType] = (
+    (JsPath \ "id").writeNullable[Int] and
+      (JsPath \ "name").write[String] and
+      (JsPath \ "opensWith").write[String] and
+      (JsPath \ "targetVersion").write[String]
+    )(unlift(ProjectType.unapply))
+
+  implicit val templateReads:Reads[ProjectType] = (
+    (JsPath \ "id").readNullable[Int] and
+      (JsPath \ "name").read[String] and
+      (JsPath \ "opensWith").read[String] and
+      (JsPath \ "targetVersion").read[String]
+    )(ProjectType.apply _)
+}
+
 case class ProjectType(id: Option[Int],name:String, opensWith: String, targetVersion: String) {
 
 }
