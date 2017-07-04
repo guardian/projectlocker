@@ -18,6 +18,13 @@ dependencies:
   override:
     - sbt test:compile
 
+database:
+  pre:
+    - sudo -u postgres createuser projectlocker
+    - sudo -u postgres createdb projectlocker -O projectlocker
+    - sudo -u postgres createdb projectlocker_test -O projectlocker
+    - bash scripts/blank_test_db.sh
+
 test:
   override:
     - sbt test
