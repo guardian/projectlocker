@@ -1,5 +1,7 @@
 import akka.actor.ActorSystem
 import akka.stream.ActorMaterializer
+import com.google.inject.Inject
+import helpers.DatabaseHelper
 import org.junit.runner._
 import org.specs2.mutable._
 import org.specs2.runner._
@@ -10,6 +12,7 @@ import play.api.test._
 import play.api.inject.bind
 import testHelpers.TestDatabase
 import play.api.{Application, Logger}
+
 import scala.concurrent.{Await, Future}
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._

@@ -1,3 +1,5 @@
+import com.google.inject.Inject
+import helpers.DatabaseHelper
 import org.specs2.mutable._
 import org.specs2.runner._
 import org.junit.runner._
@@ -14,27 +16,20 @@ import testHelpers.TestDatabase
  * For more information, consult the wiki.
  */
 @RunWith(classOf[JUnitRunner])
-class ApplicationSpec extends Specification {
+class ApplicationSpec @Inject() (databaseHelper: DatabaseHelper) extends Specification {
 
   //can over-ride bindings here. see https://www.playframework.com/documentation/2.5.x/ScalaTestingWithGuice
-  val application = new GuiceApplicationBuilder()
+  private val application = new GuiceApplicationBuilder()
     .overrides(bind[DatabaseConfigProvider].to[TestDatabase.testDbProvider])
     .build
 
   "Application" should {
-
-    "send 404 on a bad request" in {
-      val response = route(application,FakeRequest(GET, "/boum")).get
-
-      status(response) must equalTo(NOT_FOUND)
-    }
-
     "render the index page" in  {
       val home = route(application, FakeRequest(GET, "/")).get
 
-      status(home) must equalTo(NOT_FOUND)
+        status(home) must equalTo(OK)
       contentType(home) must beSome.which(_ == "text/html")
-      contentAsString(home) must contain ("Action Not Found")
+      contentAsString(home) must contain ("<title>Projectlocker</title>")
     }
   }
 }

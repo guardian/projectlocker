@@ -4,6 +4,7 @@ import org.junit.runner._
 import org.specs2.matcher.MatchResult
 import org.specs2.mutable._
 import org.specs2.runner._
+import org.specs2.specification
 import play.api.db.slick.DatabaseConfigProvider
 import play.api.inject.bind
 import play.api.inject.guice.GuiceApplicationBuilder
@@ -15,6 +16,10 @@ import testHelpers.TestDatabase
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
 import scala.concurrent.{Await, Future}
+import helpers.DatabaseHelper
+import com.google.inject.Inject
+
+import scala.reflect.ClassTag
 
 /**
  * Add your spec here.
@@ -22,14 +27,34 @@ import scala.concurrent.{Await, Future}
  * For more information, consult the wiki.
  */
 import play.api.libs.json._
+import org.specs2.specification.BeforeAfterAll
 
 @RunWith(classOf[JUnitRunner])
-trait GenericControllerSpec extends Specification {
+trait GenericControllerSpec extends Specification with BeforeAfterAll {
   //needed for body.consumeData
   implicit val system = ActorSystem("storage-controller-spec")
   implicit val materializer = ActorMaterializer()
 
+  lazy val injector = (new GuiceApplicationBuilder).injector()
+
+  def inject[T : ClassTag]: T = injector.instanceOf[T]
+
+  protected val databaseHelper:DatabaseHelper = inject[DatabaseHelper]
+
   val logger: Logger = Logger(this.getClass)
+
+  override def beforeAll(): Unit ={
+    logger.warn(">>>> before all <<<<")
+    databaseHelper.setUpDB()
+  }
+
+  override def afterAll(): Unit ={
+    logger.warn("<<<< after all >>>>")
+    databaseHelper.teardownDB()
+  }
+  //before/after code
+
+
 
   val componentName:String
   val uriRoot:String

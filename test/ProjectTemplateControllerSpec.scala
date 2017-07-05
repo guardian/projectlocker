@@ -1,3 +1,5 @@
+import com.google.inject.Inject
+import helpers.DatabaseHelper
 import org.junit.runner._
 import org.specs2.runner._
 
