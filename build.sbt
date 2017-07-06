@@ -10,6 +10,9 @@ libraryDependencies ++= Seq( jdbc, cache , ws   , specs2 % Test )
 
 libraryDependencies += evolutions
 
+concurrentRestrictions in Global += Tags.limit(Tags.Test, 1)
+
+parallelExecution in Test := false
 
 unmanagedResourceDirectories in Test <+=  baseDirectory ( _ /"target/web/public/test" )
 

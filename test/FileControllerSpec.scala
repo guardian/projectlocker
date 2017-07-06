@@ -1,5 +1,3 @@
-import com.google.inject.Inject
-import helpers.DatabaseHelper
 import org.junit.runner._
 import org.specs2.runner._
 
@@ -26,10 +24,10 @@ class FileControllerSpec extends GenericControllerSpec {
     )
   }
 
-  override val testGetId: Int = 1
-  override val testGetDocument: String = """{"filepath":"/path/to/a/video.mxf","storage":2,"user":"me","version":1,"ctime":"2017-01-17T16:55:00.123+0000","mtime":"2017-01-17T16:55:00.123+0000","atime":"2017-01-17T16:55:00.123+0000"}"""
+  override val testGetId: Int = 3
+  override val testGetDocument: String = """{"filepath":"/path/to/a/video.mxf","storage":1,"user":"me","version":1,"ctime":"1970-01-01T04:25:45.678+0100","mtime":"1970-01-01T04:25:45.678+0100","atime":"1970-01-01T04:25:45.678+0100"}"""
   override val testCreateDocument: String =  """{"filepath":"/path/to/some/other.project","storage":1,"user":"test","version":3,"ctime":"2017-03-17T13:51:00.123+0000","mtime":"2017-03-17T13:51:00.123+0000","atime":"2017-03-17T13:51:00.123+0000"}"""
-  override val minimumNewRecordId = 4
+  override val minimumNewRecordId = 3
   override val testDeleteId: Int = 2
-  override val testConflictId: Int = 1
+  override val testConflictId: Int = -1
 }

@@ -6,7 +6,7 @@ import org.specs2.mutable._
 import org.specs2.runner._
 import org.specs2.specification
 import play.api.db.slick.DatabaseConfigProvider
-import play.api.inject.bind
+import play.api.inject.{Injector, bind}
 import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.test.Helpers._
 import play.api.test._
@@ -20,6 +20,7 @@ import helpers.DatabaseHelper
 import com.google.inject.Inject
 
 import scala.reflect.ClassTag
+import scala.util.{Failure, Success}
 
 /**
  * Add your spec here.
@@ -31,13 +32,24 @@ import org.specs2.specification.BeforeAfterAll
 
 @RunWith(classOf[JUnitRunner])
 trait GenericControllerSpec extends Specification with BeforeAfterAll {
+  //lazy val injector = (new GuiceApplicationBuilder).injector()
+
+//  def inject[T : ClassTag]: T = injector.instanceOf[T]
+//
+  //can over-ride bindings here. see https://www.playframework.com/documentation/2.5.x/ScalaTestingWithGuice
+  val application:Application = new GuiceApplicationBuilder()
+    .overrides(bind[DatabaseConfigProvider].to[TestDatabase.testDbProvider])
+    .build
+
+  val injector:Injector = new GuiceApplicationBuilder()
+      .overrides(bind[DatabaseConfigProvider].to[TestDatabase.testDbProvider])
+      .injector()
+
+  def inject[T : ClassTag]: T = injector.instanceOf[T]
+
   //needed for body.consumeData
   implicit val system = ActorSystem("storage-controller-spec")
   implicit val materializer = ActorMaterializer()
-
-  lazy val injector = (new GuiceApplicationBuilder).injector()
-
-  def inject[T : ClassTag]: T = injector.instanceOf[T]
 
   protected val databaseHelper:DatabaseHelper = inject[DatabaseHelper]
 
@@ -45,16 +57,18 @@ trait GenericControllerSpec extends Specification with BeforeAfterAll {
 
   override def beforeAll(): Unit ={
     logger.warn(">>>> before all <<<<")
-    databaseHelper.setUpDB()
+    val theFuture = databaseHelper.setUpDB().map(_ match {
+      case Success(result)=>logger.info("DB setup successful")
+      case Failure(error)=>logger.error(s"DB setup failed: ${error}")
+    })
+
+    Await.result(theFuture, 10.seconds)
   }
 
   override def afterAll(): Unit ={
     logger.warn("<<<< after all >>>>")
-    databaseHelper.teardownDB()
+    Await.result(databaseHelper.teardownDB(), 10.seconds)
   }
-  //before/after code
-
-
 
   val componentName:String
   val uriRoot:String
@@ -67,11 +81,6 @@ trait GenericControllerSpec extends Specification with BeforeAfterAll {
   val testDeleteId:Int
   val testConflictId:Int
   val minimumNewRecordId:Int
-
-  //can over-ride bindings here. see https://www.playframework.com/documentation/2.5.x/ScalaTestingWithGuice
-  val application:Application = new GuiceApplicationBuilder()
-    .overrides(bind[DatabaseConfigProvider].to[TestDatabase.testDbProvider])
-    .build
 
   def bodyAsJsonFuture(response:Future[play.api.mvc.Result]) = response.flatMap(result=>
     result.body.consumeData.map(contentBytes=> {
@@ -90,13 +99,14 @@ trait GenericControllerSpec extends Specification with BeforeAfterAll {
     }
 
     "return valid data for a valid record" in  {
+      logger.warn(s"Test URL is $uriRoot/1")
       val response:Future[play.api.mvc.Result] = route(application, FakeRequest(GET, s"$uriRoot/1")).get
 
+      status(response) must equalTo(OK)
       val jsondata = Await.result(bodyAsJsonFuture(response), 5.seconds).as[JsValue]
       (jsondata \ "status").as[String] must equalTo("ok")
       (jsondata \ "result" \ "id").as[Int] must equalTo(1)
       testParsedJsonObject(jsondata \ "result", Json.parse(testGetDocument))
-      status(response) must equalTo(OK)
     }
 
     "accept new data to create a new record" in {
