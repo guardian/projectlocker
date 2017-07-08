@@ -10,7 +10,10 @@ libraryDependencies ++= Seq( jdbc, cache , ws   , specs2 % Test )
 
 libraryDependencies += evolutions
 
-concurrentRestrictions in Global += Tags.limit(Tags.Test, 1)
+concurrentRestrictions in Global := Seq(
+  Tags.limit(Tags.Test, 1),
+  Tags.limitAll(1)
+)
 
 parallelExecution in Test := false
 

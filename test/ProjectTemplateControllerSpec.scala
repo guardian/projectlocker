@@ -1,5 +1,3 @@
-import com.google.inject.Inject
-import helpers.DatabaseHelper
 import org.junit.runner._
 import org.specs2.runner._
 
@@ -12,6 +10,8 @@ import play.api.libs.json._
 
 @RunWith(classOf[JUnitRunner])
 class ProjectTemplateControllerSpec extends GenericControllerSpec {
+  sequential
+
   override val componentName: String = "ProjectTemplateController"
   override val uriRoot: String = "/template"
 

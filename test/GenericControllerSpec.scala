@@ -32,10 +32,6 @@ import org.specs2.specification.BeforeAfterAll
 
 @RunWith(classOf[JUnitRunner])
 trait GenericControllerSpec extends Specification with BeforeAfterAll {
-  //lazy val injector = (new GuiceApplicationBuilder).injector()
-
-//  def inject[T : ClassTag]: T = injector.instanceOf[T]
-//
   //can over-ride bindings here. see https://www.playframework.com/documentation/2.5.x/ScalaTestingWithGuice
   val application:Application = new GuiceApplicationBuilder()
     .overrides(bind[DatabaseConfigProvider].to[TestDatabase.testDbProvider])
@@ -57,9 +53,9 @@ trait GenericControllerSpec extends Specification with BeforeAfterAll {
 
   override def beforeAll(): Unit ={
     logger.warn(">>>> before all <<<<")
-    val theFuture = databaseHelper.setUpDB().map(_ match {
+    val theFuture = databaseHelper.setUpDB().map({
       case Success(result)=>logger.info("DB setup successful")
-      case Failure(error)=>logger.error(s"DB setup failed: ${error}")
+      case Failure(error)=>logger.error(s"DB setup failed: $error")
     })
 
     Await.result(theFuture, 10.seconds)

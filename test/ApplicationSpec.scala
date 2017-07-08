@@ -7,8 +7,10 @@ import play.api.db.slick.DatabaseConfigProvider
 import play.api.test._
 import play.api.test.Helpers._
 import play.api.inject.guice.GuiceApplicationBuilder
-import play.api.inject.bind
+import play.api.inject.{Injector, bind}
 import testHelpers.TestDatabase
+
+import scala.reflect.ClassTag
 
 /**
  * Add your spec here.
@@ -16,12 +18,21 @@ import testHelpers.TestDatabase
  * For more information, consult the wiki.
  */
 @RunWith(classOf[JUnitRunner])
-class ApplicationSpec @Inject() (databaseHelper: DatabaseHelper) extends Specification {
+class ApplicationSpec extends Specification {
+  sequential
 
   //can over-ride bindings here. see https://www.playframework.com/documentation/2.5.x/ScalaTestingWithGuice
   private val application = new GuiceApplicationBuilder()
     .overrides(bind[DatabaseConfigProvider].to[TestDatabase.testDbProvider])
     .build
+
+//  private val injector:Injector = new GuiceApplicationBuilder()
+//    .overrides(bind[DatabaseConfigProvider].to[TestDatabase.testDbProvider])
+//    .injector()
+//
+//  def inject[T : ClassTag]: T = injector.instanceOf[T]
+//
+//  protected val databaseHelper:DatabaseHelper = inject[DatabaseHelper]
 
   "Application" should {
     "render the index page" in  {

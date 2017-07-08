@@ -46,7 +46,7 @@ class DatabaseHelper @Inject()(configuration: Configuration, dbConfigProvider: D
 
   def teardownDB():Future[Try[Unit]] = {
     logger.warn("In teardownDB")
-    dbConfig.db.run(
+    val result = dbConfig.db.run(
       DBIO.seq(
         (
           TableQuery[FileAssociationRow].schema ++
@@ -58,5 +58,7 @@ class DatabaseHelper @Inject()(configuration: Configuration, dbConfigProvider: D
         ).drop
       ).asTry
     )
+    dbConfig.db.close()
+    result
   }
 }

@@ -10,6 +10,8 @@ import play.api.libs.json._
 
 @RunWith(classOf[JUnitRunner])
 class FileControllerSpec extends GenericControllerSpec {
+  sequential
+
   override val componentName: String = "FileController"
   override val uriRoot: String = "/file"
 
