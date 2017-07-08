@@ -9,8 +9,8 @@ import slick.driver.JdbcProfile
 import slick.lifted.TableQuery
 import slick.driver.PostgresDriver.api._
 import java.sql.Timestamp
-
-import scala.concurrent.Future
+import scala.concurrent.duration._
+import scala.concurrent.{Await, Future}
 import scala.util.{Failure, Success, Try}
 import scala.concurrent.ExecutionContext.Implicits.global
 
@@ -58,7 +58,8 @@ class DatabaseHelper @Inject()(configuration: Configuration, dbConfigProvider: D
         ).drop
       ).asTry
     )
-    dbConfig.db.close()
+    //dbConfig.db.close()
+    Await.result(dbConfig.db.shutdown,10.seconds)
     result
   }
 }
