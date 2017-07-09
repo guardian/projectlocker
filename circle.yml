@@ -33,4 +33,4 @@ deployment:
     branch: /.*/
     commands:
       - sbt rpm:packageBin
-      - aws s3 cp target/rpm/RPMS/noarch/projectlocker/*.rpm s3://${DEPLOY_BUCKET}/projectlocker/${CIRCLE_BUILD_NUM}
+      - aws s3 cp target/rpm/RPMS/noarch/projectlocker*.rpm s3://${DEPLOY_BUCKET}/projectlocker/${CIRCLE_BUILD_NUM}

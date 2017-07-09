@@ -17,8 +17,8 @@ import scala.util.{Failure, Success}
 import scala.concurrent.ExecutionContext.Implicits.global
 
 class System @Inject() (configuration: Configuration, dbConfigProvider: DatabaseConfigProvider) extends Controller{
-  val dbConfig = dbConfigProvider.get[JdbcProfile]
-  val logger: Logger = Logger(this.getClass)
+  private val dbConfig = dbConfigProvider.get[JdbcProfile]
+  private val logger: Logger = Logger(this.getClass)
 
   def init = Action.async {
     dbConfig.db.run(

@@ -4,6 +4,8 @@ version := "1.0"
 
 lazy val `projectlocker` = (project in file(".")).enablePlugins(PlayScala)
 
+javaOptions in Test += "-Duser.timezone=UTC"
+
 scalaVersion := "2.11.7"
 
 libraryDependencies ++= Seq( jdbc, cache , ws   , specs2 % Test )
