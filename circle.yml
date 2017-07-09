@@ -23,11 +23,6 @@ database:
     - sudo -u postgres createuser projectlocker
     - sudo -u postgres createdb projectlocker -O projectlocker
     - sudo -u postgres createdb projectlocker_test -O projectlocker
-  override:
-#    - sudo -u postgres psql projectlocker_test < conf/evolutions/test/1.sql
-#    #fake the evolutions record
-    - sudo -u postgres psql projectlocker_test < conf/test_data_evolutions.sql
-#    - sudo -u postgres psql projectlocker_test < conf/test_data_content.sql
 
 test:
   override:
