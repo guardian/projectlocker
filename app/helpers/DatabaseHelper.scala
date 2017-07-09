@@ -59,7 +59,7 @@ class DatabaseHelper @Inject()(configuration: Configuration, dbConfigProvider: D
       ).asTry
     )
     //dbConfig.db.close()
-    Await.result(dbConfig.db.shutdown,10.seconds)
+    Await.result(dbConfig.db.shutdown,30.seconds)
     result
   }
 }

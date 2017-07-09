@@ -58,12 +58,12 @@ trait GenericControllerSpec extends Specification with BeforeAfterAll {
       case Failure(error)=>logger.error(s"DB setup failed: $error")
     })
 
-    Await.result(theFuture, 10.seconds)
+    Await.result(theFuture, 30.seconds)
   }
 
   override def afterAll(): Unit ={
     logger.warn("<<<< after all >>>>")
-    Await.result(databaseHelper.teardownDB(), 10.seconds)
+    Await.result(databaseHelper.teardownDB(), 30.seconds)
   }
 
   val componentName:String
