@@ -96,7 +96,7 @@ trait GenericDatabaseObjectController[M] extends Controller {
         case Failure(error)=>
           val errorString = error.toString
           logger.error(errorString)
-          if(errorString.contains("violates foreign key constraint"))
+          if(errorString.contains("violates foreign key constraint") || errorString.contains("Referential integrity constraint violation"))
             Conflict(Json.obj("status"->"error","detail"->"This is still referenced by sub-objects"))
           else
             InternalServerError(Json.obj("status"->"error","detail"->error.toString))

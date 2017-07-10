@@ -4,12 +4,20 @@ version := "1.0"
 
 lazy val `projectlocker` = (project in file(".")).enablePlugins(PlayScala)
 
+javaOptions in Test += "-Duser.timezone=UTC"
+
 scalaVersion := "2.11.7"
 
 libraryDependencies ++= Seq( jdbc, cache , ws   , specs2 % Test )
 
 libraryDependencies += evolutions
 
+concurrentRestrictions in Global := Seq(
+  Tags.limit(Tags.Test, 1),
+  Tags.limitAll(1)
+)
+
+parallelExecution in Test := false
 
 unmanagedResourceDirectories in Test <+=  baseDirectory ( _ /"target/web/public/test" )
 
@@ -43,7 +51,7 @@ packageName in Rpm := "projectlocker"
 
 version in Rpm := "1.0"
 
-rpmRelease in Rpm := "1"  //FIXME: replace with build number
+rpmRelease in Rpm := sys.props.getOrElse("build.number","DEV")
 
 packageArchitecture in Rpm := "noarch"
 

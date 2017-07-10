@@ -10,6 +10,8 @@ import play.api.libs.json._
 
 @RunWith(classOf[JUnitRunner])
 class ProjectTypeControllerSpec extends GenericControllerSpec {
+  sequential
+
   override val componentName: String = "ProjectTypeController"
   override val uriRoot: String = "/projecttype"
 
@@ -24,7 +26,7 @@ class ProjectTypeControllerSpec extends GenericControllerSpec {
   override val testGetId: Int = 1
   override val testGetDocument: String = """{"name":"Premiere 2014 test","opensWith":"AdobePremierePro.app","targetVersion":"14.0"}"""
   override val testCreateDocument: String =  """{"name":"My Wonderful Editor","opensWith":"MyWonderfulEditor.app","targetVersion":"3.6"}"""
-  override val minimumNewRecordId = 4
-  override val testDeleteId: Int = 3
+  override val minimumNewRecordId = 2
+  override val testDeleteId: Int = 2
   override val testConflictId: Int = 1
 }
