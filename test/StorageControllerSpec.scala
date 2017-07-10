@@ -25,7 +25,7 @@ import play.api.libs.json._
 @RunWith(classOf[JUnitRunner])
 class StorageControllerSpec extends GenericControllerSpec {
   override val componentName: String = "StorageController"
-  override val uriRoot: String = "/storage"
+  override val uriRoot: String = "/api/storage"
 
   override def testParsedJsonObject(checkdata: JsLookupResult, parsed_test_json: JsValue) = {
     val object_keys = Seq("storageType","user")

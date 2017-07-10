@@ -11,7 +11,7 @@ import play.api.libs.json._
 @RunWith(classOf[JUnitRunner])
 class FileControllerSpec extends GenericControllerSpec {
   override val componentName: String = "FileController"
-  override val uriRoot: String = "/file"
+  override val uriRoot: String = "/api/file"
 
   override def testParsedJsonObject(checkdata: JsLookupResult, parsed_test_json: JsValue) = {
     val object_keys = Seq("filepath","user","ctime","mtime","atime")

@@ -27,10 +27,10 @@ class StorageCompletionComponent extends React.Component {
 
     confirmClicked(event){
         this.setState({inProgress: true});
-        axios.put("/storage",this.requestContent()).then(
+        axios.put("/api/storage",this.requestContent()).then(
             (response)=>{
                 this.setState({inProgress: false});
-                window.location = '/list/storages';
+                window.location = '/storage/';
             }
         ).catch(
             (error)=>{

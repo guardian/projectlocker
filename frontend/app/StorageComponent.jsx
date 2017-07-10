@@ -5,7 +5,7 @@ import GeneralListComponent from './GeneralListComponent.jsx';
 class StorageListComponent extends GeneralListComponent {
     constructor(props){
         super(props);
-        this.endpoint = '/storage';
+        this.endpoint = '/api/storage';
         this.columns = [
             {
                 header: "Id",
@@ -37,7 +37,7 @@ class StorageListComponent extends GeneralListComponent {
     }
 
     newElementCallback(event) {
-        window.location = "/new/storages";
+        window.location = "/storage/new";
     }
 }
 

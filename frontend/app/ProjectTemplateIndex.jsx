@@ -4,7 +4,7 @@ import GeneralListComponent from './GeneralListComponent.jsx';
 class ProjectTemplateIndex extends GeneralListComponent {
     constructor(props){
         super(props);
-        this.endpoint = '/template';
+        this.endpoint = '/api/template';
         this.columns = [
             {
                 header: "Id",

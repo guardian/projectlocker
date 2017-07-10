@@ -13,7 +13,7 @@ class ProjectTemplateControllerSpec extends GenericControllerSpec {
   sequential
 
   override val componentName: String = "ProjectTemplateController"
-  override val uriRoot: String = "/template"
+  override val uriRoot: String = "/api/template"
 
   override def testParsedJsonObject(checkdata: JsLookupResult, parsed_test_json: JsValue) = {
     val object_keys = Seq("name","filepath")

@@ -4,7 +4,7 @@ import GeneralListComponent from './GeneralListComponent.jsx';
 class ProjectEntryList extends GeneralListComponent {
     constructor(props){
         super(props);
-        this.endpoint = '/project';
+        this.endpoint = '/api/project';
         this.columns = [
             {
                 header: "Id",

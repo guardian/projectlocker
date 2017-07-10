@@ -4,7 +4,7 @@ import GeneralListComponent from './GeneralListComponent.jsx';
 class FileEntryList extends GeneralListComponent {
     constructor(props){
         super(props);
-        this.endpoint = '/file';
+        this.endpoint = '/api/file';
         this.columns = [
             {
                 header: "Id",

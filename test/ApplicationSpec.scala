@@ -1,3 +1,4 @@
+import helpers.DatabaseHelper
 import org.specs2.mutable._
 import org.specs2.runner._
 import org.junit.runner._
@@ -7,6 +8,8 @@ import play.api.test.Helpers._
 import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.inject.{Injector, bind}
 import testHelpers.TestDatabase
+
+import scala.reflect.ClassTag
 
 /**
  * Add your spec here.
@@ -22,6 +25,14 @@ class ApplicationSpec extends Specification {
     .overrides(bind[DatabaseConfigProvider].to[TestDatabase.testDbProvider])
     .build
 
+  private val injector:Injector = new GuiceApplicationBuilder()
+    .overrides(bind[DatabaseConfigProvider].to[TestDatabase.testDbProvider])
+    .injector()
+
+  def inject[T : ClassTag]: T = injector.instanceOf[T]
+
+  protected val databaseHelper:DatabaseHelper = inject[DatabaseHelper]
+  
   "Application" should {
 
     "send 404 on a bad request" in {
@@ -33,10 +44,9 @@ class ApplicationSpec extends Specification {
     "render the index page" in  {
       val home = route(application, FakeRequest(GET, "/")).get
 
-      status(home) must equalTo(NOT_FOUND)
-//        status(home) must equalTo(OK)
-//      contentType(home) must beSome.which(_ == "text/html")
-//      contentAsString(home) must contain ("<title>Projectlocker</title>")
+        status(home) must equalTo(OK)
+      contentType(home) must beSome.which(_ == "text/html")
+      contentAsString(home) must contain ("<title>Projectlocker</title>")
     }
   }
 }
