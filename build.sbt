@@ -49,7 +49,7 @@ rpmUrl in Rpm := Some("https://github/fredex42/projectlocker")
 
 packageName in Rpm := "projectlocker"
 
-version in Rpm := sys.props.getOrElse("build.tag",version.toString)
+version in Rpm := "1.0"
 
 rpmRelease in Rpm := sys.props.getOrElse("build.number","DEV")
 
