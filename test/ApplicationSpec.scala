@@ -32,7 +32,7 @@ class ApplicationSpec extends Specification {
   def inject[T : ClassTag]: T = injector.instanceOf[T]
 
   protected val databaseHelper:DatabaseHelper = inject[DatabaseHelper]
-  
+
   "Application" should {
 
     "send 404 on a bad request" in {

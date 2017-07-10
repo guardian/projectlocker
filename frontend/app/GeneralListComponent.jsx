@@ -11,6 +11,7 @@ class GeneralListComponent extends React.Component {
         };
 
         this.gotDataCallback = this.gotDataCallback.bind(this);
+        this.newElementCallback = this.newElementCallback.bind(this);
 
         /* this must be supplied by a subclass */
         this.endpoint='/unknown';
@@ -81,7 +82,7 @@ class GeneralListComponent extends React.Component {
                 />
 
                 <span className="banner-control">
-                    <button onClick={this.newElementCallback}>New</button>
+                    <button id="newElementButton" onClick={this.newElementCallback}>New</button>
                 </span>
             </div>
         );

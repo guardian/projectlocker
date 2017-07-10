@@ -2,6 +2,7 @@ machine:
   timezone: UTC
   environment:
     SBT_OPTS: "-Dfile.encoding=UTF8 -Xms512M -Xmx1024M -Xss1M -XX:+CMSClassUnloadingEnabled -XX:+UseCompressedOops -Dbuild.tag=\"$CIRCLE_TAG\" -Dbuild.number=$CIRCLE_BUILD_NUM -Dbuild.vcs.number=$CIRCLE_SHA1"
+    JEST_JUNIT_OUTPUT: ${CIRCLE_TEST_REPORTS}/jest/frontend-junit.xml
   java:
     version: oraclejdk8
   node:
@@ -17,8 +18,8 @@ dependencies:
   # Cache resolution-cache and streams for faster dependency resolution in sbt
   # Cache node_modules and bower_components for faster client-side build
   cache_directories:
-    - "~/.sbt"
-    - "frontend/node_modules"
+    - ~/.sbt
+    - frontend/node_modules
 
   override:
     - cd frontend; npm install
@@ -34,10 +35,12 @@ database:
 test:
   override:
     - sbt test
+    - cd frontend; npm run test
 
 deployment:
   make_rpm:
     branch: /.*/
     commands:
+      - cd frontend; npm run compile
       - sbt rpm:packageBin
       - aws s3 cp target/rpm/RPMS/noarch/projectlocker/*.rpm s3://${DEPLOY_BUCKET}/projectlocker/${CIRCLE_BUILD_NUM}
