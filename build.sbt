@@ -49,9 +49,9 @@ rpmUrl in Rpm := Some("https://github/fredex42/projectlocker")
 
 packageName in Rpm := "projectlocker"
 
-version in Rpm := "1.0"
+version in Rpm := sys.props.getOrElse("build.tag",version.toString)
 
-rpmRelease in Rpm := "1"  //FIXME: replace with build number
+rpmRelease in Rpm := sys.props.getOrElse("build.number","DEV")
 
 packageArchitecture in Rpm := "noarch"
 

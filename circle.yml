@@ -1,7 +1,7 @@
 machine:
   timezone: UTC
   environment:
-    SBT_OPTS: "-Dfile.encoding=UTF8 -Xms512M -Xmx1024M -Xss1M -XX:+CMSClassUnloadingEnabled -XX:MaxPermSize=256M -XX:+UseCompressedOops -Dbuild.number=$CIRCLE_BUILD_NUM -Dbuild.vcs.number=$CIRCLE_SHA1"
+    SBT_OPTS: "-Dfile.encoding=UTF8 -Xms512M -Xmx1024M -Xss1M -XX:+CMSClassUnloadingEnabled -XX:+UseCompressedOops -Dbuild.tag=\"$CIRCLE_TAG\" -Dbuild.number=$CIRCLE_BUILD_NUM -Dbuild.vcs.number=$CIRCLE_SHA1"
   java:
     version: oraclejdk8
 

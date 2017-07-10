@@ -4,7 +4,6 @@ import org.junit.runner._
 import org.specs2.matcher.MatchResult
 import org.specs2.mutable._
 import org.specs2.runner._
-import org.specs2.specification
 import play.api.db.slick.DatabaseConfigProvider
 import play.api.inject.{Injector, bind}
 import play.api.inject.guice.GuiceApplicationBuilder
@@ -22,11 +21,6 @@ import com.google.inject.Inject
 import scala.reflect.ClassTag
 import scala.util.{Failure, Success}
 
-/**
- * Add your spec here.
- * You can mock out a whole application including requests, plugins etc.
- * For more information, consult the wiki.
- */
 import play.api.libs.json._
 import org.specs2.specification.BeforeAfterAll
 

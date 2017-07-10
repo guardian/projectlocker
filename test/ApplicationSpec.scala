@@ -1,5 +1,3 @@
-import com.google.inject.Inject
-import helpers.DatabaseHelper
 import org.specs2.mutable._
 import org.specs2.runner._
 import org.junit.runner._
@@ -9,8 +7,6 @@ import play.api.test.Helpers._
 import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.inject.{Injector, bind}
 import testHelpers.TestDatabase
-
-import scala.reflect.ClassTag
 
 /**
  * Add your spec here.
