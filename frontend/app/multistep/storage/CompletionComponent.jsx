@@ -1,6 +1,6 @@
 import React from 'react';
 import axios from 'axios';
-import ShowPasswordComponent from '../ShowPasswordComponent.jsx';
+import SummaryComponent from './SummaryComponent.jsx';
 
 class StorageCompletionComponent extends React.Component {
     constructor(props){
@@ -47,30 +47,7 @@ class StorageCompletionComponent extends React.Component {
             <h3>Set up storage</h3>
             <p className="information">We will set up a new storage definition with the information below.</p>
             <p className="information">Press "Confirm" to go ahead, or press Previous if you need to amend any details.</p>
-            <table>
-                <tbody>
-                <tr>
-                    <td>Storage type</td>
-                    <td>{selectedStorage.name}</td>
-                </tr>
-                <tr>
-                    <td>Login details</td>
-                    <td>
-                        <ul>
-                            {Object.entries(this.props.loginDetails).map((entry, index)=><li>
-                                <span className="login-description">{entry[0]}: </span>
-                                <span className="login-value"><ShowPasswordComponent pass={entry[1]} fieldName={entry[0]}/></span>
-                            </li>)
-                            }
-                        </ul>
-                    </td>
-                </tr>
-                <tr>
-                    <td>Subfolder</td>
-                    <td>{this.props.subfolder}</td>
-                </tr>
-                </tbody>
-            </table>
+            <SummaryComponent name={selectedStorage.name} loginDetails={this.props.loginDetails} subfolder={this.props.rootpath}/>
             <span style={{float: "right"}}><button onClick={this.confirmClicked}>Confirm</button></span>
         </div>)
     }

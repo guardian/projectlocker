@@ -10,6 +10,7 @@ import ProjectEntryList from './ProjectEntryList.jsx';
 import ProjectTypeList from './ProjectTypeList.jsx';
 
 import StorageMultistep from './multistep/StorageMultistep.jsx';
+import StorageDeleteComponent from './delete/StorageDeleteComponent.jsx';
 
 window.React = require('react');
 
@@ -28,6 +29,7 @@ class App extends React.Component {
                 </div>
                 <div id="mainbody" className="mainbody">
                     <Switch>
+                        <Route path="/storage/:itemid/delete" component={StorageDeleteComponent}/>
                         <Route path="/storage/:itemid" component={StorageMultistep}/>
                         <Route path="/storage/" component={StorageListComponent}/>
                         <Route path="/template/:itemid" component={ProjectTemplateIndex}/>

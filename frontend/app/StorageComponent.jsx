@@ -32,12 +32,14 @@ class StorageListComponent extends GeneralListComponent {
                 }
             },
             GeneralListComponent.standardColumn("Hostname (if applicable)","host"),
-            GeneralListComponent.standardColumn("Port","port")
+            GeneralListComponent.standardColumn("Port","port"),
+            this.actionIcons()
         ];
     }
 
     newElementCallback(event) {
-        window.location = "/storage/new";
+        //window.location = "/storage/new";
+        this.props.history.push("/storage/new");
     }
 }
 

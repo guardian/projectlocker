@@ -1,6 +1,7 @@
 import React from 'react';
 import axios from 'axios';
 import SortableTable from 'react-sortable-table';
+import {Link} from 'react-router-dom';
 
 class GeneralListComponent extends React.Component {
     constructor(props){
@@ -48,6 +49,23 @@ class GeneralListComponent extends React.Component {
         };
     }
 
+    breakdownPathComponents() {
+        console.log("breakdownPathComponents: " + this.props.location.pathname);
+        return this.props.location.pathname.split('/')
+    }
+
+    /* this method supplies the edit and delete icons */
+    actionIcons() {
+        const componentName = this.breakdownPathComponents()[1];
+        return {
+            header: "",
+            key: "id",
+            render: (id) => <span className="icons">
+                    <Link to={"/" + componentName + "/" + id}><img src="edit.png"/></Link>
+                    <Link to={"/" + componentName + "/" + id + "/delete"}><img src="delete.png"/></Link>
+            </span>
+        }
+    }
     /* reloads the data for the component based on the endpoint configured in the constructor */
     reload(){
         const component = this;

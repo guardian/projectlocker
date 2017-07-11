@@ -13,7 +13,7 @@ class FileEntryList extends GeneralListComponent {
                 dataProps: { className: 'align-right'},
                 headerProps: { className: 'dashboardheader'}
             },
-            GeneralListComponent.standardColumn("File path","filepath¡"),
+            GeneralListComponent.standardColumn("File path","filepath"),
             GeneralListComponent.standardColumn("Storage", "storage"),
             GeneralListComponent.standardColumn("Owner", "user"),
             GeneralListComponent.standardColumn("Version","version"),
