@@ -112,11 +112,3 @@ tr.dashboardheader, th.dashboardheader {
 .selectable-row {
     cursor: pointer;
 }
-
-img.smallicon {
-    width: 32px;
-}
-
-img.tinyicon {
-    width: 16px;
-}

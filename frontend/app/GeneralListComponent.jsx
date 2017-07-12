@@ -29,6 +29,7 @@ class GeneralListComponent extends React.Component {
             paddingRight: '5px'
         };
 
+        this.canCreateNew=true;
         /* this must be supplied by a subclass */
         this.columns = [
 
@@ -54,15 +55,16 @@ class GeneralListComponent extends React.Component {
         return this.props.location.pathname.split('/')
     }
 
-    /* this method supplies the edit and delete icons */
+    /* this method supplies the edit and delete icons. Can't be static as <Link> relies on the object context to access
+     * history. */
     actionIcons() {
         const componentName = this.breakdownPathComponents()[1];
         return {
             header: "",
             key: "id",
             render: (id) => <span className="icons">
-                    <Link to={"/" + componentName + "/" + id}><img src="edit.png"/></Link>
-                    <Link to={"/" + componentName + "/" + id + "/delete"}><img src="delete.png"/></Link>
+                    <Link to={"/" + componentName + "/" + id}><img className="smallicon" src="/assets/images/edit.png"/></Link>
+                    <Link to={"/" + componentName + "/" + id + "/delete"}><img className="smallicon" src="/assets/images/delete.png"/></Link>
             </span>
         }
     }

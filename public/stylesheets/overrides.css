@@ -47,3 +47,11 @@ span.banner-control {
     margin-left: auto;
     display: block;
 }
+
+img.smallicon {
+    width: 32px;
+}
+
+img.tinyicon {
+    width: 16px;
+}
