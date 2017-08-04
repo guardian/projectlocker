@@ -55,3 +55,8 @@ img.smallicon {
 img.tinyicon {
     width: 16px;
 }
+
+.error-text {
+    color: darkred;
+    font-weight: bold;
+}
