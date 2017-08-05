@@ -8,6 +8,7 @@ import play.api.libs.functional.syntax._
 import play.api.libs.json.Reads.jodaDateReads
 import play.api.libs.json.Writes.jodaDateWrites
 import play.api.libs.json._
+import slick.driver.JdbcProfile
 import slick.jdbc.JdbcBackend
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -18,7 +19,7 @@ case class FileEntry(id: Option[Int], filepath: String, storageId: Int, user:Str
                      ctime: Timestamp, mtime: Timestamp, atime: Timestamp) {
 
   /* returns a StorageEntry object for the id of the storage of this FileEntry */
-  def storage(db: JdbcBackend.Database):Future[Option[StorageEntry]] = {
+  def storage(db: JdbcProfile#Backend#Database):Future[Option[StorageEntry]] = {
     db.run(
       TableQuery[StorageEntryRow].filter(_.id===storageId).result.asTry
     ).map({

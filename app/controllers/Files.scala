@@ -1,7 +1,6 @@
 package controllers
 
 import java.io._
-
 import com.google.inject.Inject
 import drivers.StorageDriver
 import play.api.{Configuration, Logger}
@@ -17,6 +16,8 @@ import slick.lifted.TableQuery
 
 import scala.concurrent.Future
 import scala.util.{Failure, Success}
+
+import helpers.StorageActions
 
 
 class Files @Inject() (configuration: Configuration, dbConfigProvider: DatabaseConfigProvider)

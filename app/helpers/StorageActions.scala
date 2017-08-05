@@ -1,5 +1,6 @@
 package helpers
-import java.io.{BufferedInputStream, BufferedOutputStream}
+import java.io.{BufferedInputStream, BufferedOutputStream, InputStream, OutputStream}
+
 import models.StorageEntry
 import play.api.Logger
 
@@ -17,6 +18,18 @@ object StorageActions {
         logger.error(s"Unrecognised storage type for id ${storageEntry.id}: ${storageEntry.storageType}")
         None
     }
+  }
+
+  def copy(input: InputStream, output: OutputStream, chunk: Int = 2048):Int = {
+    val buffer = Array.ofDim[Byte](chunk)
+    var count  = -1
+    var total  = 0
+
+    while({count = input.read(buffer); count > 0}) {
+      output.write(buffer, 0, count)
+      total+=count
+    }
+    total
   }
 }
 

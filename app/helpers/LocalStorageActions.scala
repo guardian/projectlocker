@@ -29,10 +29,10 @@ class LocalStorageActions(override val storageName:String, override val rootPath
       Some(stream)
     } catch {
       case e:FileNotFoundException=>
-        logger.error("Unable to open file for writing",e)
+        logger.error(s"Unable to open file $fileKey for writing",e)
         None
       case e:SecurityException=>
-        logger.error("Unable to open file for writing",e)
+        logger.error(s"Unable to open file $fileKey for writing",e)
         None
     }
   }
