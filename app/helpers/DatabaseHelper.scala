@@ -30,8 +30,8 @@ class DatabaseHelper @Inject()(configuration: Configuration, dbConfigProvider: D
           TableQuery[ProjectTypeRow].schema ++
           TableQuery[StorageEntryRow].schema
         ).create,
-        TableQuery[StorageEntryRow] += StorageEntry(None,None,"filesystem",Some("me"),None,None,None),
-        TableQuery[StorageEntryRow] += StorageEntry(None,None,"omms",Some("you"),None,None,None),
+        TableQuery[StorageEntryRow] += StorageEntry(None,None,"filesystem",Some("me"),None,None,None,None),
+        TableQuery[StorageEntryRow] += StorageEntry(None,None,"omms",Some("you"),None,None,None,None),
         TableQuery[FileEntryRow] += FileEntry(None,"/path/to/a/video.mxf",1,"me",1,new Timestamp(12345678),new Timestamp(12345678),new Timestamp(12345678)),
         TableQuery[FileEntryRow] += FileEntry(None,"/path/to/secondtestfile",1,"tstuser",1,new Timestamp(123456789),new Timestamp(123456789),new Timestamp(123456789)),
         //"""{"name": "Premiere test template 1","projectTypeId": 1,"filepath", "storageId": 1}"""
