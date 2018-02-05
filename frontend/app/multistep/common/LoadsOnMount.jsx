@@ -10,11 +10,8 @@ class MultistepComponentLoadsOnMount extends CommonMultistepComponent {
     }
 
     componentWillMount(){
-        console.log("LoadsOnMount: currentEntry is ", this.props.currentEntry);
         if(this.props.currentEntry){
-            console.log("LoadsOnMount... loading");
             this.setState({loading: true}, ()=>{
-                console.log("LoadsOnMount initiating axios");
                 axios.get(this.endpoint + "/" + this.props.currentEntry)
                     .then(response=>this.setState({loading: false}, ()=>this.receivedExistingObject(response.data)))
                     .catch(error=>this.setState({loading: false, error: error}))

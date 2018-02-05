@@ -1,11 +1,16 @@
 import Multistep from 'react-multistep';
 import React from 'react';
 import axios from 'axios';
+import PropTypes from 'prop-types';
 
 import ProjectTypeComponent from './projecttype/ProjectTypeComponent.jsx';
 import ProjectTypeCompletionComponent from './projecttype/CompletionComponent.jsx';
 
 class ProjectTypeMultistep extends React.Component {
+    static propTypes = {
+        match: PropTypes.object.required
+    };
+
     constructor(props){
         super(props);
 
@@ -16,7 +21,7 @@ class ProjectTypeMultistep extends React.Component {
     }
 
     componentWillMount(){
-        if(this.props.match && this.props.match.params && this.props.match.params.itemid){
+        if(this.props.match && this.props.match.params && this.props.match.params.itemid && this.props.match.params.itemid!=="new"){
             this.setState({currentEntry: this.props.match.params.itemid})
         }
     }
