@@ -38,7 +38,6 @@ class StorageListComponent extends GeneralListComponent {
     }
 
     newElementCallback(event) {
-        //window.location = "/storage/new";
         this.props.history.push("/storage/new");
     }
 }

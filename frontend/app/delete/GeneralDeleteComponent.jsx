@@ -1,5 +1,6 @@
 import React from 'react';
 import axios from 'axios';
+import ErrorViewComponent from '../multistep/common/ErrorViewComponent.jsx';
 
 class GeneralDeleteComponent extends React.Component {
     constructor(props){
@@ -7,6 +8,7 @@ class GeneralDeleteComponent extends React.Component {
 
         this.endpoint = "/api/unknown";
         this.state = {
+            loading: true,
             selectedItem: null,
             error: null
         };
@@ -18,8 +20,11 @@ class GeneralDeleteComponent extends React.Component {
     /*download information about the thing we want to delete*/
     componentWillMount() {
         axios.get(this.endpoint + "/" + this.props.match.params.itemid).then((response)=>{
-            this.setState({selectedItem: response.data.result})
-        }).catch((error)=>console.error(error));
+            this.setState({loading: false, selectedItem: response.data.result})
+        }).catch((error)=>{
+            console.error(error);
+            this.setState({loading: false, error: error});
+        });
     }
 
     /*this should be over-ridden by subclasses to render a summary of the object to be deleted*/
@@ -42,8 +47,9 @@ class GeneralDeleteComponent extends React.Component {
     }
 
     render(){
-        if(!this.state.selectedItem) return <p className="information">Loading...</p>;
-        //if(this.state.error) return <p className="error">{this.state.error.message}</p>;
+        if(this.state.error) return <ErrorViewComponent error={this.state.error}/>;
+
+        if(this.state.loading) return <p className="information">Loading...</p>;
 
         return <div>
             <h3>Delete {this.itemClass}</h3>

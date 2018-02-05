@@ -15,7 +15,8 @@ class ProjectTypeList extends GeneralListComponent {
             },
             GeneralListComponent.standardColumn("Name","name"),
             GeneralListComponent.standardColumn("Opens with", "opensWith"),
-            GeneralListComponent.standardColumn("Target version", "targetVersion")
+            GeneralListComponent.standardColumn("Target version", "targetVersion"),
+            this.actionIcons()
         ];
     }
 

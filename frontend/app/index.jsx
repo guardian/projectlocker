@@ -2,7 +2,7 @@ import React from 'react';
 import {render} from 'react-dom';
 import { BrowserRouter, Route, Switch, Link } from 'react-router-dom';
 import StorageListComponent from './StorageComponent.jsx';
-import DefaultComponent from './DefaultComponent.jsx';
+
 import RootComponent from './RootComponent.jsx';
 import ProjectTemplateIndex from './ProjectTemplateIndex.jsx';
 import ProjectTypeMultistep from './multistep/ProjectTypeMultistep.jsx';
@@ -12,6 +12,8 @@ import ProjectTypeList from './ProjectTypeList.jsx';
 
 import StorageMultistep from './multistep/StorageMultistep.jsx';
 import StorageDeleteComponent from './delete/StorageDeleteComponent.jsx';
+
+import TypeDeleteComponent from './delete/TypeDeleteComponent.jsx';
 
 window.React = require('react');
 
@@ -37,6 +39,7 @@ class App extends React.Component {
                         <Route path="/template/" component={ProjectTemplateIndex}/>
                         <Route path="/file/:itemid" component={FileEntryList}/>
                         <Route path="/file/" component={FileEntryList}/>
+                        <Route path="/type/:itemid/delete" component={TypeDeleteComponent}/>
                         <Route path="/type/:itemid" component={ProjectTypeMultistep}/>
                         <Route path="/type/" component={ProjectTypeList}/>
                         <Route path="/project/:itemid" component={ProjectEntryList}/>
