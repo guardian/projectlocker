@@ -1,6 +1,7 @@
 import React from 'react';
 import axios from 'axios';
 import SummaryComponent from './SummaryComponent.jsx';
+import ErrorViewComponent from '../common/ErrorViewComponent.jsx';
 
 class ProjectTypeCompletionComponent extends React.Component {
     constructor(props){
@@ -18,7 +19,7 @@ class ProjectTypeCompletionComponent extends React.Component {
         axios.put("/api/projecttype",this.requestContent()).then(
             (response)=>{
                 this.setState({inProgress: false});
-                window.location.assign('/projecttype/');
+                window.location.assign('/type/');
             }
         ).catch(
             (error)=>{
@@ -43,6 +44,7 @@ class ProjectTypeCompletionComponent extends React.Component {
             <p className="information">We will set up a new project type definition with the information below.</p>
             <p className="information">Press "Confirm" to go ahead, or press Previous if you need to amend any details.</p>
             <SummaryComponent name={this.props.projectType.name} opensWith={this.props.projectType.opensWith} version={this.props.projectType.version}/>
+            <ErrorViewComponent error={this.state.error}/>
             <span style={{float: "right"}}><button onClick={this.confirmClicked}>Confirm</button></span>
         </div>)
     }

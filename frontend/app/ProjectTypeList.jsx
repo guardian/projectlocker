@@ -18,6 +18,10 @@ class ProjectTypeList extends GeneralListComponent {
             GeneralListComponent.standardColumn("Target version", "targetVersion")
         ];
     }
+
+    newElementCallback(event) {
+        this.props.history.push("/type/new");
+    }
 }
 
 export default ProjectTypeList;

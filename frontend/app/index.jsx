@@ -5,6 +5,7 @@ import StorageListComponent from './StorageComponent.jsx';
 import DefaultComponent from './DefaultComponent.jsx';
 import RootComponent from './RootComponent.jsx';
 import ProjectTemplateIndex from './ProjectTemplateIndex.jsx';
+import ProjectTypeMultistep from './multistep/ProjectTypeMultistep.jsx';
 import FileEntryList from './FileEntryList.jsx';
 import ProjectEntryList from './ProjectEntryList.jsx';
 import ProjectTypeList from './ProjectTypeList.jsx';
@@ -36,7 +37,7 @@ class App extends React.Component {
                         <Route path="/template/" component={ProjectTemplateIndex}/>
                         <Route path="/file/:itemid" component={FileEntryList}/>
                         <Route path="/file/" component={FileEntryList}/>
-                        <Route path="/type/:itemid" component={ProjectTypeList}/>
+                        <Route path="/type/:itemid" component={ProjectTypeMultistep}/>
                         <Route path="/type/" component={ProjectTypeList}/>
                         <Route path="/project/:itemid" component={ProjectEntryList}/>
                         <Route path="/project/" component={ProjectEntryList}/>

@@ -20,7 +20,7 @@ class ProjectTypeMultistep extends React.Component {
                 name: 'Project type',
                 component: <ProjectTypeComponent
                     currentProjectType={this.props.currentEntry}
-                    valueWasSet={(newtype)=>this.setState({projectType: newtype})}
+                    valueWasSet={(newtype)=>{ console.log("valueWasSet"); this.setState({projectType: newtype})}}
                 />
             },
             {
