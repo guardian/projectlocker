@@ -2,47 +2,13 @@
 # This file defines all application routes (Higher priority routes first)
 # ~~~~
 
-
-GET     /file                          @controllers.Files.list
-PUT     /file                          @controllers.Files.create
-GET     /file/:id                      @controllers.Files.getitem(id: Int)
-PUT     /file/:id                      @controllers.Files.update(id: Int)
-DELETE  /file/:id                      @controllers.Files.delete(id: Int)
-
-GET     /storage                       @controllers.StoragesController.list
-PUT     /storage                       @controllers.StoragesController.create
-GET     /storage/:id                   @controllers.StoragesController.getitem(id: Int)
-PUT     /storage/:id                   @controllers.StoragesController.update(id: Int)
-DELETE  /storage/:id                   @controllers.StoragesController.delete(id: Int)
-
-GET     /template                      @controllers.ProjectTemplateController.list
-PUT     /template                      @controllers.ProjectTemplateController.create
-GET     /template/:id                  @controllers.ProjectTemplateController.getitem(id: Int)
-PUT     /template/:id                  @controllers.ProjectTemplateController.update(id: Int)
-DELETE  /template/:id                  @controllers.ProjectTemplateController.delete(id: Int)
-
-GET     /project                       @controllers.ProjectEntryController.list
-PUT     /project                       @controllers.ProjectEntryController.create
-GET     /project/:id                   @controllers.ProjectEntryController.getitem(id: Int)
-PUT     /project/:id                   @controllers.ProjectEntryController.update(id: Int)
-DELETE  /project/:id                   @controllers.ProjectEntryController.delete(id: Int)
-
-GET     /projecttype                   @controllers.ProjectTypeController.list
-PUT     /projecttype                   @controllers.ProjectTypeController.create
-GET     /projecttype/:id               @controllers.ProjectTypeController.getitem(id: Int)
-PUT     /projecttype/:id               @controllers.ProjectTypeController.update(id: Int)
-DELETE  /projecttype/:id               @controllers.ProjectTypeController.delete(id: Int)
-
-POST    /system/init                   @controllers.System.init
-=======
->>>>>>> Stashed changes
 GET     /                           controllers.Application.index(path="/")
 
 GET     /api/file                          @controllers.Files.list
 PUT     /api/file                          @controllers.Files.create
 GET     /api/file/:id                      @controllers.Files.getitem(id: Int)
 PUT     /api/file/:id                      @controllers.Files.update(id: Int)
-PUT     /api/file/:id/content              @controllers.Files.uploadContent(id: Int)
+# PUT     /api/file/:id/content              @controllers.Files.uploadContent(id: Int)
 DELETE  /api/file/:id                      @controllers.Files.delete(id: Int)
 
 GET     /api/storage                       @controllers.StoragesController.list
