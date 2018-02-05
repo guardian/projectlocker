@@ -4,6 +4,7 @@ import moxios from 'moxios';
 import StorageCompletionComponent from '../../../app/multistep/storage/CompletionComponent.jsx';
 import sinon from 'sinon';
 import assert from 'assert';
+
 const strgTypes = [
     {
         name: 'type one'
@@ -20,6 +21,7 @@ const logindetails = {
     username: 'kevin',
     password: 'kaboom'
 };
+
 const currentstorage = {
     name: 'robert'
 };

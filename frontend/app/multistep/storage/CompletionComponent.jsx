@@ -1,9 +1,17 @@
 import React from 'react';
 import axios from 'axios';
+import PropTypes from 'prop-types';
+
 import SummaryComponent from './SummaryComponent.jsx';
 import ErrorViewComponent from '../common/ErrorViewComponent.jsx';
 
 class StorageCompletionComponent extends React.Component {
+    static propTypes = {
+        loginDetails: PropTypes.object.required,
+        rootpath: PropTypes.string.required,
+        selectedType: PropTypes.number.required
+    };
+
     constructor(props){
         super(props);
 
@@ -20,7 +28,7 @@ class StorageCompletionComponent extends React.Component {
             rootpath: this.props.rootpath,
             storageType: selectedStorage.name,
             host: this.props.loginDetails.hostname,
-            port: parseInt(this.props.loginDetails.port),
+            port: this.props.loginDetails.port ? parseInt(this.props.loginDetails.port) : "",
             user: this.props.loginDetails.username,
             password: this.props.loginDetails.password
         }
@@ -50,7 +58,7 @@ class StorageCompletionComponent extends React.Component {
             <h3>Set up storage</h3>
             <p className="information">We will set up a new storage definition with the information below.</p>
             <p className="information">Press "Confirm" to go ahead, or press Previous if you need to amend any details.</p>
-            <SummaryComponent name={selectedStorage.name} loginDetails={this.props.loginDetails} subfolder={this.props.subfolder}/>
+            <SummaryComponent name={selectedStorage.name} loginDetails={this.props.loginDetails} subfolder={this.props.rootpath}/>
             <ErrorViewComponent error={this.state.error}/>
             <span style={{float: "right"}}>{errorLabel}<button onClick={this.confirmClicked}>Confirm</button></span>
         </div>)
