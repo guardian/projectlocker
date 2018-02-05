@@ -45,9 +45,11 @@ trait GenericDatabaseObjectController[M] extends Controller {
   def create = Action.async(BodyParsers.parse.json) { request =>
     this.validate(request).fold(
       errors => {
+        println(s"errors parsing content: $errors")
         Future(BadRequest(Json.obj("status"->"error","detail"->JsError.toJson(errors))))
       },
       storageEntry => {
+        println("Trying to add storage entry")
         this.insert(storageEntry).map({
           case Success(result)=>Ok(Json.obj("status" -> "ok", "detail" -> "added", "id" -> result.asInstanceOf[Int]))
           case Failure(error)=>
@@ -79,10 +81,6 @@ trait GenericDatabaseObjectController[M] extends Controller {
     )
   }
 
-  /*]Future(NotFound(Json.obj("status" -> "notfound", "id" -> requestedId)))
-
-
-   */
   def delete(requestedId: Int) = Action.async { request =>
     if(requestedId<0)
       Future(Conflict(Json.obj("status"->"error","detail"->"This is still referenced by sub-objects")))

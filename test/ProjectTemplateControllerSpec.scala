@@ -13,7 +13,7 @@ class ProjectTemplateControllerSpec extends GenericControllerSpec {
   sequential
 
   override val componentName: String = "ProjectTemplateController"
-  override val uriRoot: String = "/template"
+  override val uriRoot: String = "/api/template"
 
   override def testParsedJsonObject(checkdata: JsLookupResult, parsed_test_json: JsValue) = {
     val object_keys = Seq("name","filepath")
@@ -26,10 +26,10 @@ class ProjectTemplateControllerSpec extends GenericControllerSpec {
     )
   }
 
-  override val testGetId: Int = 3
+  override val testGetId: Int = 1
   override val testGetDocument: String = """{"name": "Premiere test template 1","projectTypeId": 1,"filepath":"/srv/projectfiles/ProjectTemplatesDev/Premiere/premiere_template_2014.prproj", "storageId": 1}"""
   override val testCreateDocument: String =  """{"name": "Cubase test template 1","projectTypeId": 2,"filepath":"/srv/projectfiles/ProjectTemplatesDev/Cubase/cubase_test_template.cpr", "storageId": 1}"""
-  override val minimumNewRecordId = 2
-  override val testDeleteId: Int = 1
+  override val minimumNewRecordId = 3
+  override val testDeleteId: Int = 2
   override val testConflictId: Int = -1
 }

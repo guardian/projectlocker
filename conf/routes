@@ -2,42 +2,42 @@
 # This file defines all application routes (Higher priority routes first)
 # ~~~~
 
-# Home page
-#GET     /                           controllers.Application.index
+GET     /                           controllers.Application.index(path="/")
 
-GET     /file                          @controllers.Files.list
-PUT     /file                          @controllers.Files.create
-GET     /file/:id                      @controllers.Files.getitem(id: Int)
-PUT     /file/:id                      @controllers.Files.update(id: Int)
-DELETE  /file/:id                      @controllers.Files.delete(id: Int)
+GET     /api/file                          @controllers.Files.list
+PUT     /api/file                          @controllers.Files.create
+GET     /api/file/:id                      @controllers.Files.getitem(id: Int)
+PUT     /api/file/:id                      @controllers.Files.update(id: Int)
+# PUT     /api/file/:id/content              @controllers.Files.uploadContent(id: Int)
+DELETE  /api/file/:id                      @controllers.Files.delete(id: Int)
 
-GET     /storage                       @controllers.StoragesController.list
-PUT     /storage                       @controllers.StoragesController.create
-GET     /storage/:id                   @controllers.StoragesController.getitem(id: Int)
-PUT     /storage/:id                   @controllers.StoragesController.update(id: Int)
-DELETE  /storage/:id                   @controllers.StoragesController.delete(id: Int)
+GET     /api/storage                       @controllers.StoragesController.list
+PUT     /api/storage                       @controllers.StoragesController.create
+GET     /api/storage/knowntypes            @controllers.StoragesController.types
+GET     /api/storage/:id                   @controllers.StoragesController.getitem(id: Int)
+PUT     /api/storage/:id                   @controllers.StoragesController.update(id: Int)
+DELETE  /api/storage/:id                   @controllers.StoragesController.delete(id: Int)
 
-GET     /template                      @controllers.ProjectTemplateController.list
-PUT     /template                      @controllers.ProjectTemplateController.create
-GET     /template/:id                  @controllers.ProjectTemplateController.getitem(id: Int)
-PUT     /template/:id                  @controllers.ProjectTemplateController.update(id: Int)
-DELETE  /template/:id                  @controllers.ProjectTemplateController.delete(id: Int)
+GET     /api/template                      @controllers.ProjectTemplateController.list
+PUT     /api/template                      @controllers.ProjectTemplateController.create
+GET     /api/template/:id                  @controllers.ProjectTemplateController.getitem(id: Int)
+PUT     /api/template/:id                  @controllers.ProjectTemplateController.update(id: Int)
+DELETE  /api/template/:id                  @controllers.ProjectTemplateController.delete(id: Int)
 
-GET     /project                       @controllers.ProjectEntryController.list
-PUT     /project                       @controllers.ProjectEntryController.create
-GET     /project/:id                   @controllers.ProjectEntryController.getitem(id: Int)
-PUT     /project/:id                   @controllers.ProjectEntryController.update(id: Int)
-DELETE  /project/:id                   @controllers.ProjectEntryController.delete(id: Int)
+GET     /api/project                       @controllers.ProjectEntryController.list
+PUT     /api/project                       @controllers.ProjectEntryController.create
+GET     /api/project/:id                   @controllers.ProjectEntryController.getitem(id: Int)
+PUT     /api/project/:id                   @controllers.ProjectEntryController.update(id: Int)
+DELETE  /api/project/:id                   @controllers.ProjectEntryController.delete(id: Int)
 
-GET     /projecttype                   @controllers.ProjectTypeController.list
-PUT     /projecttype                   @controllers.ProjectTypeController.create
-GET     /projecttype/:id               @controllers.ProjectTypeController.getitem(id: Int)
-PUT     /projecttype/:id               @controllers.ProjectTypeController.update(id: Int)
-DELETE  /projecttype/:id               @controllers.ProjectTypeController.delete(id: Int)
+GET     /api/projecttype                   @controllers.ProjectTypeController.list
+PUT     /api/projecttype                   @controllers.ProjectTypeController.create
+GET     /api/projecttype/:id               @controllers.ProjectTypeController.getitem(id: Int)
+PUT     /api/projecttype/:id               @controllers.ProjectTypeController.update(id: Int)
+DELETE  /api/projecttype/:id               @controllers.ProjectTypeController.delete(id: Int)
 
-POST    /system/init                   @controllers.System.init
+POST    /api/system/init                   @controllers.System.init
 
 # Map static resources from the /public folder to the /assets URL path
 GET     /assets/*file               controllers.Assets.at(path="/public", file)
-
-    
+GET     /*tail                      @controllers.Application.index(tail)

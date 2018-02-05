@@ -1,0 +1,62 @@
+div.leftmenu {
+    text-align: right;
+    float: left;
+    padding-right: 10px;
+    margin-right: 10px;
+    padding-left: 10px;
+    background-color: #cdcdcd;
+    border-radius: 15px;
+}
+
+ul.leftmenu {
+    list-style-type: none;
+}
+
+tr.dashboardheader, th.dashboardheader {
+    text-transform: inherit;
+    font-weight: inherit;
+}
+
+td {
+    border: 1px solid black;
+    border-collapse: collapse;
+}
+
+span.login-description {
+    text-transform: capitalize;
+}
+
+span.list-title {
+    text-align: right;
+}
+
+h2.list-title {
+    margin-right: 5%;
+}
+
+table.table {
+    border-radius: 3px;
+    margin-right: 5%;
+    margin-left: auto;
+    width: 85%;
+}
+
+span.banner-control {
+    text-align: right;
+    margin-right: 4%;
+    margin-left: auto;
+    display: block;
+}
+
+img.smallicon {
+    width: 32px;
+}
+
+img.tinyicon {
+    width: 16px;
+}
+
+.error-text {
+    color: darkred;
+    font-weight: bold;
+}

@@ -37,4 +37,22 @@ class Files @Inject() (configuration: Configuration, dbConfigProvider: DatabaseC
   )
 
   override def validate(request:Request[JsValue]) = request.body.validate[FileEntry]
+
+//  def uploadContent(requestedId: Int) = Action.async(parse.anyContent) { request=>
+//    dbConfig.db.run(
+//      TableQuery[FileEntryRow].filter(_.id === requestedId).result.asTry
+//    ).map({
+//      case rows:Seq[FileEntry]=>
+//        val fileRef = rows.head
+//        //get the storage reference for the file
+//        fileRef.storageId
+//        //then get a File object from it
+//
+//        //then write it to the File object
+//
+//          Ok("")
+//      case error=>
+//        InternalServerError(error)
+//    })
+//  }
 }

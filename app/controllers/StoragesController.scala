@@ -1,7 +1,7 @@
 package controllers
 
-import com.google.inject.Inject
-import models.{ProjectEntryRow, StorageEntry, StorageEntryRow, StorageSerializer}
+import com.google.inject.{Inject,Singleton}
+import models.{ProjectEntryRow, StorageEntry, StorageEntryRow, StorageSerializer, StorageType, StorageTypeSerializer}
 import play.api.Configuration
 import play.api.db.slick.DatabaseConfigProvider
 import play.api.libs.json._
@@ -15,9 +15,16 @@ import scala.concurrent.Future
 import scala.util.{Failure, Success}
 import scala.concurrent.ExecutionContext.Implicits.global
 
+@Singleton
 class StoragesController @Inject()
     (configuration: Configuration, dbConfigProvider: DatabaseConfigProvider)
-    extends GenericDatabaseObjectController[StorageEntry] with StorageSerializer {
+    extends GenericDatabaseObjectController[StorageEntry] with StorageSerializer with StorageTypeSerializer {
+
+  val knownTypes = List(
+    StorageType("Local",needsLogin=false,hasSubfolders=true),
+    StorageType("ObjectMatrix",needsLogin = true,hasSubfolders = false),
+    StorageType("S3",needsLogin = true,hasSubfolders = true)
+  )
 
   implicit val dbConfig:DatabaseConfig[JdbcProfile] = dbConfigProvider.get[JdbcProfile]
 
@@ -41,4 +48,8 @@ class StoragesController @Inject()
   )
 
   override def validate(request:Request[JsValue]) = request.body.validate[StorageEntry]
+
+  def types = Action {
+    Ok(Json.obj("status"->"ok","types"->this.knownTypes))
+  }
 }

@@ -28,22 +28,9 @@ object TestDatabase {
 
   class testDbProvider @Inject() (app:Application) extends DatabaseConfigProvider {
     def get[P <: BasicProfile]: DatabaseConfig[P] = {
-      def getProvider(ctr:Int):Option[DatabaseConfig[P]] = {
-        try {
-          Some(DatabaseConfigProvider.get("test")(app))
-        } catch {
-          case e: SQLTransientConnectionException=>
-            logger.warn(s"Could not get test database configuration: $e")
-            if(ctr==10) return None
-            Thread.sleep(10000)
-            getProvider(ctr+1)
-        }
-      }
 
-      getProvider(0) match {
-        case Some(provider)=>provider
-        case None=>throw new RuntimeException("Could not get test database configuration")
-      }
+      DatabaseConfigProvider.get("test")(app)
+
     }
   }
 
