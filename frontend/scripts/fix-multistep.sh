@@ -12,7 +12,9 @@ if [ -f src/index.jsx ]; then
     exit 0
 fi
 
-for file in {'index'}; do #multistep.js does not exist from v3 onwards
+FILESTOFIX=('index')
+
+for file in $FILESTOFIX; do #multistep.js does not exist from v3 onwards
     echo Fixing ${file}.js
     mv src/${file}.js src/${file}.jsx
     #this uses the existing .babelrc settings from the react-multistep package

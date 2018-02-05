@@ -17,12 +17,14 @@ class TypeSelectorComponent extends CommonMultistepComponent {
         return(<div>
                 <h3>Project Type</h3>
                 <p className="information">The first piece of information we need is what kind of project this template represents.
-                    Please select from the list below.  If the right type of project is not present, please <a href="/projecttype/new">add</a>
-                    it and then come back to this form.
+                    Please select from the list below.  If the right type of project is not present, please <a href="/type/new">add</a>
+                     it and then come back to this form.
                 </p>
                 <select id="project_type_selector" value={this.props.selectedType} onChange={this.selectorValueChanged}>
                     {
-                        this.props.projectTypes.map((projectInfo, index)=><option key={index} value={projectInfo.id}>{projectInfo.name}</option>)
+                        this.props.projectTypes ?
+                            this.props.projectTypes.map((projectInfo, index)=><option key={index} value={projectInfo.id}>{projectInfo.name}</option>)
+                            : <option/>
                     }
                 </select>
             </div>
