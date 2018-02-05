@@ -24,6 +24,7 @@ import play.api.libs.json._
 
 @RunWith(classOf[JUnitRunner])
 class StorageControllerSpec extends GenericControllerSpec {
+  sequential
   override val componentName: String = "StorageController"
   override val uriRoot: String = "/api/storage"
 

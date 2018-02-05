@@ -34,13 +34,6 @@ class ApplicationSpec extends Specification {
   protected val databaseHelper:DatabaseHelper = inject[DatabaseHelper]
 
   "Application" should {
-
-    "send 404 on a bad request" in {
-      val response = route(application,FakeRequest(GET, "/boum")).get
-
-      status(response) must equalTo(NOT_FOUND)
-    }
-
     "render the index page" in  {
       val home = route(application, FakeRequest(GET, "/")).get
 
