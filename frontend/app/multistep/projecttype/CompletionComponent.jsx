@@ -16,7 +16,9 @@ class ProjectTypeCompletionComponent extends React.Component {
 
     confirmClicked(event){
         this.setState({inProgress: true});
-        axios.put("/api/projecttype",this.requestContent()).then(
+        const restUrl = this.props.currentEntry ? "/api/projecttype/" + this.props.currentEntry : "/api/projecttype";
+
+        axios.put(restUrl,this.requestContent()).then(
             (response)=>{
                 this.setState({inProgress: false});
                 window.location.assign('/type/');

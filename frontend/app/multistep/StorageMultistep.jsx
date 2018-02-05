@@ -21,7 +21,7 @@ class StorageMultistep extends React.Component {
 
     componentWillMount() {
         axios.get("/api/storage/knowntypes").then((response)=>{
-            if(response.data.status!="ok"){
+            if(response.data.status!=="ok"){
                 console.error(response.data);
             } else {
                 this.setState({strgTypes: response.data.types});

@@ -1,6 +1,6 @@
 import React from 'react';
 import {render} from 'react-dom';
-import { BrowserRouter, Route, Switch, Link } from 'react-router-dom';
+import {BrowserRouter, Link, Route, Switch} from 'react-router-dom';
 import StorageListComponent from './StorageComponent.jsx';
 
 import RootComponent from './RootComponent.jsx';

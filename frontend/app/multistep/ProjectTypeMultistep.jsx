@@ -11,6 +11,13 @@ class ProjectTypeMultistep extends React.Component {
 
         this.state = {
             projectType: null,
+            currentEntry: null
+        }
+    }
+
+    componentWillMount(){
+        if(this.props.match && this.props.match.params && this.props.match.params.itemid){
+            this.setState({currentEntry: this.props.match.params.itemid})
         }
     }
 
@@ -19,13 +26,13 @@ class ProjectTypeMultistep extends React.Component {
             {
                 name: 'Project type',
                 component: <ProjectTypeComponent
-                    currentProjectType={this.props.currentEntry}
+                    currentEntry={this.state.currentEntry}
                     valueWasSet={(newtype)=>{ console.log("valueWasSet"); this.setState({projectType: newtype})}}
                 />
             },
             {
                 name: 'Confirm',
-                component: <ProjectTypeCompletionComponent projectType={this.state.projectType}/>
+                component: <ProjectTypeCompletionComponent projectType={this.state.projectType} currentEntry={this.state.currentEntry}/>
             }
         ];
         return(<Multistep showNavigation={true} steps={steps}/>);
