@@ -10,8 +10,8 @@ import play.mvc.Http.RequestBuilder
 import scala.concurrent.{Await, Future}
 import scala.concurrent.duration._
 import scala.util.{Failure, Success}
-
 import scala.concurrent.ExecutionContext.Implicits.global
+import scala.io.Source
 
 /**
  * Add your spec here.
@@ -89,8 +89,10 @@ class FileControllerPlaySpec extends PlaySpecification {
 
         println(response.body)
         response.status mustEqual 200
-
       })
+
+      val writtenContent = Source.fromFile("/tmp/testproject2").getLines().mkString("\n")
+      writtenContent mustEqual testbuffer
     }
   }
 }

@@ -53,11 +53,12 @@ class Files @Inject() (configuration: Configuration, dbConfigProvider: DatabaseC
 
   def writeContentIfPossible(filepath:String, maybeBuffer: Option[RawBuffer], storageDriver:StorageDriver):Result = maybeBuffer match {
         case Some(buffer) =>
+          Logger.info("Got buffer")
           buffer.asBytes() match {
             case Some(bytes) => //the buffer is held in memory
               logger.debug("uploadContent: writing memory buffer")
               storageDriver.writeDataToPath(filepath, bytes.toArray)
-              Ok(Json.obj("status" -> "ok", "detail" -> "File has been written"))
+              Ok(Json.obj("status" -> "ok", "detail" -> "File has been written."))
             case None => //the buffer is on-disk
               logger.debug("uploadContent: writing disk buffer")
               val fileInputStream = new BufferedInputStream(new FileInputStream(buffer.asFile))
@@ -70,12 +71,13 @@ class Files @Inject() (configuration: Configuration, dbConfigProvider: DatabaseC
       }
 
   def uploadContent(requestedId: Int) = Action.async(parse.anyContent) { request=>
-    println("In uploadContent")
+    Logger.info("In uploadContent")
     dbConfig.db.run(
       TableQuery[FileEntryRow].filter(_.id === requestedId).result.asTry
     ).flatMap({
       case Success(rows:Seq[FileEntry])=>
         if(rows.isEmpty){
+          Logger.error(s"File with ID $requestedId not found")
           Future(NotFound(Json.obj("status"->"error", "detail"->s"File with ID $requestedId not found")))
         } else {
           val fileRef = rows.head
@@ -84,11 +86,12 @@ class Files @Inject() (configuration: Configuration, dbConfigProvider: DatabaseC
 
           storageResult.map({
             case Success(storages: Seq[StorageEntry]) =>
+              Logger.info(s"Got storage list $storages")
               storages.head.getStorageDriver match {
                 case Some(storageDriver) =>
                   try {
+                    Logger.info(s"Writing to ${fileRef.filepath} with $storageDriver")
                     writeContentIfPossible(fileRef.filepath, request.body.asRaw, storageDriver)
-                    Ok(Json.obj("status"->"ok","detail"->"File has been written"))
                   } catch {
                     case ex: Exception =>
                       Logger.error("Unable to write file: ", ex)
