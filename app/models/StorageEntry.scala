@@ -8,6 +8,8 @@ import play.api.libs.functional.syntax._
 import play.api.libs.json.{JsPath, Reads, Writes}
 
 import scala.concurrent.ExecutionContext.Implicits.global
+import drivers._
+import play.api.Logger
 
 trait StorageSerializer {
   /*https://www.playframework.com/documentation/2.5.x/ScalaJson*/
@@ -35,6 +37,14 @@ trait StorageSerializer {
 case class StorageEntry(id: Option[Int], rootpath: Option[String], storageType: String,
                         user:Option[String], password:Option[String], host:Option[String], port:Option[Int]) {
 
+  def getStorageDriver:Option[StorageDriver] = {
+    if(storageType=="Local"){
+      Some(new PathStorage)
+    } else {
+      Logger.warn(s"No storage driver defined for $storageType")
+      None
+    }
+  }
 }
 
 class StorageEntryRow(tag:Tag) extends Table[StorageEntry](tag, "StorageEntry") {
