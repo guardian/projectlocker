@@ -19,6 +19,10 @@ class ProjectTemplateIndex extends GeneralListComponent {
             GeneralListComponent.standardColumn("Storage","storage")
         ];
     }
+
+    newElementCallback(event) {
+        this.props.history.push("/template/new");
+    }
 }
 
 export default ProjectTemplateIndex;

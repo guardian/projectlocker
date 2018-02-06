@@ -22,9 +22,7 @@ class TypeSelectorComponent extends CommonMultistepComponent {
                 </p>
                 <select id="project_type_selector" value={this.props.selectedType} onChange={this.selectorValueChanged}>
                     {
-                        this.props.projectTypes ?
-                            this.props.projectTypes.map((projectInfo, index)=><option key={index} value={projectInfo.id}>{projectInfo.name}</option>)
-                            : <option/>
+                    this.props.projectTypes.map((projectInfo, index)=><option key={index} value={projectInfo.id}>{projectInfo.name}</option>)
                     }
                 </select>
             </div>
