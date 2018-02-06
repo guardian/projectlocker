@@ -1,16 +1,13 @@
 import org.junit.runner._
 import org.specs2.runner._
-import play.api.Application
-import play.api.mvc.{AnyContent, Call}
+import play.api.db.slick.DatabaseConfigProvider
+import play.api.inject.{Injector, bind}
+import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.test._
-import play.test.Helpers._
-import play.api.mvc.Call._
-import play.mvc.Http.RequestBuilder
+import testHelpers.TestDatabase
 
 import scala.concurrent.{Await, Future}
 import scala.concurrent.duration._
-import scala.util.{Failure, Success}
-import scala.concurrent.ExecutionContext.Implicits.global
 import scala.io.Source
 
 /**
@@ -48,31 +45,17 @@ class FileControllerSpec extends GenericControllerSpec  {
 
 
 class FileControllerPlaySpec extends PlaySpecification {
-  "FileController" should {
+  sequential
+  //can over-ride bindings here. see https://www.playframework.com/documentation/2.5.x/ScalaTestingWithGuice
+  private val application = new GuiceApplicationBuilder()
+    .overrides(bind[DatabaseConfigProvider].to[TestDatabase.testDbProvider])
+    .build
 
-    "respond 404 if data is attempted to be written to a non-existing file" in new WithServer {
+  "FileController" should new WithServer(app=application) {
+
+    "respond 404 if data is attempted to be written to a non-existing file" in  {
       val testbuffer = "this is my test data\nwith another line"
-      //val call = Call(GET, "/")
-      //val req = FakeRequest(PUT, "/api/file/9/content", FakeHeaders(), testbuffer.toCharArray.map(_.toByte))
-      //val call2 = Call(PUT,"/api/file/9/content", testbuffer)
 
-      //      val req = fakeRequest()
-      //              .method("PUT")
-      //              .uri("/api/file/9/content")
-      //              .bodyRaw(testbuffer.toCharArray.map(_.toByte))
-      //                .build()
-      //
-      //      val result:Future[play.api.mvc.Result] = route(app, req._underlyingRequest()).get
-      //
-      //      //result must beSome[Future[Result]]
-      //
-      //      result.onComplete({
-      //        case Success(finalResult:play.api.mvc.Result)=>
-      //          finalResult.header.status mustEqual 200
-      //        case Failure(error)=>
-      //          throw error
-      //      })
-      //      Await.ready(result, 60.seconds)
       WsTestClient.withClient(client => {
         val request = client.url("http://localhost:19001/api/file/9/content")
         val response = Await.result(request.put(testbuffer.toCharArray.map(_.toByte)),30.seconds)
@@ -80,18 +63,18 @@ class FileControllerPlaySpec extends PlaySpecification {
       })
     }
 
-    "accept data for an existing file" in new WithServer() {
+    "accept data for an existing file" in  {
       val testbuffer = "this is my test data\nwith another line"
 
       WsTestClient.withClient(client => {
-        val request = client.url("http://localhost:19001/api/file/3/content")
+        val request = client.url("http://localhost:19001/api/file/4/content")
         val response = Await.result(request.put(testbuffer.toCharArray.map(_.toByte)),30.seconds)
 
         println(response.body)
         response.status mustEqual 200
       })
 
-      val writtenContent = Source.fromFile("/tmp/testproject2").getLines().mkString("\n")
+      val writtenContent = Source.fromFile("/tmp/testprojectfile").getLines().mkString("\n")
       writtenContent mustEqual testbuffer
     }
   }

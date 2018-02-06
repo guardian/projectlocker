@@ -98,13 +98,16 @@ class Files @Inject() (configuration: Configuration, dbConfigProvider: DatabaseC
                       InternalServerError(Json.obj("status" -> "error", "detail" -> s"Unable to write file: ${ex.toString}"))
                   }
                 case None =>
+                  Logger.error(s"No storage driver available for storage ${fileRef.storageId}")
                   InternalServerError(Json.obj("status" -> "error", "detail" -> s"No storage driver available for storage ${fileRef.storageId}"))
               }
             case Failure(error) =>
-              InternalServerError(Json.obj("status" -> "error", "detail" -> s"Unexpected object return"))
+              Logger.error(s"No storage could be found for ID ${fileRef.storageId}")
+              InternalServerError(Json.obj("status" -> "error", "detail" -> s"No storage could be found for ID ${fileRef.storageId}"))
           })
         }
       case Failure(error)=>
+        Logger.error(s"Could not get file to write: ${error.toString}")
         Future(InternalServerError(Json.obj("status"->"error", "detail"->s"Could not get file to write: ${error.toString}")))
 
     })

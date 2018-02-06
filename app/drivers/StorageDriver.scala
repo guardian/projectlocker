@@ -9,6 +9,7 @@ import scala.io.Source
   */
 trait StorageDriver {
   val bufferSize = 10
+  val storageRef:models.StorageEntry
   def fileForPath(path:String):File
 
 //  def writeDataToPath(path:String, dataStream:Stream[Byte])

@@ -39,7 +39,7 @@ case class StorageEntry(id: Option[Int], rootpath: Option[String], storageType: 
 
   def getStorageDriver:Option[StorageDriver] = {
     if(storageType=="Local"){
-      Some(new PathStorage)
+      Some(new PathStorage(this))
     } else {
       Logger.warn(s"No storage driver defined for $storageType")
       None

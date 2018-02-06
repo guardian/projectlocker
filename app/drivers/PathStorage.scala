@@ -1,30 +1,27 @@
 package drivers
 
 import java.io.{BufferedInputStream, DataOutputStream, File, FileOutputStream}
+import java.nio.file.Paths
 import java.util.NoSuchElementException
+
+import models.StorageEntry
 
 /**
   * Implements a storage driver for regular file paths
   */
-class PathStorage extends StorageDriver{
+class PathStorage(override val storageRef:StorageEntry) extends StorageDriver{
+
   override def fileForPath(path: String) = {
     new File(path)
   }
 
-//  override def writeDataToPath(path:String, dataStream:Stream[Byte]) = {
-//    val f = this.fileForPath(path)
-//    val st = new FileOutputStream(f)
-//
-//    def writeStreamChunk(st:FileOutputStream, dataStream:Stream[Byte]):Boolean = {
-//      st.write(dataStream.head)
-//      writeStreamChunk(st, dataStream.tail)
-//    }
-//    writeStreamChunk(st, dataStream)
-//    st.close()
-//  }
-
   override def writeDataToPath(path: String, dataStream: BufferedInputStream): Unit = {
-    val f = this.fileForPath(path)
+    val finalPath = storageRef.rootpath match {
+      case Some(rootpath)=>Paths.get(rootpath,path)
+      case None=>Paths.get(path)
+    }
+
+    val f = this.fileForPath(finalPath.toString)
     val st = new FileOutputStream(f)
 
     def writeStreamChunk(st:FileOutputStream, dataStream:BufferedInputStream):Boolean = {
