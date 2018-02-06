@@ -30,8 +30,6 @@ libraryDependencies ++= Seq(
   "org.slf4j" % "slf4j-nop" % "1.6.4"
 )
 
-libraryDependencies += "org.mockito" % "mockito-core" % "2.13.0" % Test
-
 enablePlugins(UniversalPlugin)
 
 enablePlugins(LinuxPlugin)

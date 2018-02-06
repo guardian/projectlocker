@@ -13,12 +13,9 @@ import slick.driver.PostgresDriver.api._
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import models._
-import play.mvc.BodyParser.AnyContent
-import play.mvc.Http.RequestBody
 import slick.lifted.TableQuery
 
 import scala.concurrent.Future
-import scala.io.Source
 import scala.util.{Failure, Success}
 
 
@@ -71,7 +68,6 @@ class Files @Inject() (configuration: Configuration, dbConfigProvider: DatabaseC
       }
 
   def uploadContent(requestedId: Int) = Action.async(parse.anyContent) { request=>
-    Logger.info("In uploadContent")
     dbConfig.db.run(
       TableQuery[FileEntryRow].filter(_.id === requestedId).result.asTry
     ).flatMap({
@@ -86,7 +82,6 @@ class Files @Inject() (configuration: Configuration, dbConfigProvider: DatabaseC
 
           storageResult.map({
             case Success(storages: Seq[StorageEntry]) =>
-              Logger.info(s"Got storage list $storages")
               storages.head.getStorageDriver match {
                 case Some(storageDriver) =>
                   try {
