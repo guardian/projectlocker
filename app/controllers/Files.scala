@@ -61,7 +61,7 @@ class Files @Inject() (configuration: Configuration, dbConfigProvider: DatabaseC
               Ok(Json.obj("status" -> "ok", "detail" -> "File has been written."))
             case None => //the buffer is on-disk
               logger.debug("uploadContent: writing disk buffer")
-              val fileInputStream = new BufferedInputStream(new FileInputStream(buffer.asFile))
+              val fileInputStream = new FileInputStream(buffer.asFile)
               storageDriver.writeDataToPath(filepath, fileInputStream)
               fileInputStream.close()
               Ok(Json.obj("status" -> "ok", "detail" -> "File has been written"))

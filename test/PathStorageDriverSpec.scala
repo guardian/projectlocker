@@ -8,6 +8,7 @@ import drivers.PathStorage
 import models.StorageEntry
 
 import scala.io.Source
+import sys.process._
 
 @RunWith(classOf[JUnitRunner])
 class PathStorageDriverSpec extends Specification with org.specs2.mock.Mockito {
@@ -33,14 +34,17 @@ class PathStorageDriverSpec extends Specification with org.specs2.mock.Mockito {
     }
 
     "write a BufferedInputStream to file" in {
-      val testbuffer = "this is my test data\nwith multiple lines"
+
       val s = new PathStorage(mock_storage)
 
-      val testStream = new BufferedInputStream(new ByteArrayInputStream(testbuffer.toCharArray.map(_.toByte)))
-      s.writeDataToPath("/tmp/testfile3", testStream)
+      val testFile=new FileInputStream(new File("public/images/uploading.svg"))
 
-      val writtenContent = Source.fromFile("/tmp/testfile3").getLines().mkString("\n")
-      writtenContent mustEqual testbuffer
+      s.writeDataToPath("/tmp/testfile3", testFile)
+
+      val checksumSource = "shasum -a 1 public/images/uploading.svg" #| "cut -c 1-40" !!
+      val checksumDest = "shasum -a 1 /tmp/testfile3" #| "cut -c 1-40" !!
+
+      checksumDest mustEqual checksumSource
     }
 
 

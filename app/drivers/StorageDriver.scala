@@ -13,6 +13,6 @@ trait StorageDriver {
   def fileForPath(path:String):File
 
 //  def writeDataToPath(path:String, dataStream:Stream[Byte])
-  def writeDataToPath(path:String, dataStream:BufferedInputStream)
+  def writeDataToPath(path:String, dataStream:FileInputStream)
   def writeDataToPath(path:String, data:Array[Byte])
 }
