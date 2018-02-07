@@ -1,6 +1,5 @@
 import org.junit.runner._
 import org.specs2.runner._
-
 /**
  * Add your spec here.
  * You can mock out a whole application including requests, plugins etc.
@@ -32,4 +31,8 @@ class ProjectTemplateControllerSpec extends GenericControllerSpec {
   override val minimumNewRecordId = 3
   override val testDeleteId: Int = 2
   override val testConflictId: Int = -1
+
+  override val expectedDeleteStatus = "warning"
+  override val expectedDeleteDetail = "Template deleted but file could not be deleted"
+
 }

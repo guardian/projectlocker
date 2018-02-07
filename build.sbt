@@ -27,8 +27,7 @@ libraryDependencies ++= Seq(
   "postgresql" % "postgresql" % "9.1-901.jdbc3",
   // https://mvnrepository.com/artifact/com.typesafe.play/play-slick
   "com.typesafe.play" %% "play-slick" % "3.0.3",
-  "com.typesafe.play" %% "play-slick-evolutions" % "3.0.3",
-  "org.slf4j" % "slf4j-nop" % "1.6.4"
+  "com.typesafe.play" %% "play-slick-evolutions" % "3.0.3"
 )
 
 enablePlugins(UniversalPlugin)
