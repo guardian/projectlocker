@@ -81,7 +81,7 @@ describe("StorageCompletionComponent", ()=>{
                 done();
             }).catch(error=>{
                 console.error(error);
-                done(error);
+                done.fail(error);
             })
         });
     })

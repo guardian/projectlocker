@@ -16,8 +16,11 @@ class ProjectTemplateDeleteComponent extends GeneralDeleteComponent {
     }
 
     informationPara(){
-        return <p className="information">The following {this.itemClass} will be PERMANENTLY deleted, along with the file on-disk,
-            if you click the Delete button below.  Do you want to continue?</p>
+        if(this.state.warning)
+            return <p className="warning">{this.state.warning}</p>;
+        else
+            return <p className="information">The following {this.itemClass} will be PERMANENTLY deleted, along with the file on-disk,
+                if you click the Delete button below.  Do you want to continue?</p>;
     }
 }
 
