@@ -8,7 +8,7 @@ javaOptions in Test += "-Duser.timezone=UTC"
 
 scalaVersion := "2.12.2"
 
-libraryDependencies ++= Seq( jdbc, cache , ws   , specs2 % Test )
+libraryDependencies ++= Seq( jdbc, ehcache , ws   , specs2 % Test, guice )
 
 libraryDependencies += evolutions
 

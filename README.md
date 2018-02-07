@@ -26,6 +26,7 @@ and it should be installed from said RPM.
 ###Frontend
 
 - The frontend is written in ES2016 javascript using React JSX.  To run in a browser, it's transpiled with Babel and bundled with Webpack
+- I'd recommend installing yarn to manage javascript dependencies: see `https://yarnpkg.com/lang/en/docs/install/`
 - Set up the tools like so: `cd frontend; yarn install` (or `cd frontend; npm install` if you don't like yarn)
 - Tests can be run via `npm test`
 - To just build the frontend, you can run `npm run compile` from the frontend directory
