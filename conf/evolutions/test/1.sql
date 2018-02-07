@@ -8,7 +8,9 @@ CREATE TABLE "FileEntry" (
     version integer NOT NULL,
     ctime timestamp without time zone NOT NULL,
     mtime timestamp without time zone NOT NULL,
-    atime timestamp without time zone NOT NULL
+    atime timestamp without time zone NOT NULL,
+    has_content BOOLEAN DEFAULT FALSE,
+    has_link BOOLEAN DEFAULT FALSE
 );
 
 
@@ -76,8 +78,7 @@ CREATE TABLE "ProjectTemplate" (
     id integer NOT NULL,
     name character varying NOT NULL,
     "ProjectType" integer NOT NULL,
-    filepath character varying NOT NULL,
-    storage integer NOT NULL
+    fileref integer NOT NULL
 );
 
 
@@ -190,7 +191,7 @@ ALTER TABLE ONLY "ProjectTemplate"
     ADD CONSTRAINT "fk_ProjectType" FOREIGN KEY ("ProjectType") REFERENCES "ProjectType"(id) DEFERRABLE INITIALLY DEFERRED;
 
 ALTER TABLE ONLY "ProjectTemplate"
-    ADD CONSTRAINT "fk_SourceDir" FOREIGN KEY (storage) REFERENCES "FileEntry"(id) DEFERRABLE INITIALLY DEFERRED;
+    ADD CONSTRAINT "fk_FileRef" FOREIGN KEY (fileref) REFERENCES "FileEntry"(id) DEFERRABLE INITIALLY DEFERRED;
 
 ALTER TABLE ONLY "FileEntry"
     ADD CONSTRAINT fk_storage FOREIGN KEY (storage) REFERENCES "StorageEntry"(id) DEFERRABLE INITIALLY DEFERRED;

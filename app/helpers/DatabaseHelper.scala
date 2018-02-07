@@ -32,13 +32,13 @@ class DatabaseHelper @Inject()(configuration: Configuration, dbConfigProvider: D
         ).create,
         TableQuery[StorageEntryRow] += StorageEntry(None,None,"filesystem",Some("me"),None,None,None),
         TableQuery[StorageEntryRow] += StorageEntry(None,None,"omms",Some("you"),None,None,None),
-        TableQuery[FileEntryRow] += FileEntry(None,"/path/to/a/video.mxf",1,"me",1,new Timestamp(12345678),new Timestamp(12345678),new Timestamp(12345678)),
-        TableQuery[FileEntryRow] += FileEntry(None,"/path/to/secondtestfile",1,"tstuser",1,new Timestamp(123456789),new Timestamp(123456789),new Timestamp(123456789)),
+        TableQuery[FileEntryRow] += FileEntry(None,"/path/to/a/video.mxf",1,"me",1,new Timestamp(12345678),new Timestamp(12345678),new Timestamp(12345678),hasContent=false,hasLink=true),
+        TableQuery[FileEntryRow] += FileEntry(None,"/path/to/secondtestfile",1,"tstuser",1,new Timestamp(123456789),new Timestamp(123456789),new Timestamp(123456789),hasContent = false,hasLink = false),
         //"""{"name": "Premiere test template 1","projectTypeId": 1,"filepath", "storageId": 1}"""
         //"{"name":,"opensWith":"AdobePremierePro.app","targetVersion":"14.0"}"
         TableQuery[ProjectTypeRow] += ProjectType(None,"Premiere 2014 test","AdobePremierePro.app","14.0"),
         TableQuery[ProjectTypeRow] += ProjectType(None,"Cubase 7.0 test","Cubase.app","7.0"),
-        TableQuery[ProjectTemplateRow] += ProjectTemplate(Some(1),"Premiere test template 1",1,"/srv/projectfiles/ProjectTemplatesDev/Premiere/premiere_template_2014.prproj",1)
+        TableQuery[ProjectTemplateRow] += ProjectTemplate(Some(1),"Premiere test template 1",1,1)
 
       ).asTry
     )

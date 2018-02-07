@@ -15,7 +15,7 @@ import scala.util.{Failure, Success}
 import scala.concurrent.{Await, Future}
 
 case class FileEntry(id: Option[Int], filepath: String, storageId: Int, user:String,version:Int,
-                     ctime: Timestamp, mtime: Timestamp, atime: Timestamp) {
+                     ctime: Timestamp, mtime: Timestamp, atime: Timestamp, hasContent:Boolean, hasLink:Boolean) {
 
   /* returns a StorageEntry object for the id of the storage of this FileEntry */
   def storage(db: JdbcBackend.Database):Future[Option[StorageEntry]] = {
@@ -28,7 +28,7 @@ case class FileEntry(id: Option[Int], filepath: String, storageId: Int, user:Str
   }
 }
 
-object FileEntry extends ((Option[Int], String, Int, String, Int, Timestamp, Timestamp, Timestamp)=>FileEntry) {
+object FileEntry extends ((Option[Int], String, Int, String, Int, Timestamp, Timestamp, Timestamp, Boolean, Boolean)=>FileEntry) {
   def entryFor(entryId: Int, db: JdbcBackend.Database):Future[FileEntry] =
     db.run(
       TableQuery[FileEntryRow].filter(_.id===entryId).result.asTry
@@ -39,7 +39,7 @@ object FileEntry extends ((Option[Int], String, Int, String, Int, Timestamp, Tim
 }
 
 class FileEntryRow(tag:Tag) extends Table[FileEntry](tag, "FileEntry") {
-  def id = column[Int]("id",O.PrimaryKey, O.AutoInc) //Autoincrement generates invalid SQL for Postgres, not sure why
+  def id = column[Int]("id",O.PrimaryKey, O.AutoInc)
   def filepath = column[String]("filepath")
   def storage = column[Int]("storage")
   def version = column[Int]("version")
@@ -48,8 +48,11 @@ class FileEntryRow(tag:Tag) extends Table[FileEntry](tag, "FileEntry") {
   def mtime = column[Timestamp]("mtime")
   def atime = column[Timestamp]("atime")
 
+  def hasContent = column[Boolean]("has_content")
+  def hasLink = column[Boolean]("has_link")
+
   def storageFk = foreignKey("fk_storage",storage,TableQuery[StorageEntryRow])(_.id)
-  def * = (id.?,filepath,storage,user,version,ctime,mtime,atime) <> (FileEntry.tupled, FileEntry.unapply)
+  def * = (id.?,filepath,storage,user,version,ctime,mtime,atime, hasContent, hasLink) <> (FileEntry.tupled, FileEntry.unapply)
 }
 
 
@@ -74,7 +77,9 @@ trait FileEntrySerializer {
       (JsPath \ "version").write[Int] and
       (JsPath \ "ctime").write[Timestamp] and
       (JsPath \ "mtime").write[Timestamp] and
-      (JsPath \ "atime").write[Timestamp]
+      (JsPath \ "atime").write[Timestamp] and
+      (JsPath \ "hasContent").write[Boolean] and
+      (JsPath \ "hasLink").write[Boolean]
     )(unlift(FileEntry.unapply))
 
   implicit val fileReads: Reads[FileEntry] = (
@@ -85,6 +90,8 @@ trait FileEntrySerializer {
       (JsPath \ "version").read[Int] and
       (JsPath \ "ctime").read[Timestamp] and
       (JsPath \ "mtime").read[Timestamp] and
-      (JsPath \ "atime").read[Timestamp]
+      (JsPath \ "atime").read[Timestamp] and
+      (JsPath \ "hasContent").read[Boolean] and
+      (JsPath \ "hasLink").read[Boolean]
     )(FileEntry.apply _)
 }
