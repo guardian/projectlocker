@@ -6,7 +6,7 @@ lazy val `projectlocker` = (project in file(".")).enablePlugins(PlayScala)
 
 javaOptions in Test += "-Duser.timezone=UTC"
 
-scalaVersion := "2.11.7"
+scalaVersion := "2.12.2"
 
 libraryDependencies ++= Seq( jdbc, cache , ws   , specs2 % Test )
 
@@ -25,8 +25,9 @@ resolvers += "scalaz-bintray" at "https://dl.bintray.com/scalaz/releases"
 
 libraryDependencies ++= Seq(
   "postgresql" % "postgresql" % "9.1-901.jdbc3",
-  "com.typesafe.play" %% "play-slick" % "2.0.2",
-  "com.typesafe.play" %% "play-slick-evolutions" % "2.0.2",
+  // https://mvnrepository.com/artifact/com.typesafe.play/play-slick
+  "com.typesafe.play" %% "play-slick" % "3.0.3",
+  "com.typesafe.play" %% "play-slick-evolutions" % "3.0.3",
   "org.slf4j" % "slf4j-nop" % "1.6.4"
 )
 

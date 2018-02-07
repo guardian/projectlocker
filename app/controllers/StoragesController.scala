@@ -1,6 +1,6 @@
 package controllers
 
-import com.google.inject.{Inject,Singleton}
+import javax.inject.{Inject,Singleton}
 import models.{ProjectEntryRow, StorageEntry, StorageEntryRow, StorageSerializer, StorageType, StorageTypeSerializer}
 import play.api.Configuration
 import play.api.db.slick.DatabaseConfigProvider

@@ -1,6 +1,6 @@
 package helpers
 
-import com.google.inject.Inject
+import javax.inject.Inject
 import models.{FileEntry, _}
 import play.api.{Configuration, Logger}
 import play.api.db.slick.DatabaseConfigProvider

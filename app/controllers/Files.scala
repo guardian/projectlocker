@@ -1,8 +1,8 @@
 package controllers
 
 import java.io._
+import javax.inject.Inject
 
-import com.google.inject.Inject
 import drivers.StorageDriver
 import play.api.{Configuration, Logger}
 import play.api.db.slick.DatabaseConfigProvider
