@@ -1,4 +1,5 @@
-#Projectlocker
+Projectlocker
+======
 
 Projectlocker is a database interface for storing, backing up and creating new projects from templates.
 
@@ -7,9 +8,10 @@ Projectlocker is a database interface for storing, backing up and creating new p
 Projectlocker uses a CI build system, at http://circleci.com/gh/fredex42/projectlocker.  RPMs are built for every commit, 
 and it should be installed from said RPM.
 
-## Development
+Development
+------
 
-###Prerequisites
+### Prerequisites
 
 - You need a working postgres installation.  On Linux this is normally as simple as `apt-get install postgresql` or `yum install postgresql`.  On Mac it's best to install Homebrew, then you can run `brew install postgresql`
 - You need an installation of node.js to build the frontend.  It's easiest to first install the Node Version Manager, nvm, and then use this to install node: `nvm install 8.1.3`
