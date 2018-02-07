@@ -15,4 +15,6 @@ trait StorageDriver {
 //  def writeDataToPath(path:String, dataStream:Stream[Byte])
   def writeDataToPath(path:String, dataStream:FileInputStream)
   def writeDataToPath(path:String, data:Array[Byte])
+
+  def deleteFileAtPath(path:String):Boolean
 }

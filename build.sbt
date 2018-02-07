@@ -44,16 +44,16 @@ packageSummary in Linux := "A system to manage, backup and archive multimedia pr
 packageDescription in Linux := "A system to manage, backup and archive multimedia project files"
 
 //RPM build configuration
-rpmVendor in Rpm := "Andy Gallagher <andy.gallagher@theguardian.com>"
+rpmVendor := "Andy Gallagher <andy.gallagher@theguardian.com>"
 
-rpmUrl in Rpm := Some("https://github/fredex42/projectlocker")
+rpmUrl := Some("https://github/fredex42/projectlocker")
 
 packageName in Rpm := "projectlocker"
 
 version in Rpm := "1.0"
 
-rpmRelease in Rpm := sys.props.getOrElse("build.number","DEV")
+rpmRelease := sys.props.getOrElse("build.number","DEV")
 
-packageArchitecture in Rpm := "noarch"
+packageArchitecture := "noarch"
 
-rpmLicense in Rpm := Some("custom")
+rpmLicense := Some("custom")

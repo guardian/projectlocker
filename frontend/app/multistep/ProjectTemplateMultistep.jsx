@@ -17,6 +17,7 @@ class ProjectTemplateMultistep extends CommonMultistepComponent
             currentEntry: null,
             error: null,
             fileId: null,
+            name: "",
             storages: []
         }
     }

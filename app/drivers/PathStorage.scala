@@ -42,4 +42,10 @@ class PathStorage(override val storageRef:StorageEntry) extends StorageDriver{
     st.write(data)
     st.close()
   }
+
+  override def deleteFileAtPath(path: String): Boolean = {
+    val f = this.fileForPath(path)
+    Logger.info(s"Deleting file at ${f.getAbsolutePath}")
+    f.delete()
+  }
 }

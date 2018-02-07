@@ -1,9 +1,12 @@
 package models
 
+import java.nio.file.{Path, Paths}
+
 import org.joda.time.DateTime
 import slick.driver.PostgresDriver.api._
 import java.sql.Timestamp
 
+import play.api.Logger
 import play.api.libs.functional.syntax._
 import play.api.libs.json.Reads.jodaDateReads
 import play.api.libs.json.Writes.jodaDateWrites
@@ -18,13 +21,56 @@ case class FileEntry(id: Option[Int], filepath: String, storageId: Int, user:Str
                      ctime: Timestamp, mtime: Timestamp, atime: Timestamp, hasContent:Boolean, hasLink:Boolean) {
 
   /* returns a StorageEntry object for the id of the storage of this FileEntry */
-  def storage(db: JdbcBackend.Database):Future[Option[StorageEntry]] = {
+  def storage(implicit db: slick.driver.JdbcProfile#Backend#Database):Future[Option[StorageEntry]] = {
     db.run(
       TableQuery[StorageEntryRow].filter(_.id===storageId).result.asTry
     ).map({
       case Success(result)=>Some(result.head)
       case Failure(error)=>None
     })
+  }
+
+  def getFullPath(implicit db: slick.driver.JdbcProfile#Backend#Database):Future[String] = {
+    this.storage.map({
+      case Some(storage)=>
+        Paths.get(storage.rootpath.getOrElse(""), filepath).toString
+      case None=>
+        filepath
+    })
+  }
+
+  def deleteFromDisk(implicit db:slick.driver.JdbcProfile#Backend#Database):Future[Either[String,Boolean]] = {
+    /*this attempts to delete the file from disk, using the configured storage driver*/
+    /*it either returns a Right(), with a boolean indicating whether the delete happened or not, or a Left() with an error string*/
+    val maybeStorageDriverFuture = this.storage.map({
+      case Some(storage)=>
+        storage.getStorageDriver
+      case None=>
+        None
+    })
+
+    maybeStorageDriverFuture.flatMap({
+      case Some(storagedriver)=>
+        this.getFullPath.map(fullpath=>Right(storagedriver.deleteFileAtPath(fullpath)))
+      case None=>
+        Future(Left("No storage driver configured for storage"))
+    })
+  }
+
+  def deleteSelf(implicit db:slick.driver.JdbcProfile#Backend#Database):Future[Either[Throwable, Unit]] = {
+    /* attempt to delete the underlying record from the database */
+    id match {
+      case Some(databaseId)=>
+        Logger.info(s"Deleting database record for file $databaseId ($filepath on storage $storageId)")
+        db.run(
+          TableQuery[FileEntryRow].filter(_.id===databaseId).delete.asTry
+        ).map({
+          case Success(rowsAffected)=>Right()
+          case Failure(error)=>Left(error)
+        })
+      case None=>
+        Future(Left(new RuntimeException("Cannot delete a record that has not been saved to the database")))
+    }
   }
 }
 

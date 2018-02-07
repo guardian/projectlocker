@@ -81,7 +81,7 @@ trait GenericDatabaseObjectController[M] extends Controller {
     )
   }
 
-  def delete(requestedId: Int) = Action.async { request =>
+  def deleteAction(requestedId: Int) = {
     if(requestedId<0)
       Future(Conflict(Json.obj("status"->"error","detail"->"This is still referenced by sub-objects")))
     else
@@ -99,5 +99,9 @@ trait GenericDatabaseObjectController[M] extends Controller {
           else
             InternalServerError(Json.obj("status"->"error","detail"->error.toString))
       })
+  }
+
+  def delete(requestedId: Int) = Action.async { request =>
+    deleteAction(requestedId)
   }
 }

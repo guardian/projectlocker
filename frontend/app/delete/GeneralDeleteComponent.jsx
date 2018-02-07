@@ -46,6 +46,11 @@ class GeneralDeleteComponent extends React.Component {
         this.context.router.history.goBack();
     }
 
+    informationPara() {
+        return <p className="information">The following {this.itemClass} will be PERMANENTLY deleted, if you click the
+            Delete button below.  Do you want to continue?</p>
+    }
+
     render(){
         if(this.state.error) return <ErrorViewComponent error={this.state.error}/>;
 
@@ -53,8 +58,7 @@ class GeneralDeleteComponent extends React.Component {
 
         return <div>
             <h3>Delete {this.itemClass}</h3>
-            <p className="information">The following {this.itemClass} will be PERMANENTLY deleted, if you click the
-            Delete button below.  Do you want to continue?</p>
+            {this.informationPara()}
             {this.getSummary()}
             <span style={{float: "right"}}><button id="deleteButton" onClick={this.confirmClicked}>Delete</button></span>
             <span style={{float: "left"}}><button id="cancelButton" onClick={this.cancelClicked}>Cancel</button></span>

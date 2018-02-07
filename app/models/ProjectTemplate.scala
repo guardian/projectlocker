@@ -27,14 +27,14 @@ trait ProjectTemplateSerializer {
 }
 
 case class ProjectTemplate (id: Option[Int],name: String, projectTypeId: Int, fileRef: Int) {
-  def projectType(implicit db: JdbcBackend.Database):Future[ProjectType] = db.run(
+  def projectType(implicit db: slick.driver.JdbcProfile#Backend#Database):Future[ProjectType] = db.run(
     TableQuery[ProjectTypeRow].filter(_.id===projectTypeId).result.asTry
   ).map({
     case Success(result)=>result.head
     case Failure(error)=>throw error
   })
 
-  def file(implicit db: JdbcBackend.Database):Future[FileEntry] = db.run(
+  def file(implicit db:slick.driver.JdbcProfile#Backend#Database):Future[FileEntry] = db.run(
     TableQuery[FileEntryRow].filter(_.id===fileRef).result.asTry
   ).map({
     case Success(result)=>result.head

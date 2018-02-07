@@ -16,7 +16,8 @@ class ProjectTemplateIndex extends GeneralListComponent {
             GeneralListComponent.standardColumn("Name","name"),
             GeneralListComponent.standardColumn("Project type", "projectType"),
             GeneralListComponent.standardColumn("Filepath", "filepath"),
-            GeneralListComponent.standardColumn("Storage","storage")
+            GeneralListComponent.standardColumn("Storage","storage"),
+            this.actionIcons()
         ];
     }
 
