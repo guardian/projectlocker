@@ -1,6 +1,11 @@
 import React from 'react';
+import PropTypes from 'prop-types';
 
 class ErrorViewComponent extends React.Component {
+    static propTypes = {
+        error: PropTypes.object.isRequired
+    };
+
     /* expects axios error response in props.error */
     constructor(props){
         super(props);

@@ -28,7 +28,7 @@ class StorageCompletionComponent extends React.Component {
             rootpath: this.props.rootpath,
             storageType: selectedStorage.name,
             host: this.props.loginDetails.hostname,
-            port: this.props.loginDetails.port ? parseInt(this.props.loginDetails.port) : "",
+            port: this.props.loginDetails.port ? parseInt(this.props.loginDetails.port) : null,
             user: this.props.loginDetails.username,
             password: this.props.loginDetails.password
         }

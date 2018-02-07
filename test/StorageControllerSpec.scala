@@ -41,7 +41,7 @@ class StorageControllerSpec extends GenericControllerSpec {
 
 
   override val testGetId: Int = 1
-  override val testGetDocument: String = """{"storageType": "filesystem", "user": "me"}"""
+  override val testGetDocument: String = """{"storageType": "Local", "user": "me"}"""
   override val testCreateDocument: String =  """{"storageType": "ftp", "user": "tests"}"""
   override val testDeleteId: Int = 4
   override val testConflictId: Int = 2

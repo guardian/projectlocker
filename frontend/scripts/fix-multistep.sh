@@ -8,7 +8,7 @@
 
 cd node_modules/react-multistep
 if [ -f src/index.jsx ]; then
-    echo It looks like react-multistep has already been modified and compiled. Not continuing.
+    echo It looks like react-multistep has already been modified and compiled. Moving on.
     exit 0
 fi
 

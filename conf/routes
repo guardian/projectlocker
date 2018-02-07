@@ -6,9 +6,9 @@ GET     /                           controllers.Application.index(path="/")
 
 GET     /api/file                          @controllers.Files.list
 PUT     /api/file                          @controllers.Files.create
+PUT     /api/file/:id/content              @controllers.Files.uploadContent(id: Int)
 GET     /api/file/:id                      @controllers.Files.getitem(id: Int)
 PUT     /api/file/:id                      @controllers.Files.update(id: Int)
-# PUT     /api/file/:id/content              @controllers.Files.uploadContent(id: Int)
 DELETE  /api/file/:id                      @controllers.Files.delete(id: Int)
 
 GET     /api/storage                       @controllers.StoragesController.list
