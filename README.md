@@ -18,14 +18,14 @@ Development
 - You need a version 1.8+ JDK.  On  Linux this is normally as simple as `apt-get install openjdk-8-jdk` or the yum equivalent
 - You need to set up the test database before the tests will work: `sudo -u postgres ./scripts/create_dev_db.sh` (**Note**: if installing through homebrew, postgres runs as the current user so the `sudo -u postgres` part is not required)
 
-###Backend
+### Backend
 
 - The backend is a Scala play project.  IDEs like Intellij IDEA can load this directly and have all of the tools needed to build and test.
 - If you want to do this from the terminal, you'll need to have the Scala Built tool installed: `wget https://dl.bintray.com/sbt/debian/sbt-0.13.12.deb && sudo dpkg -i sbt-0.13.12.deb`
 - You can then run the backend tests: `sbt test`.  **Note**: after each invokation of the backend tests, you should run `scripts/blank_test_db.sh` to reset the tests database so that the next invokation will run correctly.
 - If the tests fail, check that you have set up the projectlocker_test database properly (see previous section, and also check `circle.yml` to see how the CI environment does it)
 
-###Frontend
+### Frontend
 
 - The frontend is written in ES2016 javascript using React JSX.  To run in a browser, it's transpiled with Babel and bundled with Webpack
 - I'd recommend installing yarn to manage javascript dependencies: see `https://yarnpkg.com/lang/en/docs/install/`
