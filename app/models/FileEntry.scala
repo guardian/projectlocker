@@ -1,20 +1,24 @@
 package models
 
+import java.io.FileInputStream
 import java.nio.file.{Path, Paths}
 
 import org.joda.time.DateTime
 import slick.driver.PostgresDriver.api._
 import java.sql.Timestamp
 
+import drivers.StorageDriver
 import play.api.Logger
 import play.api.libs.functional.syntax._
 import play.api.libs.json.Reads.jodaDateReads
 import play.api.libs.json.Writes.jodaDateWrites
 import play.api.libs.json._
+import play.api.mvc.{RawBuffer, Result}
 import slick.jdbc.JdbcBackend
+import slick.lifted.TableQuery
 
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.util.{Failure, Success}
+import scala.util.{Failure, Success, Try}
 import scala.concurrent.{Await, Future}
 
 case class FileEntry(id: Option[Int], filepath: String, storageId: Int, user:String,version:Int,
@@ -71,6 +75,60 @@ case class FileEntry(id: Option[Int], filepath: String, storageId: Int, user:Str
       case None=>
         Future(Left(new RuntimeException("Cannot delete a record that has not been saved to the database")))
     }
+  }
+
+  private def writeContent(buffer: RawBuffer, storageDriver:StorageDriver):Try[Unit] =
+    buffer.asBytes() match {
+      case Some(bytes) => //the buffer is held in memory
+        Logger.debug("uploadContent: writing memory buffer")
+        storageDriver.writeDataToPath(filepath, bytes.toArray)
+        Success(Unit)
+      case None => //the buffer is on-disk
+        Logger.debug("uploadContent: writing disk buffer")
+        val fileInputStream = new FileInputStream(buffer.asFile)
+        storageDriver.writeDataToPath(filepath, fileInputStream)
+        fileInputStream.close()
+        Success(Unit)
+    }
+
+  def updateFileHasContent(implicit db:slick.driver.JdbcProfile#Backend#Database) = {
+    val updateFileref = this.copy(hasContent = true)
+
+    db.run(
+      TableQuery[FileEntryRow].filter(_.id===this.id.get).update(updateFileref).asTry
+    )
+  }
+
+  /* Asynchronously writes the given buffer to this file*/
+  def writeToFile(buffer: RawBuffer)(implicit db:slick.driver.JdbcProfile#Backend#Database):Future[Try[Unit]] = {
+    val storageResult = this.storage
+
+    storageResult.map({
+      case Some(storage) =>
+        storage.getStorageDriver match {
+          case Some(storageDriver) =>
+            try {
+              val outputPath = Paths.get(storage.rootpath.getOrElse(""), this.filepath)
+              Logger.info(s"Writing to ${outputPath} with $storageDriver")
+              val response = this.writeContent(buffer, storageDriver)
+              this.updateFileHasContent
+              response
+            } catch {
+              case ex: Exception =>
+                Logger.error("Unable to write file: ", ex)
+                //InternalServerError(Json.obj("status" -> "error", "detail" -> s"Unable to write file: ${ex.toString}"))
+                Failure(ex)
+            }
+          case None =>
+            Logger.error(s"No storage driver available for storage ${this.storageId}")
+            //InternalServerError(Json.obj("status" -> "error", "detail" -> s"No storage driver available for storage ${fileRef.storageId}"))
+            Failure(new RuntimeException(s"No storage driver available for storage ${this.storageId}"))
+        }
+      case None =>
+        Logger.error(s"No storage could be found for ID ${this.storageId}")
+        //InternalServerError(Json.obj("status" -> "error", "detail" -> s"No storage could be found for ID ${fileRef.storageId}"))
+        Failure(new RuntimeException(s"No storage could be found for ID ${this.storageId}"))
+    })
   }
 }
 
