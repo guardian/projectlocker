@@ -17,6 +17,7 @@ import TypeDeleteComponent from './delete/TypeDeleteComponent.jsx';
 
 import ProjectTemplateIndex from './ProjectTemplateIndex.jsx';
 import ProjectTemplateMultistep from './multistep/ProjectTemplateMultistep.jsx';
+import ProjectTemplateDeleteComponent from './delete/ProjectTemplateDeleteComponent.jsx';
 
 window.React = require('react');
 
@@ -38,6 +39,7 @@ class App extends React.Component {
                         <Route path="/storage/:itemid/delete" component={StorageDeleteComponent}/>
                         <Route path="/storage/:itemid" component={StorageMultistep}/>
                         <Route path="/storage/" component={StorageListComponent}/>
+                        <Route path="/template/:itemid/delete" component={ProjectTemplateDeleteComponent}/>
                         <Route path="/template/:itemid" component={ProjectTemplateMultistep}/>
                         <Route path="/template/" component={ProjectTemplateIndex}/>
                         <Route path="/file/:itemid" component={FileEntryList}/>

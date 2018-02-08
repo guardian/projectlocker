@@ -1,6 +1,6 @@
 package controllers
 
-import com.google.inject.Inject
+import javax.inject.Inject
 import models._
 import play.api.Configuration
 import play.api.db.slick.DatabaseConfigProvider

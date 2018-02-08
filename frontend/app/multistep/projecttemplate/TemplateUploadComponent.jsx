@@ -4,7 +4,6 @@ import axios from 'axios';
 import CommonMultistepComponent from '../common/CommonMultistepComponent.jsx';
 import ErrorViewComponent from '../common/ErrorViewComponent.jsx';
 import UploadingThrobber from '../common/UploadingThrobber.jsx';
-import moment from 'moment';
 
 class TemplateUploadComponent extends CommonMultistepComponent {
     static propTypes = {
@@ -57,7 +56,9 @@ class TemplateUploadComponent extends CommonMultistepComponent {
                         user: "",
                         ctime: nowtime,
                         mtime: nowtime,
-                        atime: nowtime
+                        atime: nowtime,
+                        hasContent: false,
+                        hasLink: false
                     }
                 }).then(response=>{
                     this.setState({fileId: response.data.id}, ()=>resolve(response.data));

@@ -43,6 +43,9 @@ trait GenericControllerSpec extends Specification {
   val testConflictId:Int
   val minimumNewRecordId:Int
 
+  val expectedDeleteStatus = "ok"
+  val expectedDeleteDetail = "deleted"
+
   //can over-ride bindings here. see https://www.playframework.com/documentation/2.5.x/ScalaTestingWithGuice
   val application:Application = new GuiceApplicationBuilder()
     .overrides(bind[DatabaseConfigProvider].to[TestDatabase.testDbProvider])
@@ -111,8 +114,8 @@ trait GenericControllerSpec extends Specification {
 
       status(response) must equalTo(OK)
       val jsondata = Await.result(bodyAsJsonFuture(response), 5.seconds).as[JsValue]
-      (jsondata \ "status").as[String] must equalTo("ok")
-      (jsondata \ "detail").as[String] must equalTo("deleted")
+      (jsondata \ "status").as[String] must equalTo(expectedDeleteStatus)
+      (jsondata \ "detail").as[String] must equalTo(expectedDeleteDetail)
       (jsondata \ "id").as[Int] must equalTo(testDeleteId)
     }
 

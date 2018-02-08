@@ -1,13 +1,15 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import axios from 'axios';
-//import SummaryComponent from './SummaryComponent.jsx';
+import SummaryComponent from './SummaryComponent.jsx';
 import ErrorViewComponent from '../common/ErrorViewComponent.jsx';
 
 class TemplateCompletionComponent extends React.Component {
     static propTypes ={
         currentEntry: PropTypes.number.isRequired,
-        template: PropTypes.object.isRequired
+        fileId: PropTypes.number.isRequired,
+        projectType: PropTypes.number.isRequired,
+        name: PropTypes.string.isRequired
     };
 
     constructor(props){
@@ -26,8 +28,7 @@ class TemplateCompletionComponent extends React.Component {
 
         axios.put(restUrl,this.requestContent()).then(
             (response)=>{
-                this.setState({inProgress: false});
-                window.location.assign('/template/');
+                this.setState({inProgress: false}, ()=>window.location.assign('/template/'));
             }
         ).catch(
             (error)=>{
@@ -40,7 +41,9 @@ class TemplateCompletionComponent extends React.Component {
     requestContent(){
         /* returns an object of keys/values to send to the server for saving */
         return {
-
+            name: this.props.name,
+            projectTypeId: this.props.projectType,
+            fileRef: this.props.fileId
         }
     }
 
@@ -48,6 +51,7 @@ class TemplateCompletionComponent extends React.Component {
         return(<div>
             <h3>Set up storage</h3>
             <p className="information">We will set up a new project template definition with the information below.</p>
+            <SummaryComponent fileId={this.props.fileId} projectType={this.props.projectType} name={this.props.name}/>
             <p className="information">Press "Confirm" to go ahead, or press Previous if you need to amend any details.</p>
             <ErrorViewComponent error={this.state.error}/>
             <span style={{float: "right"}}><button onClick={this.confirmClicked}>Confirm</button></span>

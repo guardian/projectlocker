@@ -1,8 +1,8 @@
 package controllers
 
 import java.io._
+import javax.inject.Inject
 
-import com.google.inject.Inject
 import drivers.StorageDriver
 import play.api.{Configuration, Logger}
 import play.api.db.slick.DatabaseConfigProvider
@@ -15,7 +15,8 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import models._
 import slick.lifted.TableQuery
 
-import scala.concurrent.Future
+import scala.concurrent.{Future,CanAwait}
+import scala.concurrent.duration._
 import scala.util.{Failure, Success}
 
 
@@ -67,6 +68,14 @@ class Files @Inject() (configuration: Configuration, dbConfigProvider: DatabaseC
           BadRequest(Json.obj("status" -> "error", "detail" -> "No upload payload"))
       }
 
+  def updateFileHasContent(fileRef: FileEntry) = {
+    val updateFileref = fileRef.copy(hasContent = true)
+
+    dbConfig.db.run(
+      TableQuery[FileEntryRow].filter(_.id===fileRef.id.get).update(updateFileref).asTry
+    )
+  }
+
   def uploadContent(requestedId: Int) = Action.async(parse.anyContent) { request=>
     dbConfig.db.run(
       TableQuery[FileEntryRow].filter(_.id === requestedId).result.asTry
@@ -86,7 +95,9 @@ class Files @Inject() (configuration: Configuration, dbConfigProvider: DatabaseC
                 case Some(storageDriver) =>
                   try {
                     Logger.info(s"Writing to ${fileRef.filepath} with $storageDriver")
-                    writeContentIfPossible(fileRef.filepath, request.body.asRaw, storageDriver)
+                    val response = writeContentIfPossible(fileRef.filepath, request.body.asRaw, storageDriver)
+                    updateFileHasContent(fileRef)
+                    response
                   } catch {
                     case ex: Exception =>
                       Logger.error("Unable to write file: ", ex)

@@ -44,11 +44,11 @@ describe("ProjectTypeCompletionComponent", ()=>{
                 status: 200,
                 response: {'status': 'ok'}
             }).then(() => {
-                assert(window.location.assign.calledWith('/projecttype/'));
+                assert(window.location.assign.calledWith('/type/'));
                 done();
             }).catch(error=>{
                 console.error(error);
-                done(error);
+                done.fail(error);
             })
         });
     })

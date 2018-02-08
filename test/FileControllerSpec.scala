@@ -9,13 +9,17 @@ import testHelpers.TestDatabase
 import scala.concurrent.{Await, Future}
 import scala.concurrent.duration._
 import scala.io.Source
+import models.{FileEntry, FileEntryRow}
+import slick.jdbc.JdbcProfile
 
+import scala.util.{Failure, Success}
 /**
  * Add your spec here.
  * You can mock out a whole application including requests, plugins etc.
  * For more information, consult the wiki.
  */
 import play.api.libs.json._
+import scala.concurrent.ExecutionContext.Implicits.global
 
 @RunWith(classOf[JUnitRunner])
 class FileControllerSpec extends GenericControllerSpec  {
@@ -36,11 +40,48 @@ class FileControllerSpec extends GenericControllerSpec  {
   }
 
   override val testGetId: Int = 1
-  override val testGetDocument: String = """{"filepath":"/path/to/a/video.mxf","storage":2,"user":"me","version":1,"ctime":"2017-01-17T16:55:00.123+0000","mtime":"2017-01-17T16:55:00.123+0000","atime":"2017-01-17T16:55:00.123+0000"}"""
-  override val testCreateDocument: String =  """{"filepath":"/path/to/some/other.project","storage":1,"user":"test","version":3,"ctime":"2017-03-17T13:51:00.123+0000","mtime":"2017-03-17T13:51:00.123+0000","atime":"2017-03-17T13:51:00.123+0000"}"""
+  override val testGetDocument: String = """{"filepath":"/path/to/a/video.mxf","storage":2,"user":"me","version":1,"ctime":"2017-01-17T16:55:00.123+0000","mtime":"2017-01-17T16:55:00.123+0000","atime":"2017-01-17T16:55:00.123+0000", "hasContent": false, "hasLink": false}"""
+  override val testCreateDocument: String =  """{"filepath":"/path/to/some/other.project","storage":1,"user":"test","version":3,"ctime":"2017-03-17T13:51:00.123+0000","mtime":"2017-03-17T13:51:00.123+0000","atime":"2017-03-17T13:51:00.123+0000", "hasContent": false, "hasLink": false}"""
   override val minimumNewRecordId = 4
   override val testDeleteId: Int = 3
   override val testConflictId: Int = 1
+
+
+  "updateFileHasContent" should {
+    "update an existing database record" in {
+      val injector = application.injector
+
+      val fileController = injector.instanceOf(classOf[controllers.Files])
+      val dbConfigProvider = injector.instanceOf(classOf[DatabaseConfigProvider])
+      val db = dbConfigProvider.get[JdbcProfile].db
+
+      val testFileEntryBeforeFuture = FileEntry.entryFor(1, db).map(_.get)
+      val fileEntryBefore = Await.result(testFileEntryBeforeFuture,10.seconds)
+      fileEntryBefore.hasContent mustEqual false
+
+      val resultFuture = testFileEntryBeforeFuture.flatMap(fileEntry=>fileController.updateFileHasContent(fileEntry))
+      val finalResult = Await.result(resultFuture,10.seconds)
+
+      finalResult mustEqual Success(1)  //expect 1 row updated
+      val testFileEntryAfterFuture = FileEntry.entryFor(1, db).map(_.get)
+
+      val fileEntryAfter = Await.result(testFileEntryAfterFuture, 10.seconds)
+      fileEntryAfter.hasContent mustEqual true
+    }
+
+    "return None if the record does not exist" in {
+      val injector = application.injector
+
+      val fileController = injector.instanceOf(classOf[controllers.Files])
+      val dbConfigProvider = injector.instanceOf(classOf[DatabaseConfigProvider])
+      val db = dbConfigProvider.get[JdbcProfile].db
+
+      val testFileEntryBeforeFuture = FileEntry.entryFor(9999, db)
+      val result = Await.result(testFileEntryBeforeFuture, 10.seconds)
+      result must beNone
+
+    }
+  }
 }
 
 
@@ -78,4 +119,5 @@ class FileControllerPlaySpec extends PlaySpecification {
       writtenContent mustEqual testbuffer
     }
   }
+
 }

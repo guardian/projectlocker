@@ -2,7 +2,7 @@ package testHelpers
 
 import java.sql.SQLTransientConnectionException
 
-import com.google.inject.Inject
+import javax.inject.Inject
 import models._
 import play.api.{Application, Logger}
 import play.api.db.slick.DatabaseConfigProvider

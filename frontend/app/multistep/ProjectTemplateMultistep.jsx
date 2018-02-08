@@ -17,6 +17,7 @@ class ProjectTemplateMultistep extends CommonMultistepComponent
             currentEntry: null,
             error: null,
             fileId: null,
+            name: "",
             storages: []
         }
     }
@@ -44,7 +45,7 @@ class ProjectTemplateMultistep extends CommonMultistepComponent
         const steps = [
             {
                 name: 'Project Type',
-                component: <TypeSelectorComponent projectTypes={this.state.projectTypes} valueWasSet={(type)=>this.setState({selectedType: type})}/>
+                component: <TypeSelectorComponent projectTypes={this.state.projectTypes} valueWasSet={(nameAndType)=>this.setState({selectedType: nameAndType.selectedType, name: nameAndType.name})}/>
             },
             {
                 name: 'Upload template',
@@ -52,7 +53,7 @@ class ProjectTemplateMultistep extends CommonMultistepComponent
             },
             {
                 name: 'Confirm',
-                component: <TemplateCompletionComponent currentEntry={this.state.currentEntry} template={this.state.template}/>
+                component: <TemplateCompletionComponent currentEntry={this.state.currentEntry} fileId={this.state.selectedFileId} name={this.state.name} projectType={this.state.selectedType}/>
             }
         ];
         return(<Multistep showNavigation={true} steps={steps}/>);
