@@ -1,6 +1,11 @@
 import React from 'react';
+import PropTypes from 'prop-types';
 
 class StorageSubfolderComponent extends React.Component {
+    static propTypes = {
+        valueWasSet: PropTypes.func.isRequired
+    };
+
     constructor(props){
         super(props);
 
@@ -9,9 +14,6 @@ class StorageSubfolderComponent extends React.Component {
         }
     }
 
-    componentDidUpdate(prevProps,prevState){
-        if(prevState!=this.state) this.props.valueWasSet(this.state.subfolder);
-    }
 
     render() {
         const selectedStorage = this.props.strgTypes[this.props.selectedType];
@@ -29,7 +31,7 @@ class StorageSubfolderComponent extends React.Component {
                     <tbody>
                     <tr>
                         <td>Subfolder path</td>
-                        <td><input onChange={(event)=>this.setState({subfolder: event.target.value})}/></td>
+                        <td><input onChange={(event)=>this.props.valueWasSet(event.target.value)}/></td>
                     </tr>
                     </tbody>
                 </table>

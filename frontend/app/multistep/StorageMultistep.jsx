@@ -14,7 +14,7 @@ class StorageMultistep extends React.Component {
         this.state = {
             strgTypes: [],
             selectedType: 0,
-            subfolder: "",
+            rootpath: "",
             loginDetails: {}
         }
     }
@@ -52,7 +52,7 @@ class StorageMultistep extends React.Component {
                 component: <StorageSubfolderComponent currentStorage={this.props.currentEntry}
                                                       strgTypes={this.state.strgTypes}
                                                       selectedType={this.state.selectedType}
-                                                      valueWasSet={(value)=>this.setState({subfolder: value})}/>
+                                                      valueWasSet={(value)=>this.setState({rootpath: value})}/>
             },
             {
                 name: 'Confirm',
@@ -60,7 +60,7 @@ class StorageMultistep extends React.Component {
                                                        strgTypes={this.state.strgTypes}
                                                        selectedType={this.state.selectedType}
                                                        loginDetails={this.state.loginDetails}
-                                                       subfolder={this.state.subfolder}/>
+                                                       rootpath={this.state.rootpath}/>
             }
         ];
         return(<Multistep showNavigation={true} steps={steps}/>);
