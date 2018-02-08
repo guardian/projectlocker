@@ -8,6 +8,7 @@ import models.StorageEntry
 import play.api.Logger
 
 import scala.io.Source
+import scala.util.Try
 
 /**
   * Implements a storage driver for regular file paths
@@ -47,5 +48,15 @@ class PathStorage(override val storageRef:StorageEntry) extends StorageDriver{
     val f = this.fileForPath(path)
     Logger.info(s"Deleting file at ${f.getAbsolutePath}")
     f.delete()
+  }
+
+  override def getWriteStream(path: String): Try[OutputStream] = Try {
+    val f = this.fileForPath(path)
+    new BufferedOutputStream(new FileOutputStream(f))
+  }
+
+  override def getReadStream(path: String): Try[InputStream] = Try {
+    val f = this.fileForPath(path)
+    new BufferedInputStream(new FileInputStream(f))
   }
 }

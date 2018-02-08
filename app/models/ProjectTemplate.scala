@@ -3,10 +3,10 @@ import play.api.libs.functional.syntax._
 import play.api.libs.json.{JsPath, Reads, Writes}
 import slick.driver.PostgresDriver.api._
 import slick.jdbc.JdbcBackend
+import slick.lifted.TableQuery
 
 import scala.concurrent.Future
 import scala.util.{Failure, Success}
-
 import scala.concurrent.ExecutionContext.Implicits.global
 
 trait ProjectTemplateSerializer {
@@ -52,4 +52,19 @@ class ProjectTemplateRow(tag: Tag) extends Table[ProjectTemplate](tag,"ProjectTe
   def fkFileRef=foreignKey("fk_FileRef",fileRef,TableQuery[FileEntryRow])(_.id)
 
   def * = (id.?, name, projectType, fileRef) <> (ProjectTemplate.tupled, ProjectTemplate.unapply)
+}
+
+object ProjectTemplateHelper {
+  def entryFor(entryId: Int)(implicit db:slick.driver.JdbcProfile#Backend#Database):Future[Option[ProjectTemplate]] =
+    db.run(
+      TableQuery[ProjectTemplateRow].filter(_.id===entryId).result.asTry
+    ).map({
+      case Success(result)=>
+        if(result.isEmpty) {
+          None
+        } else {
+          Some(result.head)
+        }
+      case Failure(error)=>throw error
+    })
 }

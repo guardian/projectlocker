@@ -3,6 +3,7 @@ package drivers
 import java.io._
 
 import scala.io.Source
+import scala.util.Try
 
 /**
   * Protocol for StorageDriver classes
@@ -17,4 +18,7 @@ trait StorageDriver {
   def writeDataToPath(path:String, data:Array[Byte])
 
   def deleteFileAtPath(path:String):Boolean
+
+  def getReadStream(path:String):Try[InputStream]
+  def getWriteStream(path:String):Try[OutputStream]
 }
