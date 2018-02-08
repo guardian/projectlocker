@@ -65,7 +65,7 @@ case class FileEntry(id: Option[Int], filepath: String, storageId: Int, user:Str
         db.run(
           TableQuery[FileEntryRow].filter(_.id===databaseId).delete.asTry
         ).map({
-          case Success(rowsAffected)=>Right()
+          case Success(rowsAffected)=>Right(Unit)
           case Failure(error)=>Left(error)
         })
       case None=>
