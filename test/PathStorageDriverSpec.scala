@@ -12,6 +12,7 @@ import sys.process._
 
 @RunWith(classOf[JUnitRunner])
 class PathStorageDriverSpec extends Specification with org.specs2.mock.Mockito {
+  sequential
   private val mock_storage = StorageEntry(None,None,"Local",None,None,None,None)
 
   "PathStorageDriver" should {
@@ -33,7 +34,7 @@ class PathStorageDriverSpec extends Specification with org.specs2.mock.Mockito {
       writtenContent mustEqual testbuffer
     }
 
-    "write a BufferedInputStream to file" in {
+    "write an InputStream to file" in {
 
       val s = new PathStorage(mock_storage)
 
@@ -47,6 +48,20 @@ class PathStorageDriverSpec extends Specification with org.specs2.mock.Mockito {
       checksumDest mustEqual checksumSource
     }
 
+    "delete an existing file" in {
+      val s= new PathStorage(mock_storage)
+
+      val testFile=new FileInputStream(new File("public/images/uploading.svg"))
+      s.writeDataToPath("/tmp/testfile4", testFile)
+
+      val fileBefore = new File("/tmp/testfile4")
+      fileBefore.exists must beTrue
+
+      s.deleteFileAtPath("/tmp/testfile4")
+
+      val fileAfter = new File("/tmp/testfile4")
+      fileAfter.exists must beFalse
+    }
 
   }
 }

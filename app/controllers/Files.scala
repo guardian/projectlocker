@@ -72,7 +72,7 @@ class Files @Inject() (configuration: Configuration, dbConfigProvider: DatabaseC
     val updateFileref = fileRef.copy(hasContent = true)
 
     dbConfig.db.run(
-      TableQuery[FileEntryRow].update(fileRef).asTry
+      TableQuery[FileEntryRow].filter(_.id===fileRef.id.get).update(updateFileref).asTry
     )
   }
 

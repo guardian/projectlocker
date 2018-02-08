@@ -22,7 +22,7 @@ case class ProjectEntry (id: Option[Int], fileAssociationId: Int, projectTypeId:
     ).map({
       case Success(result)=>result.map(assocTuple=>FileEntry.entryFor(assocTuple._3, db))
       case Failure(error)=> throw error
-    }).flatMap(Future.sequence(_))
+    }).flatMap(Future.sequence(_)).map(_.flatten)
   }
 }
 

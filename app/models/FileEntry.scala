@@ -75,11 +75,16 @@ case class FileEntry(id: Option[Int], filepath: String, storageId: Int, user:Str
 }
 
 object FileEntry extends ((Option[Int], String, Int, String, Int, Timestamp, Timestamp, Timestamp, Boolean, Boolean)=>FileEntry) {
-  def entryFor(entryId: Int, db: JdbcBackend.Database):Future[FileEntry] =
+  def entryFor(entryId: Int, db:slick.driver.JdbcProfile#Backend#Database):Future[Option[FileEntry]] =
     db.run(
       TableQuery[FileEntryRow].filter(_.id===entryId).result.asTry
     ).map({
-      case Success(result)=>result.head
+      case Success(result)=>
+        if(result.isEmpty) {
+          None
+        } else {
+          Some(result.head)
+        }
       case Failure(error)=>throw error
     })
 }
