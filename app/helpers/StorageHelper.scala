@@ -24,7 +24,7 @@ class StorageHelper {
   }
 
   def copyFile(sourceFile: FileEntry, destFile: FileEntry)
-              (implicit db:slick.jdbc.JdbcBackend#DatabaseDef):Future[Either[Seq[String],FileEntry]] = {
+              (implicit db:slick.driver.JdbcProfile#Backend#Database):Future[Either[Seq[String],FileEntry]] = {
     val storageDriversFuture = Future.sequence(Seq(sourceFile.storage,destFile.storage)).map(results=>{
       val successfulResults = results.flatten.flatMap(_.getStorageDriver)
 
@@ -42,9 +42,9 @@ class StorageHelper {
 
       storageDrivers match {
         case Left(errors)=>Left(errors)
-        case Right(storageDrivers)=>
-          val sourceStorageDriver = storageDrivers.head
-          val destStorageDriver = storageDrivers(1)
+        case Right(actualStorageDrivers)=>
+          val sourceStorageDriver = actualStorageDrivers.head
+          val destStorageDriver = actualStorageDrivers(1)
 
           val sourceFullPath = futures(1).asInstanceOf[Seq[String]].head
           val destFullPath = futures(1).asInstanceOf[Seq[String]](1)
@@ -57,7 +57,7 @@ class StorageHelper {
           if(sourceStreamTry.isFailure || destStreamTry.isFailure){
             Left(Seq(sourceStreamTry.failed.getOrElse("").toString, destStreamTry.failed.getOrElse("").toString))
           } else {
-            //safe, because we've already checked that neither failed
+            //safe, because we've already checked that neither Try failed
             try {
               val bytesCopied = copyStream(sourceStreamTry.get,destStreamTry.get)
               sourceStreamTry.get.close()

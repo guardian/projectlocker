@@ -19,7 +19,7 @@ import scala.concurrent.{Await, Future}
 import scala.concurrent.ExecutionContext.Implicits.global
 
 @RunWith(classOf[JUnitRunner])
-class ProjectCreateHelperSpec extends Specification with Mockito {
+class ProjectCreateHelperImplSpec extends Specification with Mockito {
   //can over-ride bindings here. see https://www.playframework.com/documentation/2.5.x/ScalaTestingWithGuice
   private val application = new GuiceApplicationBuilder()
     .overrides(bind[DatabaseConfigProvider].to[TestDatabase.testDbProvider])
@@ -39,7 +39,7 @@ class ProjectCreateHelperSpec extends Specification with Mockito {
         Future(Right(parameters(1).asInstanceOf[FileEntry]))
       })
 
-      val p = new ProjectCreateHelper { override protected val storageHelper:StorageHelper=mockedStorageHelper }
+      val p = new ProjectCreateHelperImpl { override protected val storageHelper:StorageHelper=mockedStorageHelper }
 
       val request = ProjectRequest("testfile",1,1,"test-user").hydrate
 
@@ -52,6 +52,29 @@ class ProjectCreateHelperSpec extends Specification with Mockito {
       val createResult = Await.result(response, 10.seconds)
 
       createResult must beSuccessfulTry(ProjectEntry(Some(2),1,Timestamp.valueOf(createTime),"test-user"))
+    }
+
+    "return an error in response to an invalid request" in {
+      val mockedStorageHelper = mock[StorageHelper]
+
+      //assume that the copyFile operation works, this is tested elsewhere
+      mockedStorageHelper.copyFile(any[FileEntry],any[FileEntry])(any[JdbcBackend#DatabaseDef]) answers((paramArray,mock)=>{
+        val parameters = paramArray.asInstanceOf[Array[Object]]
+        Future(Right(parameters(1).asInstanceOf[FileEntry]))
+      })
+
+      val p = new ProjectCreateHelperImpl { override protected val storageHelper:StorageHelper=mockedStorageHelper }
+
+      val request = ProjectRequest("testfile",2,1,"test-user").hydrate
+
+      val fullRequest = Await.result(request, 10.seconds)
+      val createTime=LocalDateTime.now()
+
+      println(s"create time is $createTime")
+      val response = p.create(fullRequest.get, Some(createTime))
+      val createResult = Await.result(response, 10.seconds)
+
+      createResult must beFailedTry
     }
   }
 }

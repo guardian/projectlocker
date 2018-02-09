@@ -112,11 +112,16 @@ case class FileEntry(id: Option[Int], filepath: String, storageId: Int, user:Str
     }
 
   def updateFileHasContent(implicit db:slick.driver.JdbcProfile#Backend#Database) = {
-    val updateFileref = this.copy(hasContent = true)
+    id match {
+      case Some(recordId)=>
+        val updateFileref = this.copy (hasContent = true)
 
-    db.run(
-      TableQuery[FileEntryRow].filter(_.id===this.id.get).update(updateFileref).asTry
-    )
+        db.run (
+          TableQuery[FileEntryRow].filter (_.id === recordId).update (updateFileref).asTry
+        )
+      case None=>
+        Future(Failure(new RuntimeException("Can't update a file record that has not been saved")))
+    }
   }
 
   /* Asynchronously writes the given buffer to this file*/
