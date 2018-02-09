@@ -7,9 +7,10 @@ import models.FileEntry
 import play.api.Logger
 
 import scala.concurrent.Future
-import scala.util.Try
+import scala.util.{Failure, Success, Try}
+import scala.concurrent.ExecutionContext.Implicits.global
 
-object StorageHelper {
+class StorageHelper {
   def copyStream(source: InputStream,dest: OutputStream, chunkSize:Int=2048):Int = {
     var count = -1
     var total = 0
@@ -22,7 +23,8 @@ object StorageHelper {
     total
   }
 
-  def copyFile(sourceFile: FileEntry, destFile: FileEntry):Future[Either[Seq[String],Unit]] = {
+  def copyFile(sourceFile: FileEntry, destFile: FileEntry)
+              (implicit db:slick.jdbc.JdbcBackend#DatabaseDef):Future[Either[Seq[String],FileEntry]] = {
     val storageDriversFuture = Future.sequence(Seq(sourceFile.storage,destFile.storage)).map(results=>{
       val successfulResults = results.flatten.flatMap(_.getStorageDriver)
 
@@ -72,11 +74,23 @@ object StorageHelper {
       }
     })
 
-    bytesCopiedFuture.map({
+    val checkFuture = bytesCopiedFuture.map({
       case Left(errors)=>Left(errors)
       case Right(bytesCopied)=>
         Logger.debug(s"Copied $bytesCopied bytes")
         //need to check if the number of bytes copied is the same as the source file. If so return Right() otherwise Left()
+        Right(Unit)
+    })
+
+    checkFuture.flatMap({
+      case Left(errors)=>Future(Left(errors))
+      case Right(nothing)=>
+        destFile.updateFileHasContent.map({
+          case Success(rowsUpdated)=>
+            Right(destFile.copy(hasContent = true))
+          case Failure(error)=>
+            Left(Seq(error.toString))
+        })
     })
   }
 }

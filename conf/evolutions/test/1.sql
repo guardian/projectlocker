@@ -30,7 +30,6 @@ ALTER SEQUENCE "FileEntry_id_seq" OWNED BY "FileEntry".id;
 
 CREATE TABLE "ProjectEntry" (
     id integer NOT NULL,
-    "ProjectFileAssociation" integer NOT NULL,
     "ProjectType" integer NOT NULL,
     created timestamp without time zone NOT NULL,
     "user" character varying NOT NULL
@@ -183,9 +182,6 @@ ALTER TABLE ONLY "ProjectFileAssociation"
 
 ALTER TABLE ONLY "ProjectFileAssociation"
     ADD CONSTRAINT "fk_ProjectEntry" FOREIGN KEY ("ProjectEntry") REFERENCES "ProjectEntry"(id) DEFERRABLE INITIALLY DEFERRED;
-
-ALTER TABLE ONLY "ProjectEntry"
-    ADD CONSTRAINT "fk_ProjectFileAssociation" FOREIGN KEY ("ProjectFileAssociation") REFERENCES "ProjectFileAssociation"(id) ON UPDATE RESTRICT DEFERRABLE INITIALLY DEFERRED;
 
 ALTER TABLE ONLY "ProjectTemplate"
     ADD CONSTRAINT "fk_ProjectType" FOREIGN KEY ("ProjectType") REFERENCES "ProjectType"(id) DEFERRABLE INITIALLY DEFERRED;

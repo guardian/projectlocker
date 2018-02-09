@@ -35,7 +35,6 @@ class PathStorageDriverSpec extends Specification with org.specs2.mock.Mockito {
     }
 
     "write an InputStream to file" in {
-
       val s = new PathStorage(mock_storage)
 
       val testFile=new FileInputStream(new File("public/images/uploading.svg"))

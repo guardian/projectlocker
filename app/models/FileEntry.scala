@@ -24,6 +24,26 @@ import scala.concurrent.{Await, Future}
 case class FileEntry(id: Option[Int], filepath: String, storageId: Int, user:String,version:Int,
                      ctime: Timestamp, mtime: Timestamp, atime: Timestamp, hasContent:Boolean, hasLink:Boolean) {
 
+  /* writes this model into the database, inserting if id is None and returning a fresh object with id set. If an id
+   * was set, then returns the same object. */
+  def save(implicit db: slick.driver.JdbcProfile#Backend#Database):Future[Try[FileEntry]] = id match {
+    case None=>
+      val insertQuery = TableQuery[FileEntryRow] returning TableQuery[FileEntryRow].map(_.id) into ((item,id)=>item.copy(id=Some(id)))
+      db.run(
+        (insertQuery+=this).asTry
+      ).map({
+        case Success(insertResult)=>Success(insertResult.asInstanceOf[FileEntry])  //maybe only intellij needs this?
+        case Failure(error)=>Failure(error)
+      })
+    case Some(realEntityId)=>
+      db.run(
+        TableQuery[FileEntryRow].filter(_.id===realEntityId).update(this).asTry
+      ).map({
+        case Success(rowsAffected)=>Success(this)
+        case Failure(error)=>Failure(error)
+      })
+  }
+
   /* returns a StorageEntry object for the id of the storage of this FileEntry */
   def storage(implicit db: slick.driver.JdbcProfile#Backend#Database):Future[Option[StorageEntry]] = {
     db.run(

@@ -26,7 +26,7 @@ INSERT INTO "ProjectType" (id, name, "opensWith", "targetVersion") VALUES (1, 'P
 INSERT INTO "ProjectType" (id, name, "opensWith", "targetVersion") VALUES (2, 'Prelude 2014 test', 'AdobePrelude.app', '14.0');
 INSERT INTO "ProjectType" (id, name, "opensWith", "targetVersion") VALUES (3, 'Cubase test', 'Cubase.app', '6.0');
 
-INSERT INTO "ProjectEntry" (id, "ProjectFileAssociation", "ProjectType", "created","user") VALUES (1, 1, 1, '2016-12-11 12:21:11.021', 'me');
+INSERT INTO "ProjectEntry" (id, "ProjectType", "created","user") VALUES (1, 1, '2016-12-11 12:21:11.021', 'me');
 SELECT pg_catalog.setval('"ProjectEntry_id_seq"', 2, false);
 
 INSERT INTO "ProjectFileAssociation" (id, "ProjectEntry", "FileEntry") VALUES (1, 1,2);
