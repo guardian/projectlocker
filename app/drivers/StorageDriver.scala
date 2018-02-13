@@ -2,6 +2,7 @@ package drivers
 
 import java.io._
 
+import scala.concurrent.Future
 import scala.io.Source
 import scala.util.Try
 
@@ -21,4 +22,6 @@ trait StorageDriver {
 
   def getReadStream(path:String):Try[InputStream]
   def getWriteStream(path:String):Try[OutputStream]
+
+  def getMetadata(path:String):Map[Symbol,String]
 }

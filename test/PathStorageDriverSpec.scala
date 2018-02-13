@@ -62,5 +62,17 @@ class PathStorageDriverSpec extends Specification with org.specs2.mock.Mockito {
       fileAfter.exists must beFalse
     }
 
+    "return file metadata" in {
+      val testbuffer = "this is my test data"
+      val s = new PathStorage(mock_storage)
+
+      //this method is blocking
+      s.writeDataToPath("/tmp/testfile5", testbuffer.toCharArray.map(_.toByte))
+
+      val metaDict = s.getMetadata("/tmp/testfile5")
+      metaDict.get('size) must beSome("20")
+      metaDict.get('lastModified) must beSome[String]
+      metaDict.get('zzzzz) must beNone
+    }
   }
 }

@@ -62,7 +62,7 @@ class StorageHelper {
               val bytesCopied = copyStream(sourceStreamTry.get,destStreamTry.get)
               sourceStreamTry.get.close()
               destStreamTry.get.close()
-              Right(bytesCopied)
+              Right(Tuple2(bytesCopied,sourceStorageDriver.getMetadata(sourceFullPath)))
             } catch {
               case ex:Throwable=>
                 Left(Seq(ex.toString))
@@ -76,10 +76,16 @@ class StorageHelper {
 
     val checkFuture = bytesCopiedFuture.map({
       case Left(errors)=>Left(errors)
-      case Right(bytesCopied)=>
+      case Right((bytesCopied,metaDict))=>
         Logger.debug(s"Copied $bytesCopied bytes")
         //need to check if the number of bytes copied is the same as the source file. If so return Right() otherwise Left()
-        Right(Unit)
+        val fileSize = metaDict('size).toLong
+        Logger.debug(s"Destination size is $fileSize")
+        if(bytesCopied!=fileSize){
+          Left(Seq(s"Copied file byte size $bytesCopied did not match source file $fileSize"))
+        } else {
+          Right(Unit)
+        }
     })
 
     checkFuture.flatMap({

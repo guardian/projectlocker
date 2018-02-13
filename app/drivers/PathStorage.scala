@@ -2,13 +2,15 @@ package drivers
 
 import java.io._
 import java.nio.file.Paths
+import java.time.{Instant, ZoneId, ZonedDateTime}
 import java.util.NoSuchElementException
 
 import models.StorageEntry
 import play.api.Logger
 
-import scala.io.Source
-import scala.util.Try
+import scala.concurrent.Future
+import scala.util.{Failure, Success, Try}
+import scala.concurrent.ExecutionContext.Implicits.global
 
 /**
   * Implements a storage driver for regular file paths
@@ -55,8 +57,19 @@ class PathStorage(override val storageRef:StorageEntry) extends StorageDriver{
     new BufferedOutputStream(new FileOutputStream(f))
   }
 
-  override def getReadStream(path: String): Try[InputStream] = Try {
+  override def getReadStream(path: String): Try[InputStream] = {
     val f = this.fileForPath(path)
-    new BufferedInputStream(new FileInputStream(f))
+    if(f.exists())
+      Success(new BufferedInputStream(new FileInputStream(f)))
+    else
+      Failure(new RuntimeException(s"Path $path does not exist"))
+  }
+
+  override def getMetadata(path: String): Map[Symbol, String] = {
+    val f = this.fileForPath(path)
+    Map(
+      'size->f.length().toString,
+      'lastModified->ZonedDateTime.ofInstant(Instant.ofEpochSecond(f.lastModified()),ZoneId.systemDefault()).toString
+    )
   }
 }
