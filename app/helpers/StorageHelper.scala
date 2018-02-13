@@ -11,6 +11,14 @@ import scala.util.{Failure, Success, Try}
 import scala.concurrent.ExecutionContext.Implicits.global
 
 class StorageHelper {
+  /**
+    * Internal method to copy from one stream to another, independent of the stream implementation.
+    * Note that this method is blocking.
+    * @param source [[java.io.InputStream]] instance to copy from
+    * @param dest [[java.io.OutputStream]] instance to copy to
+    * @param chunkSize [[Int]] representing the amount of data to be buffered in memory. Defaults to 2Kbyte.
+    * @return [[Int]] representing the number of bytes copied
+    */
   def copyStream(source: InputStream,dest: OutputStream, chunkSize:Int=2048):Int = {
     var count = -1
     var total = 0
@@ -23,6 +31,16 @@ class StorageHelper {
     total
   }
 
+  /**
+    * Copies from the file represented by sourceFile to the (non-existing) file represented by destFile.
+    * Both should have been saved to the database before calling this method.  The files do not need to be on the same
+    * storage type
+    * @param sourceFile - [[models.FileEntry]] instance representing file to copy from
+    * @param destFile - [[models.FileEntry]] instance representing file to copy to
+    * @param db - database instance, usually passed implicitly.
+    * @return [[Future[Either[Seq[String],FileEntry]] - a future containing either a list of strings giving failure reasons or a
+    *        new, updated [[models.FileEntry]] representing @destFile
+    */
   def copyFile(sourceFile: FileEntry, destFile: FileEntry)
               (implicit db:slick.driver.JdbcProfile#Backend#Database):Future[Either[Seq[String],FileEntry]] = {
     val storageDriversFuture = Future.sequence(Seq(sourceFile.storage,destFile.storage)).map(results=>{
@@ -60,9 +78,13 @@ class StorageHelper {
             //safe, because we've already checked that neither Try failed
             try {
               val bytesCopied = copyStream(sourceStreamTry.get,destStreamTry.get)
+              Logger.debug(s"copied $sourceFullPath to $destFullPath: $bytesCopied bytes")
               sourceStreamTry.get.close()
               destStreamTry.get.close()
-              Right(Tuple2(bytesCopied,sourceStorageDriver.getMetadata(sourceFullPath)))
+              if(bytesCopied==0)
+                Left(Seq(s"could not copy $sourceFullPath to $destFullPath - empty file"))
+              else
+                Right(Tuple2(bytesCopied,sourceStorageDriver.getMetadata(sourceFullPath)))
             } catch {
               case ex:Throwable=>
                 Left(Seq(ex.toString))
