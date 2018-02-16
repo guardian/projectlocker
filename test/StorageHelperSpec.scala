@@ -2,7 +2,7 @@ import java.io._
 import java.sql.Timestamp
 import java.time.LocalDateTime
 
-import drivers.PathStorage
+import drivers.{PathStorage, StorageDriver}
 import helpers.StorageHelper
 import models.{FileEntry, StorageEntry}
 import org.apache.commons.io.input.NullInputStream
@@ -80,8 +80,8 @@ class StorageHelperSpec extends Specification with Mockito with TestDatabaseAcce
         val result = Await.result(realStorageHelper.copyFile(savedSource, savedDest), 10.seconds)
         result must beRight(savedDest.copy(hasContent = true))
       } finally { // ensure that test files get deleted. if you don't use try/finally, then if either of these fails the whole test does
-        /*new File(testFileNameSrc).delete()
-        new File(testFileNameDest).delete()*/
+        new File(testFileNameSrc).delete()
+        new File(testFileNameDest).delete()
       }
     }
 
@@ -190,5 +190,84 @@ class StorageHelperSpec extends Specification with Mockito with TestDatabaseAcce
       }
     }
 
+  }
+
+  "StorageHelper.doByteCopy" should {
+    "return an error if getting the source stream failed" in {
+      val mockStorageDriver = mock[PathStorage]
+
+      val sourceStreamTry = Failure(new RuntimeException("Kaboom!"))
+      val destStreamTry = Success(mock[FileOutputStream])
+
+      val h = new StorageHelper {
+        def testDoByteCopy(sourceStorageDriver:StorageDriver,
+                           sourceStreamTry:Try[InputStream], destStreamTry:Try[OutputStream],
+                           sourceFullPath:String, destFullPath: String) =
+          doByteCopy(sourceStorageDriver,sourceStreamTry,destStreamTry,sourceFullPath,destFullPath)
+      }
+
+      val result = h.testDoByteCopy(mockStorageDriver, sourceStreamTry,destStreamTry,"/source","/dest")
+
+      result must beLeft
+      println(result.left.get)
+      result.left.get.length mustEqual 2
+      result.left.get.head mustEqual "java.lang.RuntimeException: Kaboom!"
+      result.left.get(1) mustEqual ""
+    }
+
+    "return an error if getting the destination stream failed" in {
+      val mockStorageDriver = mock[PathStorage]
+
+      val sourceStreamTry = Success(mock[FileInputStream])
+      val destStreamTry = Failure(new RuntimeException("Kaboom!"))
+
+      val h = new StorageHelper {
+        /**
+          * helper to call through to protected method
+          */
+        def testDoByteCopy(sourceStorageDriver:StorageDriver,
+                           sourceStreamTry:Try[InputStream], destStreamTry:Try[OutputStream],
+                           sourceFullPath:String, destFullPath: String) =
+          doByteCopy(sourceStorageDriver,sourceStreamTry,destStreamTry,sourceFullPath,destFullPath)
+      }
+
+      val result = h.testDoByteCopy(mockStorageDriver, sourceStreamTry,destStreamTry,"/source","/dest")
+
+      result must beLeft
+      println(result.left.get)
+      result.left.get.length mustEqual 2
+      result.left.get.head mustEqual ""
+      result.left.get(1) mustEqual "java.lang.RuntimeException: Kaboom!"
+    }
+
+    "catch and pass along any exception thrown from copyStream as a Left stringvalue" in {
+      val mockStorageDriver = mock[PathStorage]
+
+      val sourceStreamTry = Success(mock[FileInputStream])
+      val destStreamTry = Success(mock[FileOutputStream])
+
+      val h = new StorageHelper {
+        /**
+          * stub implementation to throw exception
+          */
+        override def copyStream(source: InputStream, dest: OutputStream, chunkSize: Int): Int = {
+          throw new RuntimeException("**raspberry**")
+        }
+        /**
+          * helper to call through to protected method
+          */
+        def testDoByteCopy(sourceStorageDriver:StorageDriver,
+                           sourceStreamTry:Try[InputStream], destStreamTry:Try[OutputStream],
+                           sourceFullPath:String, destFullPath: String) =
+          doByteCopy(sourceStorageDriver,sourceStreamTry,destStreamTry,sourceFullPath,destFullPath)
+      }
+
+      val result = h.testDoByteCopy(mockStorageDriver, sourceStreamTry,destStreamTry,"/source","/dest")
+
+      result must beLeft
+      println(result.left.get)
+      result.left.get.length mustEqual 1
+      result.left.get.head mustEqual "java.lang.RuntimeException: **raspberry**"
+    }
   }
 }

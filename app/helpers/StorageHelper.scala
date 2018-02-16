@@ -31,6 +31,31 @@ class StorageHelper {
     total
   }
 
+  final protected def doByteCopy(sourceStorageDriver:StorageDriver, sourceStreamTry:Try[InputStream], destStreamTry:Try[OutputStream],
+                                 sourceFullPath:String, destFullPath: String)  = {
+    if(sourceStreamTry.isFailure || destStreamTry.isFailure){
+      Left(Seq(sourceStreamTry.failed.getOrElse("").toString, destStreamTry.failed.getOrElse("").toString))
+    } else {
+      //safe, because we've already checked that neither Try failed
+      try {
+        val bytesCopied = copyStream(sourceStreamTry.get,destStreamTry.get)
+        Logger.debug(s"copied $sourceFullPath to $destFullPath: $bytesCopied bytes")
+        sourceStreamTry.get.close()
+        destStreamTry.get.close()
+        if(bytesCopied==0)
+          Left(Seq(s"could not copy $sourceFullPath to $destFullPath - empty file"))
+        else
+          Right(Tuple2(bytesCopied,sourceStorageDriver.getMetadata(sourceFullPath)))
+      } catch {
+        case ex:Throwable=>
+          Left(Seq(ex.toString))
+      } finally {
+        sourceStreamTry.get.close()
+        destStreamTry.get.close()
+      }
+    }
+  }
+
   /**
     * Copies from the file represented by sourceFile to the (non-existing) file represented by destFile.
     * Both should have been saved to the database before calling this method.  The files do not need to be on the same
@@ -72,27 +97,7 @@ class StorageHelper {
           val sourceStreamTry = sourceStorageDriver.getReadStream(sourceFullPath)
           val destStreamTry = destStorageDriver.getWriteStream(destFullPath)
 
-          if(sourceStreamTry.isFailure || destStreamTry.isFailure){
-            Left(Seq(sourceStreamTry.failed.getOrElse("").toString, destStreamTry.failed.getOrElse("").toString))
-          } else {
-            //safe, because we've already checked that neither Try failed
-            try {
-              val bytesCopied = copyStream(sourceStreamTry.get,destStreamTry.get)
-              Logger.debug(s"copied $sourceFullPath to $destFullPath: $bytesCopied bytes")
-              sourceStreamTry.get.close()
-              destStreamTry.get.close()
-              if(bytesCopied==0)
-                Left(Seq(s"could not copy $sourceFullPath to $destFullPath - empty file"))
-              else
-                Right(Tuple2(bytesCopied,sourceStorageDriver.getMetadata(sourceFullPath)))
-            } catch {
-              case ex:Throwable=>
-                Left(Seq(ex.toString))
-            } finally {
-              sourceStreamTry.get.close()
-              destStreamTry.get.close()
-            }
-          }
+          doByteCopy(sourceStorageDriver,sourceStreamTry,destStreamTry,sourceFullPath,destFullPath)
       }
     })
 
