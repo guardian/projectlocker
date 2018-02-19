@@ -11,7 +11,7 @@ class JythonRunnerSpec extends Specification {
     "run an external script" in {
       val r = new JythonRunner()
 
-      val result = r.runScript("conf/test_scripts/basic_test_1.py")
+      val result = r.runScript("postrun/test_scripts/basic_test_1.py")
       result.raisedError must beNone
       result.stdOutContents mustEqual
         """Hello world!
@@ -22,16 +22,27 @@ class JythonRunnerSpec extends Specification {
     "handle exceptions" in {
       val r = new JythonRunner()
 
-      val result = r.runScript("conf/test_scripts/error_test_2.py")
+      val result = r.runScript("postrun/test_scripts/error_test_2.py")
       result.raisedError must beSome
       result.stdOutContents mustEqual ""
       result.stdErrContents mustEqual ""
       result.raisedError.get.toString mustEqual
               """Traceback (most recent call last):
-                |  File "conf/test_scripts/error_test_2.py", line 1, in <module>
+                |  File "postrun/test_scripts/error_test_2.py", line 1, in <module>
                 |    raise StandardError("My hovercraft is full of eels")
                 |StandardError: My hovercraft is full of eels
                 |""".stripMargin
+    }
+
+    "be able to load a script with external dependencies" in {
+      val r = new JythonRunner()
+
+      val result = r.runScript("postrun/test_scripts/import_test_3.py")
+      result.raisedError must beNone
+      result.stdOutContents mustEqual
+        """Hello world!
+          |""".stripMargin
+      result.stdErrContents mustEqual ""
     }
   }
 }
