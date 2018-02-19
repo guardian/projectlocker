@@ -10,6 +10,10 @@ import play.api.libs.json.{JsPath, Reads, Writes}
 import scala.concurrent.ExecutionContext.Implicits.global
 import drivers._
 import play.api.Logger
+import slick.lifted.TableQuery
+
+import scala.concurrent.Future
+import scala.util.{Failure, Success}
 
 trait StorageSerializer {
   /*https://www.playframework.com/documentation/2.5.x/ScalaJson*/
@@ -60,3 +64,17 @@ class StorageEntryRow(tag:Tag) extends Table[StorageEntry](tag, "StorageEntry") 
 }
 
 
+object StorageEntryHelper {
+  def entryFor(entryId: Int)(implicit db:slick.driver.JdbcProfile#Backend#Database):Future[Option[StorageEntry]] =
+    db.run(
+      TableQuery[StorageEntryRow].filter(_.id===entryId).result.asTry
+    ).map({
+      case Success(result)=>
+        if(result.isEmpty) {
+          None
+        } else {
+          Some(result.head)
+        }
+      case Failure(error)=>throw error
+    })
+}

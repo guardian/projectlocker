@@ -21,10 +21,45 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.util.{Failure, Success, Try}
 import scala.concurrent.{Await, Future}
 
+/**
+  * This class represents a file that exists on some [[models.StorageEntry]]
+  * @param id - database ID. Could be None
+  * @param filepath - [[String]] path of the file on storage, relative to storage root
+  * @param storageId - [[Int]] database ID of the storage that this lives on. Has a foreign key relation to [[models.StorageEntry]]
+  * @param user - [[String]] person who owns this
+  * @param version - [[Int]] number that increments with every update
+  * @param ctime - [[Timestamp]] creation time
+  * @param mtime - [[Timestamp]] modification time
+  * @param atime - [[Timestamp]] access time
+  * @param hasContent - boolean flag representing whether this entity has any data in it yet
+  * @param hasLink - boolean flag representing whether this entitiy is linked to anything (i.e. a project) yet.
+  */
 case class FileEntry(id: Option[Int], filepath: String, storageId: Int, user:String,version:Int,
                      ctime: Timestamp, mtime: Timestamp, atime: Timestamp, hasContent:Boolean, hasLink:Boolean) {
 
-  /* returns a StorageEntry object for the id of the storage of this FileEntry */
+  /**
+    *  writes this model into the database, inserting if id is None and returning a fresh object with id set. If an id
+    * was set, then returns the same object. */
+  def save(implicit db: slick.driver.JdbcProfile#Backend#Database):Future[Try[FileEntry]] = id match {
+    case None=>
+      val insertQuery = TableQuery[FileEntryRow] returning TableQuery[FileEntryRow].map(_.id) into ((item,id)=>item.copy(id=Some(id)))
+      db.run(
+        (insertQuery+=this).asTry
+      ).map({
+        case Success(insertResult)=>Success(insertResult.asInstanceOf[FileEntry])  //maybe only intellij needs this?
+        case Failure(error)=>Failure(error)
+      })
+    case Some(realEntityId)=>
+      db.run(
+        TableQuery[FileEntryRow].filter(_.id===realEntityId).update(this).asTry
+      ).map({
+        case Success(rowsAffected)=>Success(this)
+        case Failure(error)=>Failure(error)
+      })
+  }
+
+  /**
+    *  returns a StorageEntry object for the id of the storage of this FileEntry */
   def storage(implicit db: slick.driver.JdbcProfile#Backend#Database):Future[Option[StorageEntry]] = {
     db.run(
       TableQuery[StorageEntryRow].filter(_.id===storageId).result.asTry
@@ -34,6 +69,11 @@ case class FileEntry(id: Option[Int], filepath: String, storageId: Int, user:Str
     })
   }
 
+  /**
+    * Get a full path of the file, including the root path of the storage
+    * @param db implicitly provided [[slick.driver.JdbcProfile#Backend#Database]]
+    * @return Future containing a string
+    */
   def getFullPath(implicit db: slick.driver.JdbcProfile#Backend#Database):Future[String] = {
     this.storage.map({
       case Some(storage)=>
@@ -43,8 +83,14 @@ case class FileEntry(id: Option[Int], filepath: String, storageId: Int, user:Str
     })
   }
 
+  /**
+    * this attempts to delete the file from disk, using the configured storage driver
+    *
+    * @param db implicitly provided [[slick.driver.JdbcProfile#Backend#Database]]
+    * @return A future containing either a Right() containing a Boolean indicating whether the delete happened,  or a Left with an error string
+    */
   def deleteFromDisk(implicit db:slick.driver.JdbcProfile#Backend#Database):Future[Either[String,Boolean]] = {
-    /*this attempts to delete the file from disk, using the configured storage driver*/
+    /**/
     /*it either returns a Right(), with a boolean indicating whether the delete happened or not, or a Left() with an error string*/
     val maybeStorageDriverFuture = this.storage.map({
       case Some(storage)=>
@@ -61,8 +107,12 @@ case class FileEntry(id: Option[Int], filepath: String, storageId: Int, user:Str
     })
   }
 
-  def deleteSelf(implicit db:slick.driver.JdbcProfile#Backend#Database):Future[Either[Throwable, Unit]] = {
-    /* attempt to delete the underlying record from the database */
+  /**
+    * attempt to delete the underlying record from the database
+    * @param db
+    * @return
+    */
+  def deleteSelf(implicit db:slick.driver.JdbcProfile#Backend#Database):Future[Either[Throwable, Unit]] =
     id match {
       case Some(databaseId)=>
         Logger.info(s"Deleting database record for file $databaseId ($filepath on storage $storageId)")
@@ -75,8 +125,13 @@ case class FileEntry(id: Option[Int], filepath: String, storageId: Int, user:Str
       case None=>
         Future(Left(new RuntimeException("Cannot delete a record that has not been saved to the database")))
     }
-  }
 
+  /**
+    * private method to (synchronously) write a buffer of content to the underlying file. Called by the public method writeToFile().
+    * @param buffer [[play.api.mvc.RawBuffer]] containing content to write
+    * @param storageDriver [[StorageDriver]] instance to do the actual writing
+    * @return a Try containing the unit value
+    */
   private def writeContent(buffer: RawBuffer, storageDriver:StorageDriver):Try[Unit] =
     buffer.asBytes() match {
       case Some(bytes) => //the buffer is held in memory
@@ -91,12 +146,22 @@ case class FileEntry(id: Option[Int], filepath: String, storageId: Int, user:Str
         Success(Unit)
     }
 
+  /**
+    * Update the hasContent flag
+    * @param db implicitly provided [[slick.driver.JdbcProfile#Backend#Database]]
+    * @return a Future containing a Try, which contains an updated [[models.FileEntry]] instance
+    */
   def updateFileHasContent(implicit db:slick.driver.JdbcProfile#Backend#Database) = {
-    val updateFileref = this.copy(hasContent = true)
+    id match {
+      case Some(recordId)=>
+        val updateFileref = this.copy (hasContent = true)
 
-    db.run(
-      TableQuery[FileEntryRow].filter(_.id===this.id.get).update(updateFileref).asTry
-    )
+        db.run (
+          TableQuery[FileEntryRow].filter (_.id === recordId).update (updateFileref).asTry
+        )
+      case None=>
+        Future(Failure(new RuntimeException("Can't update a file record that has not been saved")))
+    }
   }
 
   /* Asynchronously writes the given buffer to this file*/
@@ -132,21 +197,30 @@ case class FileEntry(id: Option[Int], filepath: String, storageId: Int, user:Str
   }
 }
 
+/**
+  * Companion object for the [[FileEntry]] case class
+  */
 object FileEntry extends ((Option[Int], String, Int, String, Int, Timestamp, Timestamp, Timestamp, Boolean, Boolean)=>FileEntry) {
+  /**
+    * Get a [[FileEntry]] instance for the given database ID
+    * @param entryId database ID to look up
+    * @param db database object, instance of [[slick.driver.JdbcProfile#Backend#Database]]
+    * @return a Future, containing an Option that may contain a [[FileEntry]] instance
+    */
   def entryFor(entryId: Int, db:slick.driver.JdbcProfile#Backend#Database):Future[Option[FileEntry]] =
     db.run(
       TableQuery[FileEntryRow].filter(_.id===entryId).result.asTry
     ).map({
       case Success(result)=>
-        if(result.isEmpty) {
-          None
-        } else {
-          Some(result.head)
-        }
+        result.headOption
       case Failure(error)=>throw error
     })
 }
 
+/**
+  * Table definition for [[FileEntry]] in Slick
+  * @param tag
+  */
 class FileEntryRow(tag:Tag) extends Table[FileEntry](tag, "FileEntry") {
   def id = column[Int]("id",O.PrimaryKey, O.AutoInc)
   def filepath = column[String]("filepath")
@@ -165,13 +239,19 @@ class FileEntryRow(tag:Tag) extends Table[FileEntry](tag, "FileEntry") {
 }
 
 
+/**
+  * JSON serialize/deserialize functions. This trait can be mixed into a View to easily process JSON representations of
+  * [[FileEntry]]
+  */
 trait FileEntrySerializer {
   def timestampToDateTime(t: Timestamp): DateTime = new DateTime(t.getTime)
   def dateTimeToTimestamp(dt: DateTime): Timestamp = new Timestamp(dt.getMillis)
   implicit val dateWrites = jodaDateWrites("yyyy-MM-dd'T'HH:mm:ss.SSSZ") //this DOES take numeric timezones - Z means Zone, not literal letter Z
   implicit val dateReads = jodaDateReads("yyyy-MM-dd'T'HH:mm:ss.SSSZ")
 
-  /* performs a conversion from java.sql.Timestamp to Joda DateTime and back again */
+  /**
+    *  performs a conversion from java.sql.Timestamp to Joda DateTime and back again
+    */
   implicit val timestampFormat = new Format[Timestamp] {
     def writes(t: Timestamp): JsValue = Json.toJson(timestampToDateTime(t))
     def reads(json: JsValue): JsResult[Timestamp] = Json.fromJson[DateTime](json).map(dateTimeToTimestamp)

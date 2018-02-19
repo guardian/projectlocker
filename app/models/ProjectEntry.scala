@@ -2,6 +2,7 @@ package models
 
 import slick.driver.PostgresDriver.api._
 import java.sql.Timestamp
+import java.time.LocalDateTime
 
 import org.joda.time.DateTime
 import org.joda.time.DateTimeZone.UTC
@@ -12,17 +13,27 @@ import play.api.libs.json._
 import slick.jdbc.JdbcBackend
 
 import scala.concurrent.Future
-import scala.util.{Failure, Success}
+import scala.util.{Failure, Success, Try}
 import scala.concurrent.ExecutionContext.Implicits.global
 
-case class ProjectEntry (id: Option[Int], fileAssociationId: Int, projectTypeId: Int, created:Timestamp, user: String) {
-  def associatedFiles(db: JdbcBackend.Database): Future[Seq[FileEntry]] = {
+case class ProjectEntry (id: Option[Int], projectTypeId: Int, created:Timestamp, user: String) {
+  def associatedFiles(implicit db:slick.driver.JdbcProfile#Backend#Database): Future[Seq[FileEntry]] = {
     db.run(
-      TableQuery[FileAssociationRow].filter(_.projectEntry===fileAssociationId).result.asTry
+      TableQuery[FileAssociationRow].filter(_.projectEntry===this.id.get).result.asTry
     ).map({
-      case Success(result)=>result.map(assocTuple=>FileEntry.entryFor(assocTuple._3, db))
+      case Success(result)=>result.map(assocTuple=>FileEntry.entryFor(assocTuple._2, db))
       case Failure(error)=> throw error
     }).flatMap(Future.sequence(_)).map(_.flatten)
+  }
+
+  def save(implicit db:slick.driver.JdbcProfile#Backend#Database):Future[Try[ProjectEntry]] = {
+    val insertQuery = TableQuery[ProjectEntryRow] returning TableQuery[ProjectEntryRow].map(_.id) into ((item,id)=>item.copy(id=Some(id)))
+    db.run(
+      (insertQuery+=this).asTry
+    ).map({
+      case Success(insertResult)=>Success(insertResult.asInstanceOf[ProjectEntry])  //maybe only intellij needs this?
+      case Failure(error)=>Failure(error)
+    })
   }
 }
 
@@ -31,14 +42,12 @@ class ProjectEntryRow(tag:Tag) extends Table[ProjectEntry](tag, "ProjectEntry") 
     MappedColumnType.base[DateTime, Timestamp]({d=>new Timestamp(d.getMillis)}, {t=>new DateTime(t.getTime, UTC)})
 
   def id=column[Int]("id",O.PrimaryKey,O.AutoInc)
-  def fileAssociationId=column[Int]("ProjectFileAssociation")
   def projectType=column[Int]("ProjectType")
   def created=column[Timestamp]("created")
   def user=column[String]("user")
 
-  def fileAssociationKey=foreignKey("fk_ProjectFileAssociation",fileAssociationId,TableQuery[FileAssociationRow])(_.id,onUpdate=ForeignKeyAction.Restrict)
   def projectTypeKey=foreignKey("ProjectType",projectType,TableQuery[ProjectTypeRow])(_.id)
-  def * = (id.?, fileAssociationId, projectType, created, user) <> (ProjectEntry.tupled, ProjectEntry.unapply)
+  def * = (id.?, projectType, created, user) <> (ProjectEntry.tupled, ProjectEntry.unapply)
 }
 
 trait ProjectEntrySerializer {
@@ -55,7 +64,6 @@ trait ProjectEntrySerializer {
   /*https://www.playframework.com/documentation/2.5.x/ScalaJson*/
   implicit val templateWrites:Writes[ProjectEntry] = (
     (JsPath \ "id").writeNullable[Int] and
-      (JsPath \ "fileAssociationId").write[Int] and
       (JsPath \ "projectTypeId").write[Int] and
       (JsPath \ "created").write[Timestamp] and
       (JsPath \ "user").write[String]
@@ -63,9 +71,46 @@ trait ProjectEntrySerializer {
 
   implicit val templateReads:Reads[ProjectEntry] = (
     (JsPath \ "id").readNullable[Int] and
-      (JsPath \ "fileAssociationId").read[Int] and
       (JsPath \ "projectTypeId").read[Int] and
       (JsPath \ "created").read[Timestamp] and
       (JsPath \ "user").read[String]
     )(ProjectEntry.apply _)
+}
+
+object ProjectEntry extends ((Option[Int], Int, Timestamp, String)=>ProjectEntry) {
+  def createFromFile(sourceFile: FileEntry, projectTemplate: ProjectTemplate, created:Option[LocalDateTime], user:String)
+                    (implicit db:slick.driver.JdbcProfile#Backend#Database):Future[Try[ProjectEntry]] = {
+    createFromFile(sourceFile, projectTemplate.projectTypeId, created, user)
+  }
+
+  protected def insertFileAssociation(projectEntryId:Int, sourceFileId:Int)(implicit db:slick.driver.JdbcProfile#Backend#Database) = db.run(
+    (TableQuery[FileAssociationRow]+=(projectEntryId,sourceFileId)).asTry
+  )
+
+  private def dateTimeToTimestamp(from: LocalDateTime) = Timestamp.valueOf(from)
+
+  def createFromFile(sourceFile: FileEntry, projectTypeId: Int, created:Option[LocalDateTime], user:String)
+                    (implicit db:slick.driver.JdbcProfile#Backend#Database):Future[Try[ProjectEntry]] = {
+
+    /* step one - create a new project entry */
+    println(s"Passed time: $created")
+    val entry = ProjectEntry(None, projectTypeId, dateTimeToTimestamp(created.getOrElse(LocalDateTime.now())), user)
+    val savedEntry = entry.save
+
+    /* step two - set up file association. Project entry must be saved, so this is done as a future map */
+    savedEntry.flatMap({
+      case Success(projectEntry)=>
+        if(projectEntry.id.isEmpty){
+          Future(Failure(new RuntimeException("Project entry was not saved before setting up file assoication")))
+        } else if(sourceFile.id.isEmpty){
+          Future(Failure(new RuntimeException("Source file was not saved before setting up file assoication")))
+        } else {
+          insertFileAssociation(projectEntry.id.get, sourceFile.id.get).map({
+            case Success(affectedRows: Int) => Success(projectEntry) //we are not interested in the rows, but the project entry object
+            case Failure(error) => Failure(error)
+          })
+        }
+      case Failure(error)=>Future(Failure(error))
+    })
+  }
 }
