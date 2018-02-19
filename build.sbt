@@ -33,6 +33,10 @@ libraryDependencies ++= Seq(
 //authentication
 libraryDependencies += "com.unboundid" % "unboundid-ldapsdk" % "2.3.6"
 
+// https://mvnrepository.com/artifact/org.python/jython
+libraryDependencies += "org.python" % "jython" % "2.7.1b3"
+
+
 enablePlugins(UniversalPlugin)
 
 enablePlugins(LinuxPlugin)
