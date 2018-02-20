@@ -1,3 +1,5 @@
+import NativePackagerHelper._
+
 name := "projectlocker"
 
 version := "1.0"
@@ -44,6 +46,7 @@ enablePlugins(LinuxPlugin)
 enablePlugins(RpmPlugin, JavaServerAppPackaging, SystemdPlugin)
 
 //Generic Linux package build configuration
+mappings in Universal ++= directory("postrun/")
 
 packageSummary in Linux := "A system to manage, backup and archive multimedia project files"
 
