@@ -67,17 +67,26 @@ class App extends React.Component {
         this.setState({currentUsername: "", isLoggedIn: false})
     }
 
+    /*show left menu if logged in*/
+    maybeLeftMenu(){
+        if(this.state.isLoggedIn) {
+            return <ul className="leftmenu">
+                <li><Link to="/storage/">Storages...</Link></li>
+                <li><Link to="/type/">Project Types...</Link></li>
+                <li><Link to="/template/">Project Templates...</Link></li>
+                <li><Link to="/project/">Projects...</Link></li>
+                <li><Link to="/file/">Files...</Link></li>
+            </ul>
+        } else {
+            return <ul className="leftmenu"/>
+        }
+    }
+
     render () {
         return(
             <div>
                 <div id="leftmenu" className="leftmenu">
-                    <ul className="leftmenu">
-                        <li><Link to="/storage/">Storages...</Link></li>
-                        <li><Link to="/type/">Project Types...</Link></li>
-                        <li><Link to="/template/">Project Templates...</Link></li>
-                        <li><Link to="/project/">Projects...</Link></li>
-                        <li><Link to="/file/">Files...</Link></li>
-                    </ul>
+                    {this.maybeLeftMenu()}
                 </div>
                 <div id="mainbody" className="mainbody">
                     <Switch>

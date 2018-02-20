@@ -64,7 +64,10 @@ img.tinyicon {
 div.inline-dialog {
     border: 2px solid black;
     width: 30%;
-    float: left;
+    /*float: left;*/
+    overflow:hidden;
+    margin-left: auto;
+    margin-right:auto;
     border-radius: 30px;
 }
 
