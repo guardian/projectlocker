@@ -21,6 +21,7 @@ import play.api.mvc._
 import play.api.libs.Files.TemporaryFile
 import controllers.routes
 import auth._
+import com.unboundid.ldap.sdk.LDAPConnectionPool
 import play.api.cache.SyncCacheApi
 import play.api.libs.json._
 
@@ -28,6 +29,8 @@ import scala.concurrent.Future
 
 trait Security {
   implicit val cache:SyncCacheApi
+  implicit val ldapConnectionPool:LDAPConnectionPool
+
   //if this returns something, then we are logged in
   private def username(request: RequestHeader) = request.session.get("uid")
 

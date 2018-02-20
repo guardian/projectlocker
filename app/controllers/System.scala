@@ -2,7 +2,8 @@ package controllers
 
 import javax.inject.Inject
 
-import auth.Security
+import auth.{LDAPConnectionPoolWrapper, Security}
+import com.unboundid.ldap.sdk.LDAPConnectionPool
 import play.api.{Configuration, Logger}
 import play.api.db.slick.DatabaseConfigProvider
 import play.api.libs.json._
@@ -15,11 +16,11 @@ import helpers.DatabaseHelper
 import play.api.cache.SyncCacheApi
 
 class System @Inject() (cc:ControllerComponents, configuration: Configuration, dbConfigProvider: DatabaseConfigProvider,
-                        databaseHelper:DatabaseHelper,cacheImpl:SyncCacheApi)
+                        databaseHelper:DatabaseHelper,cacheImpl:SyncCacheApi, ldapPool:LDAPConnectionPoolWrapper)
   extends AbstractController(cc) with Security {
 
   implicit val cache:SyncCacheApi = cacheImpl
-
+  implicit val ldapConnectionPool:LDAPConnectionPool = ldapPool.connectionPool.getOrElse(null)
   private val dbConfig = dbConfigProvider.get[JdbcProfile]
   private val logger: Logger = Logger(this.getClass)
 

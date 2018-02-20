@@ -2,6 +2,8 @@ package controllers
 
 import javax.inject.Inject
 
+import auth.LDAPConnectionPoolWrapper
+import com.unboundid.ldap.sdk.LDAPConnectionPool
 import models._
 import play.api.Configuration
 import play.api.cache.SyncCacheApi
@@ -15,12 +17,13 @@ import slick.driver.PostgresDriver.api._
 /**
   * Created by localhome on 17/01/2017.
   */
-class ProjectTypeController @Inject() (config: Configuration, dbConfigProvider: DatabaseConfigProvider, cacheImpl:SyncCacheApi)
+class ProjectTypeController @Inject() (config: Configuration, dbConfigProvider: DatabaseConfigProvider,
+                                       cacheImpl:SyncCacheApi, ldapPool:LDAPConnectionPoolWrapper)
   extends GenericDatabaseObjectController[ProjectType] with ProjectTypeSerializer{
   val dbConfig = dbConfigProvider.get[JdbcProfile]
 
   implicit val cache:SyncCacheApi = cacheImpl
-
+  implicit val ldapConnectionPool:LDAPConnectionPool = ldapPool.connectionPool.getOrElse(null)
   override def deleteid(requestedId: Int) = dbConfig.db.run(
     TableQuery[ProjectTypeRow].filter(_.id === requestedId).delete.asTry
   )
