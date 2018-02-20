@@ -2,7 +2,7 @@
 # This file defines all application routes (Higher priority routes first)
 # ~~~~
 
-GET     /                           controllers.Application.index(path="/")
+GET     /                                  @controllers.Application.index(path="/")
 
 GET     /api/file                          @controllers.Files.list
 PUT     /api/file                          @controllers.Files.create
@@ -36,6 +36,7 @@ GET     /api/projecttype/:id               @controllers.ProjectTypeController.ge
 PUT     /api/projecttype/:id               @controllers.ProjectTypeController.update(id: Int)
 DELETE  /api/projecttype/:id               @controllers.ProjectTypeController.delete(id: Int)
 
+POST    /api/login                         @controllers.Application.authenticate
 POST    /api/system/init                   @controllers.System.init
 
 # Map static resources from the /public folder to the /assets URL path

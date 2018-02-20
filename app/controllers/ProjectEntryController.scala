@@ -7,7 +7,7 @@ import models._
 import play.api.{Configuration, Logger}
 import play.api.db.slick.DatabaseConfigProvider
 import play.api.libs.json.JsValue
-import play.api.mvc.{Action, BodyParsers, Controller, Request}
+import play.api.mvc._
 import slick.driver.JdbcProfile
 import slick.lifted.TableQuery
 import slick.driver.PostgresDriver.api._
@@ -21,8 +21,8 @@ import scala.util.{Failure, Success}
   * Created by localhome on 17/01/2017.
   */
 @Singleton
-class ProjectEntryController @Inject() (config: Configuration, dbConfigProvider: DatabaseConfigProvider, projectHelper:ProjectCreateHelper)
-  extends Controller with ProjectEntrySerializer with ProjectRequestSerializer
+class ProjectEntryController @Inject() (cc:ControllerComponents, config: Configuration, dbConfigProvider: DatabaseConfigProvider, projectHelper:ProjectCreateHelper)
+  extends AbstractController(cc) with ProjectEntrySerializer with ProjectRequestSerializer
 {
   val dbConfig = dbConfigProvider.get[JdbcProfile]
 

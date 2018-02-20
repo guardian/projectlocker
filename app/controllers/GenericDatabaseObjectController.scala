@@ -9,7 +9,7 @@ import play.api.libs.functional.syntax._
 import play.api.libs.json.Reads.jodaDateReads
 import play.api.libs.json.Writes.jodaDateWrites
 import play.api.libs.json._
-import play.api.mvc.{Action, BodyParsers, Controller, Request}
+import play.api.mvc._
 import slick.backend.DatabaseConfig
 import slick.driver.JdbcProfile
 import slick.lifted.TableQuery
@@ -19,7 +19,7 @@ import scala.util.{Failure, Success, Try}
 import scala.concurrent.ExecutionContext.Implicits.global
 
 
-trait GenericDatabaseObjectController[M] extends Controller {
+trait GenericDatabaseObjectController[M] extends InjectedController {
   def validate(request:Request[JsValue]):JsResult[M]
 
   def selectall:Future[Try[Seq[M]]]
