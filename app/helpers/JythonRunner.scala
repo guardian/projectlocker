@@ -8,9 +8,15 @@ import scala.collection.JavaConverters._
 
 import scala.util.{Failure, Success, Try}
 
+/**
+  * this case class represents the result of the invokation of a script in Jython
+  * @param stdOutContents what the script put to stdout
+  * @param stdErrContents what the script put to stderr
+  * @param raisedError either None, if the run completed successfully, or a Throwable representing an error that occurred
+  */
 case class JythonOutput(stdOutContents: String, stdErrContents: String, raisedError: Option[Throwable])
 
-class JythonRunner {
+object JythonRunner {
 
   import org.python.util.PythonInterpreter
   import java.util.Properties
@@ -63,15 +69,16 @@ class JythonRunner {
     interpreter.setOut(outStream)
     interpreter.setErr(errStream)
 
-    val pythonifiedArgs = args.foldLeft[Map[PyObject,PyObject]](Map()){
-      (acc:Map[PyObject,PyObject],kvtuple:Tuple2[String,String])=>acc ++ Map(new PyString(kvtuple._1) -> new PyString(kvtuple._2))
-    }
+    //the cast is annoying but it should always work, since PyString is a subclass of PyObject. No idea why
+    // func.__call__ seems to not like this though.
+    val pythonifiedArgs = args.map(kvTuple=>new PyString(kvTuple._2).asInstanceOf[PyObject])
+    val pythonifiedNames = args.keys
 
     try {
       interpreter.execfile(scriptName)
       val func = interpreter.get("postrun")
-      val result = Try { func.__call__(new PyDictionary(pythonifiedArgs.asJava)) }
 
+      val result = Try { func.__call__(pythonifiedArgs.toArray, pythonifiedNames.toArray) }
       val raisedError = result match {
         case Success(nothing) => None
         case Failure(error) => Some(error)
