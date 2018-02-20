@@ -4,6 +4,8 @@ import org.junit.runner._
 import org.specs2.matcher.MatchResult
 import org.specs2.mutable._
 import org.specs2.runner._
+import play.api.cache.SyncCacheApi
+import play.api.cache.ehcache.EhCacheModule
 import play.api.db.slick.DatabaseConfigProvider
 import play.api.inject.{Injector, bind}
 import play.api.inject.guice.GuiceApplicationBuilder
@@ -24,7 +26,7 @@ import scala.concurrent.{Await, Future}
 import play.api.libs.json._
 
 @RunWith(classOf[JUnitRunner])
-trait GenericControllerSpec extends Specification {
+trait GenericControllerSpec extends Specification with MockedCacheApi{
   //needed for body.consumeData
   implicit val system = ActorSystem("storage-controller-spec")
   implicit val materializer = ActorMaterializer()
@@ -47,8 +49,9 @@ trait GenericControllerSpec extends Specification {
   val expectedDeleteDetail = "deleted"
 
   //can over-ride bindings here. see https://www.playframework.com/documentation/2.5.x/ScalaTestingWithGuice
-  val application:Application = new GuiceApplicationBuilder()
+  val application:Application = new GuiceApplicationBuilder().disable(classOf[EhCacheModule])
     .overrides(bind[DatabaseConfigProvider].to[TestDatabase.testDbProvider])
+    .overrides(bind[SyncCacheApi].toInstance(mockedSyncCacheApi))
     .build
 
   def bodyAsJsonFuture(response:Future[play.api.mvc.Result]) = response.flatMap(result=>

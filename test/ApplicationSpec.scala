@@ -2,6 +2,8 @@ import helpers.DatabaseHelper
 import org.specs2.mutable._
 import org.specs2.runner._
 import org.junit.runner._
+import play.api.cache.SyncCacheApi
+import play.api.cache.ehcache.EhCacheModule
 import play.api.db.slick.DatabaseConfigProvider
 import play.api.test._
 import play.api.test.Helpers._
@@ -17,12 +19,13 @@ import scala.reflect.ClassTag
  * For more information, consult the wiki.
  */
 @RunWith(classOf[JUnitRunner])
-class ApplicationSpec extends Specification {
+class ApplicationSpec extends Specification with MockedCacheApi {
   sequential
 
   //can over-ride bindings here. see https://www.playframework.com/documentation/2.5.x/ScalaTestingWithGuice
-  private val application = new GuiceApplicationBuilder()
+  private val application = new GuiceApplicationBuilder().disable(classOf[EhCacheModule])
     .overrides(bind[DatabaseConfigProvider].to[TestDatabase.testDbProvider])
+    .overrides(bind[SyncCacheApi].toInstance(mockedSyncCacheApi))
     .build
 
   private val injector:Injector = new GuiceApplicationBuilder()
