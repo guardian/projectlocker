@@ -26,29 +26,10 @@ object User {
 
   def authenticate(uid: String, pass: String)(implicit cache:SyncCacheApi): Try[Option[User]] = {
     LDAP.bind(uid,pass) match {
-        case Success(0) => Success(Some(User("uid",LDAP.getFullName(uid))))
+        case Success(0) => Success(Some(User(uid,LDAP.getFullName(uid))))
         case Success(_) => Success(None)
         case Failure(error)=>Failure(error)
     }
   }
-
-//  def findByUID(uid: String): Option[User] = {
-//    Some(User("csandiego","San Diego, Carmen"))
-//  }
-//
-//  def findRolesByUID(uid: String): Option[String] = {
-//    uid match {
-//      case "csandiego" => Some("admin")
-//      case _ => None
-//    }
-//  }
-  
-//  val loginForm = Form(
-//    tuple("uid" -> text, "password" -> text) verifying ("Invalid username or password",
-//      result => result match {
-//        case (uid, password) => authenticate(uid, password).isDefined
-//      }
-//    )
-//  )
 
 }

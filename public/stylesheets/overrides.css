@@ -60,3 +60,35 @@ img.tinyicon {
     color: darkred;
     font-weight: bold;
 }
+
+div.inline-dialog {
+    border: 2px solid black;
+    width: 30%;
+    float: left;
+    border-radius: 30px;
+}
+
+h2.inline-dialog-title {
+    background-color: lavender;
+    border-top-right-radius: 30px;
+    padding: 0.1em;
+    padding-left: 0.5em;
+    border-top-left-radius: 30px;
+}
+
+table.login-table {
+    margin-left: 1em;
+}
+
+button.inline-dialog {
+    float: right;
+    margin-right: 2em;
+}
+
+span.inline-dialog-content {
+    margin-left: 1em;
+}
+
+.emphasis {
+    font-weight: bold;
+}

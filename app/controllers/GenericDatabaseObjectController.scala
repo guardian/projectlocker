@@ -17,9 +17,9 @@ import slick.lifted.TableQuery
 import scala.concurrent.Future
 import scala.util.{Failure, Success, Try}
 import scala.concurrent.ExecutionContext.Implicits.global
+import auth.Security
 
-
-trait GenericDatabaseObjectController[M] extends InjectedController {
+trait GenericDatabaseObjectController[M] extends InjectedController with Security {
   def validate(request:Request[JsValue]):JsResult[M]
 
   def selectall:Future[Try[Seq[M]]]
@@ -33,14 +33,14 @@ trait GenericDatabaseObjectController[M] extends InjectedController {
 
   val logger: Logger = Logger(this.getClass)
 
-  def list = Action.async {
+  def list = IsAuthenticatedAsync {uid=>{request=>
     selectall.map({
       case Success(result)=>Ok(Json.obj("status"->"ok","result"->this.jstranslate(result)))
       case Failure(error)=>
         logger.error(error.toString)
         InternalServerError(Json.obj("status"->"error","detail"->error.toString))
     })
-  }
+  }}
 
   def create = Action.async(BodyParsers.parse.json) { request =>
     this.validate(request).fold(
@@ -61,7 +61,7 @@ trait GenericDatabaseObjectController[M] extends InjectedController {
     )
   }
 
-  def getitem(requestedId: Int) = Action.async {
+  def getitem(requestedId: Int) = IsAuthenticatedAsync {uid=>{request=>
     selectid(requestedId).map({
       case Success(result)=>
         if(result.isEmpty)
@@ -72,7 +72,7 @@ trait GenericDatabaseObjectController[M] extends InjectedController {
         logger.error(error.toString)
         InternalServerError(Json.obj("status"->"error","detail"->error.toString))
     })
-  }
+  }}
 
   def update(id: Int) = Action.async(BodyParsers.parse.json) { request =>
     this.validate(request).fold(

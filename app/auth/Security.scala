@@ -23,6 +23,8 @@ import controllers.routes
 import auth._
 import play.api.cache.SyncCacheApi
 
+import scala.concurrent.Future
+
 trait Security {
   implicit val cache:SyncCacheApi
   private def username(request: RequestHeader) = request.session.get("uid")
@@ -31,6 +33,10 @@ trait Security {
 
   def IsAuthenticated(f: => String => Request[AnyContent] => Result) = Security.Authenticated(username, onUnauthorized) {
     uid => Action(request => f(uid)(request))
+  }
+
+  def IsAuthenticatedAsync(f: => String => Request[AnyContent] => Future[Result]) = Security.Authenticated(username, onUnauthorized) {
+    uid => Action.async(request => f(uid)(request))
   }
 
   def IsAuthenticated(b: BodyParser[MultipartFormData[TemporaryFile]] = BodyParsers.parse.multipartFormData)(f: => String => Request[MultipartFormData[TemporaryFile]] => Result) = {

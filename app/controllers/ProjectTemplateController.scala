@@ -3,6 +3,7 @@ package controllers
 import javax.inject.Inject
 
 import models._
+import play.api.cache.SyncCacheApi
 import play.api.{Configuration, Logger}
 import play.api.mvc._
 import play.api.db.slick.DatabaseConfigProvider
@@ -15,8 +16,10 @@ import scala.concurrent.Future
 import scala.util.{Failure, Success}
 import scala.concurrent.ExecutionContext.Implicits.global
 
-class ProjectTemplateController @Inject() (config: Configuration, dbConfigProvider: DatabaseConfigProvider)
+class ProjectTemplateController @Inject() (config: Configuration, dbConfigProvider: DatabaseConfigProvider, cacheImpl:SyncCacheApi)
   extends GenericDatabaseObjectController[ProjectTemplate] with ProjectTemplateSerializer with StorageSerializer{
+
+  implicit val cache:SyncCacheApi = cacheImpl
 
   val dbConfig = dbConfigProvider.get[JdbcProfile]
 

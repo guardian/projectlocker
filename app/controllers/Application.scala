@@ -17,6 +17,7 @@ class Application @Inject() (cc:ControllerComponents, p:PlayBodyParsers, cacheIm
 
   implicit val cache:SyncCacheApi = cacheImpl
 
+  //this allows the loading of frontend, so shouldn't be authed
   def index(path:String) = Action {
     Ok(views.html.index())
   }
@@ -29,7 +30,7 @@ class Application @Inject() (cc:ControllerComponents, p:PlayBodyParsers, cacheIm
       loginRequest => {
         User.authenticate(loginRequest.username, loginRequest.password) match {
           case Success(Some(user))=>
-            Ok(Json.obj("status"->"ok","detail"->"Logged in")).withSession("uid"->user.uid)
+            Ok(Json.obj("status"->"ok","detail"->"Logged in","uid"->user.uid)).withSession("uid"->user.uid)
           case Success(None)=>
             Logger.warn(s"Failed login from ${loginRequest.username} with password ${loginRequest.password} from host ${request.host}")
             Forbidden(Json.obj("status"->"error","detail"->"forbidden"))
@@ -37,7 +38,14 @@ class Application @Inject() (cc:ControllerComponents, p:PlayBodyParsers, cacheIm
             Logger.error(s"Authentication error when trying to log in ${loginRequest.username}. This could just mean a wrong password.",error)
             Forbidden(Json.obj("status"->"error","detail"->"forbidden"))
         }
-
       })
+  }
+
+  def isLoggedIn = IsAuthenticated { uid=> { request=>
+    Ok(Json.obj("status"->"ok","uid"->uid))
+  }}
+
+  def logout = Action { request=>
+    Ok(Json.obj("status"->"ok","detail"->"Logged out")).withNewSession
   }
 }

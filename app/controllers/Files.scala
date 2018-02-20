@@ -1,6 +1,7 @@
 package controllers
 
 import javax.inject.Inject
+
 import play.api.{Configuration, Logger}
 import play.api.db.slick.DatabaseConfigProvider
 import play.api.mvc._
@@ -10,14 +11,17 @@ import slick.driver.PostgresDriver.api._
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import models._
+import play.api.cache.SyncCacheApi
 import slick.lifted.TableQuery
 
 import scala.concurrent.{CanAwait, Future}
 import scala.util.{Failure, Success}
 
 
-class Files @Inject() (configuration: Configuration, dbConfigProvider: DatabaseConfigProvider)
+class Files @Inject() (configuration: Configuration, dbConfigProvider: DatabaseConfigProvider, cacheImpl:SyncCacheApi)
   extends GenericDatabaseObjectController[FileEntry] with FileEntrySerializer {
+
+  implicit val cache:SyncCacheApi = cacheImpl
 
   val dbConfig = dbConfigProvider.get[JdbcProfile]
 

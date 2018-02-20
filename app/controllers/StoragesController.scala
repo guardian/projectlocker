@@ -1,8 +1,10 @@
 package controllers
 
-import javax.inject.{Inject,Singleton}
+import javax.inject.{Inject, Singleton}
+
 import models.{ProjectEntryRow, StorageEntry, StorageEntryRow, StorageSerializer, StorageType, StorageTypeSerializer}
 import play.api.Configuration
+import play.api.cache.SyncCacheApi
 import play.api.db.slick.DatabaseConfigProvider
 import play.api.libs.json._
 import play.api.mvc.{Action, BodyParsers, Request}
@@ -17,8 +19,10 @@ import scala.concurrent.ExecutionContext.Implicits.global
 
 @Singleton
 class StoragesController @Inject()
-    (configuration: Configuration, dbConfigProvider: DatabaseConfigProvider)
+    (configuration: Configuration, dbConfigProvider: DatabaseConfigProvider, cacheImpl:SyncCacheApi)
     extends GenericDatabaseObjectController[StorageEntry] with StorageSerializer with StorageTypeSerializer {
+
+  implicit val cache:SyncCacheApi = cacheImpl
 
   val knownTypes = List(
     StorageType("Local",needsLogin=false,hasSubfolders=true),

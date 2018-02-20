@@ -19,9 +19,54 @@ import ProjectTemplateIndex from './ProjectTemplateIndex.jsx';
 import ProjectTemplateMultistep from './multistep/ProjectTemplateMultistep.jsx';
 import ProjectTemplateDeleteComponent from './delete/ProjectTemplateDeleteComponent.jsx';
 
+import axios from 'axios';
+
 window.React = require('react');
 
 class App extends React.Component {
+    constructor(props){
+        super(props);
+
+        this.state = {
+            isLoggedIn: false,
+            currentUsername: ""
+        };
+
+        this.onLoggedIn = this.onLoggedIn.bind(this);
+        this.onLoggedOut = this.onLoggedOut.bind(this);
+    }
+
+    checkLogin(){
+        this.setState({loading: true, haveChecked: true}, ()=>
+            axios.get("/api/isLoggedIn")
+                .then(response=>{ //200 response means we are logged in
+                    this.setState({
+                        isLoggedIn: true,
+                        currentUsername: response.data.uid
+                    });
+                })
+                .catch(error=>{
+                    this.setState({
+                        isLoggedIn: false,
+                        currentUsername: ""
+                    })
+                })
+        );
+    }
+
+    componentWillMount(){
+        this.checkLogin();
+    }
+
+    onLoggedIn(userid){
+        console.log("Logged in as " + userid);
+        this.setState({currentUsername: userid, isLoggedIn: true})
+    }
+
+    onLoggedOut(){
+        this.setState({currentUsername: "", isLoggedIn: false})
+    }
+
     render () {
         return(
             <div>
@@ -49,7 +94,12 @@ class App extends React.Component {
                         <Route path="/type/" component={ProjectTypeList}/>
                         <Route path="/project/:itemid" component={ProjectEntryList}/>
                         <Route path="/project/" component={ProjectEntryList}/>
-                        <Route exact path="/" component={RootComponent}/>
+                        <Route exact path="/" component={()=><RootComponent
+                            onLoggedOut={this.onLoggedOut}
+                            onLoggedIn={this.onLoggedIn}
+                            currentUsername={this.state.currentUsername}
+                            isLoggedIn={this.state.isLoggedIn}
+                        />}/>
                     </Switch>
                 </div>
             </div>
