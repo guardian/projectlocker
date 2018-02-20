@@ -32,7 +32,10 @@ trait Security {
   implicit val ldapConnectionPool:LDAPConnectionPool
 
   //if this returns something, then we are logged in
-  private def username(request: RequestHeader) = request.session.get("uid")
+  private def username(request: RequestHeader) = Conf.ldapProtocol match {
+    case "none"=>Some("noldap")
+    case _=>request.session.get("uid")
+  }
 
   private def onUnauthorized(request: RequestHeader) = {
     Results.Forbidden(Json.obj("status"->"error","detail"->"Not logged in"))

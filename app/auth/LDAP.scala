@@ -36,6 +36,7 @@ object LDAP {
   }
 
   def getUserDN (uid:String)(implicit cache:SyncCacheApi, connectionPool:LDAPConnectionPool) : Option[String] = {
+    if(connectionPool==null) return None
     val cacheKey = "userDN." + uid
     val userDN: Option[String] = cache.getOrElseUpdate[Option[String]](cacheKey) {
       println("LDAP: get DN for " + uid)
@@ -53,6 +54,7 @@ object LDAP {
   }
   
   def getUserRoles (uid: String)(implicit cache:SyncCacheApi, connectionPool:LDAPConnectionPool) : Option[List[String]] = {
+    if(connectionPool==null) return None
     val cacheKey = "userRoles." + uid
     val userRoles : Option[List[String]] = cache.getOrElseUpdate[Option[List[String]]](cacheKey,Duration.create(ldapCacheDuration,"seconds")) {
       println("LDAP: get roles for " + uid)
@@ -78,6 +80,7 @@ object LDAP {
   }
 
   def getRoleDN (role:String)(implicit cache:SyncCacheApi, connectionPool:LDAPConnectionPool) : Option[String] = {
+    if(connectionPool==null) return None
     val cacheKey = "roleDN." + role
     val roleDN : Option[String] = cache.getOrElseUpdate[Option[String]](cacheKey) {
       println("LDAP: get DN for " + role)
@@ -95,6 +98,7 @@ object LDAP {
   }
 
   def compareMember (roleDN: String, userDN: String)(implicit connectionPool:LDAPConnectionPool) : Int = {
+    if(connectionPool==null) return -1
     println("LDAP: compare " + roleDN + " " + userDN)
     connectionPool
       .compare(new CompareRequest(roleDN,memberAttribute,userDN))
@@ -144,6 +148,7 @@ object LDAP {
   }
 
   def getFullName (uid:String)(implicit cache:SyncCacheApi, connectionPool:LDAPConnectionPool) : String = {
+    if(connectionPool==null) return ""
     val cacheKey = "userFullName." + uid
     val userFullName : String = cache.getOrElseUpdate[String](cacheKey,Duration(ldapCacheDuration,"seconds")) {
       println("LDAP: search " + uid + " Full Name")
