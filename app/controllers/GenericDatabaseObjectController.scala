@@ -27,7 +27,7 @@ trait GenericDatabaseObjectController[M] extends InjectedController with Securit
 
   def deleteid(requestedId: Int):Future[Try[Int]]
 
-  def insert(entry: M):Future[Any]
+  def insert(entry: M,uid:String):Future[Any]
   def jstranslate(result:Seq[M]):Json.JsValueWrapper
   def jstranslate(result:M):Json.JsValueWrapper
 
@@ -42,15 +42,14 @@ trait GenericDatabaseObjectController[M] extends InjectedController with Securit
     })
   }}
 
-  def create = Action.async(BodyParsers.parse.json) { request =>
+  def create = IsAuthenticatedAsync(BodyParsers.parse.json) {uid=>{request =>
     this.validate(request).fold(
       errors => {
         println(s"errors parsing content: $errors")
         Future(BadRequest(Json.obj("status"->"error","detail"->JsError.toJson(errors))))
       },
-      storageEntry => {
-        println("Trying to add storage entry")
-        this.insert(storageEntry).map({
+      newEntry => {
+        this.insert(newEntry,uid).map({
           case Success(result)=>Ok(Json.obj("status" -> "ok", "detail" -> "added", "id" -> result.asInstanceOf[Int]))
           case Failure(error)=>
             logger.error(error.toString)
@@ -59,7 +58,7 @@ trait GenericDatabaseObjectController[M] extends InjectedController with Securit
         )
       }
     )
-  }
+  }}
 
   def getitem(requestedId: Int) = IsAuthenticatedAsync {uid=>{request=>
     selectid(requestedId).map({
@@ -74,12 +73,12 @@ trait GenericDatabaseObjectController[M] extends InjectedController with Securit
     })
   }}
 
-  def update(id: Int) = Action.async(BodyParsers.parse.json) { request =>
+  def update(id: Int) = IsAuthenticatedAsync(BodyParsers.parse.json) { uid=>{request =>
     this.validate(request).fold(
       errors=>Future(BadRequest(Json.obj("status"->"error","detail"->JsError.toJson(errors)))),
       StorageEntry=>Future(Ok(""))
     )
-  }
+  }}
 
   def deleteAction(requestedId: Int) = {
     deleteid(requestedId).map({
@@ -98,10 +97,10 @@ trait GenericDatabaseObjectController[M] extends InjectedController with Securit
     })
   }
 
-  def delete(requestedId: Int) = Action.async { request =>
+  def delete(requestedId: Int) = IsAuthenticatedAsync {uid=>{ request =>
     if(requestedId<0)
       Future(Conflict(Json.obj("status"->"error","detail"->"This is still referenced by sub-objects")))
     else
       deleteAction(requestedId)
-  }
+  }}
 }

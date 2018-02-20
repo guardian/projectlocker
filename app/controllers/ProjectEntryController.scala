@@ -2,13 +2,15 @@ package controllers
 
 import javax.inject.{Inject, Singleton}
 
+import auth.Security
 import helpers.ProjectCreateHelper
 import models._
+import play.api.cache.SyncCacheApi
 import play.api.{Configuration, Logger}
 import play.api.db.slick.DatabaseConfigProvider
 import play.api.libs.json.JsValue
 import play.api.mvc._
-import slick.driver.JdbcProfile
+import slick.jdbc.JdbcProfile
 import slick.lifted.TableQuery
 import slick.driver.PostgresDriver.api._
 import play.api.libs.json.{JsError, Json}
@@ -21,12 +23,15 @@ import scala.util.{Failure, Success}
   * Created by localhome on 17/01/2017.
   */
 @Singleton
-class ProjectEntryController @Inject() (cc:ControllerComponents, config: Configuration, dbConfigProvider: DatabaseConfigProvider, projectHelper:ProjectCreateHelper)
-  extends AbstractController(cc) with ProjectEntrySerializer with ProjectRequestSerializer
+class ProjectEntryController @Inject() (cc:ControllerComponents, config: Configuration,
+                                        dbConfigProvider: DatabaseConfigProvider, projectHelper:ProjectCreateHelper,
+                                        cacheImpl:SyncCacheApi)
+  extends GenericDatabaseObjectController[ProjectEntry] with ProjectEntrySerializer with ProjectRequestSerializer with Security
 {
+  override implicit val cache:SyncCacheApi = cacheImpl
+
   val dbConfig = dbConfigProvider.get[JdbcProfile]
 
-  /*
   override def deleteid(requestedId: Int) = dbConfig.db.run(
     TableQuery[ProjectEntryRow].filter(_.id === requestedId).delete.asTry
   )
@@ -42,21 +47,20 @@ class ProjectEntryController @Inject() (cc:ControllerComponents, config: Configu
   override def jstranslate(result: Seq[ProjectEntry]) = result
   override def jstranslate(result: ProjectEntry) = result  //implicit translation should handle this
 
-  override def insert(entry: ProjectEntry) = dbConfig.db.run(
-    (TableQuery[ProjectEntryRow] returning TableQuery[ProjectEntryRow].map(_.id) += entry).asTry
-  )
+  /*this is pointless because of the override of [[create]] below, so it should not get called,
+   but is needed to conform to the [[GenericDatabaseObjectController]] protocol*/
+  override def insert(entry: ProjectEntry,uid:String) = Future(Failure(new RuntimeException("ProjectEntryController::insert should not have been called")))
 
   override def validate(request:Request[JsValue]) = request.body.validate[ProjectEntry]
-*/
 
-  def create = Action.async(BodyParsers.parse.json) { request =>
+  override def create = IsAuthenticatedAsync(BodyParsers.parse.json) {uid=>{ request =>
     implicit val db = dbConfig.db
 
     request.body.validate[ProjectRequest].fold(
       errors=>
         Future(BadRequest(Json.obj("status"->"error","detail"->JsError.toJson(errors)))),
       projectRequest=> {
-        val fullRequestFuture=projectRequest.hydrate
+        val fullRequestFuture=projectRequest.copy(user=uid).hydrate
         fullRequestFuture.flatMap({
           case None=>
             Future(BadRequest(Json.obj("status"->"error","detail"->"Invalid template or storage ID")))
@@ -71,6 +75,6 @@ class ProjectEntryController @Inject() (cc:ControllerComponents, config: Configu
             })
         })
       })
-  }
+  }}
 
 }

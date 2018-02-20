@@ -72,14 +72,14 @@ trait GenericControllerSpec extends Specification with MockedCacheApi{
 
     "return valid data for a valid record" in  {
 
-      val response:Future[play.api.mvc.Result] = route(application, FakeRequest(GET, s"$uriRoot/1")).get
+      val response:Future[play.api.mvc.Result] = route(application, FakeRequest(GET, s"$uriRoot/1").withSession("uid"->"testuser")).get
 
+      status(response) must equalTo(OK)
       val jsondata = Await.result(bodyAsJsonFuture(response), 5.seconds).as[JsValue]
       (jsondata \ "status").as[String] must equalTo("ok")
       (jsondata \ "result" \ "id").as[Int] must equalTo(1)
       testParsedJsonObject(jsondata \ "result", Json.parse(testGetDocument))
 
-      status(response) must equalTo(OK)
     }
 
     "accept new data to create a new record" in {
@@ -87,7 +87,7 @@ trait GenericControllerSpec extends Specification with MockedCacheApi{
         method="PUT",
         uri=uriRoot,
         headers=FakeHeaders(Seq(("Content-Type", "application/json"))),
-        body=testCreateDocument)
+        body=testCreateDocument).withSession("uid"->"testuser")
       ).get
 
       status(response) must equalTo(OK)
@@ -98,9 +98,8 @@ trait GenericControllerSpec extends Specification with MockedCacheApi{
       (jsondata \ "id").as[Int] must greaterThanOrEqualTo(minimumNewRecordId) //if we re-run the tests without blanking the database explicitly this goes up
 
       val newRecordId = (jsondata \ "id").as[Int]
-      val checkResponse = route(application, FakeRequest(GET, s"$uriRoot/$newRecordId")).get
+      val checkResponse = route(application, FakeRequest(GET, s"$uriRoot/$newRecordId").withSession("uid"->"testuser")).get
       val checkdata = Await.result(bodyAsJsonFuture(checkResponse), 5.seconds)
-
 
       (checkdata \ "status").as[String] must equalTo("ok")
       (checkdata \ "result" \ "id").as[Int] must equalTo(newRecordId)
@@ -112,7 +111,7 @@ trait GenericControllerSpec extends Specification with MockedCacheApi{
         method="DELETE",
         uri=s"$uriRoot/$testDeleteId",
         headers=FakeHeaders(),
-        body="")
+        body="").withSession("uid"->"testuser")
       ).get
 
       status(response) must equalTo(OK)
@@ -127,7 +126,7 @@ trait GenericControllerSpec extends Specification with MockedCacheApi{
         method = "DELETE",
         uri = s"$uriRoot/$testConflictId",
         headers = FakeHeaders(),
-        body = "")
+        body = "").withSession("uid"->"testuser")
       ).get
 
       status(response) must equalTo(CONFLICT)

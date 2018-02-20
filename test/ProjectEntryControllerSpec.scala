@@ -61,7 +61,7 @@ class ProjectEntryControllerSpec extends Specification with Mockito {
         method="PUT",
         uri="/api/project",
         headers=FakeHeaders(Seq(("Content-Type", "application/json"))),
-        body=testCreateDocument)).get
+        body=testCreateDocument).withSession("uid"->"testuser")).get
 
       status(response) must equalTo(OK)
       val jsondata = Await.result(bodyAsJsonFuture(response), 5.seconds).as[JsValue]

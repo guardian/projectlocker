@@ -8,7 +8,7 @@ import play.api.{Configuration, Logger}
 import play.api.mvc._
 import play.api.db.slick.DatabaseConfigProvider
 import play.api.libs.json._
-import slick.driver.JdbcProfile
+import slick.jdbc.JdbcProfile
 import slick.lifted.TableQuery
 import slick.driver.PostgresDriver.api._
 
@@ -35,7 +35,7 @@ class ProjectTemplateController @Inject() (config: Configuration, dbConfigProvid
 
   override def selectall = dbConfig.db.run(TableQuery[ProjectTemplateRow].result.asTry)
 
-  override def insert(entry: ProjectTemplate) = dbConfig.db.run(
+  override def insert(entry: ProjectTemplate, uid:String) = dbConfig.db.run(
     (TableQuery[ProjectTemplateRow] returning TableQuery[ProjectTemplateRow].map(_.id) += entry).asTry)
 
   override def jstranslate(result: Seq[ProjectTemplate]) = result

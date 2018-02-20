@@ -5,7 +5,7 @@ import javax.inject.Inject
 import play.api.{Configuration, Logger}
 import play.api.db.slick.DatabaseConfigProvider
 import play.api.mvc._
-import slick.driver.JdbcProfile
+import slick.jdbc.JdbcProfile
 import play.api.libs.json._
 import slick.driver.PostgresDriver.api._
 
@@ -43,13 +43,16 @@ class Files @Inject() (configuration: Configuration, dbConfigProvider: DatabaseC
   override def jstranslate(result: Seq[FileEntry]) = result //implicit translation should handle this
   override def jstranslate(result: FileEntry) = result //implicit translation should handle this
 
-  override def insert(entry: FileEntry) = dbConfig.db.run(
-    (TableQuery[FileEntryRow] returning TableQuery[FileEntryRow].map(_.id) += entry).asTry
-  )
+  override def insert(entry: FileEntry,uid:String) = {
+    val updatedEntry = entry.copy(user = uid)
+    dbConfig.db.run(
+      (TableQuery[FileEntryRow] returning TableQuery[FileEntryRow].map(_.id) += updatedEntry).asTry
+    )
+  }
 
   override def validate(request: Request[JsValue]) = request.body.validate[FileEntry]
 
-  def uploadContent(requestedId: Int) = Action.async(parse.anyContent) { request =>
+  def uploadContent(requestedId: Int) = IsAuthenticatedAsync(parse.anyContent) {uid=>{ request =>
     implicit val db = dbConfig.db
 
     request.body.asRaw match {
@@ -78,6 +81,6 @@ class Files @Inject() (configuration: Configuration, dbConfigProvider: DatabaseC
       case None =>
         Future(BadRequest(Json.obj("status" -> "error", "detail" -> "No upload payload")))
     }
-  }
+  }}
 }
 

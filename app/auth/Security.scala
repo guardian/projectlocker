@@ -22,14 +22,18 @@ import play.api.libs.Files.TemporaryFile
 import controllers.routes
 import auth._
 import play.api.cache.SyncCacheApi
+import play.api.libs.json._
 
 import scala.concurrent.Future
 
 trait Security {
   implicit val cache:SyncCacheApi
+  //if this returns something, then we are logged in
   private def username(request: RequestHeader) = request.session.get("uid")
 
-  private def onUnauthorized(request: RequestHeader) = Results.Forbidden("")
+  private def onUnauthorized(request: RequestHeader) = {
+    Results.Forbidden(Json.obj("status"->"error","detail"->"Not logged in"))
+  }
 
   def IsAuthenticated(f: => String => Request[AnyContent] => Result) = Security.Authenticated(username, onUnauthorized) {
     uid => Action(request => f(uid)(request))
@@ -37,6 +41,10 @@ trait Security {
 
   def IsAuthenticatedAsync(f: => String => Request[AnyContent] => Future[Result]) = Security.Authenticated(username, onUnauthorized) {
     uid => Action.async(request => f(uid)(request))
+  }
+
+  def IsAuthenticatedAsync[A](b: BodyParser[A])(f: => String => Request[A] => Future[Result]) = Security.Authenticated(username, onUnauthorized) {
+    uid=> Action.async(b)(request => f(uid)(request))
   }
 
   def IsAuthenticated(b: BodyParser[MultipartFormData[TemporaryFile]] = BodyParsers.parse.multipartFormData)(f: => String => Request[MultipartFormData[TemporaryFile]] => Result) = {
