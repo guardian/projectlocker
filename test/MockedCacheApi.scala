@@ -8,7 +8,4 @@ import scala.runtime.Nothing$
 trait MockedCacheApi extends Mockito {
   val mockedSyncCacheApi = mock[SyncCacheApi]
 
-//  mockedSyncCacheApi.getOrElseUpdate[Option[String]](anyString,any[Duration])(any[Option[String]]) returns None
-//  mockedSyncCacheApi.getOrElseUpdate[Option[List[String]]](anyString,any[Duration])(any[Option[List[String]]]) returns None
-
 }
