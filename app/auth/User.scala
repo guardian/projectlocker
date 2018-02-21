@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
+ * Modified by Andy Gallagher to provide cache instance via implicits
  */
 
 package auth
@@ -26,7 +27,7 @@ case class User(uid: String, name: String)
 
 object User {
 
-  def authenticate(uid: String, pass: String)(implicit cache:SyncCacheApi, connectionPool:LDAPConnectionPool): Try[Option[User]] = {
+  def authenticate(uid: String, pass: String)(implicit cache:SyncCacheApi): Try[Option[User]] = {
     LDAP.bind(uid,pass) match {
         case Success(0) => Success(Some(User(uid,LDAP.getFullName(uid))))
         case Success(_) => Success(None)

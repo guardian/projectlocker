@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
+ * Modified by Andy Gallagher to improve error reporting when configuration is invalid
  */
 
 package auth
