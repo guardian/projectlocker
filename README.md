@@ -65,6 +65,14 @@ to log into AD, and your DNs in `roleBaseDN` and `userBaseDN`.
 Plain unencrypted ldap can also be used, but is discouraged.  No keystore is needed, simply configure the `application.conf`
 as above but use `ldapProtocol = "ldap"` and `ldapPort = 336` instead.
 
+### none
+
+Authentication can be disabled, if you are working on development without access to an ldap server.  Simply set
+`ldapProtocol = "none"` in `application.conf`.  This will treat any session to be logged in with a username of `noldap`.
+
+Fairly obviously, don't deploy the system like this!
+
+
 Development
 ------
 
