@@ -2,7 +2,6 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import axios from 'axios';
 import ErrorViewComponent from './multistep/common/ErrorViewComponent.jsx';
-import Cookies from 'universal-cookie';
 
 class LoginComponent extends React.Component {
     static propTypes = {
