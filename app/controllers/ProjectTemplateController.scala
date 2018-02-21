@@ -1,13 +1,14 @@
 package controllers
 
 import javax.inject.Inject
-
+import com.unboundid.ldap.sdk.LDAPConnectionPool
 import models._
+import play.api.cache.SyncCacheApi
 import play.api.{Configuration, Logger}
 import play.api.mvc._
 import play.api.db.slick.DatabaseConfigProvider
 import play.api.libs.json._
-import slick.driver.JdbcProfile
+import slick.jdbc.JdbcProfile
 import slick.lifted.TableQuery
 import slick.driver.PostgresDriver.api._
 
@@ -15,9 +16,11 @@ import scala.concurrent.Future
 import scala.util.{Failure, Success}
 import scala.concurrent.ExecutionContext.Implicits.global
 
-class ProjectTemplateController @Inject() (config: Configuration, dbConfigProvider: DatabaseConfigProvider)
+class ProjectTemplateController @Inject() (config: Configuration, dbConfigProvider: DatabaseConfigProvider,
+                                           cacheImpl:SyncCacheApi)
   extends GenericDatabaseObjectController[ProjectTemplate] with ProjectTemplateSerializer with StorageSerializer{
 
+  implicit val cache:SyncCacheApi = cacheImpl
   val dbConfig = dbConfigProvider.get[JdbcProfile]
 
   override def deleteid(requestedId: Int) = dbConfig.db.run(
@@ -32,7 +35,7 @@ class ProjectTemplateController @Inject() (config: Configuration, dbConfigProvid
 
   override def selectall = dbConfig.db.run(TableQuery[ProjectTemplateRow].result.asTry)
 
-  override def insert(entry: ProjectTemplate) = dbConfig.db.run(
+  override def insert(entry: ProjectTemplate, uid:String) = dbConfig.db.run(
     (TableQuery[ProjectTemplateRow] returning TableQuery[ProjectTemplateRow].map(_.id) += entry).asTry)
 
   override def jstranslate(result: Seq[ProjectTemplate]) = result

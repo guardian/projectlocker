@@ -1,9 +1,23 @@
 import React from 'react';
-import {render} from 'react-dom';
+import LoginComponent from './LoginComponent.jsx';
+import PropTypes from 'prop-types';
 
 class RootComponent extends React.Component {
+    static propTypes = {
+        onLoggedIn: PropTypes.func.isRequired,
+        onLoggedOut: PropTypes.func.isRequired,
+        currentUsername: PropTypes.string,
+        isLoggedIn: PropTypes.bool.isRequired
+    };
+
     render() {
-        return(<p>Please select an option on the left</p>);
+        return(<div>
+            <LoginComponent onLoggedIn={this.props.onLoggedIn}
+                            onLoggedOut={this.props.onLoggedOut}
+                            username={this.props.currentUsername}
+                            currentlyLoggedIn={this.props.isLoggedIn}
+            />
+        </div>);
     }
 }
 

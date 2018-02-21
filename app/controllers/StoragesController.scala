@@ -1,13 +1,14 @@
 package controllers
 
-import javax.inject.{Inject,Singleton}
+import javax.inject.{Inject, Singleton}
 import models.{ProjectEntryRow, StorageEntry, StorageEntryRow, StorageSerializer, StorageType, StorageTypeSerializer}
 import play.api.Configuration
+import play.api.cache.SyncCacheApi
 import play.api.db.slick.DatabaseConfigProvider
 import play.api.libs.json._
 import play.api.mvc.{Action, BodyParsers, Request}
-import slick.backend.DatabaseConfig
-import slick.driver.JdbcProfile
+import slick.basic.DatabaseConfig
+import slick.jdbc.JdbcProfile
 import slick.lifted.TableQuery
 import slick.driver.PostgresDriver.api._
 
@@ -17,8 +18,10 @@ import scala.concurrent.ExecutionContext.Implicits.global
 
 @Singleton
 class StoragesController @Inject()
-    (configuration: Configuration, dbConfigProvider: DatabaseConfigProvider)
+    (configuration: Configuration, dbConfigProvider: DatabaseConfigProvider, cacheImpl:SyncCacheApi)
     extends GenericDatabaseObjectController[StorageEntry] with StorageSerializer with StorageTypeSerializer {
+
+  implicit val cache:SyncCacheApi = cacheImpl
 
   val knownTypes = List(
     StorageType("Local",needsLogin=false,hasSubfolders=true),
@@ -43,7 +46,7 @@ class StoragesController @Inject()
   override def jstranslate(result: Seq[StorageEntry]) = result.asInstanceOf[Seq[StorageEntry]]  //implicit translation should handle this
   override def jstranslate(result: StorageEntry) = result  //implicit translation should handle this
 
-  override def insert(storageEntry: StorageEntry) = dbConfig.db.run(
+  override def insert(storageEntry: StorageEntry,uid:String) = dbConfig.db.run(
     (TableQuery[StorageEntryRow] returning TableQuery[StorageEntryRow].map(_.id) += storageEntry).asTry
   )
 

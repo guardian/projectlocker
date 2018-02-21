@@ -30,6 +30,9 @@ libraryDependencies ++= Seq(
   "com.typesafe.play" %% "play-slick-evolutions" % "3.0.3"
 )
 
+//authentication
+libraryDependencies += "com.unboundid" % "unboundid-ldapsdk" % "2.3.6"
+
 enablePlugins(UniversalPlugin)
 
 enablePlugins(LinuxPlugin)

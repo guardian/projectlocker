@@ -6,6 +6,7 @@ div.leftmenu {
     padding-left: 10px;
     background-color: #cdcdcd;
     border-radius: 15px;
+    width: 150px;
 }
 
 ul.leftmenu {
@@ -59,4 +60,55 @@ img.tinyicon {
 .error-text {
     color: darkred;
     font-weight: bold;
+}
+
+div.inline-dialog {
+    border: 2px solid black;
+    width: 30%;
+    overflow:hidden;
+    margin-top:5em;
+    margin-left: auto;
+    margin-right:auto;
+    border-radius: 30px;
+}
+
+h2.inline-dialog-title {
+    background-color: lavender;
+    border-top-right-radius: 30px;
+    padding: 0.1em;
+    padding-left: 0.5em;
+    border-top-left-radius: 30px;
+}
+
+table.login-table {
+    margin-left: 1em;
+}
+
+button.inline-dialog {
+    float: right;
+    margin-right: 2em;
+}
+
+.inline-dialog-content {
+    margin-left: 1em;
+}
+
+.emphasis {
+    font-weight: bold;
+}
+
+.mainbody {
+    position: absolute;
+    width:80%;
+    left: 150px;
+}
+
+.intro-banner {
+    text-align: center;
+    font-size: 1.3em;
+    color: green;
+}
+
+p.centered {
+    text-align: center;
 }

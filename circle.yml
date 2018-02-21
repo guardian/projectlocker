@@ -43,4 +43,4 @@ deployment:
     commands:
       - cd frontend; npm run compile
       - sbt rpm:packageBin
-      - aws s3 cp target/rpm/RPMS/noarch/projectlocker*.rpm s3://${DEPLOY_BUCKET}/projectlocker/${CIRCLE_BUILD_NUM}
+      - for x in `ls target/rpm/RPMS/noarch/projectlocker*.rpm`; do bash ./upload_to_s3.sh "$x"; done

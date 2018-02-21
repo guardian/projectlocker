@@ -9,7 +9,7 @@ import play.api.libs.functional.syntax._
 import play.api.libs.json.Reads.jodaDateReads
 import play.api.libs.json.Writes.jodaDateWrites
 import play.api.libs.json._
-import play.api.mvc.{Action, BodyParsers, Controller, Request}
+import play.api.mvc._
 import slick.backend.DatabaseConfig
 import slick.driver.JdbcProfile
 import slick.lifted.TableQuery
@@ -17,9 +17,9 @@ import slick.lifted.TableQuery
 import scala.concurrent.Future
 import scala.util.{Failure, Success, Try}
 import scala.concurrent.ExecutionContext.Implicits.global
+import auth.Security
 
-
-trait GenericDatabaseObjectController[M] extends Controller {
+trait GenericDatabaseObjectController[M] extends InjectedController with Security {
   def validate(request:Request[JsValue]):JsResult[M]
 
   def selectall:Future[Try[Seq[M]]]
@@ -27,30 +27,29 @@ trait GenericDatabaseObjectController[M] extends Controller {
 
   def deleteid(requestedId: Int):Future[Try[Int]]
 
-  def insert(entry: M):Future[Any]
+  def insert(entry: M,uid:String):Future[Any]
   def jstranslate(result:Seq[M]):Json.JsValueWrapper
   def jstranslate(result:M):Json.JsValueWrapper
 
   val logger: Logger = Logger(this.getClass)
 
-  def list = Action.async {
+  def list = IsAuthenticatedAsync {uid=>{request=>
     selectall.map({
       case Success(result)=>Ok(Json.obj("status"->"ok","result"->this.jstranslate(result)))
       case Failure(error)=>
         logger.error(error.toString)
         InternalServerError(Json.obj("status"->"error","detail"->error.toString))
     })
-  }
+  }}
 
-  def create = Action.async(BodyParsers.parse.json) { request =>
+  def create = IsAuthenticatedAsync(BodyParsers.parse.json) {uid=>{request =>
     this.validate(request).fold(
       errors => {
         println(s"errors parsing content: $errors")
         Future(BadRequest(Json.obj("status"->"error","detail"->JsError.toJson(errors))))
       },
-      storageEntry => {
-        println("Trying to add storage entry")
-        this.insert(storageEntry).map({
+      newEntry => {
+        this.insert(newEntry,uid).map({
           case Success(result)=>Ok(Json.obj("status" -> "ok", "detail" -> "added", "id" -> result.asInstanceOf[Int]))
           case Failure(error)=>
             logger.error(error.toString)
@@ -59,9 +58,9 @@ trait GenericDatabaseObjectController[M] extends Controller {
         )
       }
     )
-  }
+  }}
 
-  def getitem(requestedId: Int) = Action.async {
+  def getitem(requestedId: Int) = IsAuthenticatedAsync {uid=>{request=>
     selectid(requestedId).map({
       case Success(result)=>
         if(result.isEmpty)
@@ -72,14 +71,14 @@ trait GenericDatabaseObjectController[M] extends Controller {
         logger.error(error.toString)
         InternalServerError(Json.obj("status"->"error","detail"->error.toString))
     })
-  }
+  }}
 
-  def update(id: Int) = Action.async(BodyParsers.parse.json) { request =>
+  def update(id: Int) = IsAuthenticatedAsync(BodyParsers.parse.json) { uid=>{request =>
     this.validate(request).fold(
       errors=>Future(BadRequest(Json.obj("status"->"error","detail"->JsError.toJson(errors)))),
       StorageEntry=>Future(Ok(""))
     )
-  }
+  }}
 
   def deleteAction(requestedId: Int) = {
     deleteid(requestedId).map({
@@ -98,10 +97,10 @@ trait GenericDatabaseObjectController[M] extends Controller {
     })
   }
 
-  def delete(requestedId: Int) = Action.async { request =>
+  def delete(requestedId: Int) = IsAuthenticatedAsync {uid=>{ request =>
     if(requestedId<0)
       Future(Conflict(Json.obj("status"->"error","detail"->"This is still referenced by sub-objects")))
     else
       deleteAction(requestedId)
-  }
+  }}
 }
