@@ -17,13 +17,26 @@ class Application @Inject() (cc:ControllerComponents, p:PlayBodyParsers, cacheIm
   extends AbstractController(cc) with Security with LoginRequestSerializer {
 
   implicit val cache:SyncCacheApi = cacheImpl
+  //this is safe as users of the connection pool automatically bail on a null input
+  //a proper error message is returned from authenticate, which is
   implicit val ldapConnectionPool:LDAPConnectionPool = ldapPool.connectionPool.getOrElse(null)
 
-  //this allows the loading of frontend, so shouldn't be authed
+  /**
+    * Action to provide base html and frontend code to the client
+    * @param path http path postfix, not used but must be included to allow an indefinite path in routes
+    * @return Action containing html
+    */
   def index(path:String) = Action {
     Ok(views.html.index())
   }
 
+  /**
+    * Action to allow the client to authenticate.  Expects a JSON body containing username and password (use https!!!)
+    * @return If login is successful, a 200 response containing a session cookie that authenticates the user.
+    *         If unsuccessful, a 403 response
+    *         If the data is malformed, a 400 response
+    *         If an error occurs, a 500 response with a basic error message directing the user to go to the logs
+    */
   def authenticate = Action(p.json) { request=>
     ldapPool.connectionPool.fold(
       errors=> {
@@ -52,10 +65,19 @@ class Application @Inject() (cc:ControllerComponents, p:PlayBodyParsers, cacheIm
     )
   }
 
+  /**
+    * Action that allows the frontend to test if the current session is valid
+    * @return If the session is not valid, a 403 response
+    *         If the session is valid, a 200 response with the currently logged in userid in a json object
+    */
   def isLoggedIn = IsAuthenticated { uid=> { request=>
     Ok(Json.obj("status"->"ok","uid"->uid))
   }}
 
+  /**
+    * Action to log out, by clearing the client's session cookie.
+    * @return
+    */
   def logout = Action { request=>
     Ok(Json.obj("status"->"ok","detail"->"Logged out")).withNewSession
   }

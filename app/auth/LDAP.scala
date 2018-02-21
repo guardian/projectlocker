@@ -22,6 +22,7 @@ import com.unboundid.util.ssl.{SSLUtil, TrustAllTrustManager, TrustStoreTrustMan
 import java.security.MessageDigest
 
 import Conf._
+import play.api.Logger
 import play.api.cache.SyncCacheApi
 
 import scala.concurrent.duration._
@@ -39,7 +40,7 @@ object LDAP {
     if(connectionPool==null) return None
     val cacheKey = "userDN." + uid
     val userDN: Option[String] = cache.getOrElseUpdate[Option[String]](cacheKey) {
-      println("LDAP: get DN for " + uid)
+      Logger.debug("LDAP: get DN for " + uid)
       // Get DN for a given uid
       val searchEntries : java.util.List[com.unboundid.ldap.sdk.SearchResultEntry] = connectionPool
         .search(new SearchRequest(
@@ -57,7 +58,7 @@ object LDAP {
     if(connectionPool==null) return None
     val cacheKey = "userRoles." + uid
     val userRoles : Option[List[String]] = cache.getOrElseUpdate[Option[List[String]]](cacheKey,Duration.create(ldapCacheDuration,"seconds")) {
-      println("LDAP: get roles for " + uid)
+      Logger.debug("LDAP: get roles for " + uid)
       try {
         val searchEntries : java.util.List[com.unboundid.ldap.sdk.SearchResultEntry] = connectionPool
           .search(new SearchRequest(
@@ -83,7 +84,7 @@ object LDAP {
     if(connectionPool==null) return None
     val cacheKey = "roleDN." + role
     val roleDN : Option[String] = cache.getOrElseUpdate[Option[String]](cacheKey) {
-      println("LDAP: get DN for " + role)
+      Logger.debug("LDAP: get DN for " + role)
       // Get DN for a given role
       val searchEntries : java.util.List[com.unboundid.ldap.sdk.SearchResultEntry] = connectionPool
         .search(new SearchRequest(
@@ -99,7 +100,7 @@ object LDAP {
 
   def compareMember (roleDN: String, userDN: String)(implicit connectionPool:LDAPConnectionPool) : Int = {
     if(connectionPool==null) return -1
-    println("LDAP: compare " + roleDN + " " + userDN)
+    Logger.debug("LDAP: compare " + roleDN + " " + userDN)
     connectionPool
       .compare(new CompareRequest(roleDN,memberAttribute,userDN))
       .getResultCode
@@ -136,7 +137,7 @@ object LDAP {
     val bindResult : Int = cache.getOrElseUpdate[Int](cacheKey,Duration(ldapCacheDuration,"seconds")) {
       getUserDN(uid) match {
         case Some(dn) =>
-          println("LDAP: binding " + uid + " hash=" + hash)
+          Logger.debug("LDAP: binding " + uid + " hash=" + hash)
           connectionPool
             .bindAndRevertAuthentication(new SimpleBindRequest(dn,pass))
             .getResultCode
@@ -148,10 +149,10 @@ object LDAP {
   }
 
   def getFullName (uid:String)(implicit cache:SyncCacheApi, connectionPool:LDAPConnectionPool) : String = {
-    if(connectionPool==null) return ""
+
     val cacheKey = "userFullName." + uid
     val userFullName : String = cache.getOrElseUpdate[String](cacheKey,Duration(ldapCacheDuration,"seconds")) {
-      println("LDAP: search " + uid + " Full Name")
+      Logger.debug("LDAP: search " + uid + " Full Name")
       connectionPool
         .search(
           new SearchRequest(
