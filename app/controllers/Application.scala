@@ -4,7 +4,7 @@ import javax.inject.{Inject, Singleton}
 
 import play.api._
 import play.api.mvc._
-import auth.{LDAPConnectionPoolWrapper, Security, User}
+import auth.{LDAP, Security, User}
 import com.unboundid.ldap.sdk.LDAPConnectionPool
 import models.{LoginRequest, LoginRequestSerializer}
 import play.api.cache.SyncCacheApi
@@ -13,13 +13,10 @@ import play.api.libs.json._
 import scala.util.{Failure, Success}
 
 @Singleton
-class Application @Inject() (cc:ControllerComponents, p:PlayBodyParsers, cacheImpl:SyncCacheApi, ldapPool:LDAPConnectionPoolWrapper)
+class Application @Inject() (cc:ControllerComponents, p:PlayBodyParsers, cacheImpl:SyncCacheApi)
   extends AbstractController(cc) with Security with LoginRequestSerializer {
 
   implicit val cache:SyncCacheApi = cacheImpl
-  //this is safe as users of the connection pool automatically bail on a null input
-  //a proper error message is returned from authenticate, which is
-  implicit val ldapConnectionPool:LDAPConnectionPool = ldapPool.connectionPool.getOrElse(null)
 
   /**
     * Action to provide base html and frontend code to the client
@@ -38,7 +35,7 @@ class Application @Inject() (cc:ControllerComponents, p:PlayBodyParsers, cacheIm
     *         If an error occurs, a 500 response with a basic error message directing the user to go to the logs
     */
   def authenticate = Action(p.json) { request=>
-    ldapPool.connectionPool.fold(
+    LDAP.connectionPool.fold(
       errors=> {
         Logger.error("LDAP not configured properly", errors)
         InternalServerError(Json.obj("status" -> "error", "detail" -> "ldap not configured properly, see logs"))

@@ -29,7 +29,6 @@ import scala.concurrent.Future
 
 trait Security {
   implicit val cache:SyncCacheApi
-  implicit val ldapConnectionPool:LDAPConnectionPool
 
   //if this returns something, then we are logged in
   private def username(request: RequestHeader) = Conf.ldapProtocol match {

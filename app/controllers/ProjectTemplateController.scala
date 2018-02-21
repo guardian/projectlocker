@@ -1,8 +1,6 @@
 package controllers
 
 import javax.inject.Inject
-
-import auth.LDAPConnectionPoolWrapper
 import com.unboundid.ldap.sdk.LDAPConnectionPool
 import models._
 import play.api.cache.SyncCacheApi
@@ -19,11 +17,10 @@ import scala.util.{Failure, Success}
 import scala.concurrent.ExecutionContext.Implicits.global
 
 class ProjectTemplateController @Inject() (config: Configuration, dbConfigProvider: DatabaseConfigProvider,
-                                           cacheImpl:SyncCacheApi, ldapPool:LDAPConnectionPoolWrapper)
+                                           cacheImpl:SyncCacheApi)
   extends GenericDatabaseObjectController[ProjectTemplate] with ProjectTemplateSerializer with StorageSerializer{
 
   implicit val cache:SyncCacheApi = cacheImpl
-  implicit val ldapConnectionPool:LDAPConnectionPool = ldapPool.connectionPool.getOrElse(null)
   val dbConfig = dbConfigProvider.get[JdbcProfile]
 
   override def deleteid(requestedId: Int) = dbConfig.db.run(

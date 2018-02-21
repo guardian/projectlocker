@@ -1,9 +1,6 @@
 package controllers
 
 import javax.inject.{Inject, Singleton}
-
-import auth.LDAPConnectionPoolWrapper
-import com.unboundid.ldap.sdk.LDAPConnectionPool
 import models.{ProjectEntryRow, StorageEntry, StorageEntryRow, StorageSerializer, StorageType, StorageTypeSerializer}
 import play.api.Configuration
 import play.api.cache.SyncCacheApi
@@ -21,12 +18,11 @@ import scala.concurrent.ExecutionContext.Implicits.global
 
 @Singleton
 class StoragesController @Inject()
-    (configuration: Configuration, dbConfigProvider: DatabaseConfigProvider, cacheImpl:SyncCacheApi,
-     ldapPool:LDAPConnectionPoolWrapper)
+    (configuration: Configuration, dbConfigProvider: DatabaseConfigProvider, cacheImpl:SyncCacheApi)
     extends GenericDatabaseObjectController[StorageEntry] with StorageSerializer with StorageTypeSerializer {
 
   implicit val cache:SyncCacheApi = cacheImpl
-  implicit val ldapConnectionPool:LDAPConnectionPool = ldapPool.connectionPool.getOrElse(null)
+
   val knownTypes = List(
     StorageType("Local",needsLogin=false,hasSubfolders=true),
     StorageType("ObjectMatrix",needsLogin = true,hasSubfolders = false),

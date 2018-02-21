@@ -26,9 +26,30 @@ import play.api.Logger
 import play.api.cache.SyncCacheApi
 
 import scala.concurrent.duration._
-import scala.util.Try
+import scala.util.{Failure, Success, Try}
 
 object LDAP {
+  protected val trustManager = {
+    (ldapProtocol,ldapUseKeystore) match {
+      case ("ldaps",true) =>
+        Try { new TrustStoreTrustManager(trustStore,trustStorePass,trustStoreType,true) }
+      case ("ldaps",false) =>
+        Try { new TrustAllTrustManager() }
+      case _ =>
+        Success(null)// don't need a trust store
+    }
+  }
+
+  // Initialize Multi-Server LDAP Connection Pool
+  val connectionPool:Try[LDAPConnectionPool] = ldapProtocol match {
+    case "ldaps" =>
+      Try { new LDAPConnectionPool(new FailoverServerSet(serverAddresses, serverPorts,new SSLUtil(trustManager.get).createSSLSocketFactory()),new SimpleBindRequest(bindDN, bindPass), poolSize) }
+    case "ldap" =>
+      Try { new LDAPConnectionPool(new FailoverServerSet(serverAddresses, serverPorts),new SimpleBindRequest(bindDN, bindPass), poolSize) }
+    case _ =>
+      Failure(new RuntimeException(s"Invalid ldap protocol in settings: $ldapProtocol"))
+  }
+
   def getDN (searchEntries: java.util.List[com.unboundid.ldap.sdk.SearchResultEntry]) : Option[String] = {
     searchEntries.size match {
       case 0 => None
@@ -36,13 +57,13 @@ object LDAP {
     }
   }
 
-  def getUserDN (uid:String)(implicit cache:SyncCacheApi, connectionPool:LDAPConnectionPool) : Option[String] = {
-    if(connectionPool==null) return None
+  def getUserDN (uid:String)(implicit cache:SyncCacheApi) : Option[String] = {
+    if(connectionPool.isFailure) return None
     val cacheKey = "userDN." + uid
     val userDN: Option[String] = cache.getOrElseUpdate[Option[String]](cacheKey) {
       Logger.debug("LDAP: get DN for " + uid)
       // Get DN for a given uid
-      val searchEntries : java.util.List[com.unboundid.ldap.sdk.SearchResultEntry] = connectionPool
+      val searchEntries : java.util.List[com.unboundid.ldap.sdk.SearchResultEntry] = connectionPool.get
         .search(new SearchRequest(
           userBaseDN, 
           SearchScope.SUB,
@@ -54,13 +75,13 @@ object LDAP {
     userDN
   }
   
-  def getUserRoles (uid: String)(implicit cache:SyncCacheApi, connectionPool:LDAPConnectionPool) : Option[List[String]] = {
-    if(connectionPool==null) return None
+  def getUserRoles (uid: String)(implicit cache:SyncCacheApi) : Option[List[String]] = {
+    if(connectionPool.isFailure) return None
     val cacheKey = "userRoles." + uid
     val userRoles : Option[List[String]] = cache.getOrElseUpdate[Option[List[String]]](cacheKey,Duration.create(ldapCacheDuration,"seconds")) {
       Logger.debug("LDAP: get roles for " + uid)
       try {
-        val searchEntries : java.util.List[com.unboundid.ldap.sdk.SearchResultEntry] = connectionPool
+        val searchEntries : java.util.List[com.unboundid.ldap.sdk.SearchResultEntry] = connectionPool.get
           .search(new SearchRequest(
             userBaseDN, 
             SearchScope.SUB,
@@ -80,13 +101,13 @@ object LDAP {
     userRoles
   }
 
-  def getRoleDN (role:String)(implicit cache:SyncCacheApi, connectionPool:LDAPConnectionPool) : Option[String] = {
-    if(connectionPool==null) return None
+  def getRoleDN (role:String)(implicit cache:SyncCacheApi) : Option[String] = {
+    if(connectionPool.isFailure) return None
     val cacheKey = "roleDN." + role
     val roleDN : Option[String] = cache.getOrElseUpdate[Option[String]](cacheKey) {
       Logger.debug("LDAP: get DN for " + role)
       // Get DN for a given role
-      val searchEntries : java.util.List[com.unboundid.ldap.sdk.SearchResultEntry] = connectionPool
+      val searchEntries : java.util.List[com.unboundid.ldap.sdk.SearchResultEntry] = connectionPool.get
         .search(new SearchRequest(
           roleBaseDN, 
           SearchScope.SUB,
@@ -98,10 +119,10 @@ object LDAP {
     roleDN
   }
 
-  def compareMember (roleDN: String, userDN: String)(implicit connectionPool:LDAPConnectionPool) : Int = {
-    if(connectionPool==null) return -1
+  def compareMember (roleDN: String, userDN: String) : Int = {
+    if(connectionPool.isFailure) return -1
     Logger.debug("LDAP: compare " + roleDN + " " + userDN)
-    connectionPool
+    connectionPool.get
       .compare(new CompareRequest(roleDN,memberAttribute,userDN))
       .getResultCode
       .intValue
@@ -125,7 +146,9 @@ object LDAP {
     }
   }
 
-  def bind (uid:String,pass:String)(implicit cache:SyncCacheApi, connectionPool:LDAPConnectionPool) : Try[Int] = Try {
+  def bind (uid:String,pass:String)(implicit cache:SyncCacheApi) : Try[Int] = Try {
+    if(connectionPool.isFailure) return Failure(connectionPool.failed.get)
+
     val msg : String = uid + pass + "ela_salt_201406"
     val hash : String =  MessageDigest.getInstance("SHA-256")
       .digest(msg.getBytes)
@@ -138,7 +161,7 @@ object LDAP {
       getUserDN(uid) match {
         case Some(dn) =>
           Logger.debug("LDAP: binding " + uid + " hash=" + hash)
-          connectionPool
+          connectionPool.get
             .bindAndRevertAuthentication(new SimpleBindRequest(dn,pass))
             .getResultCode
             .intValue()
@@ -148,12 +171,12 @@ object LDAP {
     bindResult
   }
 
-  def getFullName (uid:String)(implicit cache:SyncCacheApi, connectionPool:LDAPConnectionPool) : String = {
-
+  def getFullName (uid:String)(implicit cache:SyncCacheApi) : String = {
+    if(connectionPool.isFailure) return ""
     val cacheKey = "userFullName." + uid
     val userFullName : String = cache.getOrElseUpdate[String](cacheKey,Duration(ldapCacheDuration,"seconds")) {
       Logger.debug("LDAP: search " + uid + " Full Name")
-      connectionPool
+      connectionPool.get
         .search(
           new SearchRequest(
             userBaseDN,

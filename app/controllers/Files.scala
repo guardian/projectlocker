@@ -2,7 +2,6 @@ package controllers
 
 import javax.inject.Inject
 
-import auth.LDAPConnectionPoolWrapper
 import com.unboundid.ldap.sdk.LDAPConnectionPool
 import play.api.{Configuration, Logger}
 import play.api.db.slick.DatabaseConfigProvider
@@ -20,12 +19,10 @@ import scala.concurrent.{CanAwait, Future}
 import scala.util.{Failure, Success}
 
 
-class Files @Inject() (configuration: Configuration, dbConfigProvider: DatabaseConfigProvider, cacheImpl:SyncCacheApi,
-                       ldapPool:LDAPConnectionPoolWrapper)
+class Files @Inject() (configuration: Configuration, dbConfigProvider: DatabaseConfigProvider, cacheImpl:SyncCacheApi)
   extends GenericDatabaseObjectController[FileEntry] with FileEntrySerializer {
 
   implicit val cache:SyncCacheApi = cacheImpl
-  implicit val ldapConnectionPool:LDAPConnectionPool = ldapPool.connectionPool.getOrElse(null)
 
   val dbConfig = dbConfigProvider.get[JdbcProfile]
 

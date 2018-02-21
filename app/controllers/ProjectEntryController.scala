@@ -1,8 +1,7 @@
 package controllers
 
 import javax.inject.{Inject, Singleton}
-
-import auth.{LDAPConnectionPoolWrapper, Security}
+import auth.Security
 import com.unboundid.ldap.sdk.LDAPConnectionPool
 import helpers.ProjectCreateHelper
 import models._
@@ -26,11 +25,10 @@ import scala.util.{Failure, Success}
 @Singleton
 class ProjectEntryController @Inject() (cc:ControllerComponents, config: Configuration,
                                         dbConfigProvider: DatabaseConfigProvider, projectHelper:ProjectCreateHelper,
-                                        cacheImpl:SyncCacheApi, ldapPool:LDAPConnectionPoolWrapper)
+                                        cacheImpl:SyncCacheApi)
   extends GenericDatabaseObjectController[ProjectEntry] with ProjectEntrySerializer with ProjectRequestSerializer with Security
 {
   override implicit val cache:SyncCacheApi = cacheImpl
-  implicit val ldapConnectionPool:LDAPConnectionPool = ldapPool.connectionPool.getOrElse(null)
 
   val dbConfig = dbConfigProvider.get[JdbcProfile]
 
