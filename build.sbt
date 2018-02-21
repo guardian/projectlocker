@@ -37,7 +37,7 @@ enablePlugins(UniversalPlugin)
 
 enablePlugins(LinuxPlugin)
 
-enablePlugins(RpmPlugin)
+enablePlugins(RpmPlugin, JavaServerAppPackaging, SystemdPlugin)
 
 //Generic Linux package build configuration
 
@@ -49,6 +49,8 @@ packageDescription in Linux := "A system to manage, backup and archive multimedi
 rpmVendor := "Andy Gallagher <andy.gallagher@theguardian.com>"
 
 rpmUrl := Some("https://github/fredex42/projectlocker")
+
+serverLoading in Universal := Some(ServerLoader.Systemd)
 
 packageName in Rpm := "projectlocker"
 
