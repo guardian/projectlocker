@@ -78,7 +78,9 @@ class App extends React.Component {
                 <li><Link to="/file/">Files...</Link></li>
             </ul>
         } else {
-            return <ul className="leftmenu"/>
+            return <ul className="leftmenu">
+                <li><i>Not logged in</i></li>
+            </ul>
         }
     }
 

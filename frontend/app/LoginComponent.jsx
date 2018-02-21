@@ -6,10 +6,10 @@ import Cookies from 'universal-cookie';
 
 class LoginComponent extends React.Component {
     static propTypes = {
-        onLoggedIn: PropTypes.func.required,
-        onLoggedOut: PropTypes.func.required,
+        onLoggedIn: PropTypes.func.isRequired,
+        onLoggedOut: PropTypes.func.isRequired,
         username: PropTypes.string,
-        currentlyLoggedIn: PropTypes.bool.required
+        currentlyLoggedIn: PropTypes.bool.isRequired
     };
 
     constructor(props){
@@ -69,9 +69,10 @@ class LoginComponent extends React.Component {
         if(this.props.currentlyLoggedIn){
             return <div className="inline-dialog">
                 <h2 className="inline-dialog-title">Login</h2>
-                <p className="inline-dialog-content">You are currently logged in as
+                <p className="inline-dialog-content centered">You are currently logged in as
                     <i className="fa fa-user" style={{ marginRight: "3px", marginLeft: "5px"}}/>
                     <span className="emphasis">{this.props.username}</span></p>
+                <p className="intro-banner">Please select an option on the left</p>
                 <button className="inline-dialog" onClick={this.doLogout}>Log out</button>
             </div>
         } else {
@@ -82,13 +83,13 @@ class LoginComponent extends React.Component {
                     <tr>
                         <td>User name:</td>
                         <td>
-                            <input type="text" className={this.state.loading ? "disabled" : ""} onChange={event=>this.setState({enteredUserName: event.target.value})}/>
+                            <input id="username" type="text" className={this.state.loading ? "disabled" : ""} onChange={event=>this.setState({enteredUserName: event.target.value})}/>
                         </td>
                     </tr>
                     <tr>
                         <td>Password:</td>
                         <td>
-                            <input type="password" className={this.state.loading ? "disabled" : ""} onChange={event=>this.setState({enteredPassword: event.target.value})}/>
+                            <input id="password" type="password" className={this.state.loading ? "disabled" : ""} onChange={event=>this.setState({enteredPassword: event.target.value})}/>
                         </td>
                     </tr>
                     </tbody>

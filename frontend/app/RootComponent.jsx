@@ -12,7 +12,6 @@ class RootComponent extends React.Component {
 
     render() {
         return(<div>
-            <p>Please select an option on the left</p>
             <LoginComponent onLoggedIn={this.props.onLoggedIn}
                             onLoggedOut={this.props.onLoggedOut}
                             username={this.props.currentUsername}

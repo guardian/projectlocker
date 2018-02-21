@@ -6,6 +6,7 @@ div.leftmenu {
     padding-left: 10px;
     background-color: #cdcdcd;
     border-radius: 15px;
+    width: 150px;
 }
 
 ul.leftmenu {
@@ -64,8 +65,8 @@ img.tinyicon {
 div.inline-dialog {
     border: 2px solid black;
     width: 30%;
-    /*float: left;*/
     overflow:hidden;
+    margin-top:5em;
     margin-left: auto;
     margin-right:auto;
     border-radius: 30px;
@@ -94,4 +95,20 @@ button.inline-dialog {
 
 .emphasis {
     font-weight: bold;
+}
+
+.mainbody {
+    position: absolute;
+    width:80%;
+    left: 150px;
+}
+
+.intro-banner {
+    text-align: center;
+    font-size: 1.3em;
+    color: green;
+}
+
+p.centered {
+    text-align: center;
 }
