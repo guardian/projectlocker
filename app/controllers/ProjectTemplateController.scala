@@ -75,8 +75,7 @@ class ProjectTemplateController @Inject() (config: Configuration, dbConfigProvid
           val template = templatesList.head
           template.file
         case Failure(error) =>
-          //InternalServerError(Json.obj("status"->"error", "detail"->error.toString))
-          Logger.error(error.toString)
+          logger.error(error.toString)
           throw error; //this will result in the future failing and can be picked up as a Try later on
       })
 
@@ -94,7 +93,7 @@ class ProjectTemplateController @Inject() (config: Configuration, dbConfigProvid
       /*step four - now delete the template object that was using it */
       val templateDeleteFuture = fileDeleteFuture.flatMap({
         case Left(errorString) =>
-          Logger.error(s"Not able to delete the underlying file: $errorString")
+          logger.error(s"Not able to delete the underlying file: $errorString")
           Future(InternalServerError(Json.obj("status" -> "error", "detail" -> s"Not able to delete the underlying file: $errorString")))
         case Right(managedDelete) =>
             /*now run the normal delete process for the project template object, even if the file could not be deleted (maybe it doesn't exist

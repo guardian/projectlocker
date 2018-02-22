@@ -37,7 +37,7 @@ class Application @Inject() (cc:ControllerComponents, p:PlayBodyParsers, cacheIm
   def authenticate = Action(p.json) { request=>
     LDAP.connectionPool.fold(
       errors=> {
-        Logger.error("LDAP not configured properly", errors)
+        logger.error("LDAP not configured properly", errors)
         InternalServerError(Json.obj("status" -> "error", "detail" -> "ldap not configured properly, see logs"))
       },
       ldapConnectionPool=> {
@@ -51,10 +51,10 @@ class Application @Inject() (cc:ControllerComponents, p:PlayBodyParsers, cacheIm
               case Success(Some(user)) =>
                 Ok(Json.obj("status" -> "ok", "detail" -> "Logged in", "uid" -> user.uid)).withSession("uid" -> user.uid)
               case Success(None) =>
-                Logger.warn(s"Failed login from ${loginRequest.username} with password ${loginRequest.password} from host ${request.host}")
+                logger.warn(s"Failed login from ${loginRequest.username} with password ${loginRequest.password} from host ${request.host}")
                 Forbidden(Json.obj("status" -> "error", "detail" -> "forbidden"))
               case Failure(error) =>
-                Logger.error(s"Authentication error when trying to log in ${loginRequest.username}. This could just mean a wrong password.", error)
+                logger.error(s"Authentication error when trying to log in ${loginRequest.username}. This could just mean a wrong password.", error)
                 Forbidden(Json.obj("status" -> "error", "detail" -> "forbidden"))
             }
           })

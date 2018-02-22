@@ -31,8 +31,6 @@ trait GenericDatabaseObjectController[M] extends InjectedController with Securit
   def jstranslate(result:Seq[M]):Json.JsValueWrapper
   def jstranslate(result:M):Json.JsValueWrapper
 
-  val logger: Logger = Logger(this.getClass)
-
   def list = IsAuthenticatedAsync {uid=>{request=>
     selectall.map({
       case Success(result)=>Ok(Json.obj("status"->"ok","result"->this.jstranslate(result)))

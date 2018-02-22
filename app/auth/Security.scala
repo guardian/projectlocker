@@ -31,7 +31,8 @@ import scala.concurrent.Future
 
 trait Security {
   implicit val cache:SyncCacheApi
-
+  val logger: Logger = Logger(this.getClass)
+  
   /**
     * look up an ldap user in the session.
     * @param request HTTP request object
@@ -50,10 +51,10 @@ trait Security {
   private def hmacUsername(header: RequestHeader, auth: String):Option[String] = {
     val authparts = auth.split(":")
 
-    Logger.debug(s"authparts: ${authparts.mkString(":")}")
-    Logger.debug(s"headers: ${header.headers.toSimpleMap.toString}")
+    logger.debug(s"authparts: ${authparts.mkString(":")}")
+    logger.debug(s"headers: ${header.headers.toSimpleMap.toString}")
     if(Conf.sharedSecret.isEmpty){
-      Logger.error("Unable to process server->server request, shared_secret is not set in application.conf")
+      logger.error("Unable to process server->server request, shared_secret is not set in application.conf")
       return None
     }
 
@@ -63,10 +64,10 @@ trait Security {
   //if this returns something, then we are logged in
   private def username(request:RequestHeader) = request.headers.get("Authorization") match {
     case Some(auth)=>
-      Logger.debug("got Auth header, doing hmac auth")
+      logger.debug("got Auth header, doing hmac auth")
       hmacUsername(request,auth)
     case None=>
-      Logger.debug("no Auth header, doing session auth")
+      logger.debug("no Auth header, doing session auth")
       ldapUsername(request)
   }
 

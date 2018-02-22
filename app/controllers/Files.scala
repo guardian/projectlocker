@@ -63,7 +63,7 @@ class Files @Inject() (configuration: Configuration, dbConfigProvider: DatabaseC
         ).flatMap({
           case Success(rows: Seq[FileEntry]) =>
             if (rows.isEmpty) {
-              Logger.error(s"File with ID $requestedId not found")
+              logger.error(s"File with ID $requestedId not found")
               Future(NotFound(Json.obj("status" -> "error", "detail" -> s"File with ID $requestedId not found")))
             } else {
               val fileRef = rows.head
@@ -76,7 +76,7 @@ class Files @Inject() (configuration: Configuration, dbConfigProvider: DatabaseC
               })
             }
           case Failure(error) =>
-            Logger.error(s"Could not get file to write: ${error.toString}")
+            logger.error(s"Could not get file to write: ${error.toString}")
             Future(InternalServerError(Json.obj("status" -> "error", "detail" -> s"Could not get file to write: ${error.toString}")))
         })
       case None =>

@@ -11,6 +11,7 @@ import scala.util.{Failure, Success, Try}
   * Implements a storage driver for regular file paths
   */
 class PathStorage(override val storageRef:StorageEntry) extends StorageDriver{
+  val logger: Logger = Logger(this.getClass)
 
   /**
     * return a [[java.io.File]] instance for the given path
@@ -29,7 +30,7 @@ class PathStorage(override val storageRef:StorageEntry) extends StorageDriver{
     }
 
     val f = this.fileForPath(finalPath.toString)
-    Logger.info(s"Writing data to ${f.getAbsolutePath}")
+    logger.info(s"Writing data to ${f.getAbsolutePath}")
     val st = new FileOutputStream(f)
 
     st.getChannel.transferFrom(dataStream.getChannel, 0, Long.MaxValue)
@@ -39,7 +40,7 @@ class PathStorage(override val storageRef:StorageEntry) extends StorageDriver{
 
   def writeDataToPath(path:String, data:Array[Byte]):Try[Unit] = Try {
     val f = this.fileForPath(path)
-    Logger.info(s"Writing data to ${f.getAbsolutePath}")
+    logger.info(s"Writing data to ${f.getAbsolutePath}")
     val st = new FileOutputStream(f)
 
     st.write(data)
@@ -48,7 +49,7 @@ class PathStorage(override val storageRef:StorageEntry) extends StorageDriver{
 
   override def deleteFileAtPath(path: String): Boolean = {
     val f = this.fileForPath(path)
-    Logger.info(s"Deleting file at ${f.getAbsolutePath}")
+    logger.info(s"Deleting file at ${f.getAbsolutePath}")
     f.delete()
   }
 

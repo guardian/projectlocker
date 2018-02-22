@@ -11,6 +11,7 @@ import scala.util.{Failure, Success, Try}
 import scala.concurrent.ExecutionContext.Implicits.global
 
 class StorageHelper {
+  val logger: Logger = Logger(this.getClass)
   /**
     * Internal method to copy from one stream to another, independent of the stream implementation.
     * Note that this method is blocking.
@@ -39,7 +40,7 @@ class StorageHelper {
       //safe, because we've already checked that neither Try failed
       try {
         val bytesCopied = copyStream(sourceStreamTry.get,destStreamTry.get)
-        Logger.debug(s"copied $sourceFullPath to $destFullPath: $bytesCopied bytes")
+        logger.debug(s"copied $sourceFullPath to $destFullPath: $bytesCopied bytes")
         sourceStreamTry.get.close()
         destStreamTry.get.close()
         if(bytesCopied==0)
@@ -92,7 +93,7 @@ class StorageHelper {
           val sourceFullPath = futures(1).asInstanceOf[Seq[String]].head
           val destFullPath = futures(1).asInstanceOf[Seq[String]](1)
 
-          Logger.info(s"Copying from $sourceFullPath on $sourceStorageDriver to $destFullPath on $destStorageDriver")
+          logger.info(s"Copying from $sourceFullPath on $sourceStorageDriver to $destFullPath on $destStorageDriver")
 
           val sourceStreamTry = sourceStorageDriver.getReadStream(sourceFullPath)
           val destStreamTry = destStorageDriver.getWriteStream(destFullPath)
@@ -104,10 +105,10 @@ class StorageHelper {
     val checkFuture = bytesCopiedFuture.map({
       case Left(errors)=>Left(errors)
       case Right((bytesCopied,metaDict))=>
-        Logger.debug(s"Copied $bytesCopied bytes")
+        logger.debug(s"Copied $bytesCopied bytes")
         //need to check if the number of bytes copied is the same as the source file. If so return Right() otherwise Left()
         val fileSize = metaDict('size).toLong
-        Logger.debug(s"Destination size is $fileSize")
+        logger.debug(s"Destination size is $fileSize")
         if(bytesCopied!=fileSize){
           Left(Seq(s"Copied file byte size $bytesCopied did not match source file $fileSize"))
         } else {

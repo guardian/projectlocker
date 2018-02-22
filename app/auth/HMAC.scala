@@ -6,10 +6,11 @@ import javax.crypto.Mac
 import javax.crypto.spec.SecretKeySpec
 import java.security._
 import java.util.Base64
+
 import collection.JavaConverters._
 
 object HMAC {
-  val logger = Logger("app.auth.HMAC")
+  val logger: Logger = Logger(this.getClass)
 
   /**
     * generate the HMAC digest of a string, given a shared secret to encrypt it with
@@ -33,13 +34,13 @@ object HMAC {
     */
   def calculateHmac(request: RequestHeader, sharedSecret: String):Option[String] = try {
     val string_to_sign = s"${request.headers.get("Date").get}\n${request.headers.get("Content-Length").getOrElse("0")}\n${request.headers.get("X-Sha384-Checksum").get}\n${request.method}\n${request.path}"
-    Logger.debug(s"Incoming request, string to sign: $string_to_sign")
+    logger.debug(s"Incoming request, string to sign: $string_to_sign")
     val hmac = generateHMAC(sharedSecret, string_to_sign)
-    Logger.debug(s"HMAC generated: $hmac")
+    logger.debug(s"HMAC generated: $hmac")
     Some(hmac)
   } catch {
       case e:java.util.NoSuchElementException=>
-        Logger.debug(e.toString)
+        logger.debug(e.toString)
         None
   }
 
