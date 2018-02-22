@@ -23,6 +23,7 @@ import play.api.libs.Files.TemporaryFile
 import controllers.routes
 import auth._
 import com.unboundid.ldap.sdk.LDAPConnectionPool
+import play.api.Logger
 import play.api.cache.SyncCacheApi
 import play.api.libs.json._
 
@@ -31,10 +32,42 @@ import scala.concurrent.Future
 trait Security {
   implicit val cache:SyncCacheApi
 
-  //if this returns something, then we are logged in
-  private def username(request: RequestHeader) = Conf.ldapProtocol match {
+  /**
+    * look up an ldap user in the session.
+    * @param request HTTP request object
+    * @return Option containing uid if present or None
+    */
+  private def ldapUsername(request: RequestHeader) = Conf.ldapProtocol match {
     case "none"=>Some("noldap")
     case _=>request.session.get("uid")
+  }
+
+  /**
+    * look up an hmac user
+    * @param header HTTP request object
+    * @param auth Authorization token as passed from the client
+    */
+  private def hmacUsername(header: RequestHeader, auth: String):Option[String] = {
+    val authparts = auth.split(":")
+
+    Logger.debug(s"authparts: ${authparts.mkString(":")}")
+    Logger.debug(s"headers: ${header.headers.toSimpleMap.toString}")
+    if(Conf.sharedSecret.isEmpty){
+      Logger.error("Unable to process server->server request, shared_secret is not set in application.conf")
+      return None
+    }
+
+    HMAC.calculateHmac(header, Conf.sharedSecret).flatMap(calculatedSig=>{if(calculatedSig==authparts(1)) Some(authparts(0)) else None})
+  }
+
+  //if this returns something, then we are logged in
+  private def username(request:RequestHeader) = request.headers.get("Authorization") match {
+    case Some(auth)=>
+      Logger.debug("got Auth header, doing hmac auth")
+      hmacUsername(request,auth)
+    case None=>
+      Logger.debug("no Auth header, doing session auth")
+      ldapUsername(request)
   }
 
   private def onUnauthorized(request: RequestHeader) = {

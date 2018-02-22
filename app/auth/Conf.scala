@@ -40,7 +40,8 @@ object Conf {
   val trustStoreType = conf.getString("ldap.trustStoreType")
   val ldapCacheDuration = conf.getInt("ldap.ldapCacheDuration")
   val acg1 = conf.getString("ldap.acg1")
-  
+
+  val sharedSecret = conf.getString("shared_secret")
   val serverAddresses = Array(ldapHost0,ldapHost1)
   val serverPorts = Array(ldapPort,ldapPort)
 }
