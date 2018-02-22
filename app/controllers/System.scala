@@ -21,7 +21,6 @@ class System @Inject() (cc:ControllerComponents, configuration: Configuration, d
 
   implicit val cache:SyncCacheApi = cacheImpl
   private val dbConfig = dbConfigProvider.get[JdbcProfile]
-  private val logger: Logger = Logger(this.getClass)
 
   def init = Action.async {
       databaseHelper.setUpDB().map({

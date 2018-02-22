@@ -67,10 +67,10 @@ class ProjectEntryController @Inject() (cc:ControllerComponents, config: Configu
           case Some(rq)=>
             projectHelper.create(rq,None).map({
               case Failure(error)=>
-                Logger.error("Could not create new project", error)
+                logger.error("Could not create new project", error)
                 InternalServerError(Json.obj("status"->"error","detail"->error.toString))
               case Success(projectEntry)=>
-                Logger.error(s"Created new project: $projectEntry")
+                logger.error(s"Created new project: $projectEntry")
                 Ok(Json.obj("status"->"ok","detail"->"created project", "projectId"->projectEntry.id.get))
             })
         })

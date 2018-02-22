@@ -99,3 +99,25 @@ Development
 - To just build the frontend, you can run `npm run compile` from the frontend directory
 - To develop the frontend, you should run `npm run dev` from the frontend directory.  This doesn't terminate, it asks Webpack to stay running and check the source files for modifications and automatically rebuild for you
 - **Note** - react-multistep is not properly webpack compliant and needs to be transpiled seperately.  This is automatically done when you run `npm run compile` or `npm run dev`, by running the `frontend/scripts/fix-multistep` script.  If you see errors relating to multistep, then try deleting `frontend/node_modules/react-multistep`, reinstalling with `yarn install` and running this script manually
+
+
+### Signing requests for server->server interactions
+
+Projectlocker supports HMAC signing of requests for server-server actions.
+In order to use this, you must:
+
+- provide a base64 encoded SHA-384 checksum of your request's content in a header called `X-Sha384-Checksum`
+- ensure that an HTTP date is present in a header called `Date`
+- ensure that the length of your body content is present in a header called `Content-Length`. If there is no body then this value should be 0.
+- provide a signature in a header called 'Authorization'.  This should be of the form `{uid}:{auth}`, where {uid} is a user-provided
+identifier of the client and {auth} is the signature
+
+The signature should be calculated like this:
+
+- make a string of the contents of the Date, Content-Length and Checksum headers separated by newlines followed by the
+ request method and URI path (not query parts) also separated by newlines.
+- use the server's shared secret to calculate an SHA-384 digest of this string, and base64 encode it
+- the server performs the same calculation (in `auth/HMAC.scala`) and if the two signatures match then you are in.
+- if you have troubles, turn on debug at the server end to check the string_to_sign and digests
+
+There is a working example of how to do this in Python in `scripts/test_hmac_auth.py`

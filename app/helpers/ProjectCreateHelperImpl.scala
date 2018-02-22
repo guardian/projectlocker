@@ -15,6 +15,7 @@ import scala.util.{Failure, Success, Try}
 @Singleton
 class ProjectCreateHelperImpl extends ProjectCreateHelper {
   protected val storageHelper:StorageHelper = new StorageHelper
+  val logger: Logger = Logger(this.getClass)
 
   /**
     * Logic to create a project.  This runs asynchronously, taking in a project request in the form of a [[models.ProjectRequestFull]]
@@ -25,12 +26,12 @@ class ProjectCreateHelperImpl extends ProjectCreateHelper {
     * @return a [[Try]] containing a saved [[models.ProjectEntry]] object if successful, wrapped in a  [[Future]]
     */
   def create(rq:ProjectRequestFull,createTime:Option[LocalDateTime])(implicit db: slick.driver.JdbcProfile#Backend#Database):Future[Try[ProjectEntry]] = {
-    Logger.info(s"Creating project from $rq")
+    logger.info(s"Creating project from $rq")
     rq.destinationStorage.getStorageDriver match {
       case None=>
         Future(Failure(new RuntimeException(s"Storage ${rq.destinationStorage.id} does not have any storage driver configured")))
       case Some(storageDriver)=>
-        Logger.info(s"Got storage driver: $storageDriver")
+        logger.info(s"Got storage driver: $storageDriver")
 
         val recordTimestamp = Timestamp.valueOf(createTime.getOrElse(LocalDateTime.now()))
         val destFileEntry = FileEntry(None,rq.filename,rq.destinationStorage.id.get,"system",1,
@@ -39,22 +40,22 @@ class ProjectCreateHelperImpl extends ProjectCreateHelper {
         destFileEntry.save flatMap {
           case Success(savedFileEntry)=>
             val fileCopyFuture=rq.projectTemplate.file.flatMap(sourceFileEntry=>{
-              Logger.info(s"Copying from file $sourceFileEntry to $savedFileEntry")
+              logger.info(s"Copying from file $sourceFileEntry to $savedFileEntry")
               storageHelper.copyFile(sourceFileEntry, savedFileEntry)
             })
 
             fileCopyFuture.flatMap({
               case Left(error)=>
-                Logger.error(s"File copy failed: ${error.toString}")
+                logger.error(s"File copy failed: ${error.toString}")
                 Future(Failure(new RuntimeException(error.mkString("\n"))))
               case Right(writtenFile)=>
-                Logger.info(s"Creating new project entry from $writtenFile")
+                logger.info(s"Creating new project entry from $writtenFile")
                 val result = ProjectEntry.createFromFile(writtenFile, rq.projectTemplate,createTime,rq.user)
-                Logger.info("Done")
+                logger.info("Done")
                 result
             })
           case Failure(error)=>
-            Logger.error("Unable to save destination file entry to database", error)
+            logger.error("Unable to save destination file entry to database", error)
             Future(Failure(error))
         }
     }

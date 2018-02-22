@@ -37,6 +37,7 @@ import scala.concurrent.{Await, Future}
 case class FileEntry(id: Option[Int], filepath: String, storageId: Int, user:String,version:Int,
                      ctime: Timestamp, mtime: Timestamp, atime: Timestamp, hasContent:Boolean, hasLink:Boolean) {
 
+  val logger: Logger = Logger(this.getClass)
   /**
     *  writes this model into the database, inserting if id is None and returning a fresh object with id set. If an id
     * was set, then returns the same object. */
@@ -115,7 +116,7 @@ case class FileEntry(id: Option[Int], filepath: String, storageId: Int, user:Str
   def deleteSelf(implicit db:slick.driver.JdbcProfile#Backend#Database):Future[Either[Throwable, Unit]] =
     id match {
       case Some(databaseId)=>
-        Logger.info(s"Deleting database record for file $databaseId ($filepath on storage $storageId)")
+        logger.info(s"Deleting database record for file $databaseId ($filepath on storage $storageId)")
         db.run(
           TableQuery[FileEntryRow].filter(_.id===databaseId).delete.asTry
         ).map({
@@ -135,11 +136,11 @@ case class FileEntry(id: Option[Int], filepath: String, storageId: Int, user:Str
   private def writeContent(buffer: RawBuffer, storageDriver:StorageDriver):Try[Unit] =
     buffer.asBytes() match {
       case Some(bytes) => //the buffer is held in memory
-        Logger.debug("uploadContent: writing memory buffer")
+        logger.debug("uploadContent: writing memory buffer")
         storageDriver.writeDataToPath(filepath, bytes.toArray)
         Success(Unit)
       case None => //the buffer is on-disk
-        Logger.debug("uploadContent: writing disk buffer")
+        logger.debug("uploadContent: writing disk buffer")
         val fileInputStream = new FileInputStream(buffer.asFile)
         storageDriver.writeDataToPath(filepath, fileInputStream)
         fileInputStream.close()
@@ -174,23 +175,23 @@ case class FileEntry(id: Option[Int], filepath: String, storageId: Int, user:Str
           case Some(storageDriver) =>
             try {
               val outputPath = Paths.get(storage.rootpath.getOrElse(""), this.filepath)
-              Logger.info(s"Writing to ${outputPath} with $storageDriver")
+              logger.info(s"Writing to ${outputPath} with $storageDriver")
               val response = this.writeContent(buffer, storageDriver)
               this.updateFileHasContent
               response
             } catch {
               case ex: Exception =>
-                Logger.error("Unable to write file: ", ex)
+                logger.error("Unable to write file: ", ex)
                 //InternalServerError(Json.obj("status" -> "error", "detail" -> s"Unable to write file: ${ex.toString}"))
                 Failure(ex)
             }
           case None =>
-            Logger.error(s"No storage driver available for storage ${this.storageId}")
+            logger.error(s"No storage driver available for storage ${this.storageId}")
             //InternalServerError(Json.obj("status" -> "error", "detail" -> s"No storage driver available for storage ${fileRef.storageId}"))
             Failure(new RuntimeException(s"No storage driver available for storage ${this.storageId}"))
         }
       case None =>
-        Logger.error(s"No storage could be found for ID ${this.storageId}")
+        logger.error(s"No storage could be found for ID ${this.storageId}")
         //InternalServerError(Json.obj("status" -> "error", "detail" -> s"No storage could be found for ID ${fileRef.storageId}"))
         Failure(new RuntimeException(s"No storage could be found for ID ${this.storageId}"))
     })
