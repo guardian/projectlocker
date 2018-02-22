@@ -6,6 +6,7 @@ import copy
 import hmac
 from email.utils import formatdate
 import base64
+import json
 
 def sign_request(original_headers, method, path, content_body, shared_secret):
     """
@@ -40,7 +41,19 @@ def sign_request(original_headers, method, path, content_body, shared_secret):
 #START MAIN
 shared_secret = "rubbish"
 
+print "GET request"
+print "---------------"
 signed_headers = sign_request({}, "GET", "/api/storage", "", shared_secret)
 
 result = requests.get("http://localhost:9000/api/storage", headers=signed_headers)
+print "Server returned {0}: {1}".format(result.status_code, result.content)
+
+print "\n----------------"
+print "PUT request"
+print "\n----------------"
+
+body = json.dumps({'somekey': 'somevalue'})
+
+signed_headers = sign_request({'Content-Type': 'application/json'}, "PUT", "/api/storage", body, shared_secret)
+result = requests.put("http://localhost:9000/api/storage", data=body, headers=signed_headers)
 print "Server returned {0}: {1}".format(result.status_code, result.content)

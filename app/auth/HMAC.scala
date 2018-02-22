@@ -1,11 +1,12 @@
 package auth
 
 import play.api.Logger
-import play.api.mvc.RequestHeader
+import play.api.mvc.{AnyContent, Request, RequestHeader}
 import javax.crypto.Mac
 import javax.crypto.spec.SecretKeySpec
 import java.security._
 import java.util.Base64
+
 import collection.JavaConverters._
 
 object HMAC {
@@ -43,6 +44,24 @@ object HMAC {
         None
   }
 
+  def validateContentChecksum(rq: Request[AnyContent]):Option[Boolean] = {
+    if(rq.headers.get("X-Sha384-Checksum").isEmpty) return None //no point validating if there is no checksum to start with!
+
+    val digester = MessageDigest.getInstance("SHA-384")
+    val contentBuffer = rq.body.asRaw
+    contentBuffer match {
+      case Some(buffer)=>
+        buffer.asBytes() match {
+          case Some(bytes)=>
+            val encodedDigest = Base64.getEncoder.encodeToString(digester.digest(bytes.toArray))
+            Logger.debug(s"validateContentChecksum - got checksum $encodedDigest")
+            if(encodedDigest==rq.headers.get("X-Sha384-Checksum").get) Some(true) else Some(false)
+          case None=>
+            Logger.error("checksum validation of upload buffered to disk is not yet implemented")
+            None
+        }
+    }
+  }
   /**
     * Returns information about the available crypto algorithms on this platform
     * @return

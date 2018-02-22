@@ -1,6 +1,8 @@
 package controllers
 import java.sql.Timestamp
 
+import akka.stream.scaladsl.{Flow, Keep, Sink}
+import akka.util.ByteString
 import models.{FileEntry, FileEntryRow, StorageEntry, StorageEntryRow}
 import org.joda.time.DateTime
 import play.api.Logger
@@ -19,7 +21,9 @@ import scala.util.{Failure, Success, Try}
 import scala.concurrent.ExecutionContext.Implicits.global
 import auth.Security
 
-trait GenericDatabaseObjectController[M] extends InjectedController with Security {
+import play.api.libs.streams.Accumulator
+
+trait GenericDatabaseObjectController[M] extends InjectedController with Security with PlayBodyParsers {
   def validate(request:Request[JsValue]):JsResult[M]
 
   def selectall:Future[Try[Seq[M]]]
@@ -41,6 +45,18 @@ trait GenericDatabaseObjectController[M] extends InjectedController with Securit
         InternalServerError(Json.obj("status"->"error","detail"->error.toString))
     })
   }}
+
+  def checksumVerifyParser:BodyParser[JsValue] = BodyParser {req=>
+    val sink:Sink[ByteString, Future[ByteString]] = Flow[ByteString].toMat(Sink.fold(ByteString(Array()))(_ :+ _))(Keep.right)
+    Accumulator(sink).map(Right.apply)
+  }
+//  val checksumVerifyParser = parse.using { request=>
+//    HMAC.validateContentChecksum(request)
+//      .map(didValidate=>if(didValidate) parse.json(999999) else sys.error("Checksum did not match"))
+//      .getOrElse {
+//        sys.error("Could not validate checksum")
+//      }
+//  }
 
   def create = IsAuthenticatedAsync(BodyParsers.parse.json) {uid=>{request =>
     this.validate(request).fold(
