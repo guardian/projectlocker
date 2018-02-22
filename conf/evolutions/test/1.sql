@@ -31,6 +31,8 @@ ALTER SEQUENCE "FileEntry_id_seq" OWNED BY "FileEntry".id;
 CREATE TABLE "ProjectEntry" (
     id integer NOT NULL,
     "ProjectType" integer NOT NULL,
+    "vidispineId" CHARACTER VARYING NULL,
+    title CHARACTER VARYING NOT NULL,
     created timestamp without time zone NOT NULL,
     "user" character varying NOT NULL
 );

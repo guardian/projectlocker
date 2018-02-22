@@ -50,7 +50,7 @@ class ProjectCreateHelperImpl extends ProjectCreateHelper {
                 Future(Failure(new RuntimeException(error.mkString("\n"))))
               case Right(writtenFile)=>
                 logger.info(s"Creating new project entry from $writtenFile")
-                val result = ProjectEntry.createFromFile(writtenFile, rq.projectTemplate,createTime,rq.user)
+                val result = ProjectEntry.createFromFile(writtenFile, rq.projectTemplate, rq.title, createTime,rq.user)
                 logger.info("Done")
                 result
             })

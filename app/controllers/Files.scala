@@ -1,8 +1,6 @@
 package controllers
 
 import javax.inject.Inject
-
-import com.unboundid.ldap.sdk.LDAPConnectionPool
 import play.api.{Configuration, Logger}
 import play.api.db.slick.DatabaseConfigProvider
 import play.api.mvc._

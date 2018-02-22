@@ -50,12 +50,13 @@ class ProjectEntryControllerSpec extends Specification with Mockito {
           |{
           |  "filename": "sometestprojectfile",
           |  "destinationStorageId": 1,
+          |  "title": "MyTestProjectEntry",
           |  "projectTemplateId": 1,
           |  "user": "test-user"
           |}
         """.stripMargin
 
-      val fakeProjectEntry = ProjectEntry(Some(999),1,Timestamp.valueOf(LocalDateTime.now()),"test-user")
+      val fakeProjectEntry = ProjectEntry(Some(999),1,None,"MyTestProjectEntry",Timestamp.valueOf(LocalDateTime.now()),"test-user")
       mockedProjectHelper.create(any[ProjectRequestFull],org.mockito.Matchers.eq(None))(org.mockito.Matchers.eq(db)) answers((arglist,mock)=>Future(Success(fakeProjectEntry)))
       val response = route(application, FakeRequest(
         method="PUT",

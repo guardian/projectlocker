@@ -16,7 +16,8 @@ import scala.concurrent.Future
 import scala.util.{Failure, Success, Try}
 import scala.concurrent.ExecutionContext.Implicits.global
 
-case class ProjectEntry (id: Option[Int], projectTypeId: Int, created:Timestamp, user: String) {
+case class ProjectEntry (id: Option[Int], projectTypeId: Int, vidispineProjectId: Option[String],
+                         projectTitle: String, created:Timestamp, user: String) {
   def associatedFiles(implicit db:slick.driver.JdbcProfile#Backend#Database): Future[Seq[FileEntry]] = {
     db.run(
       TableQuery[FileAssociationRow].filter(_.projectEntry===this.id.get).result.asTry
@@ -43,11 +44,13 @@ class ProjectEntryRow(tag:Tag) extends Table[ProjectEntry](tag, "ProjectEntry") 
 
   def id=column[Int]("id",O.PrimaryKey,O.AutoInc)
   def projectType=column[Int]("ProjectType")
+  def vidispineProjectId=column[Option[String]]("vidispineId")
+  def projectTitle=column[String]("title")
   def created=column[Timestamp]("created")
   def user=column[String]("user")
 
   def projectTypeKey=foreignKey("ProjectType",projectType,TableQuery[ProjectTypeRow])(_.id)
-  def * = (id.?, projectType, created, user) <> (ProjectEntry.tupled, ProjectEntry.unapply)
+  def * = (id.?, projectType, vidispineProjectId, projectTitle, created, user) <> (ProjectEntry.tupled, ProjectEntry.unapply)
 }
 
 trait ProjectEntrySerializer {
@@ -65,6 +68,8 @@ trait ProjectEntrySerializer {
   implicit val templateWrites:Writes[ProjectEntry] = (
     (JsPath \ "id").writeNullable[Int] and
       (JsPath \ "projectTypeId").write[Int] and
+      (JsPath \ "vidispineId").writeNullable[String] and
+      (JsPath \ "title").write[String] and
       (JsPath \ "created").write[Timestamp] and
       (JsPath \ "user").write[String]
     )(unlift(ProjectEntry.unapply))
@@ -72,15 +77,17 @@ trait ProjectEntrySerializer {
   implicit val templateReads:Reads[ProjectEntry] = (
     (JsPath \ "id").readNullable[Int] and
       (JsPath \ "projectTypeId").read[Int] and
+      (JsPath \ "vidispineId").readNullable[String] and
+      (JsPath \ "title").read[String] and
       (JsPath \ "created").read[Timestamp] and
       (JsPath \ "user").read[String]
     )(ProjectEntry.apply _)
 }
 
-object ProjectEntry extends ((Option[Int], Int, Timestamp, String)=>ProjectEntry) {
-  def createFromFile(sourceFile: FileEntry, projectTemplate: ProjectTemplate, created:Option[LocalDateTime], user:String)
+object ProjectEntry extends ((Option[Int], Int, Option[String], String, Timestamp, String)=>ProjectEntry) {
+  def createFromFile(sourceFile: FileEntry, projectTemplate: ProjectTemplate, title:String, created:Option[LocalDateTime], user:String)
                     (implicit db:slick.driver.JdbcProfile#Backend#Database):Future[Try[ProjectEntry]] = {
-    createFromFile(sourceFile, projectTemplate.projectTypeId, created, user)
+    createFromFile(sourceFile, projectTemplate.projectTypeId, title, created, user)
   }
 
   protected def insertFileAssociation(projectEntryId:Int, sourceFileId:Int)(implicit db:slick.driver.JdbcProfile#Backend#Database) = db.run(
@@ -89,12 +96,12 @@ object ProjectEntry extends ((Option[Int], Int, Timestamp, String)=>ProjectEntry
 
   private def dateTimeToTimestamp(from: LocalDateTime) = Timestamp.valueOf(from)
 
-  def createFromFile(sourceFile: FileEntry, projectTypeId: Int, created:Option[LocalDateTime], user:String)
+  def createFromFile(sourceFile: FileEntry, projectTypeId: Int, title:String, created:Option[LocalDateTime], user:String)
                     (implicit db:slick.driver.JdbcProfile#Backend#Database):Future[Try[ProjectEntry]] = {
 
     /* step one - create a new project entry */
     println(s"Passed time: $created")
-    val entry = ProjectEntry(None, projectTypeId, dateTimeToTimestamp(created.getOrElse(LocalDateTime.now())), user)
+    val entry = ProjectEntry(None, projectTypeId, None, title, dateTimeToTimestamp(created.getOrElse(LocalDateTime.now())), user)
     val savedEntry = entry.save
 
     /* step two - set up file association. Project entry must be saved, so this is done as a future map */
