@@ -112,3 +112,8 @@ button.inline-dialog {
 p.centered {
     text-align: center;
 }
+
+.value-not-present {
+    font-style: italic;
+    color: #777777;
+}

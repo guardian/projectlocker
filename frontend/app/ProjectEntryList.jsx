@@ -1,7 +1,7 @@
 import React from 'react';
 import GeneralListComponent from './GeneralListComponent.jsx';
 import ProjectEntryFiles from './ProjectEntryFiles.jsx';
-import ProjectTypeView from './ProjectTypeView.jsx';
+import ProjectTypeView from './EntryViews/ProjectTypeView.jsx';
 
 class ProjectEntryList extends GeneralListComponent {
     constructor(props){
@@ -19,7 +19,7 @@ class ProjectEntryList extends GeneralListComponent {
             {
                 header: "Pluto project",
                 key: "vidispineId",
-                render: vsid=><a target="_blank" href={this.props.plutoBaseUrl + "/" + vsid}>{vsid}</a>,
+                render: vsid=>vsid? <a target="_blank" href={this.props.plutoBaseUrl + "/" + vsid}>{vsid}</a> : <span className="value-not-present">(not set)</span>,
                 headerProps: { className: 'dashboardheader'}
             },
             {
@@ -31,11 +31,11 @@ class ProjectEntryList extends GeneralListComponent {
             {
                 header: "Project type",
                 key: "projectTypeId",
-                render: (typeId)=><ProjectTypeView projectType={typeId}/>,
+                render: (typeId)=><ProjectTypeView entryId={typeId}/>,
                 headerProps: {className: 'dashboardheader'}
             },
             GeneralListComponent.standardColumn("Created", "created"),
-            GeneralListComponent.standardColumn("Owner","user"),
+            GeneralListComponent.standardColumn("Owner","user")
         ];
     }
 

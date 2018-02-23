@@ -2,13 +2,15 @@ import React from 'react';
 import axios from 'axios';
 import PropTypes from 'prop-types';
 
-class ProjectTypeView extends React.Component {
+class GenericEntryView extends React.Component {
     static propTypes = {
-        projectType: PropTypes.number.isRequired
+        entryId: PropTypes.number.isRequired
     };
 
     constructor(props){
         super(props);
+
+        this.endpoint = "/unknown";
 
         this.state = {
             loading: false,
@@ -18,7 +20,7 @@ class ProjectTypeView extends React.Component {
 
     componentWillMount(){
         this.setState({loading: true}, ()=>{
-            axios.get("/api/projecttype/" + this.props.projectType)
+            axios.get(this.endpoint + "/" + this.props.entryId)
                 .then(response=>this.setState({content: response.data.result, loading: false}))
                 .catch(error=>this.setState({lastError: error, loading: false}))
         })
@@ -29,4 +31,4 @@ class ProjectTypeView extends React.Component {
     }
 }
 
-export default ProjectTypeView;
+export default GenericEntryView;

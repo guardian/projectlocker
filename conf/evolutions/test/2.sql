@@ -9,9 +9,9 @@ SET search_path = public, pg_catalog;
 
 BEGIN;
 
-INSERT INTO "StorageEntry" (id, rootpath, "storageType", "user", password, host, port) VALUES (1, NULL, 'Local', 'me', NULL, NULL, NULL);
-INSERT INTO "StorageEntry" (id, rootpath, "storageType", "user", password, host, port) VALUES (2, '/backups/projectfiles', 'ftp', 'me', '123456abcde', 'ftp.mysite.com', 21);
-INSERT INTO "StorageEntry" (id, rootpath, "storageType", "user", password, host, port) VALUES (3, '/backups/projectfiles', 'ftp', 'me', '123456abcde', 'ftp.mysite.com', 21);
+INSERT INTO "StorageEntry" (id, rootpath, clientpath, "storageType", "user", password, host, port) VALUES (1, NULL, NULL, 'Local', 'me', NULL, NULL, NULL);
+INSERT INTO "StorageEntry" (id, rootpath, clientpath, "storageType", "user", password, host, port) VALUES (2, '/backups/projectfiles', NULL, 'ftp', 'me', '123456abcde', 'ftp.mysite.com', 21);
+INSERT INTO "StorageEntry" (id, rootpath, clientpath, "storageType", "user", password, host, port) VALUES (3, '/backups/projectfiles', NULL, 'ftp', 'me', '123456abcde', 'ftp.mysite.com', 21);
 
 
 

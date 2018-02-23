@@ -1,6 +1,7 @@
 import React from 'react';
 import axios from 'axios';
 import PropTypes from 'prop-types';
+import FileOnStorageView from './EntryViews/FileOnStorageView.jsx';
 
 class ProjectEntryFiles extends React.Component {
     static propTypes = {
@@ -27,7 +28,7 @@ class ProjectEntryFiles extends React.Component {
 
     render(){
         return <ul>
-            {this.state.filesList.map(entry=><li>{entry.filepath} on {entry.storage}</li>)}
+            {this.state.filesList.map(entry=><li><FileOnStorageView entryId={entry.storage} filepath={entry.filepath}/></li>)}
         </ul>
     }
 }
