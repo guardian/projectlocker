@@ -22,6 +22,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.util.Success
 
 class ProjectEntryControllerSpec extends Specification with Mockito {
+  sequential
   val mockedProjectHelper = mock[ProjectCreateHelperImpl]
 
   protected val application = new GuiceApplicationBuilder()
