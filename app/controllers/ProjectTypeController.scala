@@ -11,7 +11,7 @@ import play.api.libs.json.JsValue
 import play.api.mvc.Request
 import slick.jdbc.JdbcProfile
 import slick.lifted.TableQuery
-import slick.driver.PostgresDriver.api._
+import slick.jdbc.PostgresProfile.api._
 
 /**
   * Created by localhome on 17/01/2017.

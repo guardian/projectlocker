@@ -2,13 +2,12 @@ package controllers
 
 import javax.inject.Inject
 
-import com.unboundid.ldap.sdk.LDAPConnectionPool
 import play.api.{Configuration, Logger}
 import play.api.db.slick.DatabaseConfigProvider
 import play.api.mvc._
 import slick.jdbc.JdbcProfile
 import play.api.libs.json._
-import slick.driver.PostgresDriver.api._
+import slick.jdbc.PostgresProfile.api._
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import models._

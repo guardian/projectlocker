@@ -4,7 +4,7 @@ import java.io.FileInputStream
 import java.nio.file.{Path, Paths}
 
 import org.joda.time.DateTime
-import slick.driver.PostgresDriver.api._
+import slick.jdbc.PostgresProfile.api._
 import java.sql.Timestamp
 
 import drivers.StorageDriver

@@ -5,9 +5,9 @@ import javax.inject.{Inject, Singleton}
 import models.{FileEntry, _}
 import play.api.{Configuration, Logger}
 import play.api.db.slick.DatabaseConfigProvider
-import slick.driver.JdbcProfile
+import slick.jdbc.JdbcProfile
 import slick.lifted.TableQuery
-import slick.driver.PostgresDriver.api._
+import slick.jdbc.PostgresProfile.api._
 import java.sql.Timestamp
 
 import scala.concurrent.duration._

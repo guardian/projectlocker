@@ -10,7 +10,7 @@ import play.api.mvc.{Action, BodyParsers, Request}
 import slick.basic.DatabaseConfig
 import slick.jdbc.JdbcProfile
 import slick.lifted.TableQuery
-import slick.driver.PostgresDriver.api._
+import slick.jdbc.PostgresProfile.api._
 
 import scala.concurrent.Future
 import scala.util.{Failure, Success}

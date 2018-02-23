@@ -41,7 +41,7 @@ class ProjectCreateHelperImplSpec extends Specification with Mockito {
 
       val p = new ProjectCreateHelperImpl { override protected val storageHelper:StorageHelper=mockedStorageHelper }
 
-      val request = ProjectRequest("testfile",1,1,"test-user").hydrate
+      val request = ProjectRequest("testfile",1,"MyTestProjectFile", 1,"test-user").hydrate
 
       val fullRequest = Await.result(request, 10.seconds)
 
@@ -51,7 +51,7 @@ class ProjectCreateHelperImplSpec extends Specification with Mockito {
       val response = p.create(fullRequest.get, Some(createTime))
       val createResult = Await.result(response, 10.seconds)
 
-      createResult must beSuccessfulTry(ProjectEntry(Some(2),1,Timestamp.valueOf(createTime),"test-user"))
+      createResult must beSuccessfulTry(ProjectEntry(Some(3),1,None,"MyTestProjectFile",Timestamp.valueOf(createTime),"test-user"))
     }
 
     "return an error in response to an invalid request" in {
@@ -65,7 +65,7 @@ class ProjectCreateHelperImplSpec extends Specification with Mockito {
 
       val p = new ProjectCreateHelperImpl { override protected val storageHelper:StorageHelper=mockedStorageHelper }
 
-      val request = ProjectRequest("testfile",2,1,"test-user").hydrate
+      val request = ProjectRequest("testfile",2,"MyTestProjectFile",1,"test-user").hydrate
 
       val fullRequest = Await.result(request, 10.seconds)
       val createTime=LocalDateTime.now()
