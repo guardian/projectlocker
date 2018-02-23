@@ -4,7 +4,7 @@ import javax.inject.{Inject, Singleton}
 
 import auth.Security
 import com.unboundid.ldap.sdk.LDAPConnectionPool
-import exceptions.RecordNotFoundException
+import exceptions.{BadDataException, RecordNotFoundException}
 import helpers.ProjectCreateHelper
 import models._
 import play.api.cache.SyncCacheApi
@@ -19,7 +19,7 @@ import play.api.libs.json.{JsError, Json}
 
 import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.util.{Failure, Success}
+import scala.util.{Failure, Success, Try}
 
 /**
   * Created by localhome on 17/01/2017.
@@ -74,6 +74,20 @@ class ProjectEntryController @Inject() (cc:ControllerComponents, config: Configu
       case Failure(error)=>Future(Failure(error))
     })
 
+  def doUpdateVsid(requestedId:Int, maybeNewVsid:Option[String]) = selectid(requestedId).flatMap({
+    case Success(someSeq)=>
+      someSeq.headOption match {
+        case Some(record)=>
+          val updatedProjectEntry = record.copy (vidispineProjectId = maybeNewVsid)
+          dbConfig.db.run (
+            TableQuery[ProjectEntryRow].filter (_.id === requestedId).update (updatedProjectEntry).asTry
+          )
+        case None=>
+          Future(Failure(new RecordNotFoundException(s"No record found for id $requestedId")))
+      }
+    case Failure(error)=>Future(Failure(error))
+  })
+
   def doUpdateTitle(vsid:String, newTitle:String) = selectVsid(vsid).flatMap({
     case Success(someSeq)=>
       someSeq.headOption match {
@@ -118,6 +132,24 @@ class ProjectEntryController @Inject() (cc:ControllerComponents, config: Configu
             logger.error("Could not update project title", error)
             if(error.getClass==classOf[RecordNotFoundException])
               NotFound(Json.obj("status"->"error", "detail"-> s"record for $vsid not found"))
+            else
+              InternalServerError(Json.obj("status"->"error","detail"->error.toString))
+        })
+    )
+  }}
+
+  def updateVsid(requestedId:Int) = IsAuthenticatedAsync(BodyParsers.parse.json) {uid=>{request=>
+    request.body.validate[UpdateTitleRequest].fold(
+      errors=>
+        Future(BadRequest(Json.obj("status"->"error", "detail"->JsError.toJson(errors)))),
+      updateTitleRequest=>
+        doUpdateVsid(requestedId,updateTitleRequest.newVsid).map({
+          case Success(rows)=>
+            Ok(Json.obj("status"->"ok","detail"->"record updated"))
+          case Failure(error)=>
+            logger.error("Could not update project title", error)
+            if(error.getClass==classOf[RecordNotFoundException])
+              NotFound(Json.obj("status"->"error", "detail"-> s"record $requestedId not found"))
             else
               InternalServerError(Json.obj("status"->"error","detail"->error.toString))
         })

@@ -28,6 +28,7 @@ GET     /api/project                       @controllers.ProjectEntryController.l
 PUT     /api/project                       @controllers.ProjectEntryController.create
 GET     /api/project/by-vsid/:vsid          @controllers.ProjectEntryController.getByVsid(vsid:String)
 PUT     /api/project/:id/title              @controllers.ProjectEntryController.updateTitle(id: Int)
+PUT     /api/project/:id/vsid               @controllers.ProjectEntryController.updateVsid(id: Int)
 PUT     /api/project/by-vsid/:vsid/title    @controllers.ProjectEntryController.updateTitleByVsid(vsid:String)
 #GET     /api/project/:id                   @controllers.ProjectEntryController.getitem(id: Int)
 #PUT     /api/project/:id                   @controllers.ProjectEntryController.update(id: Int)

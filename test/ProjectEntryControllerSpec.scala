@@ -93,7 +93,7 @@ class ProjectEntryControllerSpec extends Specification with Mockito {
       status(response) must equalTo(NOT_FOUND)
     }
   }
-  
+
   "ProjectEntryController.updateTitle" should {
     "update the title field of an existing record" in {
       val testUpdateDocument =
@@ -171,6 +171,49 @@ class ProjectEntryControllerSpec extends Specification with Mockito {
       val response = route(application, FakeRequest(
         method="PUT",
         uri="/api/project/by-vsid/VX-99999/title",
+        headers=FakeHeaders(Seq(("Content-Type","application/json"))),
+        body=testUpdateDocument).withSession("uid"->"testuser")).get
+
+      status(response) must equalTo(NOT_FOUND)
+    }
+  }
+
+  "ProjectEntryController.updateVsid" should {
+    "update the vidipsineProjectId field of an existing record" in {
+      val testUpdateDocument =
+        """{
+          |  "title": "",
+          |  "vsid": "VX-5678"
+          |}""".stripMargin
+
+      val dbRecordBefore = Await.result(ProjectEntry.entryForId(1),5.seconds).get
+      dbRecordBefore.vidispineProjectId must beNone
+
+      val response = route(application, FakeRequest(
+        method="PUT",
+        uri="/api/project/1/vsid",
+        headers=FakeHeaders(Seq(("Content-Type","application/json"))),
+        body=testUpdateDocument).withSession("uid"->"testuser")).get
+
+      val jsondata = Await.result(bodyAsJsonFuture(response), 5.seconds).as[JsValue]
+      status(response) must equalTo(OK)
+      (jsondata \ "status").as[String] must equalTo("ok")
+      (jsondata \ "detail").as[String] must equalTo("record updated")
+
+      val dbRecordAfter = Await.result(ProjectEntry.entryForId(1),5.seconds).get
+      dbRecordAfter.vidispineProjectId must beSome("VX-5678")
+    }
+
+    "return 404 for a record that does not exist" in {
+      val testUpdateDocument =
+        """{
+          |  "title": "",
+          |  "vsid": "VX-5678"
+          |}""".stripMargin
+
+      val response = route(application, FakeRequest(
+        method="PUT",
+        uri="/api/project/9999/vsid",
         headers=FakeHeaders(Seq(("Content-Type","application/json"))),
         body=testUpdateDocument).withSession("uid"->"testuser")).get
 
