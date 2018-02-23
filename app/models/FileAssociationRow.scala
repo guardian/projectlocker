@@ -1,6 +1,6 @@
 package models
 
-import slick.driver.PostgresDriver.api._
+import slick.jdbc.PostgresProfile.api._
 
 /**
   * This table maintains assocations between files and projects, i.e. which files are part of which project

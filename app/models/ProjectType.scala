@@ -1,6 +1,6 @@
 package models
 import org.joda.time.DateTime
-import slick.driver.PostgresDriver.api._
+import slick.jdbc.PostgresProfile.api._
 import java.sql.Timestamp
 
 import play.api.libs.functional.syntax._

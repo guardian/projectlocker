@@ -8,7 +8,7 @@ import play.api.{Configuration, Logger}
 import play.api.db.slick.DatabaseConfigProvider
 import play.api.libs.json._
 import play.api.mvc._
-import slick.driver.JdbcProfile
+import slick.jdbc.JdbcProfile
 
 import scala.util.{Failure, Success}
 import scala.concurrent.ExecutionContext.Implicits.global

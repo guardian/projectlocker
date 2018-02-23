@@ -1,6 +1,6 @@
 package models
 
-import slick.driver.PostgresDriver.api._
+import slick.jdbc.PostgresProfile.api._
 import slick.lifted.TableQuery
 import java.sql.Timestamp
 import java.time.LocalDateTime

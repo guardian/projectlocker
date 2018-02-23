@@ -14,7 +14,7 @@ import play.api.libs.json.JsValue
 import play.api.mvc._
 import slick.jdbc.JdbcProfile
 import slick.lifted.TableQuery
-import slick.driver.PostgresDriver.api._
+import slick.jdbc.PostgresProfile.api._
 import play.api.libs.json.{JsError, Json}
 
 import scala.concurrent.Future
