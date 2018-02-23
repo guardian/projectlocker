@@ -20,6 +20,7 @@ trait StorageSerializer {
   implicit val storageWrites:Writes[StorageEntry] = (
     (JsPath \ "id").writeNullable[Int] and
       (JsPath \ "rootpath").writeNullable[String] and
+      (JsPath \ "clientpath").writeNullable[String] and
       (JsPath \ "storageType").write[String] and
       (JsPath \ "user").writeNullable[String] and
       (JsPath \ "password").writeNullable[String] and
@@ -30,6 +31,7 @@ trait StorageSerializer {
   implicit val storageReads:Reads[StorageEntry] = (
     (JsPath \ "id").readNullable[Int] and
       (JsPath \ "rootpath").readNullable[String] and
+      (JsPath \ "clientpath").readNullable[String] and
       (JsPath \ "storageType").read[String] and
       (JsPath \ "user").readNullable[String] and
       (JsPath \ "password").readNullable[String] and
@@ -38,7 +40,7 @@ trait StorageSerializer {
     )(StorageEntry.apply _)
 }
 
-case class StorageEntry(id: Option[Int], rootpath: Option[String], storageType: String,
+case class StorageEntry(id: Option[Int], rootpath: Option[String], clientpath: Option[String], storageType: String,
                         user:Option[String], password:Option[String], host:Option[String], port:Option[Int]) {
   val logger: Logger = Logger(this.getClass)
 
@@ -55,18 +57,19 @@ case class StorageEntry(id: Option[Int], rootpath: Option[String], storageType: 
 class StorageEntryRow(tag:Tag) extends Table[StorageEntry](tag, "StorageEntry") {
   def id = column[Int]("id",O.PrimaryKey, O.AutoInc)
   def rootpath = column[Option[String]]("rootpath")
+  def clientpath = column[Option[String]]("clientpath")
   def storageType = column[String]("storageType")
   def user = column[Option[String]]("user")
   def password = column[Option[String]]("password")
   def host = column[Option[String]]("host")
   def port = column[Option[Int]]("port")
 
-  def * = (id.?,rootpath,storageType,user,password,host,port) <> (StorageEntry.tupled, StorageEntry.unapply)
+  def * = (id.?,rootpath,clientpath,storageType,user,password,host,port) <> (StorageEntry.tupled, StorageEntry.unapply)
 }
 
 
 object StorageEntryHelper {
-  def entryFor(entryId: Int)(implicit db:slick.driver.JdbcProfile#Backend#Database):Future[Option[StorageEntry]] =
+  def entryFor(entryId: Int)(implicit db:slick.jdbc.JdbcProfile#Backend#Database):Future[Option[StorageEntry]] =
     db.run(
       TableQuery[StorageEntryRow].filter(_.id===entryId).result.asTry
     ).map({

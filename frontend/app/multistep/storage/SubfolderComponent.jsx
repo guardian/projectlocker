@@ -10,10 +10,10 @@ class StorageSubfolderComponent extends React.Component {
         super(props);
 
         this.state = {
-            subfolder: ""
+            subfolder: "",
+            clientpath: null
         }
     }
-
 
     render() {
         const selectedStorage = this.props.strgTypes[this.props.selectedType];
@@ -31,7 +31,11 @@ class StorageSubfolderComponent extends React.Component {
                     <tbody>
                     <tr>
                         <td>Subfolder path</td>
-                        <td><input onChange={(event)=>this.props.valueWasSet(event.target.value)}/></td>
+                        <td><input onChange={(event)=>this.setState({subfolder: event.target.value}, ()=>this.props.valueWasSet(this.state))}/></td>
+                    </tr>
+                    <tr>
+                        <td>Client mount point (if any)</td>
+                        <td><input onChange={(event)=>this.setState({clientpath: event.target.value}, ()=>this.props.valueWasSet(this.state))}/></td>
                     </tr>
                     </tbody>
                 </table>

@@ -68,7 +68,7 @@ class StorageHelper {
     *        new, updated [[models.FileEntry]] representing @destFile
     */
   def copyFile(sourceFile: FileEntry, destFile: FileEntry)
-              (implicit db:slick.driver.JdbcProfile#Backend#Database):Future[Either[Seq[String],FileEntry]] = {
+              (implicit db:slick.jdbc.JdbcProfile#Backend#Database):Future[Either[Seq[String],FileEntry]] = {
     val storageDriversFuture = Future.sequence(Seq(sourceFile.storage,destFile.storage)).map(results=>{
       val successfulResults = results.flatten.flatMap(_.getStorageDriver)
 

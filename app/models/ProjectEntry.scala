@@ -19,7 +19,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 
 case class ProjectEntry (id: Option[Int], projectTypeId: Int, vidispineProjectId: Option[String],
                          projectTitle: String, created:Timestamp, user: String) {
-  def associatedFiles(implicit db:slick.driver.JdbcProfile#Backend#Database): Future[Seq[FileEntry]] = {
+  def associatedFiles(implicit db:slick.jdbc.JdbcProfile#Backend#Database): Future[Seq[FileEntry]] = {
     db.run(
       TableQuery[FileAssociationRow].filter(_.projectEntry===this.id.get).result.asTry
     ).map({
@@ -28,7 +28,7 @@ case class ProjectEntry (id: Option[Int], projectTypeId: Int, vidispineProjectId
     }).flatMap(Future.sequence(_)).map(_.flatten)
   }
 
-  def save(implicit db:slick.driver.JdbcProfile#Backend#Database):Future[Try[ProjectEntry]] = {
+  def save(implicit db:slick.jdbc.JdbcProfile#Backend#Database):Future[Try[ProjectEntry]] = {
     val insertQuery = TableQuery[ProjectEntryRow] returning TableQuery[ProjectEntryRow].map(_.id) into ((item,id)=>item.copy(id=Some(id)))
     db.run(
       (insertQuery+=this).asTry
@@ -37,6 +37,7 @@ case class ProjectEntry (id: Option[Int], projectTypeId: Int, vidispineProjectId
       case Failure(error)=>Failure(error)
     })
   }
+
 }
 
 class ProjectEntryRow(tag:Tag) extends Table[ProjectEntry](tag, "ProjectEntry") {
@@ -54,17 +55,7 @@ class ProjectEntryRow(tag:Tag) extends Table[ProjectEntry](tag, "ProjectEntry") 
   def * = (id.?, projectType, vidispineProjectId, projectTitle, created, user) <> (ProjectEntry.tupled, ProjectEntry.unapply)
 }
 
-trait ProjectEntrySerializer {
-  def timestampToDateTime(t: Timestamp): DateTime = new DateTime(t.getTime)
-  def dateTimeToTimestamp(dt: DateTime): Timestamp = new Timestamp(dt.getMillis)
-  implicit val dateWrites = jodaDateWrites("yyyy-MM-dd'T'HH:mm:ss.SSSZ") //this DOES take numeric timezones - Z means Zone, not literal letter Z
-  implicit val dateReads = jodaDateReads("yyyy-MM-dd'T'HH:mm:ss.SSSZ")
-
-  /* performs a conversion from java.sql.Timestamp to Joda DateTime and back again */
-  implicit val timestampFormat = new Format[Timestamp] {
-    def writes(t: Timestamp): JsValue = Json.toJson(timestampToDateTime(t))
-    def reads(json: JsValue): JsResult[Timestamp] = Json.fromJson[DateTime](json).map(dateTimeToTimestamp)
-  }
+trait ProjectEntrySerializer extends TimestampSerialization {
   /*https://www.playframework.com/documentation/2.5.x/ScalaJson*/
   implicit val templateWrites:Writes[ProjectEntry] = (
     (JsPath \ "id").writeNullable[Int] and
@@ -87,24 +78,24 @@ trait ProjectEntrySerializer {
 
 object ProjectEntry extends ((Option[Int], Int, Option[String], String, Timestamp, String)=>ProjectEntry) {
   def createFromFile(sourceFile: FileEntry, projectTemplate: ProjectTemplate, title:String, created:Option[LocalDateTime], user:String)
-                    (implicit db:slick.driver.JdbcProfile#Backend#Database):Future[Try[ProjectEntry]] = {
+                    (implicit db:slick.jdbc.JdbcProfile#Backend#Database):Future[Try[ProjectEntry]] = {
     createFromFile(sourceFile, projectTemplate.projectTypeId, title, created, user)
   }
 
-  def entryForId(requestedId: Int)(implicit db:slick.driver.JdbcProfile#Backend#Database):Future[Try[ProjectEntry]] = {
+  def entryForId(requestedId: Int)(implicit db:slick.jdbc.JdbcProfile#Backend#Database):Future[Try[ProjectEntry]] = {
     db.run(
       TableQuery[ProjectEntryRow].filter(_.id===requestedId).result.asTry
     ).map(_.map(_.head))
   }
 
-  protected def insertFileAssociation(projectEntryId:Int, sourceFileId:Int)(implicit db:slick.driver.JdbcProfile#Backend#Database) = db.run(
+  protected def insertFileAssociation(projectEntryId:Int, sourceFileId:Int)(implicit db:slick.jdbc.JdbcProfile#Backend#Database) = db.run(
     (TableQuery[FileAssociationRow]+=(projectEntryId,sourceFileId)).asTry
   )
 
   private def dateTimeToTimestamp(from: LocalDateTime) = Timestamp.valueOf(from)
 
   def createFromFile(sourceFile: FileEntry, projectTypeId: Int, title:String, created:Option[LocalDateTime], user:String)
-                    (implicit db:slick.driver.JdbcProfile#Backend#Database):Future[Try[ProjectEntry]] = {
+                    (implicit db:slick.jdbc.JdbcProfile#Backend#Database):Future[Try[ProjectEntry]] = {
 
     /* step one - create a new project entry */
     println(s"Passed time: $created")

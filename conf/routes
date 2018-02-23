@@ -27,6 +27,7 @@ DELETE  /api/template/:id                  @controllers.ProjectTemplateControlle
 GET     /api/project                       @controllers.ProjectEntryController.list
 PUT     /api/project                       @controllers.ProjectEntryController.create
 GET     /api/project/by-vsid/:vsid          @controllers.ProjectEntryController.getByVsid(vsid:String)
+GET     /api/project/:id/files              @controllers.ProjectEntryController.filesList(id:Int)
 PUT     /api/project/:id/title              @controllers.ProjectEntryController.updateTitle(id: Int)
 PUT     /api/project/:id/vsid               @controllers.ProjectEntryController.updateVsid(id: Int)
 PUT     /api/project/by-vsid/:vsid/title    @controllers.ProjectEntryController.updateTitleByVsid(vsid:String)

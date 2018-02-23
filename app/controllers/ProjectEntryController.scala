@@ -29,7 +29,8 @@ class ProjectEntryController @Inject() (cc:ControllerComponents, config: Configu
                                         dbConfigProvider: DatabaseConfigProvider, projectHelper:ProjectCreateHelper,
                                         cacheImpl:SyncCacheApi)
   extends GenericDatabaseObjectController[ProjectEntry]
-    with ProjectEntrySerializer with ProjectRequestSerializer with UpdateTitleRequestSerializer with Security
+    with ProjectEntrySerializer with ProjectRequestSerializer with UpdateTitleRequestSerializer with FileEntrySerializer
+    with Security
 {
   override implicit val cache:SyncCacheApi = cacheImpl
 
@@ -172,7 +173,7 @@ class ProjectEntryController @Inject() (cc:ControllerComponents, config: Configu
     }
   }
 
-  def updateVsid(requestedId:Int) = IsAuthenticatedAsync(BodyParsers.parse.json) {uid=>{request=>
+  def updateVsid(requestedId:Int) = IsAuthenticatedAsync(parse.json) {uid=>{request=>
     request.body.validate[UpdateTitleRequest].fold(
       errors=>
         Future(BadRequest(Json.obj("status"->"error", "detail"->JsError.toJson(errors)))),
@@ -193,6 +194,23 @@ class ProjectEntryController @Inject() (cc:ControllerComponents, config: Configu
     )
   }}
 
+  def filesList(requestedId: Int) = IsAuthenticatedAsync {uid=>{request=>
+    implicit val db = dbConfig.db
+
+    selectid(requestedId).flatMap({
+      case Failure(error)=>
+        logger.error(s"could not list files from project ${requestedId}",error)
+        Future(InternalServerError(Json.obj("status"->"error","detail"->error.toString)))
+      case Success(someSeq)=>
+        someSeq.headOption match { //matching on pk, so can only be one result
+          case Some(projectEntry)=>
+            projectEntry.associatedFiles.map(fileList=>Ok(Json.obj("status"->"ok","files"->fileList)))
+          case None=>
+            Future(NotFound(Json.obj("status"->"error","detail"->s"project $requestedId not found")))
+        }
+    })
+  }}
+
   override def selectall = dbConfig.db.run(
     TableQuery[ProjectEntryRow].result.asTry //simple select *
   )
@@ -206,7 +224,7 @@ class ProjectEntryController @Inject() (cc:ControllerComponents, config: Configu
 
   override def validate(request:Request[JsValue]) = request.body.validate[ProjectEntry]
 
-  override def create = IsAuthenticatedAsync(BodyParsers.parse.json) {uid=>{ request =>
+  override def create = IsAuthenticatedAsync(parse.json) {uid=>{ request =>
     implicit val db = dbConfig.db
 
     request.body.validate[ProjectRequest].fold(

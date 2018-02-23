@@ -40,7 +40,7 @@ trait GenericDatabaseObjectController[M] extends InjectedController with Securit
     })
   }}
 
-  def create = IsAuthenticatedAsync(BodyParsers.parse.json) {uid=>{request =>
+  def create = IsAuthenticatedAsync(parse.json) {uid=>{request =>
     this.validate(request).fold(
       errors => {
         println(s"errors parsing content: $errors")
@@ -71,7 +71,7 @@ trait GenericDatabaseObjectController[M] extends InjectedController with Securit
     })
   }}
 
-  def update(id: Int) = IsAuthenticatedAsync(BodyParsers.parse.json) { uid=>{request =>
+  def update(id: Int) = IsAuthenticatedAsync(parse.json) { uid=>{request =>
     this.validate(request).fold(
       errors=>Future(BadRequest(Json.obj("status"->"error","detail"->JsError.toJson(errors)))),
       StorageEntry=>Future(Ok(""))
