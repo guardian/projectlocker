@@ -51,7 +51,7 @@ class ProjectCreateHelperImplSpec extends Specification with Mockito {
       val response = p.create(fullRequest.get, Some(createTime))
       val createResult = Await.result(response, 10.seconds)
 
-      createResult must beSuccessfulTry(ProjectEntry(Some(2),1,None,"MyTestProjectFile",Timestamp.valueOf(createTime),"test-user"))
+      createResult must beSuccessfulTry(ProjectEntry(Some(3),1,None,"MyTestProjectFile",Timestamp.valueOf(createTime),"test-user"))
     }
 
     "return an error in response to an invalid request" in {

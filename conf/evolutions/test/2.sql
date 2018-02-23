@@ -27,7 +27,9 @@ INSERT INTO "ProjectType" (id, name, "opensWith", "targetVersion") VALUES (2, 'P
 INSERT INTO "ProjectType" (id, name, "opensWith", "targetVersion") VALUES (3, 'Cubase test', 'Cubase.app', '6.0');
 
 INSERT INTO "ProjectEntry" (id, "ProjectType", "title", "created","user") VALUES (1, 1, 'InitialTestProject', '2016-12-11 12:21:11.021', 'me');
-SELECT pg_catalog.setval('"ProjectEntry_id_seq"', 2, false);
+INSERT INTO "ProjectEntry" (id, "ProjectType", "title", "vidispineId", "created","user") VALUES (2, 1, 'AnotherTestProject', 'VX-1234', '2016-12-11 12:21:11.021', 'you');
+
+SELECT pg_catalog.setval('"ProjectEntry_id_seq"', 3, false);
 
 INSERT INTO "ProjectFileAssociation" (id, "ProjectEntry", "FileEntry") VALUES (1, 1,2);
 SELECT pg_catalog.setval('"ProjectFileAssociation_id_seq"', 2, false);

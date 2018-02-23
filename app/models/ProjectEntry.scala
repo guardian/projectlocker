@@ -1,6 +1,7 @@
 package models
 
 import slick.driver.PostgresDriver.api._
+import slick.lifted.TableQuery
 import java.sql.Timestamp
 import java.time.LocalDateTime
 
@@ -88,6 +89,12 @@ object ProjectEntry extends ((Option[Int], Int, Option[String], String, Timestam
   def createFromFile(sourceFile: FileEntry, projectTemplate: ProjectTemplate, title:String, created:Option[LocalDateTime], user:String)
                     (implicit db:slick.driver.JdbcProfile#Backend#Database):Future[Try[ProjectEntry]] = {
     createFromFile(sourceFile, projectTemplate.projectTypeId, title, created, user)
+  }
+
+  def entryForId(requestedId: Int)(implicit db:slick.driver.JdbcProfile#Backend#Database):Future[Try[ProjectEntry]] = {
+    db.run(
+      TableQuery[ProjectEntryRow].filter(_.id===requestedId).result.asTry
+    ).map(_.map(_.head))
   }
 
   protected def insertFileAssociation(projectEntryId:Int, sourceFileId:Int)(implicit db:slick.driver.JdbcProfile#Backend#Database) = db.run(

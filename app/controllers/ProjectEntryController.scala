@@ -1,8 +1,10 @@
 package controllers
 
 import javax.inject.{Inject, Singleton}
+
 import auth.Security
 import com.unboundid.ldap.sdk.LDAPConnectionPool
+import exceptions.RecordNotFoundException
 import helpers.ProjectCreateHelper
 import models._
 import play.api.cache.SyncCacheApi
@@ -26,7 +28,8 @@ import scala.util.{Failure, Success}
 class ProjectEntryController @Inject() (cc:ControllerComponents, config: Configuration,
                                         dbConfigProvider: DatabaseConfigProvider, projectHelper:ProjectCreateHelper,
                                         cacheImpl:SyncCacheApi)
-  extends GenericDatabaseObjectController[ProjectEntry] with ProjectEntrySerializer with ProjectRequestSerializer with Security
+  extends GenericDatabaseObjectController[ProjectEntry]
+    with ProjectEntrySerializer with ProjectRequestSerializer with UpdateTitleRequestSerializer with Security
 {
   override implicit val cache:SyncCacheApi = cacheImpl
 
@@ -39,6 +42,87 @@ class ProjectEntryController @Inject() (cc:ControllerComponents, config: Configu
   override def selectid(requestedId: Int) = dbConfig.db.run(
     TableQuery[ProjectEntryRow].filter(_.id === requestedId).result.asTry
   )
+
+  protected def selectVsid(vsid: String) = dbConfig.db.run(
+    TableQuery[ProjectEntryRow].filter(_.vidispineProjectId === vsid).result.asTry
+  )
+
+  def getByVsid(vsid:String) = IsAuthenticatedAsync {uid=>{request=>
+    selectVsid(vsid).map({
+      case Success(result)=>
+        if(result.isEmpty)
+          NotFound("")
+        else
+          Ok(Json.obj("status"->"ok","result"->this.jstranslate(result.head)))
+      case Failure(error)=>
+        logger.error(error.toString)
+        InternalServerError(Json.obj("status"->"error","detail"->error.toString))
+    })
+  }}
+
+  def doUpdateTitle(requestedId:Int, newTitle:String) = selectid(requestedId).flatMap({
+      case Success(someSeq)=>
+        someSeq.headOption match {
+          case Some(record)=>
+            val updatedProjectEntry = record.copy (projectTitle = newTitle)
+            dbConfig.db.run (
+            TableQuery[ProjectEntryRow].filter (_.id === requestedId).update (updatedProjectEntry).asTry
+            )
+          case None=>
+            Future(Failure(new RecordNotFoundException(s"No record found for id $requestedId")))
+        }
+      case Failure(error)=>Future(Failure(error))
+    })
+
+  def doUpdateTitle(vsid:String, newTitle:String) = selectVsid(vsid).flatMap({
+    case Success(someSeq)=>
+      someSeq.headOption match {
+        case Some(record) =>
+          val updatedProjectEntry = record.copy(projectTitle = newTitle)
+          dbConfig.db.run(
+            TableQuery[ProjectEntryRow].filter(_.vidispineProjectId === vsid).update(updatedProjectEntry).asTry
+          )
+        case None=>
+          Future(Failure(new RecordNotFoundException(s"No record found for vsid $vsid")))
+      }
+    case Failure(error)=>Future(Failure(error))
+  })
+
+  def updateTitle(requestedId:Int) = IsAuthenticatedAsync(BodyParsers.parse.json) {uid=>{request=>
+    request.body.validate[UpdateTitleRequest].fold(
+      errors=>
+        Future(BadRequest(Json.obj("status"->"error", "detail"->JsError.toJson(errors)))),
+      updateTitleRequest=>
+        doUpdateTitle(requestedId,updateTitleRequest.newTitle).map({
+          case Success(rows)=>
+            Ok(Json.obj("status"->"ok","detail"->"record updated"))
+          case Failure(error)=>
+            logger.error("Could not update project title", error)
+            if(error.getClass==classOf[RecordNotFoundException])
+              NotFound(Json.obj("status"->"error", "detail"-> s"record $requestedId not found"))
+            else
+              InternalServerError(Json.obj("status"->"error","detail"->error.toString))
+        })
+    )
+  }}
+
+  def updateTitleByVsid(vsid:String) = IsAuthenticatedAsync(BodyParsers.parse.json) {uid=>{request=>
+    request.body.validate[UpdateTitleRequest].fold(
+      errors=>
+        Future(BadRequest(Json.obj("status"->"error", "detail"->JsError.toJson(errors)))),
+      updateTitleRequest=>
+        doUpdateTitle(vsid,updateTitleRequest.newTitle).map({
+          case Success(rows)=>
+            Ok(Json.obj("status"->"ok","detail"->"record updated"))
+          case Failure(error)=>
+            logger.error("Could not update project title", error)
+            if(error.getClass==classOf[RecordNotFoundException])
+              NotFound(Json.obj("status"->"error", "detail"-> s"record for $vsid not found"))
+            else
+              InternalServerError(Json.obj("status"->"error","detail"->error.toString))
+        })
+    )
+  }}
 
   override def selectall = dbConfig.db.run(
     TableQuery[ProjectEntryRow].result.asTry //simple select *
