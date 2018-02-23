@@ -60,54 +60,64 @@ class ProjectEntryController @Inject() (cc:ControllerComponents, config: Configu
     })
   }}
 
-  def doUpdateTitle(requestedId:Int, newTitle:String) = selectid(requestedId).flatMap({
-      case Success(someSeq)=>
-        someSeq.headOption match {
-          case Some(record)=>
-            val updatedProjectEntry = record.copy (projectTitle = newTitle)
-            dbConfig.db.run (
-            TableQuery[ProjectEntryRow].filter (_.id === requestedId).update (updatedProjectEntry).asTry
-            )
-          case None=>
-            Future(Failure(new RecordNotFoundException(s"No record found for id $requestedId")))
-        }
-      case Failure(error)=>Future(Failure(error))
-    })
 
-  def doUpdateVsid(requestedId:Int, maybeNewVsid:Option[String]) = selectid(requestedId).flatMap({
+  /**
+    * Fully generic container method to process an update request
+    * @param requestedId an ID to identify what should be updated, this is passed to [[selector]]
+    * @param selector a function that takes [[requestedId]] and returns a Future, containing a Try, containing a sequence of ProjectEntries
+    *                 that should have exactly one entry
+    * @param f a function to perform the actual update.  This is only called if selector returns a valid sequence of at least one ProjectEntry,
+    *          and is passed the first ProjectEntry in the sequence that [[selector]] returns.
+    *          It should return a Future containing a Try containing the number of rows updated.
+    * @tparam T the data type of [[requestedId]]
+    * @return A Future containing either a Failure indicating why [[f]] was not called, or a Success with the result of [[f]]
+    */
+  def doUpdateGenericSelector[T](requestedId:T, selector:T=>Future[Try[Seq[ProjectEntry]]])(f: ProjectEntry=>Future[Try[Int]]) = selector(requestedId).flatMap({
     case Success(someSeq)=>
       someSeq.headOption match {
         case Some(record)=>
-          val updatedProjectEntry = record.copy (vidispineProjectId = maybeNewVsid)
-          dbConfig.db.run (
-            TableQuery[ProjectEntryRow].filter (_.id === requestedId).update (updatedProjectEntry).asTry
-          )
+          f(record)
         case None=>
           Future(Failure(new RecordNotFoundException(s"No record found for id $requestedId")))
       }
     case Failure(error)=>Future(Failure(error))
   })
 
-  def doUpdateTitle(vsid:String, newTitle:String) = selectVsid(vsid).flatMap({
-    case Success(someSeq)=>
-      someSeq.headOption match {
-        case Some(record) =>
-          val updatedProjectEntry = record.copy(projectTitle = newTitle)
-          dbConfig.db.run(
-            TableQuery[ProjectEntryRow].filter(_.vidispineProjectId === vsid).update(updatedProjectEntry).asTry
-          )
-        case None=>
-          Future(Failure(new RecordNotFoundException(s"No record found for vsid $vsid")))
-      }
-    case Failure(error)=>Future(Failure(error))
-  })
+  /**
+    * Most updates are done with the primary key, this is a convenience method to call [[doUpdateGenericSelector]]
+    * with the appropriate selector and data type for the primary key
+    * @param requestedId integer primary key value identifying what should be updated
+    * @param f a function to perform the actual update. See [[doUpdateGenericSelector]] for details
+    * @return see [[doUpdateGenericSelector]]
+    */
+  def doUpdateGeneric(requestedId:Int)(f: ProjectEntry=>Future[Try[Int]]) = doUpdateGenericSelector[Int](requestedId,selectid)(f)
 
-  def updateTitle(requestedId:Int) = IsAuthenticatedAsync(BodyParsers.parse.json) {uid=>{request=>
+  /**
+    * Update the vidisipineId on a data record
+    * @param requestedId primary key of the record to update
+    * @param newVsid new vidispine ID. Note that this is an Option[String] as the id can be null
+    * @return a Future containing a Try containing an Int describing the number of records updated
+    */
+  def doUpdateVsid(requestedId:Int, newVsid:Option[String]):Future[Try[Int]] = doUpdateGeneric(requestedId){ record=>
+    val updatedProjectEntry = record.copy (vidispineProjectId = newVsid)
+    dbConfig.db.run (
+      TableQuery[ProjectEntryRow].filter (_.id === requestedId).update (updatedProjectEntry).asTry
+    )
+  }
+
+  /**
+    * generic code for an endpoint to update the title
+    * @param requestedId identifier of the record to update
+    * @param updater function to perform the actual update.  This is passed requestedId and a string to change the title to
+    * @tparam T type of @reqestedId
+    * @return a Future[Response]
+    */
+  def genericUpdateTitleEndpoint[T](requestedId:T)(updater:(T,String)=>Future[Try[Int]]) = IsAuthenticatedAsync(parse.json) {uid=>{request=>
     request.body.validate[UpdateTitleRequest].fold(
       errors=>
         Future(BadRequest(Json.obj("status"->"error", "detail"->JsError.toJson(errors)))),
       updateTitleRequest=>
-        doUpdateTitle(requestedId,updateTitleRequest.newTitle).map({
+        updater(requestedId,updateTitleRequest.newTitle).map({
           case Success(rows)=>
             Ok(Json.obj("status"->"ok","detail"->"record updated"))
           case Failure(error)=>
@@ -120,23 +130,34 @@ class ProjectEntryController @Inject() (cc:ControllerComponents, config: Configu
     )
   }}
 
-  def updateTitleByVsid(vsid:String) = IsAuthenticatedAsync(BodyParsers.parse.json) {uid=>{request=>
-    request.body.validate[UpdateTitleRequest].fold(
-      errors=>
-        Future(BadRequest(Json.obj("status"->"error", "detail"->JsError.toJson(errors)))),
-      updateTitleRequest=>
-        doUpdateTitle(vsid,updateTitleRequest.newTitle).map({
-          case Success(rows)=>
-            Ok(Json.obj("status"->"ok","detail"->"record updated"))
-          case Failure(error)=>
-            logger.error("Could not update project title", error)
-            if(error.getClass==classOf[RecordNotFoundException])
-              NotFound(Json.obj("status"->"error", "detail"-> s"record for $vsid not found"))
-            else
-              InternalServerError(Json.obj("status"->"error","detail"->error.toString))
-        })
-    )
-  }}
+  /**
+    * endpoint to update project title field of record based on primary key
+    * @param requestedId
+    * @return
+    */
+  def updateTitle(requestedId:Int) = genericUpdateTitleEndpoint[Int](requestedId) { (requestedId,newTitle)=>
+    doUpdateGeneric(requestedId) {record=>
+      val updatedProjectEntry = record.copy (projectTitle = newTitle)
+      dbConfig.db.run (
+        TableQuery[ProjectEntryRow].filter (_.id === requestedId).update (updatedProjectEntry).asTry
+      )
+    }
+  }
+
+  /**
+    * endoint to update project title field of record based on vidispine id
+    * @param vsid
+    * @return
+    */
+  def updateTitleByVsid(vsid:String) = genericUpdateTitleEndpoint[String](vsid) { (vsid,newTitle)=>
+    doUpdateGenericSelector[String](vsid,selectVsid) { record=>
+      val updatedProjectEntry = record.copy(projectTitle = newTitle)
+      dbConfig.db.run(
+        TableQuery[ProjectEntryRow].filter(_.vidispineProjectId === vsid).update(updatedProjectEntry).asTry
+      )
+    }
+  }
+
 
   def updateVsid(requestedId:Int) = IsAuthenticatedAsync(BodyParsers.parse.json) {uid=>{request=>
     request.body.validate[UpdateTitleRequest].fold(
