@@ -82,7 +82,7 @@ class ProjectEntryControllerSpec extends Specification with Mockito {
 
       status(response) must equalTo(OK)
       val jsondata = Await.result(bodyAsJsonFuture(response), 5.seconds).as[JsValue]
-      jsondata.toString mustEqual """{"status":"ok","result":{"id":2,"projectTypeId":1,"vidispineId":"VX-1234","title":"AnotherTestProject","created":"2016-12-11T12:21:11.021+0000","user":"you"}}"""
+      jsondata.toString mustEqual """{"status":"ok","result":[{"id":2,"projectTypeId":1,"vidispineId":"VX-1234","title":"AnotherTestProject","created":"2016-12-11T12:21:11.021+0000","user":"you"}]}"""
     }
 
     "return 404 for an unkown vidispine ID" in {
@@ -114,7 +114,7 @@ class ProjectEntryControllerSpec extends Specification with Mockito {
       val jsondata = Await.result(bodyAsJsonFuture(response), 5.seconds).as[JsValue]
       status(response) must equalTo(OK)
       (jsondata \ "status").as[String] must equalTo("ok")
-      (jsondata \ "detail").as[String] must equalTo("record updated")
+      (jsondata \ "detail").as[String] must equalTo("1 record(s) updated")
 
       val dbRecordAfter = Await.result(ProjectEntry.entryForId(1),5.seconds).get
       dbRecordAfter.projectTitle mustEqual "some new title"
@@ -156,7 +156,7 @@ class ProjectEntryControllerSpec extends Specification with Mockito {
       val jsondata = Await.result(bodyAsJsonFuture(response), 5.seconds).as[JsValue]
       status(response) must equalTo(OK)
       (jsondata \ "status").as[String] must equalTo("ok")
-      (jsondata \ "detail").as[String] must equalTo("record updated")
+      (jsondata \ "detail").as[String] must equalTo("1 record(s) updated")
 
       val dbRecordAfter = Await.result(ProjectEntry.entryForId(2),5.seconds).get
       dbRecordAfter.projectTitle mustEqual "some other new title"
@@ -174,6 +174,8 @@ class ProjectEntryControllerSpec extends Specification with Mockito {
         headers=FakeHeaders(Seq(("Content-Type","application/json"))),
         body=testUpdateDocument).withSession("uid"->"testuser")).get
 
+      val jsondata = Await.result(bodyAsJsonFuture(response), 5.seconds).as[JsValue]
+      println(jsondata.toString)
       status(response) must equalTo(NOT_FOUND)
     }
   }
@@ -198,7 +200,7 @@ class ProjectEntryControllerSpec extends Specification with Mockito {
       val jsondata = Await.result(bodyAsJsonFuture(response), 5.seconds).as[JsValue]
       status(response) must equalTo(OK)
       (jsondata \ "status").as[String] must equalTo("ok")
-      (jsondata \ "detail").as[String] must equalTo("record updated")
+      (jsondata \ "detail").as[String] must equalTo("1 record(s) updated")
 
       val dbRecordAfter = Await.result(ProjectEntry.entryForId(1),5.seconds).get
       dbRecordAfter.vidispineProjectId must beSome("VX-5678")

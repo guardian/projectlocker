@@ -39,11 +39,11 @@ class ProjectEntryController @Inject() (cc:ControllerComponents, config: Configu
     TableQuery[ProjectEntryRow].filter(_.id === requestedId).delete.asTry
   )
 
-  override def selectid(requestedId: Int) = dbConfig.db.run(
+  override def selectid(requestedId: Int):Future[Try[Seq[ProjectEntry]]] = dbConfig.db.run(
     TableQuery[ProjectEntryRow].filter(_.id === requestedId).result.asTry
   )
 
-  protected def selectVsid(vsid: String) = dbConfig.db.run(
+  protected def selectVsid(vsid: String):Future[Try[Seq[ProjectEntry]]] = dbConfig.db.run(
     TableQuery[ProjectEntryRow].filter(_.vidispineProjectId === vsid).result.asTry
   )
 
@@ -53,7 +53,7 @@ class ProjectEntryController @Inject() (cc:ControllerComponents, config: Configu
         if(result.isEmpty)
           NotFound("")
         else
-          Ok(Json.obj("status"->"ok","result"->this.jstranslate(result.head)))
+          Ok(Json.obj("status"->"ok","result"->this.jstranslate(result)))
       case Failure(error)=>
         logger.error(error.toString)
         InternalServerError(Json.obj("status"->"error","detail"->error.toString))
@@ -65,22 +65,21 @@ class ProjectEntryController @Inject() (cc:ControllerComponents, config: Configu
     * Fully generic container method to process an update request
     * @param requestedId an ID to identify what should be updated, this is passed to [[selector]]
     * @param selector a function that takes [[requestedId]] and returns a Future, containing a Try, containing a sequence of ProjectEntries
-    *                 that should have exactly one entry
+    *                 that correspond to the provided ID
     * @param f a function to perform the actual update.  This is only called if selector returns a valid sequence of at least one ProjectEntry,
-    *          and is passed the first ProjectEntry in the sequence that [[selector]] returns.
+    *          and is called for each ProjectEntry in the sequence that [[selector]] returns.
     *          It should return a Future containing a Try containing the number of rows updated.
     * @tparam T the data type of [[requestedId]]
-    * @return A Future containing either a Failure indicating why [[f]] was not called, or a Success with the result of [[f]]
+    * @return A Future containing a sequnce of results for each invokation of f. with either a Failure indicating why
+    *         [[f]] was not called, or a Success with the result of [[f]]
     */
-  def doUpdateGenericSelector[T](requestedId:T, selector:T=>Future[Try[Seq[ProjectEntry]]])(f: ProjectEntry=>Future[Try[Int]]) = selector(requestedId).flatMap({
+  def doUpdateGenericSelector[T](requestedId:T, selector:T=>Future[Try[Seq[ProjectEntry]]])(f: ProjectEntry=>Future[Try[Int]]):Future[Seq[Try[Int]]] = selector(requestedId).flatMap({
     case Success(someSeq)=>
-      someSeq.headOption match {
-        case Some(record)=>
-          f(record)
-        case None=>
-          Future(Failure(new RecordNotFoundException(s"No record found for id $requestedId")))
-      }
-    case Failure(error)=>Future(Failure(error))
+        if(someSeq.isEmpty)
+          Future(Seq(Failure(new RecordNotFoundException(s"No records found for id $requestedId"))))
+        else
+          Future.sequence(someSeq.map(f))
+    case Failure(error)=>Future(Seq(Failure(error)))
   })
 
   /**
@@ -98,7 +97,7 @@ class ProjectEntryController @Inject() (cc:ControllerComponents, config: Configu
     * @param newVsid new vidispine ID. Note that this is an Option[String] as the id can be null
     * @return a Future containing a Try containing an Int describing the number of records updated
     */
-  def doUpdateVsid(requestedId:Int, newVsid:Option[String]):Future[Try[Int]] = doUpdateGeneric(requestedId){ record=>
+  def doUpdateVsid(requestedId:Int, newVsid:Option[String]):Future[Seq[Try[Int]]] = doUpdateGeneric(requestedId){ record=>
     val updatedProjectEntry = record.copy (vidispineProjectId = newVsid)
     dbConfig.db.run (
       TableQuery[ProjectEntryRow].filter (_.id === requestedId).update (updatedProjectEntry).asTry
@@ -112,21 +111,23 @@ class ProjectEntryController @Inject() (cc:ControllerComponents, config: Configu
     * @tparam T type of @reqestedId
     * @return a Future[Response]
     */
-  def genericUpdateTitleEndpoint[T](requestedId:T)(updater:(T,String)=>Future[Try[Int]]) = IsAuthenticatedAsync(parse.json) {uid=>{request=>
+  def genericUpdateTitleEndpoint[T](requestedId:T)(updater:(T,String)=>Future[Seq[Try[Int]]]) = IsAuthenticatedAsync(parse.json) {uid=>{request=>
     request.body.validate[UpdateTitleRequest].fold(
       errors=>
         Future(BadRequest(Json.obj("status"->"error", "detail"->JsError.toJson(errors)))),
-      updateTitleRequest=>
-        updater(requestedId,updateTitleRequest.newTitle).map({
-          case Success(rows)=>
-            Ok(Json.obj("status"->"ok","detail"->"record updated"))
-          case Failure(error)=>
-            logger.error("Could not update project title", error)
-            if(error.getClass==classOf[RecordNotFoundException])
-              NotFound(Json.obj("status"->"error", "detail"-> s"record $requestedId not found"))
-            else
-              InternalServerError(Json.obj("status"->"error","detail"->error.toString))
+      updateTitleRequest=> {
+        val results = updater(requestedId, updateTitleRequest.newTitle).map(_.partition(_.isSuccess))
+
+        results.map(resultTuple => {
+          val failures = resultTuple._2
+          val successes = resultTuple._1
+
+          if (failures.isEmpty)
+            Ok(Json.obj("status" -> "ok", "detail" -> s"${successes.length} record(s) updated"))
+          else
+            genericHandleFailures(failures, requestedId)
         })
+      }
     )
   }}
 
@@ -159,21 +160,36 @@ class ProjectEntryController @Inject() (cc:ControllerComponents, config: Configu
   }
 
 
+  def genericHandleFailures[T](failures:Seq[Try[Int]], requestedId:T) = {
+    val notFoundFailures = failures.filter(_.failed.get.getClass==classOf[RecordNotFoundException])
+
+    if(notFoundFailures.length==failures.length) {
+      println("not found")
+      NotFound(Json.obj("status" -> "error", "detail" -> s"no records found for $requestedId"))
+    } else {
+      println("error")
+      InternalServerError(Json.obj("status" -> "error", "detail" -> failures.map(_.failed.get.toString)))
+    }
+  }
+
   def updateVsid(requestedId:Int) = IsAuthenticatedAsync(BodyParsers.parse.json) {uid=>{request=>
     request.body.validate[UpdateTitleRequest].fold(
       errors=>
         Future(BadRequest(Json.obj("status"->"error", "detail"->JsError.toJson(errors)))),
-      updateTitleRequest=>
-        doUpdateVsid(requestedId,updateTitleRequest.newVsid).map({
-          case Success(rows)=>
-            Ok(Json.obj("status"->"ok","detail"->"record updated"))
-          case Failure(error)=>
-            logger.error("Could not update project title", error)
-            if(error.getClass==classOf[RecordNotFoundException])
-              NotFound(Json.obj("status"->"error", "detail"-> s"record $requestedId not found"))
-            else
-              InternalServerError(Json.obj("status"->"error","detail"->error.toString))
+      updateTitleRequest=>{
+        val results = doUpdateVsid(requestedId, updateTitleRequest.newVsid).map(_.partition(_.isSuccess))
+
+        results.map(resultTuple => {
+          val failures = resultTuple._2
+          val successes = resultTuple._1
+
+          if (failures.isEmpty)
+            Ok(Json.obj("status" -> "ok", "detail" -> s"${successes.length} record(s) updated"))
+          else {
+            genericHandleFailures(failures, requestedId)
+          }
         })
+      }
     )
   }}
 
