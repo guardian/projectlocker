@@ -4,7 +4,7 @@ import java.time.LocalDateTime
 import akka.actor.ActorSystem
 import akka.stream.ActorMaterializer
 import helpers.{ProjectCreateHelper, ProjectCreateHelperImpl}
-import models.{ProjectEntry, ProjectRequestFull}
+import models.{ProjectEntry, ProjectEntrySerializer, ProjectRequestFull}
 import org.specs2.mutable.Specification
 import org.specs2.mock.Mockito
 import play.api.db.slick.DatabaseConfigProvider
@@ -21,7 +21,7 @@ import scala.concurrent.{Await, Future}
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.util.Success
 
-class ProjectEntryControllerSpec extends Specification with Mockito {
+class ProjectEntryControllerSpec extends Specification with Mockito with ProjectEntrySerializer {
   sequential
   val mockedProjectHelper = mock[ProjectCreateHelperImpl]
 
@@ -161,6 +161,31 @@ class ProjectEntryControllerSpec extends Specification with Mockito {
       val dbRecordAfter = Await.result(ProjectEntry.entryForId(2),5.seconds).get
       dbRecordAfter.projectTitle mustEqual "some other new title"
     }
+    "update the title field of multiple matching records" in {
+      val testUpdateDocument =
+        """{
+          |  "title": "ThatTestProject",
+          |  "vsid": null
+          |}""".stripMargin
+
+      val dbRecordBefore = Await.result(ProjectEntry.entryForId(2),5.seconds).get
+      dbRecordBefore.projectTitle mustEqual "AnotherTestProject"
+
+      val response = route(application, FakeRequest(
+        method="PUT",
+        uri="/api/project/by-vsid/VX-2345/title",
+        headers=FakeHeaders(Seq(("Content-Type","application/json"))),
+        body=testUpdateDocument).withSession("uid"->"testuser")).get
+
+      val jsondata = Await.result(bodyAsJsonFuture(response), 5.seconds).as[JsValue]
+      status(response) must equalTo(OK)
+      (jsondata \ "status").as[String] must equalTo("ok")
+      (jsondata \ "detail").as[String] must equalTo("record updated")
+
+      val dbRecordAfter = Await.result(ProjectEntry.entryForId(2),5.seconds).get
+      dbRecordAfter.projectTitle mustEqual "some other new title"
+    }
+
     "return 404 for a record that does not exist" in {
       val testUpdateDocument =
         """{
@@ -223,4 +248,26 @@ class ProjectEntryControllerSpec extends Specification with Mockito {
     }
   }
 
+  "ProjectEntryController.listFiltered" should {
+    "show projectentry items filtered by passed parameters" in {
+      val testSearchDocument =
+        """{
+          |  "title": "ThatTestProject",
+          |  "vidispineProjectId": null,
+          |  "filename": null
+          |}""".stripMargin
+
+      val response = route(application, FakeRequest(
+        method="PUT",
+        uri="/api/project/list",
+        headers=FakeHeaders(Seq(("Content-Type","application/json"))),
+        body=testSearchDocument).withSession("uid"->"testuser")).get
+
+      val jsondata = Await.result(bodyAsJsonFuture(response), 5.seconds).as[JsValue]
+      println(jsondata.toString())
+      status(response) must equalTo(OK)
+
+      (jsondata \ "result").as[List[ProjectEntry]].length mustEqual 1
+    }
+  }
 }

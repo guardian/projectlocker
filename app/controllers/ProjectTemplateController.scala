@@ -33,7 +33,7 @@ class ProjectTemplateController @Inject() (config: Configuration, dbConfigProvid
 
   override def validate(request: Request[JsValue]) = request.body.validate[ProjectTemplate]
 
-  override def selectall = dbConfig.db.run(TableQuery[ProjectTemplateRow].result.asTry)
+  override def selectall(startAt:Int, limit:Int) = dbConfig.db.run(TableQuery[ProjectTemplateRow].result.asTry)
 
   override def insert(entry: ProjectTemplate, uid:String) = dbConfig.db.run(
     (TableQuery[ProjectTemplateRow] returning TableQuery[ProjectTemplateRow].map(_.id) += entry).asTry)

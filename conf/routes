@@ -4,27 +4,29 @@
 
 GET     /                                  @controllers.Application.index(path="/")
 
-GET     /api/file                          @controllers.Files.list
+GET     /api/file                          @controllers.Files.list(startAt:Int ?=0,limit:Int ?=100)
 PUT     /api/file                          @controllers.Files.create
 PUT     /api/file/:id/content              @controllers.Files.uploadContent(id: Int)
 GET     /api/file/:id                      @controllers.Files.getitem(id: Int)
 PUT     /api/file/:id                      @controllers.Files.update(id: Int)
 DELETE  /api/file/:id                      @controllers.Files.delete(id: Int)
 
-GET     /api/storage                       @controllers.StoragesController.list
+GET     /api/storage                       @controllers.StoragesController.list(startAt:Int ?=0,limit:Int ?=100)
 PUT     /api/storage                       @controllers.StoragesController.create
 GET     /api/storage/knowntypes            @controllers.StoragesController.types
 GET     /api/storage/:id                   @controllers.StoragesController.getitem(id: Int)
 PUT     /api/storage/:id                   @controllers.StoragesController.update(id: Int)
 DELETE  /api/storage/:id                   @controllers.StoragesController.delete(id: Int)
 
-GET     /api/template                      @controllers.ProjectTemplateController.list
+GET     /api/template                      @controllers.ProjectTemplateController.list(startAt:Int ?=0,limit:Int ?=100)
 PUT     /api/template                      @controllers.ProjectTemplateController.create
 GET     /api/template/:id                  @controllers.ProjectTemplateController.getitem(id: Int)
 PUT     /api/template/:id                  @controllers.ProjectTemplateController.update(id: Int)
 DELETE  /api/template/:id                  @controllers.ProjectTemplateController.delete(id: Int)
 
-GET     /api/project                       @controllers.ProjectEntryController.list
+GET     /api/project                       @controllers.ProjectEntryController.list(startAt:Int ?=0,limit:Int ?=100)
+GET     /api/project/list                   @controllers.ProjectEntryController.list(startAt:Int ?=0,limit:Int ?=100)
+PUT     /api/project/list                   @controllers.ProjectEntryController.listFiltered(startAt:Int ?=0,limit:Int ?=100)
 PUT     /api/project                       @controllers.ProjectEntryController.create
 GET     /api/project/by-vsid/:vsid          @controllers.ProjectEntryController.getByVsid(vsid:String)
 GET     /api/project/:id/files              @controllers.ProjectEntryController.filesList(id:Int)
@@ -35,7 +37,7 @@ PUT     /api/project/by-vsid/:vsid/title    @controllers.ProjectEntryController.
 #PUT     /api/project/:id                   @controllers.ProjectEntryController.update(id: Int)
 #DELETE  /api/project/:id                   @controllers.ProjectEntryController.delete(id: Int)
 
-GET     /api/projecttype                   @controllers.ProjectTypeController.list
+GET     /api/projecttype                   @controllers.ProjectTypeController.list(startAt:Int ?=0,limit:Int ?=100)
 PUT     /api/projecttype                   @controllers.ProjectTypeController.create
 GET     /api/projecttype/:id               @controllers.ProjectTypeController.getitem(id: Int)
 PUT     /api/projecttype/:id               @controllers.ProjectTypeController.update(id: Int)

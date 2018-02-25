@@ -39,7 +39,7 @@ class StoragesController @Inject()
     TableQuery[StorageEntryRow].filter(_.id === requestedId).delete.asTry
   )
 
-  override def selectall = dbConfig.db.run(
+  override def selectall(startAt:Int, limit:Int) = dbConfig.db.run(
     TableQuery[StorageEntryRow].result.asTry //simple select *
   )
 

@@ -10,12 +10,11 @@ import models._
 import play.api.cache.SyncCacheApi
 import play.api.{Configuration, Logger}
 import play.api.db.slick.DatabaseConfigProvider
-import play.api.libs.json.JsValue
+import play.api.libs.json.{JsError, JsResult, JsValue, Json}
 import play.api.mvc._
 import slick.jdbc.JdbcProfile
 import slick.lifted.TableQuery
 import slick.jdbc.PostgresProfile.api._
-import play.api.libs.json.{JsError, Json}
 
 import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -28,9 +27,9 @@ import scala.util.{Failure, Success, Try}
 class ProjectEntryController @Inject() (cc:ControllerComponents, config: Configuration,
                                         dbConfigProvider: DatabaseConfigProvider, projectHelper:ProjectCreateHelper,
                                         cacheImpl:SyncCacheApi)
-  extends GenericDatabaseObjectController[ProjectEntry]
-    with ProjectEntrySerializer with ProjectRequestSerializer with UpdateTitleRequestSerializer with FileEntrySerializer
-    with Security
+  extends GenericDatabaseObjectControllerWithFilter[ProjectEntry,ProjectEntryFilterTerms]
+    with ProjectEntrySerializer with ProjectEntryFilterTermsSerializer with ProjectRequestSerializer
+    with UpdateTitleRequestSerializer with FileEntrySerializer with Security
 {
   override implicit val cache:SyncCacheApi = cacheImpl
 
@@ -211,18 +210,29 @@ class ProjectEntryController @Inject() (cc:ControllerComponents, config: Configu
     })
   }}
 
-  override def selectall = dbConfig.db.run(
+  override def selectall(startAt:Int, limit:Int) = dbConfig.db.run(
     TableQuery[ProjectEntryRow].result.asTry //simple select *
   )
 
-  override def jstranslate(result: Seq[ProjectEntry]) = result
-  override def jstranslate(result: ProjectEntry) = result  //implicit translation should handle this
+  override def selectFiltered(startAt: Int, limit: Int, terms: ProjectEntryFilterTerms): Future[Try[Seq[ProjectEntry]]] = {
+    println(terms.toString)
+    dbConfig.db.run(
+      terms.addFilterTerms {
+        TableQuery[ProjectEntryRow]
+      }.result.asTry
+    )
+  }
+
+  override def jstranslate(result: Seq[ProjectEntry]):Json.JsValueWrapper = result
+  override def jstranslate(result: ProjectEntry):Json.JsValueWrapper = result  //implicit translation should handle this
 
   /*this is pointless because of the override of [[create]] below, so it should not get called,
    but is needed to conform to the [[GenericDatabaseObjectController]] protocol*/
   override def insert(entry: ProjectEntry,uid:String) = Future(Failure(new RuntimeException("ProjectEntryController::insert should not have been called")))
 
   override def validate(request:Request[JsValue]) = request.body.validate[ProjectEntry]
+
+  override def validateFilterParams(request: Request[JsValue]): JsResult[ProjectEntryFilterTerms] = request.body.validate[ProjectEntryFilterTerms]
 
   override def create = IsAuthenticatedAsync(parse.json) {uid=>{ request =>
     implicit val db = dbConfig.db

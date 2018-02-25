@@ -36,8 +36,8 @@ class Files @Inject() (configuration: Configuration, dbConfigProvider: DatabaseC
     )
   }
 
-  override def selectall = dbConfig.db.run(
-    TableQuery[FileEntryRow].result.asTry //simple select *
+  override def selectall(startAt:Int, limit:Int) = dbConfig.db.run(
+    TableQuery[FileEntryRow].drop(startAt).take(limit).result.asTry //simple select *
   )
 
   override def jstranslate(result: Seq[FileEntry]) = result //implicit translation should handle this
