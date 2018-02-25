@@ -168,8 +168,8 @@ class ProjectEntryControllerSpec extends Specification with Mockito with Project
           |  "vsid": null
           |}""".stripMargin
 
-      val dbRecordBefore = Await.result(ProjectEntry.entryForId(2),5.seconds).get
-      dbRecordBefore.projectTitle mustEqual "AnotherTestProject"
+      val dbRecordBefore = Await.result(ProjectEntry.entryForId(3),5.seconds).get
+      dbRecordBefore.projectTitle mustEqual "ThatTestProject"
 
       val response = route(application, FakeRequest(
         method="PUT",
@@ -178,12 +178,15 @@ class ProjectEntryControllerSpec extends Specification with Mockito with Project
         body=testUpdateDocument).withSession("uid"->"testuser")).get
 
       val jsondata = Await.result(bodyAsJsonFuture(response), 5.seconds).as[JsValue]
+      println(jsondata.toString())
       status(response) must equalTo(OK)
       (jsondata \ "status").as[String] must equalTo("ok")
-      (jsondata \ "detail").as[String] must equalTo("record updated")
+      (jsondata \ "detail").as[String] must equalTo("2 record(s) updated")
 
-      val dbRecordAfter = Await.result(ProjectEntry.entryForId(2),5.seconds).get
-      dbRecordAfter.projectTitle mustEqual "some other new title"
+      val dbRecordAfter = Await.result(ProjectEntry.entryForId(3),5.seconds).get
+      dbRecordAfter.projectTitle mustEqual "ThatTestProject"
+      val dbRecordAfterNext = Await.result(ProjectEntry.entryForId(4),5.seconds).get
+      dbRecordAfterNext.projectTitle mustEqual "ThatTestProject"
     }
 
     "return 404 for a record that does not exist" in {
@@ -249,12 +252,10 @@ class ProjectEntryControllerSpec extends Specification with Mockito with Project
   }
 
   "ProjectEntryController.listFiltered" should {
-    "show projectentry items filtered by passed parameters" in {
+    "show projectentry items filtered by title" in {
       val testSearchDocument =
         """{
-          |  "title": "ThatTestProject",
-          |  "vidispineProjectId": null,
-          |  "filename": null
+          |  "title": "ThatTestProject"
           |}""".stripMargin
 
       val response = route(application, FakeRequest(
@@ -267,7 +268,67 @@ class ProjectEntryControllerSpec extends Specification with Mockito with Project
       println(jsondata.toString())
       status(response) must equalTo(OK)
 
-      (jsondata \ "result").as[List[ProjectEntry]].length mustEqual 1
+      val resultList = (jsondata \ "result").as[List[ProjectEntry]]
+      resultList.length mustEqual 2
+      resultList.head.id must beSome(3)
+      resultList(1).id must beSome(4)
+    }
+
+    "show projectentry items filtered by vidispine id" in {
+      val testSearchDocument =
+        """{
+          |  "title": null,
+          |  "vidispineId": "VX-2345",
+          |  "filename": null
+          |}""".stripMargin
+
+      val response = route(application, FakeRequest(
+        method="PUT",
+        uri="/api/project/list",
+        headers=FakeHeaders(Seq(("Content-Type","application/json"))),
+        body=testSearchDocument).withSession("uid"->"testuser")).get
+
+      val jsondata = Await.result(bodyAsJsonFuture(response), 5.seconds).as[JsValue]
+      status(response) must equalTo(OK)
+
+      val resultList = (jsondata \ "result").as[List[ProjectEntry]]
+      resultList.length mustEqual 2
+      resultList.head.id must beSome(3)
+      resultList(1).id must beSome(4)
+    }
+
+    "return an empty list if nothing matches" in {
+      val testSearchDocument =
+        """{
+          |  "title": "Fdgfsdgfgdsfgdsfgsd"
+          |}""".stripMargin
+
+      val response = route(application, FakeRequest(
+        method="PUT",
+        uri="/api/project/list",
+        headers=FakeHeaders(Seq(("Content-Type","application/json"))),
+        body=testSearchDocument).withSession("uid"->"testuser")).get
+
+      val jsondata = Await.result(bodyAsJsonFuture(response), 5.seconds).as[JsValue]
+      status(response) must equalTo(OK)
+
+      val resultList = (jsondata \ "result").as[List[ProjectEntry]]
+      resultList.length mustEqual 0
+    }
+
+    "reject invalid json doc with 400" in {
+      val testSearchDocument =
+        """{
+          |  "title": "ThatTestProject",
+          |}""".stripMargin
+
+      val response = route(application, FakeRequest(
+        method="PUT",
+        uri="/api/project/list",
+        headers=FakeHeaders(Seq(("Content-Type","application/json"))),
+        body=testSearchDocument).withSession("uid"->"testuser")).get
+
+      status(response) must equalTo(BAD_REQUEST)
     }
   }
 }

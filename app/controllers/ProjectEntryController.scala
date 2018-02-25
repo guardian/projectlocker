@@ -151,10 +151,10 @@ class ProjectEntryController @Inject() (cc:ControllerComponents, config: Configu
     * @return
     */
   def updateTitleByVsid(vsid:String) = genericUpdateTitleEndpoint[String](vsid) { (vsid,newTitle)=>
-    doUpdateGenericSelector[String](vsid,selectVsid) { record=>
+    doUpdateGenericSelector[String](vsid,selectVsid) { record=> //this lambda function is called once for each record
       val updatedProjectEntry = record.copy(projectTitle = newTitle)
       dbConfig.db.run(
-        TableQuery[ProjectEntryRow].filter(_.vidispineProjectId === vsid).update(updatedProjectEntry).asTry
+        TableQuery[ProjectEntryRow].filter(_.id === record.id.get).update(updatedProjectEntry).asTry
       )
     }
   }
