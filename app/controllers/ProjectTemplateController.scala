@@ -33,7 +33,7 @@ class ProjectTemplateController @Inject() (config: Configuration, dbConfigProvid
 
   override def validate(request: Request[JsValue]) = request.body.validate[ProjectTemplate]
 
-  override def selectall = dbConfig.db.run(TableQuery[ProjectTemplateRow].result.asTry)
+  override def selectall(startAt:Int, limit:Int) = dbConfig.db.run(TableQuery[ProjectTemplateRow].drop(startAt).take(limit).result.asTry)
 
   override def insert(entry: ProjectTemplate, uid:String) = dbConfig.db.run(
     (TableQuery[ProjectTemplateRow] returning TableQuery[ProjectTemplateRow].map(_.id) += entry).asTry)
@@ -64,7 +64,7 @@ class ProjectTemplateController @Inject() (config: Configuration, dbConfigProvid
   }
 
   override def delete(requestedId: Int) = Action.async { request =>
-    implicit val db:slick.driver.JdbcProfile#Backend#Database=dbConfig.db
+    implicit val db:slick.jdbc.JdbcProfile#Backend#Database=dbConfig.db
 
     if(requestedId<0)
       Future(Conflict(Json.obj("status"->"error","detail"->"This is still referenced by sub-objects")))

@@ -29,8 +29,8 @@ class ProjectTypeController @Inject() (config: Configuration, dbConfigProvider: 
     TableQuery[ProjectTypeRow].filter(_.id === requestedId).result.asTry
   )
 
-  override def selectall = dbConfig.db.run(
-    TableQuery[ProjectTypeRow].result.asTry //simple select *
+  override def selectall(startAt:Int, limit:Int) = dbConfig.db.run(
+    TableQuery[ProjectTypeRow].drop(startAt).take(limit).result.asTry //simple select *
   )
 
   override def jstranslate(result: Seq[ProjectType]) = result

@@ -10,12 +10,11 @@ import models._
 import play.api.cache.SyncCacheApi
 import play.api.{Configuration, Logger}
 import play.api.db.slick.DatabaseConfigProvider
-import play.api.libs.json.JsValue
+import play.api.libs.json.{JsError, JsResult, JsValue, Json}
 import play.api.mvc._
 import slick.jdbc.JdbcProfile
 import slick.lifted.TableQuery
 import slick.jdbc.PostgresProfile.api._
-import play.api.libs.json.{JsError, Json}
 
 import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -28,8 +27,9 @@ import scala.util.{Failure, Success, Try}
 class ProjectEntryController @Inject() (cc:ControllerComponents, config: Configuration,
                                         dbConfigProvider: DatabaseConfigProvider, projectHelper:ProjectCreateHelper,
                                         cacheImpl:SyncCacheApi)
-  extends GenericDatabaseObjectController[ProjectEntry]
-    with ProjectEntrySerializer with ProjectRequestSerializer with UpdateTitleRequestSerializer with Security
+  extends GenericDatabaseObjectControllerWithFilter[ProjectEntry,ProjectEntryFilterTerms]
+    with ProjectEntrySerializer with ProjectEntryFilterTermsSerializer with ProjectRequestSerializer
+    with UpdateTitleRequestSerializer with FileEntrySerializer with Security
 {
   override implicit val cache:SyncCacheApi = cacheImpl
 
@@ -151,10 +151,10 @@ class ProjectEntryController @Inject() (cc:ControllerComponents, config: Configu
     * @return
     */
   def updateTitleByVsid(vsid:String) = genericUpdateTitleEndpoint[String](vsid) { (vsid,newTitle)=>
-    doUpdateGenericSelector[String](vsid,selectVsid) { record=>
+    doUpdateGenericSelector[String](vsid,selectVsid) { record=> //this lambda function is called once for each record
       val updatedProjectEntry = record.copy(projectTitle = newTitle)
       dbConfig.db.run(
-        TableQuery[ProjectEntryRow].filter(_.vidispineProjectId === vsid).update(updatedProjectEntry).asTry
+        TableQuery[ProjectEntryRow].filter(_.id === record.id.get).update(updatedProjectEntry).asTry
       )
     }
   }
@@ -164,15 +164,13 @@ class ProjectEntryController @Inject() (cc:ControllerComponents, config: Configu
     val notFoundFailures = failures.filter(_.failed.get.getClass==classOf[RecordNotFoundException])
 
     if(notFoundFailures.length==failures.length) {
-      println("not found")
       NotFound(Json.obj("status" -> "error", "detail" -> s"no records found for $requestedId"))
     } else {
-      println("error")
       InternalServerError(Json.obj("status" -> "error", "detail" -> failures.map(_.failed.get.toString)))
     }
   }
 
-  def updateVsid(requestedId:Int) = IsAuthenticatedAsync(BodyParsers.parse.json) {uid=>{request=>
+  def updateVsid(requestedId:Int) = IsAuthenticatedAsync(parse.json) {uid=>{request=>
     request.body.validate[UpdateTitleRequest].fold(
       errors=>
         Future(BadRequest(Json.obj("status"->"error", "detail"->JsError.toJson(errors)))),
@@ -193,12 +191,37 @@ class ProjectEntryController @Inject() (cc:ControllerComponents, config: Configu
     )
   }}
 
-  override def selectall = dbConfig.db.run(
-    TableQuery[ProjectEntryRow].result.asTry //simple select *
+  def filesList(requestedId: Int) = IsAuthenticatedAsync {uid=>{request=>
+    implicit val db = dbConfig.db
+
+    selectid(requestedId).flatMap({
+      case Failure(error)=>
+        logger.error(s"could not list files from project ${requestedId}",error)
+        Future(InternalServerError(Json.obj("status"->"error","detail"->error.toString)))
+      case Success(someSeq)=>
+        someSeq.headOption match { //matching on pk, so can only be one result
+          case Some(projectEntry)=>
+            projectEntry.associatedFiles.map(fileList=>Ok(Json.obj("status"->"ok","files"->fileList)))
+          case None=>
+            Future(NotFound(Json.obj("status"->"error","detail"->s"project $requestedId not found")))
+        }
+    })
+  }}
+
+  override def selectall(startAt:Int, limit:Int) = dbConfig.db.run(
+    TableQuery[ProjectEntryRow].drop(startAt).take(limit).result.asTry //simple select *
   )
 
-  override def jstranslate(result: Seq[ProjectEntry]) = result
-  override def jstranslate(result: ProjectEntry) = result  //implicit translation should handle this
+  override def selectFiltered(startAt: Int, limit: Int, terms: ProjectEntryFilterTerms): Future[Try[Seq[ProjectEntry]]] = {
+    dbConfig.db.run(
+      terms.addFilterTerms {
+        TableQuery[ProjectEntryRow]
+      }.drop(startAt).take(limit).result.asTry
+    )
+  }
+
+  override def jstranslate(result: Seq[ProjectEntry]):Json.JsValueWrapper = result
+  override def jstranslate(result: ProjectEntry):Json.JsValueWrapper = result  //implicit translation should handle this
 
   /*this is pointless because of the override of [[create]] below, so it should not get called,
    but is needed to conform to the [[GenericDatabaseObjectController]] protocol*/
@@ -206,7 +229,9 @@ class ProjectEntryController @Inject() (cc:ControllerComponents, config: Configu
 
   override def validate(request:Request[JsValue]) = request.body.validate[ProjectEntry]
 
-  override def create = IsAuthenticatedAsync(BodyParsers.parse.json) {uid=>{ request =>
+  override def validateFilterParams(request: Request[JsValue]): JsResult[ProjectEntryFilterTerms] = request.body.validate[ProjectEntryFilterTerms]
+
+  override def create = IsAuthenticatedAsync(parse.json) {uid=>{ request =>
     implicit val db = dbConfig.db
 
     request.body.validate[ProjectRequest].fold(

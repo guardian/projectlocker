@@ -13,7 +13,7 @@ import sys.process._
 @RunWith(classOf[JUnitRunner])
 class PathStorageDriverSpec extends Specification with org.specs2.mock.Mockito {
   sequential
-  private val mock_storage = StorageEntry(None,None,"Local",None,None,None,None)
+  private val mock_storage = StorageEntry(None,None,None,"Local",None,None,None,None)
 
   "PathStorageDriver" should {
     "return a File object for a path" in {

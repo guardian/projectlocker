@@ -9,7 +9,8 @@ class StorageCompletionComponent extends React.Component {
     static propTypes = {
         loginDetails: PropTypes.object.required,
         rootpath: PropTypes.string.required,
-        selectedType: PropTypes.number.required
+        selectedType: PropTypes.number.required,
+        clientpath: PropTypes.string.required
     };
 
     constructor(props){
@@ -26,6 +27,7 @@ class StorageCompletionComponent extends React.Component {
         const selectedStorage = this.props.strgTypes[this.props.selectedType];
         return {
             rootpath: this.props.rootpath,
+            clientpath: this.props.clientpath,
             storageType: selectedStorage.name,
             host: this.props.loginDetails.hostname,
             port: this.props.loginDetails.port ? parseInt(this.props.loginDetails.port) : null,
@@ -58,7 +60,7 @@ class StorageCompletionComponent extends React.Component {
             <h3>Set up storage</h3>
             <p className="information">We will set up a new storage definition with the information below.</p>
             <p className="information">Press "Confirm" to go ahead, or press Previous if you need to amend any details.</p>
-            <SummaryComponent name={selectedStorage.name} loginDetails={this.props.loginDetails} subfolder={this.props.rootpath}/>
+            <SummaryComponent name={selectedStorage.name} loginDetails={this.props.loginDetails} subfolder={this.props.rootpath} clientpath={this.props.clientpath} />
             <ErrorViewComponent error={this.state.error}/>
             <span style={{float: "right"}}>{errorLabel}<button onClick={this.confirmClicked}>Confirm</button></span>
         </div>)

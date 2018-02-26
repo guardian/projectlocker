@@ -16,6 +16,7 @@ class StorageListComponent extends GeneralListComponent {
             },
             GeneralListComponent.standardColumn("Type","type"),
             GeneralListComponent.standardColumn("Root path","rootpath"),
+            GeneralListComponent.standardColumn("Client-facing path (if any)","clientpath"),
             GeneralListComponent.standardColumn("Storage type","storageType"),
             GeneralListComponent.standardColumn("Username","user"),
             {

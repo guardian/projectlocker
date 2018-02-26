@@ -123,6 +123,7 @@ ALTER SEQUENCE "ProjectType_id_seq" OWNED BY "ProjectType".id;
 CREATE TABLE "StorageEntry" (
     id integer NOT NULL,
     rootpath character varying,
+    clientpath character varying,
     "storageType" character varying NOT NULL,
     "user" character varying,
     password character varying,

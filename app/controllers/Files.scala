@@ -30,14 +30,13 @@ class Files @Inject() (configuration: Configuration, dbConfigProvider: DatabaseC
   )
 
   override def selectid(requestedId: Int) = {
-    println("In select")
     dbConfig.db.run(
       TableQuery[FileEntryRow].filter(_.id === requestedId).result.asTry
     )
   }
 
-  override def selectall = dbConfig.db.run(
-    TableQuery[FileEntryRow].result.asTry //simple select *
+  override def selectall(startAt:Int, limit:Int) = dbConfig.db.run(
+    TableQuery[FileEntryRow].drop(startAt).take(limit).result.asTry //simple select *
   )
 
   override def jstranslate(result: Seq[FileEntry]) = result //implicit translation should handle this

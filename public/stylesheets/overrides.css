@@ -112,3 +112,46 @@ button.inline-dialog {
 p.centered {
     text-align: center;
 }
+
+.value-not-present {
+    font-style: italic;
+    color: #777777;
+}
+
+.filter-list-block {
+    margin-left: auto;
+    margin-right: 5%;
+    width: 85%;
+    overflow: hidden;
+
+}
+
+.filter-list-entry {
+    vertical-align: top;
+}
+
+a.filter-link-control {
+    font-size: 0.8em;
+    margin-left: 1em;
+    cursor: pointer;
+}
+
+.filter-list-title {
+    display: block;
+    margin-bottom: 1em;
+}
+
+.filter-entry-label {
+    display: inline-block;
+    vertical-align: top;
+    margin-right: 0.5em;
+}
+
+.filter-entry-input {
+    display: inline-block;
+    margin-right: 1.2em;
+}
+
+.filter-entry-error {
+    margin-left: -5em;
+}
