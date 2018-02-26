@@ -40,7 +40,7 @@ class StoragesController @Inject()
   )
 
   override def selectall(startAt:Int, limit:Int) = dbConfig.db.run(
-    TableQuery[StorageEntryRow].result.asTry //simple select *
+    TableQuery[StorageEntryRow].drop(startAt).take(limit).result.asTry //simple select *
   )
 
   override def jstranslate(result: Seq[StorageEntry]) = result.asInstanceOf[Seq[StorageEntry]]  //implicit translation should handle this

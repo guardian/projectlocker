@@ -164,10 +164,8 @@ class ProjectEntryController @Inject() (cc:ControllerComponents, config: Configu
     val notFoundFailures = failures.filter(_.failed.get.getClass==classOf[RecordNotFoundException])
 
     if(notFoundFailures.length==failures.length) {
-      println("not found")
       NotFound(Json.obj("status" -> "error", "detail" -> s"no records found for $requestedId"))
     } else {
-      println("error")
       InternalServerError(Json.obj("status" -> "error", "detail" -> failures.map(_.failed.get.toString)))
     }
   }
@@ -215,7 +213,6 @@ class ProjectEntryController @Inject() (cc:ControllerComponents, config: Configu
   )
 
   override def selectFiltered(startAt: Int, limit: Int, terms: ProjectEntryFilterTerms): Future[Try[Seq[ProjectEntry]]] = {
-    println(terms.toString)
     dbConfig.db.run(
       terms.addFilterTerms {
         TableQuery[ProjectEntryRow]

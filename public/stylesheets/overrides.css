@@ -127,15 +127,15 @@ p.centered {
 }
 
 .filter-list-entry {
-
+    vertical-align: top;
 }
 
 a.filter-link-control {
     font-size: 0.8em;
     margin-left: 1em;
     cursor: pointer;
-
 }
+
 .filter-list-title {
     display: block;
     margin-bottom: 1em;
@@ -143,10 +143,15 @@ a.filter-link-control {
 
 .filter-entry-label {
     display: inline-block;
+    vertical-align: top;
     margin-right: 0.5em;
 }
 
 .filter-entry-input {
     display: inline-block;
     margin-right: 1.2em;
+}
+
+.filter-entry-error {
+    margin-left: -5em;
 }

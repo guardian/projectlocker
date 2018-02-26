@@ -30,16 +30,16 @@ describe("GeneralListComponent", ()=> {
         done();
     });
 
-    test("reload should download data and then call gotDataCallback", (done)=>{
+    test("getNextPage should download data and then call gotDataCallback", (done)=>{
         const result = shallow(<GeneralListComponent title="test title"/>);
         const callbackSpy = sinon.spy();
         result.instance().gotDataCallback = callbackSpy;
         result.instance().endpoint = "/path/to/fake/endpoint";
 
-        result.instance().reload();
+        result.instance().getNextPage();
 
         return moxios.wait(()=>{
-            expect(moxios.requests.mostRecent().config.url).toEqual('/path/to/fake/endpoint');
+            expect(moxios.requests.mostRecent().config.url).toEqual('/path/to/fake/endpoint?startAt=0&length=20');
             let request = moxios.requests.mostRecent();
             request.respondWith({
                 status: 200,
@@ -53,14 +53,4 @@ describe("GeneralListComponent", ()=> {
             })
         });
     });
-
-    /*strange. this test should work but does not (the action works in browser)*/
-    // test("clicking on New should call newElementCallback", ()=>{
-    //     const result = shallow(<GeneralListComponent title="test title"/>);
-    //     const callbackSpy = sinon.spy();
-    //     result.instance().newElementCallback = callbackSpy;
-    //
-    //     result.find("#newElementButton").simulate("click");
-    //     expect(callbackSpy.called).toBeTruthy();
-    // });
 });

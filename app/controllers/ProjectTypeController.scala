@@ -30,7 +30,7 @@ class ProjectTypeController @Inject() (config: Configuration, dbConfigProvider: 
   )
 
   override def selectall(startAt:Int, limit:Int) = dbConfig.db.run(
-    TableQuery[ProjectTypeRow].result.asTry //simple select *
+    TableQuery[ProjectTypeRow].drop(startAt).take(limit).result.asTry //simple select *
   )
 
   override def jstranslate(result: Seq[ProjectType]) = result

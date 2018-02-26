@@ -23,7 +23,7 @@ class GeneralListComponent extends React.Component {
 
         /* this must be supplied by a subclass */
         this.endpoint='/unknown';
-        this.filterEndpoint = "/unknown.list";
+        this.filterEndpoint = null;
 
         this.style = {
             backgroundColor: '#eee',
@@ -59,7 +59,6 @@ class GeneralListComponent extends React.Component {
     }
 
     breakdownPathComponents() {
-        console.log("breakdownPathComponents: " + this.props.location.pathname);
         return this.props.location.pathname.split('/')
     }
 
@@ -81,24 +80,26 @@ class GeneralListComponent extends React.Component {
     getNextPage(){
         const startAt = this.state.currentPage * this.pageSize;
         const length = this.pageSize;
-        console.log("getNextPage");
 
-        axios.put(this.filterEndpoint + "?startAt=" + startAt + "&length=" + length, this.state.filterTerms)
-            .then(response=>this.setState({
+        const axiosFuture = this.filterEndpoint ?
+            axios.put(this.filterEndpoint + "?startAt=" + startAt + "&length=" + length, this.state.filterTerms) :
+            axios.get(this.endpoint + "?startAt=" + startAt + "&length=" + length);
+
+        axiosFuture.then(response=>{
+            this.setState({
                 currentPage: this.state.currentPage+1
             }, ()=>{
                 this.gotDataCallback(response, ()=> {
                     if (response.data.result.length > 0) this.getNextPage()
                 });
-            }))
-            .catch(error=>{
+            })
+        }).catch(error=>{
             console.error(error);
         });
     }
 
     /* reloads the data for the component based on the endpoint configured in the constructor */
     reload(){
-        console.log("reload()");
         this.setState({
             currentPage: 0,
             data: []
@@ -126,7 +127,6 @@ class GeneralListComponent extends React.Component {
     this will cause a reload of data from the server
      */
     filterDidUpdate(newterms){
-        console.log("filterDidUpdate");
         this.setState({filterTerms: newterms},()=>this.reload());
     }
 

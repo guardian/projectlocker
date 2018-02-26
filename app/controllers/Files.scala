@@ -30,7 +30,6 @@ class Files @Inject() (configuration: Configuration, dbConfigProvider: DatabaseC
   )
 
   override def selectid(requestedId: Int) = {
-    println("In select")
     dbConfig.db.run(
       TableQuery[FileEntryRow].filter(_.id === requestedId).result.asTry
     )

@@ -1,5 +1,6 @@
 import React from 'react';
 import PropTypes from 'prop-types';
+import Omit from 'lodash.omit';
 
 class ProjectEntryFilterComponent extends React.Component {
     static propTypes = {
@@ -10,7 +11,7 @@ class ProjectEntryFilterComponent extends React.Component {
     constructor(props){
         super(props);
 
-        const vsidValidator = new RegExp('^\w{2}-\d+$|^$');
+        const vsidValidator = new RegExp('\\w{2}-\\d+');
 
         this.filterSpec = [
             {
@@ -23,7 +24,12 @@ class ProjectEntryFilterComponent extends React.Component {
             {
                 key: "vidispineId",
                 label: "PLUTO project id",
-                validator: (input)=>vsidValidator.test(input) ? null : "This must be in the form of XX-nnnnn"
+                //validator: (input)=>vsidValidator.test(input) ? null : "This must be in the form of XX-nnnnn"
+                validator: (input)=>{
+                    const result=vsidValidator.test(input);
+                    console.log("validation result for '"+ input, "': ", result);
+                    return result ? null : "This must be in the form of XX-nnnnn"
+                }
             },
             {
                 key: "filename",
@@ -34,7 +40,8 @@ class ProjectEntryFilterComponent extends React.Component {
 
         this.state = {
             filters: {},
-            showFilters: true
+            fieldErrors: {},
+            showFilters: false
         };
 
         this.switchHidden = this.switchHidden.bind(this);
@@ -42,12 +49,37 @@ class ProjectEntryFilterComponent extends React.Component {
         this.doClear = this.doClear.bind(this);
     }
 
-    entryUpdated(event, filterKey){
+    updateFilters(filterKey, value,cb){
         let newFilters = {match: "W_ENDSWITH"};
-        newFilters[filterKey] = event.target.value;
-        this.setState({filters: Object.assign(this.state.filters, newFilters)}, ()=>{
+        newFilters[filterKey] = value;
+        this.setState({filters: Object.assign(this.state.filters, newFilters)}, cb);
+    }
 
-        });
+    addFieldError(filterKey, errorDesc, cb){
+        let newFilters = {};
+        newFilters[filterKey] = errorDesc;
+        this.setState({fieldErrors: newFilters}, cb);
+    }
+
+    removeFieldError(filterKey, cb){
+        this.setState({fieldErrors: Omit(this.state.fieldErrors, filterKey)}, cb);
+    }
+
+    entryUpdated(event, filterKey){
+        const spec = this.filterSpec.filter(entry=>entry.key===filterKey);
+
+        if(spec[0].validator){
+            const wasError = spec[0].validator(event.target.value);
+            if(wasError){
+                this.addFieldError(filterKey, wasError);
+            } else {
+                this.removeFieldError(filterKey);
+                this.updateFilters(filterKey, event.target.value);
+            }
+        } else {
+            this.updateFilters(filterKey, event.target.value);
+        }
+
     }
 
     switchHidden(){
@@ -64,6 +96,10 @@ class ProjectEntryFilterComponent extends React.Component {
         }, ()=>this.doUpdate());
     }
 
+    showFilterError(fieldName){
+        return <span>{this.state.fieldErrors[fieldName] ? this.state.fieldErrors[fieldName] : ""}</span>
+    }
+
     render(){
         return <div className="filter-list-block">
             <span className="filter-list-title">
@@ -75,7 +111,12 @@ class ProjectEntryFilterComponent extends React.Component {
             {this.filterSpec.map(filterEntry=>
                 <span className="filter-list-entry" style={{ display: this.state.showFilters ? "inline-block" : "none" }}  key={filterEntry.key}>
                    <label className="filter-entry-label" htmlFor={filterEntry.key}>{filterEntry.label}</label>
-                   <input className="filter-entry-input" id={filterEntry.key} onChange={(event)=>this.entryUpdated(event, filterEntry.key)} value={this.state.filters[filterEntry.key]}/>
+                    <div className="filter-entry-input">
+                        <input id={filterEntry.key} onChange={(event)=>this.entryUpdated(event, filterEntry.key)} value={this.state.filters[filterEntry.key]}/>
+                        {this.state.fieldErrors[filterEntry.key] ? <i className="fa fa-exclamation" style={{color: "red", marginLeft: "0.5em"}}/> : <i className="fa fa-check" style={{color: "green", marginLeft: "0.5em"}}/>}
+                        <br style={{marginTop: "5px" }}/>
+                        {this.state.fieldErrors[filterEntry.key] ? <span className="filter-entry-error">{this.state.fieldErrors[filterEntry.key]}</span> : <span/>}
+                    </div>
                 </span>)}
             <span className="filter-list-entry" style={{ display: this.state.showFilters ? "inline-block": "none", float: "right"}}>
                 <button onClick={this.doClear}>Clear</button>

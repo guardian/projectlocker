@@ -255,7 +255,8 @@ class ProjectEntryControllerSpec extends Specification with Mockito with Project
     "show projectentry items filtered by title" in {
       val testSearchDocument =
         """{
-          |  "title": "ThatTestProject"
+          |  "title": "ThatTestProject",
+          |  "match": "W_ENDSWITH"
           |}""".stripMargin
 
       val response = route(application, FakeRequest(
@@ -277,9 +278,8 @@ class ProjectEntryControllerSpec extends Specification with Mockito with Project
     "show projectentry items filtered by vidispine id" in {
       val testSearchDocument =
         """{
-          |  "title": null,
           |  "vidispineId": "VX-2345",
-          |  "filename": null
+          |  "match": "W_ENDSWITH"
           |}""".stripMargin
 
       val response = route(application, FakeRequest(
@@ -300,8 +300,7 @@ class ProjectEntryControllerSpec extends Specification with Mockito with Project
     "return an empty list for a filename that is not associated with any projects" in {
       val testSearchDocument =
         """{
-          |  "title": null,
-          |  "vidispineId": null,
+          |  "match": "W_ENDSWITH",
           |  "filename": "/path/to/another/file.project"
           |}""".stripMargin
 
@@ -322,8 +321,7 @@ class ProjectEntryControllerSpec extends Specification with Mockito with Project
     "show projectentry items filtered by file association" in {
       val testSearchDocument =
         """{
-          |  "title": null,
-          |  "vidispineId": null,
+          |  "match": "W_ENDSWITH",
           |  "filename": "/path/to/thattestproject"
           |}""".stripMargin
 
@@ -346,6 +344,7 @@ class ProjectEntryControllerSpec extends Specification with Mockito with Project
     "return an empty list if nothing matches" in {
       val testSearchDocument =
         """{
+          |  "match": "W_ENDSWITH",
           |  "title": "Fdgfsdgfgdsfgdsfgsd"
           |}""".stripMargin
 
