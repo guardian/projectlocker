@@ -43,7 +43,7 @@ class ProjectEntryFilterComponent extends React.Component {
     }
 
     entryUpdated(event, filterKey){
-        let newFilters = {};
+        let newFilters = {match: "W_ENDSWITH"};
         newFilters[filterKey] = event.target.value;
         this.setState({filters: Object.assign(this.state.filters, newFilters)}, ()=>{
 
@@ -60,7 +60,7 @@ class ProjectEntryFilterComponent extends React.Component {
 
     doClear(){
         this.setState({
-            filters: {},
+            filters: {match: "W_ENDSWITH"},
         }, ()=>this.doUpdate());
     }
 

@@ -9,7 +9,9 @@ class GeneralListComponent extends React.Component {
         this.state = {
             data: [],
             hovered: false,
-            filterTerms: {},
+            filterTerms: {
+                match: "W_ENDSWITH"
+            },
             currentPage: 0
         };
 
