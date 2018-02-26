@@ -117,3 +117,36 @@ p.centered {
     font-style: italic;
     color: #777777;
 }
+
+.filter-list-block {
+    margin-left: auto;
+    margin-right: 5%;
+    width: 85%;
+    overflow: hidden;
+
+}
+
+.filter-list-entry {
+
+}
+
+a.filter-link-control {
+    font-size: 0.8em;
+    margin-left: 1em;
+    cursor: pointer;
+
+}
+.filter-list-title {
+    display: block;
+    margin-bottom: 1em;
+}
+
+.filter-entry-label {
+    display: inline-block;
+    margin-right: 0.5em;
+}
+
+.filter-entry-input {
+    display: inline-block;
+    margin-right: 1.2em;
+}

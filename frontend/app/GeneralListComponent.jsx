@@ -8,14 +8,20 @@ class GeneralListComponent extends React.Component {
         super(props);
         this.state = {
             data: [],
-            hovered: false
+            hovered: false,
+            filterTerms: {},
+            currentPage: 0
         };
+
+        this.pageSize = 20;
 
         this.gotDataCallback = this.gotDataCallback.bind(this);
         this.newElementCallback = this.newElementCallback.bind(this);
+        this.filterDidUpdate = this.filterDidUpdate.bind(this);
 
         /* this must be supplied by a subclass */
         this.endpoint='/unknown';
+        this.filterEndpoint = "/unknown.list";
 
         this.style = {
             backgroundColor: '#eee',
@@ -68,20 +74,40 @@ class GeneralListComponent extends React.Component {
             </span>
         }
     }
-    /* reloads the data for the component based on the endpoint configured in the constructor */
-    reload(){
-        const component = this;
 
-        axios.get(this.endpoint).then(component.gotDataCallback).catch(function (error) {
+    /* loads the next page of data */
+    getNextPage(){
+        const startAt = this.state.currentPage * this.pageSize;
+        const length = this.pageSize;
+        console.log("getNextPage");
+
+        axios.put(this.filterEndpoint + "?startAt=" + startAt + "&length=" + length, this.state.filterTerms)
+            .then(response=>this.setState({
+                currentPage: this.state.currentPage+1
+            }, ()=>{
+                this.gotDataCallback(response, ()=> {
+                    if (response.data.result.length > 0) this.getNextPage()
+                });
+            }))
+            .catch(error=>{
             console.error(error);
         });
     }
 
-    /* called when we receive data; can be over-ridden by a subclass to do something more clever */
-    gotDataCallback(result){
+    /* reloads the data for the component based on the endpoint configured in the constructor */
+    reload(){
+        console.log("reload()");
         this.setState({
-            data: result.data.result
-        });
+            currentPage: 0,
+            data: []
+        }, ()=> this.getNextPage());
+    }
+
+    /* called when we receive data; can be over-ridden by a subclass to do something more clever */
+    gotDataCallback(response, cb){
+        this.setState({
+            data: this.state.data.concat(response.data.result)
+        }, cb);
     }
 
     /* called when the New button is clicked; can be over-ridden by a subclass to do something more clever */
@@ -89,10 +115,24 @@ class GeneralListComponent extends React.Component {
 
     }
 
+    /* called to insert a filtering component; should be over-ridden by a subclass if filtering is required */
+    getFilterComponent(){
+        return <span/>
+    }
+
+    /* this can be referenced from a filter component in a subclass and should be called to update the active filtering.
+    this will cause a reload of data from the server
+     */
+    filterDidUpdate(newterms){
+        console.log("filterDidUpdate");
+        this.setState({filterTerms: newterms},()=>this.reload());
+    }
+
     render() {
         return (
             <div>
                 <span className="list-title"><h2 className="list-title">{this.props.title}</h2></span>
+                {this.getFilterComponent()}
                 <SortableTable
                     data={ this.state.data}
                     columns={this.columns}

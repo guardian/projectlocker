@@ -2,11 +2,14 @@ import React from 'react';
 import GeneralListComponent from './GeneralListComponent.jsx';
 import ProjectEntryFiles from './ProjectEntryFiles.jsx';
 import ProjectTypeView from './EntryViews/ProjectTypeView.jsx';
+import ProjectEntryFilterComponent from './ProjectEntryFilterComponent.jsx';
 
 class ProjectEntryList extends GeneralListComponent {
     constructor(props){
         super(props);
         this.endpoint = '/api/project';
+        this.filterEndpoint = '/api/project/list';
+        
         this.columns = [
             {
                 header: "Id",
@@ -39,8 +42,8 @@ class ProjectEntryList extends GeneralListComponent {
         ];
     }
 
-    gotDataCallback(result){
-        super.gotDataCallback(result);
+    getFilterComponent(){
+        return <ProjectEntryFilterComponent filterDidUpdate={this.filterDidUpdate}/>
     }
 }
 
