@@ -4,7 +4,7 @@ import javax.inject.{Inject, Singleton}
 
 import auth.Security
 import com.unboundid.ldap.sdk.LDAPConnectionPool
-import exceptions.{BadDataException, RecordNotFoundException}
+import exceptions.{BadDataException, ProjectCreationError, RecordNotFoundException}
 import helpers.ProjectCreateHelper
 import models._
 import play.api.cache.SyncCacheApi
@@ -246,7 +246,12 @@ class ProjectEntryController @Inject() (cc:ControllerComponents, config: Configu
             projectHelper.create(rq,None).map({
               case Failure(error)=>
                 logger.error("Could not create new project", error)
-                InternalServerError(Json.obj("status"->"error","detail"->error.toString))
+                error match {
+                  case projectCreationError:ProjectCreationError=>
+                    BadRequest(Json.obj("status"->"error","detail"->projectCreationError.getMessage))
+                  case _=>
+                    InternalServerError(Json.obj("status"->"error","detail"->error.toString))
+                }
               case Success(projectEntry)=>
                 logger.error(s"Created new project: $projectEntry")
                 Ok(Json.obj("status"->"ok","detail"->"created project", "projectId"->projectEntry.id.get))

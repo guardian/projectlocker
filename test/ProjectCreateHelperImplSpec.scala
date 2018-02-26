@@ -54,6 +54,30 @@ class ProjectCreateHelperImplSpec extends Specification with Mockito {
       createResult must beSuccessfulTry(ProjectEntry(Some(5),1,None,"MyTestProjectFile",Timestamp.valueOf(createTime),"test-user"))
     }
 
+    "refuse to overwrite an existing file that has data on it" in {
+      val mockedStorageHelper = mock[StorageHelper]
+
+      //assume that the copyFile operation works, this is tested elsewhere
+      mockedStorageHelper.copyFile(any[FileEntry],any[FileEntry])(any[JdbcBackend#DatabaseDef]) answers((paramArray,mock)=>{
+        val parameters = paramArray.asInstanceOf[Array[Object]]
+        Future(Right(parameters(1).asInstanceOf[FileEntry]))
+      })
+
+      val p = new ProjectCreateHelperImpl { override protected val storageHelper:StorageHelper=mockedStorageHelper }
+
+      val request = ProjectRequest("/path/to/a/file.project",1,"MyTestProjectFile", 1,"test-user").hydrate
+
+      val fullRequest = Await.result(request, 10.seconds)
+
+      val createTime=LocalDateTime.now()
+
+      val response = p.create(fullRequest.get, Some(createTime))
+      val createResult = Await.result(response, 10.seconds)
+
+      createResult must beFailedTry
+      createResult.failed.get.toString mustEqual "exceptions.ProjectCreationError: File /path/to/a/file.project on Local (no root path) (no host) already has data"
+    }
+
     "return an error in response to an invalid request" in {
       val mockedStorageHelper = mock[StorageHelper]
 

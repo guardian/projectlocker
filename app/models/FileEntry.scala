@@ -208,6 +208,18 @@ object FileEntry extends ((Option[Int], String, Int, String, Int, Timestamp, Tim
         result.headOption
       case Failure(error)=>throw error
     })
+
+  /**
+    * Get a FileEntry instance for the given filename and storage
+    * @param fileName file name to search for (exact match to file path)
+    * @param storageId storage ID to search for
+    * @param db implicitly provided database object, instance of slick.jdbc.JdbcProfile#Backend#Database
+    * @return a Future, containing a Try that contains a sequnce of zero or more FileEntry instances
+    */
+  def entryFor(fileName: String, storageId: Int)(implicit db:slick.jdbc.JdbcProfile#Backend#Database):Future[Try[Seq[FileEntry]]] =
+    db.run(
+      TableQuery[FileEntryRow].filter(_.filepath===fileName).filter(_.storage===storageId).result.asTry
+    )
 }
 
 /**
