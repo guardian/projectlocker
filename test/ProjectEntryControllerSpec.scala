@@ -297,6 +297,52 @@ class ProjectEntryControllerSpec extends Specification with Mockito with Project
       resultList(1).id must beSome(4)
     }
 
+    "return an empty list for a filename that is not associated with any projects" in {
+      val testSearchDocument =
+        """{
+          |  "title": null,
+          |  "vidispineId": null,
+          |  "filename": "/path/to/another/file.project"
+          |}""".stripMargin
+
+      val response = route(application, FakeRequest(
+        method="PUT",
+        uri="/api/project/list",
+        headers=FakeHeaders(Seq(("Content-Type","application/json"))),
+        body=testSearchDocument).withSession("uid"->"testuser")).get
+
+      val jsondata = Await.result(bodyAsJsonFuture(response), 5.seconds).as[JsValue]
+      println(jsondata.toString)
+      status(response) must equalTo(OK)
+
+      val resultList = (jsondata \ "result").as[List[ProjectEntry]]
+      resultList.length mustEqual 0
+    }
+
+    "show projectentry items filtered by file association" in {
+      val testSearchDocument =
+        """{
+          |  "title": null,
+          |  "vidispineId": null,
+          |  "filename": "/path/to/thattestproject"
+          |}""".stripMargin
+
+      val response = route(application, FakeRequest(
+        method="PUT",
+        uri="/api/project/list",
+        headers=FakeHeaders(Seq(("Content-Type","application/json"))),
+        body=testSearchDocument).withSession("uid"->"testuser")).get
+
+      val jsondata = Await.result(bodyAsJsonFuture(response), 5.seconds).as[JsValue]
+      println(jsondata.toString)
+      status(response) must equalTo(OK)
+
+      val resultList = (jsondata \ "result").as[List[ProjectEntry]]
+      resultList.length mustEqual 1
+      resultList.head.id must beSome(3)
+      resultList.head.projectTitle mustEqual "ThatTestProject"
+    }
+
     "return an empty list if nothing matches" in {
       val testSearchDocument =
         """{

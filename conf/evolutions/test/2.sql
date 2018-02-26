@@ -19,8 +19,9 @@ INSERT INTO "FileEntry" (id, filepath, storage, "user", version, ctime, mtime, a
 INSERT INTO "FileEntry" (id, filepath, storage, "user", version, ctime, mtime, atime) VALUES (2, '/path/to/a/file.project', 1, 'you', 1, '2016-12-11 12:21:11.021', '2016-12-11 12:21:11.021', '2016-12-11 12:21:11.021');
 INSERT INTO "FileEntry" (id, filepath, storage, "user", version, ctime, mtime, atime) VALUES (3, '/path/to/another/file.project', 1, 'you', 1, '2016-12-11 12:21:11.021', '2016-12-11 12:21:11.021', '2016-12-11 12:21:11.021');
 INSERT INTO "FileEntry" (id, filepath, storage, "user", version, ctime, mtime, atime) VALUES (4, '/tmp/testprojectfile', 1, 'you', 1, '2016-12-11 12:21:11.021', '2016-12-11 12:21:11.021', '2016-12-11 12:21:11.021');
+INSERT INTO "FileEntry" (id, filepath, storage, "user", version, ctime, mtime, atime) VALUES (5, '/path/to/thattestproject', 1, 'you', 1, '2016-12-11 12:21:11.021', '2016-12-11 12:21:11.021', '2016-12-11 12:21:11.021');
 
-SELECT pg_catalog.setval('"FileEntry_id_seq"', 4, true);
+SELECT pg_catalog.setval('"FileEntry_id_seq"', 5, true);
 
 INSERT INTO "ProjectType" (id, name, "opensWith", "targetVersion") VALUES (1, 'Premiere 2014 test', 'AdobePremierePro.app', '14.0');
 INSERT INTO "ProjectType" (id, name, "opensWith", "targetVersion") VALUES (2, 'Prelude 2014 test', 'AdobePrelude.app', '14.0');
@@ -34,7 +35,8 @@ INSERT INTO "ProjectEntry" (id, "ProjectType", "title", "vidispineId", "created"
 SELECT pg_catalog.setval('"ProjectEntry_id_seq"', 5, false);
 
 INSERT INTO "ProjectFileAssociation" (id, "ProjectEntry", "FileEntry") VALUES (1, 1,2);
-SELECT pg_catalog.setval('"ProjectFileAssociation_id_seq"', 2, false);
+INSERT INTO "ProjectFileAssociation" (id, "ProjectEntry", "FileEntry") VALUES (2, 3,5);
+SELECT pg_catalog.setval('"ProjectFileAssociation_id_seq"', 3, false);
 
 
 
