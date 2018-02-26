@@ -1,16 +1,10 @@
 import org.junit.runner._
 import org.specs2.runner._
-import play.api.db.slick.DatabaseConfigProvider
-import play.api.inject.{Injector, bind}
-import play.api.inject.guice.GuiceApplicationBuilder
+import play.api.test.Helpers._
 import play.api.test._
-import testHelpers.TestDatabase
-
 import scala.concurrent.{Await, Future}
 import scala.concurrent.duration._
 import scala.io.Source
-import models.{FileEntry, FileEntryRow}
-import slick.jdbc.JdbcProfile
 
 import scala.util.{Failure, Success}
 /**
@@ -47,41 +41,83 @@ class FileControllerSpec extends GenericControllerSpec  {
   override val testDeleteId: Int = 3
   override val testConflictId: Int = 1
 
-}
+  "FileController.create" should {
+    "refuse to over-write an existing record with another that has the same filename and storage" in {
+      val testInvalidDocument =
+        """{
+          |"filepath":"/path/to/a/video.mxf",
+          |"storage":2,
+          |"user":"john",
+          |"version":1,
+          |"ctime":"2018-02-04T14:23:02.000Z",
+          |"mtime":"2018-02-04T14:23:02.000Z",
+          |"atime":"2018-02-04T14:23:02.000Z",
+          |"hasContent": false,
+          |"hasLink": false
+          |}
+        """.stripMargin
 
+      val response = route(application, FakeRequest(
+        method="PUT",
+        uri=uriRoot,
+        headers=FakeHeaders(Seq(("Content-Type", "application/json"))),
+        body=testInvalidDocument).withSession("uid"->"testuser")
+      ).get
 
-class FileControllerPlaySpec extends PlaySpecification {
-  sequential
-  //can over-ride bindings here. see https://www.playframework.com/documentation/2.5.x/ScalaTestingWithGuice
-  private val application = new GuiceApplicationBuilder()
-    .overrides(bind[DatabaseConfigProvider].to[TestDatabase.testDbProvider])
-    .build
+      val jsondata = Await.result(bodyAsJsonFuture(response), 5.seconds).as[JsValue]
+      println(jsondata.toString)
+      status(response) must equalTo(CONFLICT)
 
-  "FileController" should new WithServer(app=application) {
+      (jsondata \ "status").as[String] mustEqual "error"
+      (jsondata \ "detail").as[String] mustEqual "exceptions.AlreadyExistsException: A file already exists at /path/to/a/video.mxf on storage 2"
+    }
+  }
 
-    "respond 404 if data is attempted to be written to a non-existing file" in  {
+  "FileController.uploadContent" should {
+    "respond 404 if data is attempted to be written to a non-existing file" in {
       val testbuffer = "this is my test data\nwith another line"
+      val response = route(application, FakeRequest(
+        method="PUT",
+        uri="/api/file/9999/content",
+        headers=FakeHeaders(Seq(("Content-Type", "application/octet-stream"))),
+        body=testbuffer
+      ).withSession("uid"->"testuser")).get
 
-      WsTestClient.withClient(client => {
-        val request = client.url("http://localhost:19001/api/file/9/content")
-        val response = Await.result(request.put(testbuffer.toCharArray.map(_.toByte)),30.seconds)
-        response.status mustEqual 404
-      })
+      status(response) mustEqual NOT_FOUND
     }
 
-    "accept data for an existing file" in  {
+    "accept data for an existing file" in {
       val testbuffer = "this is my test data\nwith another line"
+      val response = route(application, FakeRequest(
+        method="PUT",
+        uri="/api/file/4/content",
+        headers=FakeHeaders(Seq(("Content-Type", "application/octet-stream"))),
+        body=testbuffer
+      ).withSession("uid"->"testuser")).get
 
-      WsTestClient.withClient(client => {
-        val request = client.url("http://localhost:19001/api/file/4/content")
-        val response = Await.result(request.put(testbuffer.toCharArray.map(_.toByte)),30.seconds)
-
-        println(response.body)
-        response.status mustEqual 200
-      })
+      val responseBody = Await.result(bodyAsJsonFuture(response),10.seconds)
+      println(responseBody.toString)
+      status(response) mustEqual OK
 
       val writtenContent = Source.fromFile("/tmp/testprojectfile").getLines().mkString("\n")
       writtenContent mustEqual testbuffer
+    }
+
+    "refuse to over-write a file with existing data" in {
+      val testbuffer = "this is my test data\nwith another line"
+      val response = route(application, FakeRequest(
+        method="PUT",
+        uri="/api/file/2/content",
+        headers=FakeHeaders(Seq(("Content-Type", "application/octet-stream"))),
+        body=testbuffer
+      ).withSession("uid"->"testuser")).get
+
+      val responseBody = Await.result(bodyAsJsonFuture(response),10.seconds)
+      println(responseBody.toString)
+      status(response) mustEqual BAD_REQUEST
+
+      (responseBody \ "status").as[String] mustEqual "error"
+      (responseBody \ "detail").as[String] mustEqual "This file already has content."
     }
   }
 

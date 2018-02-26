@@ -2,10 +2,12 @@ package controllers
 
 import play.api.libs.json._
 import play.api.mvc._
+
 import scala.concurrent.Future
 import scala.util.{Failure, Success, Try}
 import scala.concurrent.ExecutionContext.Implicits.global
 import auth.Security
+import exceptions.{AlreadyExistsException, BadDataException}
 
 /**
   * Simplified form of [[GenericDatabaseObjectControllerWithFilter]] which does not support filtering. This provides
@@ -67,7 +69,7 @@ trait GenericDatabaseObjectControllerWithFilter[M,F] extends InjectedController 
 
   def deleteid(requestedId: Int):Future[Try[Int]]
 
-  def insert(entry: M,uid:String):Future[Any]
+  def insert(entry: M,uid:String):Future[Try[Int]]
   def jstranslate(result:Seq[M]):Json.JsValueWrapper
   def jstranslate(result:M):Json.JsValueWrapper
 
@@ -123,7 +125,14 @@ trait GenericDatabaseObjectControllerWithFilter[M,F] extends InjectedController 
           case Success(result)=>Ok(Json.obj("status" -> "ok", "detail" -> "added", "id" -> result.asInstanceOf[Int]))
           case Failure(error)=>
             logger.error(error.toString)
-            InternalServerError(Json.obj("status"->"error", "detail"->error.toString))
+            error match {
+              case e:BadDataException=>
+                BadRequest(Json.obj("status"->"error", "detail"->e.toString))
+              case e:AlreadyExistsException=>
+                Conflict(Json.obj("status"->"error", "detail"->e.toString))
+              case _=>
+                InternalServerError(Json.obj("status"->"error", "detail"->error.toString))
+            }
         }
         )
       }
