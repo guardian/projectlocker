@@ -127,7 +127,7 @@ trait GenericDatabaseObjectControllerWithFilter[M,F] extends InjectedController 
             logger.error(error.toString)
             error match {
               case e:BadDataException=>
-                BadRequest(Json.obj("status"->"error", "detail"->e.toString))
+                Conflict(Json.obj("status"->"error", "detail"->e.toString))
               case e:AlreadyExistsException=>
                 Conflict(Json.obj("status"->"error", "detail"->e.toString))
               case _=>
