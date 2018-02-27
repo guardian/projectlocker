@@ -29,9 +29,9 @@ case class ProjectType(id: Option[Int],name:String, opensWith: String, targetVer
 
 class ProjectTypeRow(tag: Tag) extends Table[ProjectType](tag, "ProjectType") {
   def id=column[Int]("id",O.PrimaryKey,O.AutoInc)
-  def name=column[String]("name")
-  def opensWith=column[String]("opensWith")
-  def targetVersion=column[String]("targetVersion")
+  def name=column[String]("s_name")
+  def opensWith=column[String]("s_opens_with")
+  def targetVersion=column[String]("s_target_version")
 
   def * = (id.?, name, opensWith, targetVersion) <> (ProjectType.tupled, ProjectType.unapply)
 }

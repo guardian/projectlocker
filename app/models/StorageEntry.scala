@@ -60,13 +60,13 @@ case class StorageEntry(id: Option[Int], rootpath: Option[String], clientpath: O
 
 class StorageEntryRow(tag:Tag) extends Table[StorageEntry](tag, "StorageEntry") {
   def id = column[Int]("id",O.PrimaryKey, O.AutoInc)
-  def rootpath = column[Option[String]]("rootpath")
-  def clientpath = column[Option[String]]("clientpath")
-  def storageType = column[String]("storageType")
-  def user = column[Option[String]]("user")
-  def password = column[Option[String]]("password")
-  def host = column[Option[String]]("host")
-  def port = column[Option[Int]]("port")
+  def rootpath = column[Option[String]]("s_root_path")
+  def clientpath = column[Option[String]]("s_client_path")
+  def storageType = column[String]("s_storage_type")
+  def user = column[Option[String]]("s_user")
+  def password = column[Option[String]]("s_password")
+  def host = column[Option[String]]("s_host")
+  def port = column[Option[Int]]("i_port")
 
   def * = (id.?,rootpath,clientpath,storageType,user,password,host,port) <> (StorageEntry.tupled, StorageEntry.unapply)
 }
@@ -78,11 +78,7 @@ object StorageEntryHelper {
       TableQuery[StorageEntryRow].filter(_.id===entryId).result.asTry
     ).map({
       case Success(result)=>
-        if(result.isEmpty) {
-          None
-        } else {
-          Some(result.head)
-        }
+        result.headOption
       case Failure(error)=>throw error
     })
 }
