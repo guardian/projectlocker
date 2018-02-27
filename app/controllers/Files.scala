@@ -2,6 +2,7 @@ package controllers
 
 import javax.inject.Inject
 
+import exceptions.{AlreadyExistsException, BadDataException}
 import play.api.{Configuration, Logger}
 import play.api.db.slick.DatabaseConfigProvider
 import play.api.mvc._
@@ -15,7 +16,7 @@ import play.api.cache.SyncCacheApi
 import slick.lifted.TableQuery
 
 import scala.concurrent.{CanAwait, Future}
-import scala.util.{Failure, Success}
+import scala.util.{Failure, Success, Try}
 
 
 class Files @Inject() (configuration: Configuration, dbConfigProvider: DatabaseConfigProvider, cacheImpl:SyncCacheApi)
@@ -42,11 +43,21 @@ class Files @Inject() (configuration: Configuration, dbConfigProvider: DatabaseC
   override def jstranslate(result: Seq[FileEntry]) = result //implicit translation should handle this
   override def jstranslate(result: FileEntry) = result //implicit translation should handle this
 
-  override def insert(entry: FileEntry,uid:String) = {
-    val updatedEntry = entry.copy(user = uid)
-    dbConfig.db.run(
-      (TableQuery[FileEntryRow] returning TableQuery[FileEntryRow].map(_.id) += updatedEntry).asTry
-    )
+  override def insert(entry: FileEntry,uid:String):Future[Try[Int]] = {
+    /* only allow a record to be created if no files already exist with that path on that storage */
+    FileEntry.entryFor(entry.filepath,entry.storageId)(dbConfig.db).flatMap({
+      case Success(fileList)=>
+        if(fileList.isEmpty){
+          val updatedEntry = entry.copy(user = uid)
+          dbConfig.db.run(
+            (TableQuery[FileEntryRow] returning TableQuery[FileEntryRow].map(_.id) += updatedEntry).asTry
+          )
+        } else {
+          Future(Failure(new AlreadyExistsException(s"A file already exists at ${entry.filepath} on storage ${entry.storageId}")))
+        }
+      case Failure(error)=>Future(Failure(error))
+    })
+
   }
 
   override def validate(request: Request[JsValue]) = request.body.validate[FileEntry]
@@ -66,12 +77,15 @@ class Files @Inject() (configuration: Configuration, dbConfigProvider: DatabaseC
             } else {
               val fileRef = rows.head
               //get the storage reference for the file
-              fileRef.writeToFile(buffer).map({
-                case Success(x) =>
-                  Ok(Json.obj("status" -> "ok", "detail" -> "File has been written."))
-                case Failure(error) =>
-                  InternalServerError(Json.obj("status" -> "error", "detail" -> error.toString))
-              })
+              if(fileRef.hasContent)
+                Future(BadRequest(Json.obj("status"->"error","detail"->"This file already has content.")))
+              else
+                fileRef.writeToFile(buffer).map({
+                  case Success(x) =>
+                    Ok(Json.obj("status" -> "ok", "detail" -> "File has been written."))
+                  case Failure(error) =>
+                    InternalServerError(Json.obj("status" -> "error", "detail" -> error.toString))
+                })
             }
           case Failure(error) =>
             logger.error(s"Could not get file to write: ${error.toString}")

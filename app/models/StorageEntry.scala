@@ -52,6 +52,10 @@ case class StorageEntry(id: Option[Int], rootpath: Option[String], clientpath: O
       None
     }
   }
+
+  def repr:String = {
+    s"$storageType (${rootpath.getOrElse("no root path")}) ${host.getOrElse("(no host)")}"
+  }
 }
 
 class StorageEntryRow(tag:Tag) extends Table[StorageEntry](tag, "StorageEntry") {
