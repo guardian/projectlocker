@@ -36,6 +36,7 @@ test:
   override:
     - sbt test
     - cd frontend; npm run test
+    - scripts/check_evolutions.sh
 
 deployment:
   make_rpm:
