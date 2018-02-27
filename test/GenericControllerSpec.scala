@@ -90,8 +90,10 @@ trait GenericControllerSpec extends Specification with MockedCacheApi{
         body=testCreateDocument).withSession("uid"->"testuser")
       ).get
 
-      status(response) must equalTo(OK)
+
       val jsondata = Await.result(bodyAsJsonFuture(response), 5.seconds).as[JsValue]
+      println(jsondata.toString)
+      status(response) must equalTo(OK)
       (jsondata \ "status").as[String] must equalTo("ok")
       (jsondata \ "detail").as[String] must equalTo("added")
 

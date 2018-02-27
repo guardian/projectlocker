@@ -44,12 +44,12 @@ case class ProjectTemplate (id: Option[Int],name: String, projectTypeId: Int, fi
 
 class ProjectTemplateRow(tag: Tag) extends Table[ProjectTemplate](tag,"ProjectTemplate") {
   def id=column[Int]("id",O.PrimaryKey,O.AutoInc)
-  def name=column[String]("name")
-  def projectType=column[Int]("ProjectType")
-  def fileRef=column[Int]("fileref")
+  def name=column[String]("s_name")
+  def projectType=column[Int]("k_project_type")
+  def fileRef=column[Int]("k_file_ref")
 
-  def fkProjectType=foreignKey("fk_ProjectType",projectType,TableQuery[ProjectTypeRow])(_.id)
-  def fkFileRef=foreignKey("fk_FileRef",fileRef,TableQuery[FileEntryRow])(_.id)
+  def fkProjectType=foreignKey("fk_project_type",projectType,TableQuery[ProjectTypeRow])(_.id)
+  def fkFileRef=foreignKey("fk_file_ref",fileRef,TableQuery[FileEntryRow])(_.id)
 
   def * = (id.?, name, projectType, fileRef) <> (ProjectTemplate.tupled, ProjectTemplate.unapply)
 }
@@ -59,12 +59,7 @@ object ProjectTemplateHelper {
     db.run(
       TableQuery[ProjectTemplateRow].filter(_.id===entryId).result.asTry
     ).map({
-      case Success(result)=>
-        if(result.isEmpty) {
-          None
-        } else {
-          Some(result.head)
-        }
+      case Success(result)=>result.headOption
       case Failure(error)=>throw error
     })
 }

@@ -8,11 +8,11 @@ import slick.jdbc.PostgresProfile.api._
   */
 class FileAssociationRow(tag: Tag) extends Table[(Int,Int)](tag, "ProjectFileAssociation") {
   def id=column[Int]("id",O.PrimaryKey,O.AutoInc)
-  def projectEntry = column[Int]("ProjectEntry")
-  def fileEntry = column[Int]("FileEntry")
+  def projectEntry = column[Int]("k_project_entry")
+  def fileEntry = column[Int]("k_file_entry")
 
-  def projectEntryFk=foreignKey("fk_ProjectEntry",projectEntry,TableQuery[ProjectEntryRow])(_.id)
-  def fileEntryFk=foreignKey("fk_FileEntry",fileEntry,TableQuery[FileEntryRow])(_.id)
+  def projectEntryFk=foreignKey("FK_PROJECT_ENTRY",projectEntry,TableQuery[ProjectEntryRow])(_.id)
+  def fileEntryFk=foreignKey("FK_FILE_ENTRY",fileEntry,TableQuery[FileEntryRow])(_.id)
 
   def * = (projectEntry, fileEntry)
 }

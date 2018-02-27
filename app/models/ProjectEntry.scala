@@ -45,13 +45,13 @@ class ProjectEntryRow(tag:Tag) extends Table[ProjectEntry](tag, "ProjectEntry") 
     MappedColumnType.base[DateTime, Timestamp]({d=>new Timestamp(d.getMillis)}, {t=>new DateTime(t.getTime, UTC)})
 
   def id=column[Int]("id",O.PrimaryKey,O.AutoInc)
-  def projectType=column[Int]("ProjectType")
-  def vidispineProjectId=column[Option[String]]("vidispineId")
-  def projectTitle=column[String]("title")
-  def created=column[Timestamp]("created")
-  def user=column[String]("user")
+  def projectType=column[Int]("k_project_type")
+  def vidispineProjectId=column[Option[String]]("s_vidispine_id")
+  def projectTitle=column[String]("s_title")
+  def created=column[Timestamp]("t_created")
+  def user=column[String]("s_user")
 
-  def projectTypeKey=foreignKey("ProjectType",projectType,TableQuery[ProjectTypeRow])(_.id)
+  def projectTypeKey=foreignKey("fk_project_type",projectType,TableQuery[ProjectTypeRow])(_.id)
   def * = (id.?, projectType, vidispineProjectId, projectTitle, created, user) <> (ProjectEntry.tupled, ProjectEntry.unapply)
 }
 

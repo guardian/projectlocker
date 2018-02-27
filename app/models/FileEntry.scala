@@ -42,7 +42,7 @@ case class FileEntry(id: Option[Int], filepath: String, storageId: Int, user:Str
       db.run(
         (insertQuery+=this).asTry
       ).map({
-        case Success(insertResult)=>Success(insertResult.asInstanceOf[FileEntry])  //maybe only intellij needs this?
+        case Success(insertResult)=>Success(insertResult.asInstanceOf[FileEntry])  //maybe only intellij needs the cast here?
         case Failure(error)=>Failure(error)
       })
     case Some(realEntityId)=>
@@ -228,16 +228,16 @@ object FileEntry extends ((Option[Int], String, Int, String, Int, Timestamp, Tim
   */
 class FileEntryRow(tag:Tag) extends Table[FileEntry](tag, "FileEntry") {
   def id = column[Int]("id",O.PrimaryKey, O.AutoInc)
-  def filepath = column[String]("filepath")
-  def storage = column[Int]("storage")
-  def version = column[Int]("version")
-  def user = column[String]("user")
-  def ctime = column[Timestamp]("ctime")
-  def mtime = column[Timestamp]("mtime")
-  def atime = column[Timestamp]("atime")
+  def filepath = column[String]("s_filepath")
+  def storage = column[Int]("k_storage_id")
+  def version = column[Int]("i_version")
+  def user = column[String]("s_user")
+  def ctime = column[Timestamp]("t_ctime")
+  def mtime = column[Timestamp]("t_mtime")
+  def atime = column[Timestamp]("t_atime")
 
-  def hasContent = column[Boolean]("has_content")
-  def hasLink = column[Boolean]("has_link")
+  def hasContent = column[Boolean]("b_has_content")
+  def hasLink = column[Boolean]("b_has_link")
 
   def storageFk = foreignKey("fk_storage",storage,TableQuery[StorageEntryRow])(_.id)
   def * = (id.?,filepath,storage,user,version,ctime,mtime,atime, hasContent, hasLink) <> (FileEntry.tupled, FileEntry.unapply)
