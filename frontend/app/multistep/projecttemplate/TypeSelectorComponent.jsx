@@ -1,8 +1,14 @@
 import React from 'react';
-import axios from 'axios';
+import PropTypes from 'prop-types';
 import CommonMultistepComponent from '../common/CommonMultistepComponent.jsx';
 
 class TypeSelectorComponent extends CommonMultistepComponent {
+    static propTypes = {
+        projectTypes: PropTypes.array.isRequired,
+        selectedType: PropTypes.number.isRequired,
+        templateName: PropTypes.string.isRequired
+    };
+
     constructor(props){
         super(props);
 
@@ -14,13 +20,18 @@ class TypeSelectorComponent extends CommonMultistepComponent {
         this.selectorValueChanged = this.selectorValueChanged.bind(this);
     }
 
+    componentWillMount(){
+        this.setState({
+
+        })
+    }
 
     updateParent(){
         this.props.valueWasSet(this.state);
     }
 
     selectorValueChanged(event){
-        this.setState({selectedType: parseInt(event.target.value)}, ()=>
+        this.setState({name: this.props.templateName, selectedType: parseInt(event.target.value)}, ()=>
             this.updateParent()
         );
     }
@@ -38,7 +49,8 @@ class TypeSelectorComponent extends CommonMultistepComponent {
                     }
                 </select>
             <label htmlFor="projectNameSelector">Project name:</label>
-                    <input type="text" id="projectNmaeSelector" onChange={(event)=>this.setState({name: event.target.value}, ()=>this.updateParent())}/>
+                    <input type="text" id="projectNameSelector" value={this.props.templateName}
+                           onChange={(event)=>this.setState({name: event.target.value, selectedType: this.props.selectedType}, ()=>this.updateParent())}/>
             </div>
         )
 

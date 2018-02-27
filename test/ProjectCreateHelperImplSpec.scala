@@ -1,7 +1,5 @@
 import java.sql.Timestamp
 import java.time.{Instant, LocalDateTime}
-
-import org.mockito._
 import helpers._
 import models.{FileEntry, ProjectEntry, ProjectRequest}
 import org.junit.runner.RunWith

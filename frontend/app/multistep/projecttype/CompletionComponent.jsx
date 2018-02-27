@@ -36,16 +36,18 @@ class ProjectTypeCompletionComponent extends React.Component {
         return {
             name: this.props.projectType.name,
             opensWith: this.props.projectType.opensWith,
-            targetVersion: this.props.projectType.version
+            targetVersion: this.props.projectType.version,
+            fileExtension: this.props.projectType.fileExtension
         }
     }
 
     render() {
         return(<div>
-            <h3>Set up storage</h3>
+            <h3>Set up project type</h3>
             <p className="information">We will set up a new project type definition with the information below.</p>
             <p className="information">Press "Confirm" to go ahead, or press Previous if you need to amend any details.</p>
-            <SummaryComponent name={this.props.projectType.name} opensWith={this.props.projectType.opensWith} version={this.props.projectType.version}/>
+            <SummaryComponent name={this.props.projectType.name} opensWith={this.props.projectType.opensWith}
+                              version={this.props.projectType.version} fileExtension={this.props.projectType.fileExtension}/>
             <ErrorViewComponent error={this.state.error}/>
             <span style={{float: "right"}}><button onClick={this.confirmClicked}>Confirm</button></span>
         </div>)

@@ -21,6 +21,10 @@ class SummaryComponent extends React.Component {
                 <td>Required Version</td>
                 <td id="projectTypeRequiredVersion">{this.props.version}</td>
             </tr>
+            <tr>
+                <td>File extension</td>
+                <td id="projectTypeFileExtension">{this.props.fileExtension}</td>
+            </tr>
             </tbody>
         </table>;
     }

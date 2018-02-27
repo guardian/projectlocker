@@ -15,6 +15,7 @@ class ProjectTypeComponent extends MultistepComponentLoadsOnMount{
             name: null,
             opensWith: null,
             version: null,
+            fileExtension: null,
             loading: false,
             error: null
         }
@@ -26,7 +27,8 @@ class ProjectTypeComponent extends MultistepComponentLoadsOnMount{
         this.setState({
             name: projectType.result.name,
             version: projectType.result.targetVersion,
-            opensWith: projectType.result.opensWith
+            opensWith: projectType.result.opensWith,
+            fileExtension: projectType.result.fileExtension
         }, cb);
     }
 
@@ -41,15 +43,23 @@ class ProjectTypeComponent extends MultistepComponentLoadsOnMount{
                 <tbody>
                 <tr>
                     <td>Name of project type</td>
-                    <td><input id="project_type_name" className="inputs" value={this.state.name} onChange={event=>this.setState({name: event.target.value})}/></td>
+                    <td><input id="project_type_name" className="inputs" value={this.state.name}
+                               onChange={event=>this.setState({name: event.target.value})}/></td>
                 </tr>
                 <tr>
                     <td>Opens with which Mac app?</td>
-                    <td><input id="opens_with" className="inputs" value={this.state.opensWith} onChange={event=>this.setState({opensWith: event.target.value})}/></td>
+                    <td><input id="opens_with" className="inputs" value={this.state.opensWith}
+                               onChange={event=>this.setState({opensWith: event.target.value})}/></td>
                 </tr>
                 <tr>
                     <td>Minimum required software version to open it</td>
-                    <td><input id="version" className="inputs" value={this.state.version} onChange={event=>this.setState({version: event.target.value})}/></td>
+                    <td><input id="version" className="inputs" value={this.state.version}
+                               onChange={event=>this.setState({version: event.target.value})}/></td>
+                </tr>
+                <tr>
+                    <td>File extension for this file type</td>
+                    <td><input id="extension" className="inputs" value={this.state.fileExtension}
+                               onChange={event=>this.setState({fileExtension: event.target.value})}/></td>
                 </tr>
                 </tbody>
             </table>

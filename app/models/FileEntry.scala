@@ -125,19 +125,20 @@ case class FileEntry(id: Option[Int], filepath: String, storageId: Int, user:Str
   /**
     * private method to (synchronously) write a buffer of content to the underlying file. Called by the public method writeToFile().
     * @param buffer [[play.api.mvc.RawBuffer]] containing content to write
+    * @param outputPath String, absolute path to write content to.
     * @param storageDriver [[StorageDriver]] instance to do the actual writing
     * @return a Try containing the unit value
     */
-  private def writeContent(buffer: RawBuffer, storageDriver:StorageDriver):Try[Unit] =
+  private def writeContent(buffer: RawBuffer, outputPath:java.nio.file.Path, storageDriver:StorageDriver):Try[Unit] =
     buffer.asBytes() match {
       case Some(bytes) => //the buffer is held in memory
         logger.debug("uploadContent: writing memory buffer")
-        storageDriver.writeDataToPath(filepath, bytes.toArray)
+        storageDriver.writeDataToPath(outputPath.toString, bytes.toArray)
         Success(Unit)
       case None => //the buffer is on-disk
         logger.debug("uploadContent: writing disk buffer")
         val fileInputStream = new FileInputStream(buffer.asFile)
-        storageDriver.writeDataToPath(filepath, fileInputStream)
+        storageDriver.writeDataToPath(outputPath.toString, fileInputStream)
         fileInputStream.close()
         Success(Unit)
     }
@@ -171,7 +172,7 @@ case class FileEntry(id: Option[Int], filepath: String, storageId: Int, user:Str
             try {
               val outputPath = Paths.get(storage.rootpath.getOrElse(""), this.filepath)
               logger.info(s"Writing to ${outputPath} with $storageDriver")
-              val response = this.writeContent(buffer, storageDriver)
+              val response = this.writeContent(buffer, outputPath, storageDriver)
               this.updateFileHasContent
               response
             } catch {
