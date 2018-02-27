@@ -27,7 +27,9 @@ class ProjectTemplateMultistep extends CommonMultistepComponent
             this.setState({currentEntry: this.props.match.params.itemid})
         }
         axios.get("/api/projecttype").then((response)=>{
-            this.setState({projectTypes: response.data.result});
+            const firstType = response.data.result[0] ? response.data.result[0].id : null;
+
+            this.setState({projectTypes: response.data.result, selectedType: firstType});
         }).catch((error)=>{
             console.error(error);
             this.setState({error: error})
@@ -45,7 +47,10 @@ class ProjectTemplateMultistep extends CommonMultistepComponent
         const steps = [
             {
                 name: 'Project Type',
-                component: <TypeSelectorComponent projectTypes={this.state.projectTypes} valueWasSet={(nameAndType)=>this.setState({selectedType: nameAndType.selectedType, name: nameAndType.name})}/>
+                component: <TypeSelectorComponent projectTypes={this.state.projectTypes}
+                                                  selectedType={this.state.selectedType}
+                                                  templateName={this.state.name}
+                                                  valueWasSet={(nameAndType)=>this.setState({selectedType: nameAndType.selectedType, name: nameAndType.name})}/>
             },
             {
                 name: 'Upload template',

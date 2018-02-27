@@ -1,6 +1,6 @@
 package helpers
 
-import models.{FileEntry, ProjectEntry, ProjectRequestFull}
+import models.{FileEntry, ProjectEntry, ProjectRequestFull, ProjectType}
 import java.sql.Timestamp
 
 import scala.concurrent.Future
@@ -18,23 +18,51 @@ class ProjectCreateHelperImpl extends ProjectCreateHelper {
   protected val storageHelper:StorageHelper = new StorageHelper
   val logger: Logger = Logger(this.getClass)
 
+  /**
+    * Combines the provided filename with a (possibly) provided extension
+    * @param filename filename
+    * @param extension Option possibly containing a string of the file extension
+    * @return Combined filename and extension. If no extension, filename returned unchanged; if the extension does not start with a
+    *         dot then a dot is inserted between name and extension
+    */
+  private def makeFileName(filename:String,extension:Option[String]):String = {
+    if(extension.isDefined){
+      if(extension.get.startsWith("."))
+        s"$filename${extension.get}"
+      else
+        s"$filename.${extension.get}"
+    } else
+      filename
+  }
+
+  /**
+    * Either create a new file entry for the required destination file or retrieve a pre-exisiting one
+    * @param rq ProjectRequestFull instance describing the project to be created
+    * @param recordTimestamp time to record for creation
+    * @param db implicitly provided database instance
+    * @return a Future, containing a Try, containing a saved FileEntry instance if successful
+    */
   def getDestFileFor(rq:ProjectRequestFull, recordTimestamp:Timestamp)(implicit db: slick.jdbc.JdbcProfile#Backend#Database): Future[Try[FileEntry]] =
-    FileEntry.entryFor(rq.filename, rq.destinationStorage.id.get).map({
+    FileEntry.entryFor(rq.filename, rq.destinationStorage.id.get).flatMap({
       case Success(filesList)=>
-        if(filesList.isEmpty)
+        if(filesList.isEmpty) {
           //no file entries exist already, create one and proceed
-          Success(FileEntry(None,rq.filename,rq.destinationStorage.id.get,"system",1,
-            recordTimestamp,recordTimestamp,recordTimestamp, hasContent = false, hasLink = false))
-        else {
+          ProjectType.entryFor(rq.projectTemplate.projectTypeId) map {
+            case Success(projectType)=>
+              Success(FileEntry(None, makeFileName(rq.filename,projectType.fileExtension), rq.destinationStorage.id.get, "system", 1,
+                recordTimestamp, recordTimestamp, recordTimestamp, hasContent = false, hasLink = false))
+            case Failure(error)=>Failure(error)
+          }
+        } else {
           //a file entry does already exist, but may not have data on it
           if(filesList.length>1)
-            Failure(new ProjectCreationError(s"Multiple files exist for ${rq.filename} on ${rq.destinationStorage.repr}"))
+            Future(Failure(new ProjectCreationError(s"Multiple files exist for ${rq.filename} on ${rq.destinationStorage.repr}")))
           else if(filesList.head.hasContent)
-            Failure(new ProjectCreationError(s"File ${rq.filename} on ${rq.destinationStorage.repr} already has data"))
+            Future(Failure(new ProjectCreationError(s"File ${rq.filename} on ${rq.destinationStorage.repr} already has data")))
           else
-            Success(filesList.head)
+            Future(Success(filesList.head))
         }
-      case Failure(error)=>Failure(error)
+      case Failure(error)=>Future(Failure(error))
     })
 
   /**

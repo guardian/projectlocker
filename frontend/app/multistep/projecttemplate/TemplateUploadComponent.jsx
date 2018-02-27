@@ -14,11 +14,13 @@ class TemplateUploadComponent extends CommonMultistepComponent {
     constructor(props) {
         super(props);
 
+        const firstStorage = this.props.storages[0] ? this.props.storages[0].id : null;
+
         this.state = {
             loading: false,
             error: null,
             hasFiles: false,
-            selectedStorage: null,
+            selectedStorage: firstStorage,
             fileId: null,
             uploading: false
         };
