@@ -39,7 +39,13 @@ class ProjectEntryList extends GeneralListComponent {
             },
             GeneralListComponent.dateTimeColumn("Created", "created"),
             GeneralListComponent.standardColumn("Owner","user"),
-            this.actionIcons()
+            this.actionIcons(),
+            {
+                header: "",
+                key: "id",
+                headerProps: {className: 'dashboardheader'},
+                render: projid=><a target="_blank" href={"pluto:openproject:" + projid}>Open project</a>
+            }
         ];
     }
 
