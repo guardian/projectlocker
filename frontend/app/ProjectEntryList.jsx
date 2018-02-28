@@ -37,8 +37,9 @@ class ProjectEntryList extends GeneralListComponent {
                 render: (typeId)=><ProjectTypeView entryId={typeId}/>,
                 headerProps: {className: 'dashboardheader'}
             },
-            GeneralListComponent.standardColumn("Created", "created"),
-            GeneralListComponent.standardColumn("Owner","user")
+            GeneralListComponent.dateTimeColumn("Created", "created"),
+            GeneralListComponent.standardColumn("Owner","user"),
+            this.actionIcons()
         ];
     }
 

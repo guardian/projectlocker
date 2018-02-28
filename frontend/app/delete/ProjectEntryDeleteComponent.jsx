@@ -1,20 +1,24 @@
 import React from 'react';
 import GeneralDeleteComponent from './GeneralDeleteComponent.jsx';
+import SummaryComponent from '../multistep/projectcreate/SummaryComponent.jsx';
+import ProjectEntryView from '../EntryViews/ProjectEntryView.jsx'
 
-class ProjectTemplateDeleteComponent extends GeneralDeleteComponent {
+class ProjectEntryDeleteComponent extends GeneralDeleteComponent {
     constructor(props){
         super(props);
         this.itemClass = "Project";
         this.endpoint = "/api/project";
     }
 
-    // informationPara(){
-    //     if(this.state.warning)
-    //         return <p className="warning">{this.state.warning}</p>;
-    //     else
-    //         return <p className="information">The following {this.itemClass} will be PERMANENTLY deleted, along with the file on-disk,
-    //             if you click the Delete button below.  Do you want to continue?</p>;
-    // }
+    componentWillMount() {
+        this.setState({loading: false});
+        /*remove the default implementation, as the http request is made by ProjectEntryView*/
+    }
+
+    getSummary(){
+        return <ProjectEntryView entryId={this.props.match.params.itemid}/>
+
+    }
 }
 
-export default ProjectTemplateDeleteComponent;
+export default ProjectEntryDeleteComponent;

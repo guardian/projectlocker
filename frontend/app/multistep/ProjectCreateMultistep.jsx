@@ -1,7 +1,6 @@
 import Multistep from 'react-multistep';
 import React from 'react';
 import axios from 'axios';
-import PropTypes from 'prop-types';
 import TemplateComponent from './projectcreate/TemplateComponent.jsx';
 import NameComponent from './projectcreate/NameComponent.jsx';
 import DestinationStorageComponent from './projectcreate/DestinationStorageComponent.jsx';
