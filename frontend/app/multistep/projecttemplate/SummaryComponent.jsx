@@ -1,5 +1,6 @@
 import React from 'react';
 import PropTypes from 'prop-types';
+import ProjectTypeView from '../../EntryViews/ProjectTypeView.jsx';
 
 class SummaryComponent extends React.Component {
     static propTypes = {
@@ -25,7 +26,7 @@ class SummaryComponent extends React.Component {
             </tr>
             <tr>
                 <td>Project type</td>
-                <td id="projectType">{this.props.projectType}</td>
+                <td id="projectType"><ProjectTypeView entryId={this.props.projectType}/></td>
             </tr>
             </tbody>
         </table>;

@@ -45,6 +45,10 @@ class ProjectEntryList extends GeneralListComponent {
     getFilterComponent(){
         return <ProjectEntryFilterComponent filterDidUpdate={this.filterDidUpdate}/>
     }
+
+    newElementCallback(event) {
+        this.props.history.push("/project/new");
+    }
 }
 
 export default ProjectEntryList;
