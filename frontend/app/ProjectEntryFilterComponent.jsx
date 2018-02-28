@@ -1,6 +1,7 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import Omit from 'lodash.omit';
+import {validateVsid} from "./validators/VsidValidator.jsx";
 
 class ProjectEntryFilterComponent extends React.Component {
     static propTypes = {
@@ -10,8 +11,6 @@ class ProjectEntryFilterComponent extends React.Component {
 
     constructor(props){
         super(props);
-
-        const vsidValidator = new RegExp('\\w{2}-\\d+');
 
         this.filterSpec = [
             {
@@ -25,11 +24,7 @@ class ProjectEntryFilterComponent extends React.Component {
                 key: "vidispineId",
                 label: "PLUTO project id",
                 //validator: (input)=>vsidValidator.test(input) ? null : "This must be in the form of XX-nnnnn"
-                validator: (input)=>{
-                    const result=vsidValidator.test(input);
-                    console.log("validation result for '"+ input, "': ", result);
-                    return result ? null : "This must be in the form of XX-nnnnn"
-                }
+                validator: validateVsid
             },
             {
                 key: "filename",

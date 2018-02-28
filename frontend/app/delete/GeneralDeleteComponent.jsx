@@ -82,7 +82,7 @@ class GeneralDeleteComponent extends React.Component {
     render(){
         if(this.state.loading) return <p className="information">Loading...</p>;
 
-        return <div>
+        return <div className="filter-list-block">
             <h3>Delete {this.itemClass}</h3>
             {this.informationPara()}
             {this.getSummary()}

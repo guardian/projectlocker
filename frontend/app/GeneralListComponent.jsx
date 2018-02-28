@@ -2,6 +2,7 @@ import React from 'react';
 import axios from 'axios';
 import SortableTable from 'react-sortable-table';
 import {Link} from 'react-router-dom';
+import moment from 'moment';
 
 class GeneralListComponent extends React.Component {
     constructor(props){
@@ -56,6 +57,16 @@ class GeneralListComponent extends React.Component {
             headerProps: { className: 'dashboardheader'},
             render: (value)=><span style={{fontStyle: "italic"}}>n/a</span> ? value : (value && value.length>0)
         };
+    }
+
+    /* this method supplies a column definition for datetimes */
+    static dateTimeColumn(name,key) {
+        return {
+            header: name,
+            key: key,
+            headerProps: {className: 'dashboardheader'},
+            render: value=><span className="datetime">{moment(value).format("ddd Do MMM, HH:MM")}</span>
+        }
     }
 
     breakdownPathComponents() {

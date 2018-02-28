@@ -21,6 +21,9 @@ import ProjectTemplateDeleteComponent from './delete/ProjectTemplateDeleteCompon
 
 import ProjectDeleteComponent from './delete/ProjectEntryDeleteComponent.jsx';
 
+import ProjectCreateMultistep from './multistep/ProjectCreateMultistep.jsx';
+import TitleEditComponent from './multistep/projectcreate/ProjectEntryEditComponent.jsx';
+
 import axios from 'axios';
 
 window.React = require('react');
@@ -106,7 +109,7 @@ class App extends React.Component {
                         <Route path="/type/:itemid" component={ProjectTypeMultistep}/>
                         <Route path="/type/" component={ProjectTypeList}/>
                         <Route path="/project/:itemid/delete" component={ProjectDeleteComponent}/>
-                        <Route path="/project/:itemid" component={ProjectEntryList}/>
+                        <Route path="/project/:itemid" component={TitleEditComponent}/>
                         <Route path="/project/" component={ProjectEntryList}/>
                         <Route exact path="/" component={()=><RootComponent
                             onLoggedOut={this.onLoggedOut}

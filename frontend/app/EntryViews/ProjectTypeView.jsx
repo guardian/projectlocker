@@ -4,6 +4,10 @@ import PropTypes from 'prop-types';
 import GenericEntryView from './GenericEntryView.jsx';
 
 class ProjectTypeView extends GenericEntryView {
+    static propTypes = {
+        entryId: PropTypes.number.isRequired
+    };
+
     constructor(props){
         super(props);
         this.endpoint = "/api/projecttype"

@@ -37,13 +37,24 @@ class ProjectEntryList extends GeneralListComponent {
                 render: (typeId)=><ProjectTypeView entryId={typeId}/>,
                 headerProps: {className: 'dashboardheader'}
             },
-            GeneralListComponent.standardColumn("Created", "created"),
-            GeneralListComponent.standardColumn("Owner","user")
+            GeneralListComponent.dateTimeColumn("Created", "created"),
+            GeneralListComponent.standardColumn("Owner","user"),
+            this.actionIcons(),
+            {
+                header: "",
+                key: "id",
+                headerProps: {className: 'dashboardheader'},
+                render: projid=><a target="_blank" href={"pluto:openproject:" + projid}>Open project</a>
+            }
         ];
     }
 
     getFilterComponent(){
         return <ProjectEntryFilterComponent filterDidUpdate={this.filterDidUpdate}/>
+    }
+
+    newElementCallback(event) {
+        this.props.history.push("/project/new");
     }
 }
 
