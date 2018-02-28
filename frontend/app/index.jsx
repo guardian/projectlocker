@@ -22,7 +22,7 @@ import ProjectTemplateDeleteComponent from './delete/ProjectTemplateDeleteCompon
 import ProjectDeleteComponent from './delete/ProjectEntryDeleteComponent.jsx';
 
 import ProjectCreateMultistep from './multistep/ProjectCreateMultistep.jsx';
-import TitleEditComponent from './multistep/projectcreate/TitleEditComponent.jsx';
+import TitleEditComponent from './multistep/projectcreate/ProjectEntryEditComponent.jsx';
 
 import axios from 'axios';
 
