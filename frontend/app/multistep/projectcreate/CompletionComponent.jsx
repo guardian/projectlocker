@@ -51,8 +51,6 @@ class ProjectCompletionComponent extends React.Component {
     }
 
     render() {
-        const errorLabel = this.state.error ? <span className="error-text">{this.state.error.statusText}: {this.state.error.data.detail}</span> : "";
-
         return(<div>
             <h3>Create new project</h3>
             <p className="information">We will create a new project with the information below.</p>
@@ -62,7 +60,7 @@ class ProjectCompletionComponent extends React.Component {
                               projectName={this.props.projectName} projectFilename={this.props.projectFilename}/>
             
             <ErrorViewComponent error={this.state.error}/>
-            <span style={{float: "right"}}>{errorLabel}<button onClick={this.confirmClicked}>Confirm</button></span>
+            <span style={{float: "right"}}><button onClick={this.confirmClicked}>Confirm</button></span>
         </div>)
     }
 }

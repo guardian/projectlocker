@@ -29,7 +29,7 @@ class NameComponent extends CommonMultistepComponent {
     }
 
     makeAutoFilename(title){
-        const sanitizer = /[^\w\d_]/g;
+        const sanitizer = /[^\w\d_]+/g;
         return title.replace(sanitizer, "_").toLowerCase();
     }
 
@@ -63,7 +63,7 @@ class NameComponent extends CommonMultistepComponent {
                     <td><input id="fileNameInput" onChange={this.fileNameChanged}
                                value={this.state.fileName} disabled={this.state.autoNameFile}/></td>
                     <td><input id="autoNameCheck" type="checkbox"
-                               value={this.state.autoNameFile} onChange={(event)=>this.setState({autoNameFile: event.target.value})}/>
+                               checked={this.state.autoNameFile} onChange={(event)=>this.setState({autoNameFile: event.target.checked})}/>
                         Automatically name file (recommended)
                     </td>
                 </tr>

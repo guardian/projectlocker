@@ -108,6 +108,7 @@ class App extends React.Component {
                         <Route path="/type/:itemid/delete" component={TypeDeleteComponent}/>
                         <Route path="/type/:itemid" component={ProjectTypeMultistep}/>
                         <Route path="/type/" component={ProjectTypeList}/>
+                        <Route path="/project/new" component={ProjectCreateMultistep}/>
                         <Route path="/project/:itemid/delete" component={ProjectDeleteComponent}/>
                         <Route path="/project/:itemid" component={TitleEditComponent}/>
                         <Route path="/project/" component={ProjectEntryList}/>
