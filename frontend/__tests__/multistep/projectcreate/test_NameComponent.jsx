@@ -11,7 +11,7 @@ describe("NameComponent", ()=>{
                                                 selectionUpdated={updatedCb}/>);
 
         const result = rendered.instance().makeAutoFilename("My prøject with funny characters!!!");
-        expect(result).toEqual("my_pr_ject_with_funny_characters___");
+        expect(result).toEqual("my_pr_ject_with_funny_characters_");
     });
 
     it("should call selectionUpdated when the user types into the project name box", ()=>{
