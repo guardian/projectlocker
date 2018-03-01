@@ -8,14 +8,8 @@ import slick.jdbc.PostgresProfile.api._
 case class ProjectEntryFilterTerms(title:Option[String],
                                    vidispineProjectId:Option[String],
                                    filename:Option[String],
-                                   wildcard:FilterTypeWildcard.Value) {
-
-  protected def makeWildcard(termString:String):String = wildcard match {
-    case FilterTypeWildcard.W_ENDSWITH=>termString + "%"
-    case FilterTypeWildcard.W_EXACT=>termString
-    case FilterTypeWildcard.W_STARTSWITH=>"%" + termString
-    case FilterTypeWildcard.W_CONTAINS=>"%" + termString + "%"
-  }
+                                   wildcard:FilterTypeWildcard.Value)
+extends GeneralFilterEntryTerms[ProjectEntryRow, ProjectEntry] {
 
   /**
     * adds the relevant filter terms to the end of a Slick query
@@ -23,7 +17,7 @@ case class ProjectEntryFilterTerms(title:Option[String],
     *          be appended
     * @return slick query with the relevant filter terms added
     */
-  def addFilterTerms(f: =>Query[ProjectEntryRow, ProjectEntry, Seq]):Query[ProjectEntryRow, ProjectEntry, Seq] = {
+  override def addFilterTerms(f: =>Query[ProjectEntryRow, ProjectEntry, Seq]):Query[ProjectEntryRow, ProjectEntry, Seq] = {
     var action = f
     if(filename.isDefined){
       /* see http://slick.lightbend.com/doc/3.0.0/queries.html#joining-and-zipping */

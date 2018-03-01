@@ -2,7 +2,7 @@ import React from 'react';
 import GeneralListComponent from './GeneralListComponent.jsx';
 import ProjectEntryFiles from './ProjectEntryFiles.jsx';
 import ProjectTypeView from './EntryViews/ProjectTypeView.jsx';
-import ProjectEntryFilterComponent from './ProjectEntryFilterComponent.jsx';
+import ProjectEntryFilterComponent from './filter/ProjectEntryFilterComponent.jsx';
 
 class ProjectEntryList extends GeneralListComponent {
     constructor(props){

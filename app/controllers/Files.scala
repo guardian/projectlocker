@@ -20,7 +20,8 @@ import scala.util.{Failure, Success, Try}
 
 
 class Files @Inject() (configuration: Configuration, dbConfigProvider: DatabaseConfigProvider, cacheImpl:SyncCacheApi)
-  extends GenericDatabaseObjectController[FileEntry] with FileEntrySerializer {
+  extends GenericDatabaseObjectControllerWithFilter[FileEntry,FileEntryFilterTerms]
+    with FileEntrySerializer with FileEntryFilterTermsSerializer {
 
   implicit val cache:SyncCacheApi = cacheImpl
 
@@ -39,6 +40,16 @@ class Files @Inject() (configuration: Configuration, dbConfigProvider: DatabaseC
   override def selectall(startAt:Int, limit:Int) = dbConfig.db.run(
     TableQuery[FileEntryRow].drop(startAt).take(limit).result.asTry //simple select *
   )
+
+  override def validateFilterParams(request: Request[JsValue]): JsResult[FileEntryFilterTerms] = request.body.validate[FileEntryFilterTerms]
+
+  override def selectFiltered(startAt: Int, limit: Int, terms: FileEntryFilterTerms): Future[Try[Seq[FileEntry]]] = {
+    dbConfig.db.run(
+      terms.addFilterTerms {
+        TableQuery[FileEntryRow]
+      }.drop(startAt).take(limit).result.asTry
+    )
+  }
 
   override def jstranslate(result: Seq[FileEntry]) = result //implicit translation should handle this
   override def jstranslate(result: FileEntry) = result //implicit translation should handle this

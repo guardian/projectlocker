@@ -1,7 +1,7 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import Omit from 'lodash.omit';
-import {validateVsid} from "./validators/VsidValidator.jsx";
+import {validateVsid} from "../validators/VsidValidator.jsx";
 
 class ProjectEntryFilterComponent extends React.Component {
     static propTypes = {

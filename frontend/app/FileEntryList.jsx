@@ -5,6 +5,8 @@ class FileEntryList extends GeneralListComponent {
     constructor(props){
         super(props);
         this.endpoint = '/api/file';
+        this.filterEndpoint = '/api/file/list';
+
         this.columns = [
             {
                 header: "Id",
@@ -17,9 +19,9 @@ class FileEntryList extends GeneralListComponent {
             GeneralListComponent.standardColumn("Storage", "storage"),
             GeneralListComponent.standardColumn("Owner", "user"),
             GeneralListComponent.standardColumn("Version","version"),
-            GeneralListComponent.standardColumn("Create time","ctime"),
-            GeneralListComponent.standardColumn("Modification time","mtime"),
-            GeneralListComponent.standardColumn("Access time","atime")
+            GeneralListComponent.dateTimeColumn("Create time","ctime"),
+            GeneralListComponent.dateTimeColumn("Modification time","mtime"),
+            GeneralListComponent.dateTimeColumn("Access time","atime")
         ];
     }
 }

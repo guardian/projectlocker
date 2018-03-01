@@ -5,6 +5,7 @@
 GET     /                                  @controllers.Application.index(path="/")
 
 GET     /api/file                          @controllers.Files.list(startAt:Int ?=0,limit:Int ?=100)
+PUT     /api/file/list                     @controllers.Files.listFiltered(startAt:Int ?=0,limit:Int ?=100)
 PUT     /api/file                          @controllers.Files.create
 PUT     /api/file/:id/content              @controllers.Files.uploadContent(id: Int)
 GET     /api/file/:id                      @controllers.Files.getitem(id: Int)
