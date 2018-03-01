@@ -155,3 +155,18 @@ a.filter-link-control {
 .filter-entry-error {
     margin-left: -5em;
 }
+
+li.horizontal-list-item {
+    display: inline;
+    margin-right: 1em;
+}
+
+p.warning-text {
+    margin-left: auto;
+    font-style: italic;
+    font-weight: bold;
+    color: darkorange;
+    margin-right: 5%;
+    width: 85%;
+    overflow: hidden;
+}

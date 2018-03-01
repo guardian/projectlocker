@@ -5,6 +5,8 @@ import {Link} from 'react-router-dom';
 import moment from 'moment';
 
 class GeneralListComponent extends React.Component {
+    static ITEM_LIMIT=50;
+
     constructor(props){
         super(props);
         this.state = {
@@ -13,7 +15,8 @@ class GeneralListComponent extends React.Component {
             filterTerms: {
                 match: "W_ENDSWITH"
             },
-            currentPage: 0
+            currentPage: 0,
+            maximumItemsLoaded: false
         };
 
         this.pageSize = 20;
@@ -101,7 +104,11 @@ class GeneralListComponent extends React.Component {
                 currentPage: this.state.currentPage+1
             }, ()=>{
                 this.gotDataCallback(response, ()=> {
-                    if (response.data.result.length > 0) this.getNextPage()
+                    if (response.data.result.length > 0)
+                        if(this.pageSize*this.state.currentPage>=GeneralListComponent.ITEM_LIMIT)
+                            this.setState({maximumItemsLoaded: true});
+                        else
+                            this.getNextPage()
                 });
             })
         }).catch(error=>{
@@ -141,11 +148,20 @@ class GeneralListComponent extends React.Component {
         this.setState({filterTerms: newterms},()=>this.reload());
     }
 
+    itemLimitWarning(){
+        if(this.state.maximumItemsLoaded)
+            return <p className="warning-text"><i className="fa-info fa" style={{marginRight: "0.5em", color: "orange"}}/>Maximum of {GeneralListComponent.ITEM_LIMIT} items have been loaded. Use filters to narrow this down.</p>
+        else
+            return <p style={{margin: 0}}/>
+    }
+
     render() {
         return (
             <div>
                 <span className="list-title"><h2 className="list-title">{this.props.title}</h2></span>
                 {this.getFilterComponent()}
+                {this.itemLimitWarning()}
+
                 <SortableTable
                     data={ this.state.data}
                     columns={this.columns}
