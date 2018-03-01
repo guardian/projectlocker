@@ -49,7 +49,7 @@ class TemplateCompletionComponent extends React.Component {
 
     render() {
         return(<div>
-            <h3>Set up storage</h3>
+            <h3>Set up project template</h3>
             <p className="information">We will set up a new project template definition with the information below.</p>
             <SummaryComponent fileId={this.props.fileId} projectType={this.props.projectType} name={this.props.name}/>
             <p className="information">Press "Confirm" to go ahead, or press Previous if you need to amend any details.</p>

@@ -37,7 +37,7 @@ class ProjectEntryEditComponent extends React.Component {
                 });
 
         if(this.state.vsidChanged && (!this.state.vsidInvalid || this.state.removeVsid))
-            finalPromise = finalPromise.then(axios.put("/api/project/" + projectId + "/vsid",
+            finalPromise = finalPromise.then(()=>axios.put("/api/project/" + projectId + "/vsid",
                 {title: this.state.projectName, vsid: this.state.removeVsid ? null : this.state.vsid})
             .then(response=>{})
             .catch(error=>{

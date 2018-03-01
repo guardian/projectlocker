@@ -18,12 +18,20 @@ class GenericEntryView extends React.Component {
         }
     }
 
-    componentWillMount(){
+    loadData() {
         this.setState({loading: true}, ()=>{
             axios.get(this.endpoint + "/" + this.props.entryId)
                 .then(response=>this.setState({content: response.data.result, loading: false}))
                 .catch(error=>this.setState({lastError: error, loading: false}))
         })
+    }
+
+    componentWillMount(){
+        if(this.props.entryId) this.loadData();
+    }
+
+    componentDidUpdate(oldProps, oldState){
+        if(oldProps.entryId!==this.props.entryId) this.loadData();
     }
 
     render(){

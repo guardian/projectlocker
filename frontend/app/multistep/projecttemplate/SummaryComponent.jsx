@@ -1,6 +1,7 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import ProjectTypeView from '../../EntryViews/ProjectTypeView.jsx';
+import FileEntryView from '../../EntryViews/FileEntryView.jsx';
 
 class SummaryComponent extends React.Component {
     static propTypes = {
@@ -22,7 +23,7 @@ class SummaryComponent extends React.Component {
             </tr>
             <tr>
                 <td>File</td>
-                <td id="fileId">{this.props.fileId}</td>
+                <td id="fileId"><FileEntryView entryId={this.props.fileId}/></td>
             </tr>
             <tr>
                 <td>Project type</td>
