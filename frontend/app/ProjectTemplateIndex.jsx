@@ -1,5 +1,7 @@
 import React from 'react';
 import GeneralListComponent from './GeneralListComponent.jsx';
+import ProjectTypeView from './EntryViews/ProjectTypeView.jsx';
+import FileEntryView from './EntryViews/FileEntryView.jsx';
 
 class ProjectTemplateIndex extends GeneralListComponent {
     constructor(props){
@@ -14,9 +16,18 @@ class ProjectTemplateIndex extends GeneralListComponent {
                 headerProps: { className: 'dashboardheader'}
             },
             GeneralListComponent.standardColumn("Name","name"),
-            GeneralListComponent.standardColumn("Project type", "projectType"),
-            GeneralListComponent.standardColumn("Filepath", "filepath"),
-            GeneralListComponent.standardColumn("Storage","storage"),
+            {
+                header: "Project type",
+                key: "projectTypeId",
+                headerProps: {className: 'dashboardheader'},
+                render: typeId=><ProjectTypeView entryId={typeId}/>
+            },
+            {
+                header: "File",
+                key: "fileRef",
+                headerProps: {className: 'dashboardheader'},
+                render: fileRef=><FileEntryView entryId={fileRef}/>
+            },
             this.actionIcons()
         ];
     }
