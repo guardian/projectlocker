@@ -1,5 +1,6 @@
 import React from 'react';
 import GeneralListComponent from './GeneralListComponent.jsx';
+import FileEntryFilterComponent from './filter/FileEntryFilterComponent.jsx';
 
 class FileEntryList extends GeneralListComponent {
     constructor(props){
@@ -23,6 +24,10 @@ class FileEntryList extends GeneralListComponent {
             GeneralListComponent.dateTimeColumn("Modification time","mtime"),
             GeneralListComponent.dateTimeColumn("Access time","atime")
         ];
+    }
+
+    getFilterComponent(){
+        return <FileEntryFilterComponent filterDidUpdate={this.filterDidUpdate}/>
     }
 }
 
