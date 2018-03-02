@@ -18,6 +18,7 @@ CACHE 1;
 ALTER SEQUENCE "PostrunAction_id_seq" OWNED BY "PostrunAction".id;
 
 ALTER TABLE public."PostrunAction_id_seq" OWNER TO projectlocker;
+ALTER TABLE ONLY "PostrunAction" ALTER COLUMN id SET DEFAULT nextval('"PostrunAction_id_seq"'::regclass);
 
 ALTER TABLE "PostrunAction" OWNER TO "projectlocker";
 
