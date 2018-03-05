@@ -1,15 +1,97 @@
 package models
 
+import java.io.File
+import java.nio.file.{Files, Path, Paths}
 import java.sql.Timestamp
 
+import helpers.{JythonOutput, JythonRunner}
+import org.apache.commons.io.{FileUtils, FilenameUtils}
+import play.api.{Configuration, Logger}
 import play.api.libs.json.{JsPath, Reads, Writes}
 import play.api.libs.functional.syntax._
 import slick.lifted.Tag
 import slick.jdbc.PostgresProfile.api._
 
-case class PostrunAction (id:Option[Int],runnable:String, title:String, description:Option[String],
-                          owner:String, version:Int, ctime: Timestamp){
+import scala.concurrent.Future
+import scala.util.{Failure, Success, Try}
+import scala.concurrent.ExecutionContext.Implicits.global
 
+case class PostrunAction (id:Option[Int],runnable:String, title:String, description:Option[String],
+                          owner:String, version:Int, ctime: Timestamp) {
+  val logger = Logger(this.getClass)
+
+  /**
+    * asynchronously creates a backup of the given project file as a temp file
+    * @param projectFileName project file to back up
+    * @return a Future, containing a Try that contains either the backup file created or an error indicating why it was not created
+    */
+  def backupProjectFile(projectFileName: String): Future[Try[Path]] = Future {
+    Try {
+      val projectNameOnly = FilenameUtils.getBaseName(projectFileName)
+      val outputPath = Files.createTempFile(projectNameOnly, ".bak")
+
+      FileUtils.copyFile(new File(projectFileName), new File(outputPath.toString))
+      outputPath
+    }
+  }
+
+  /**
+    * synchronously copies the given backup file back over the original file
+    * @param backupPath Path representing the backup file
+    * @param originalFile String representing the file path to copy it over
+    * @return a Try indicating whether the operation succeeded or not
+    */
+  def restoreBackupFile(backupPath: Path, originalFile: String) = Try {
+    logger.warn(s"Restoring backup file ${backupPath.toString}")
+    FileUtils.copyFile(new File(backupPath.toString), new File(originalFile))
+  }
+
+  /**
+    * asynchronously executes this postrun action on a newly created project
+    * @param projectFileName - filename of the newly created project
+    * @param projectEntry - models.projectEntry object representing the newly created project
+    * @param projectType - models.projectType that the project was created from
+    * @param config - implicitly provided play.api.Configuration object, representing the app configuration
+    * @return a Future containing a Try containing either the script output or an error
+    */
+  def run(projectFileName:String,projectEntry:ProjectEntry,projectType:ProjectType)
+         (implicit config:Configuration):Future[Try[JythonOutput]] = {
+    val inputPath = Paths.get(config.get[String]("postrun.scriptsPath"), this.runnable)
+    backupProjectFile(projectFileName) flatMap {
+      case Failure(error) =>
+        logger.error(s"Unable to back up project file $projectFileName:", error)
+        Future(Failure(error))
+      case Success(backupPath) =>
+        logger.info(s"Backed up project file from $projectFileName to ${backupPath.toString}")
+        logger.debug(s"Going to try to run script at path $inputPath...")
+        val scriptArgs = Map(
+          "projectFile" -> projectFileName
+        ) ++ projectEntry.asStringMap ++ projectType.asStringMap
+
+        JythonRunner.runScriptAsync(inputPath.toString, scriptArgs) map {
+          case Success(scriptOutput) =>
+            logger.debug("Script started successfully")
+            scriptOutput.raisedError match {
+              case Some(error)=>
+                logger.error("Postrun script could not run: ",error)
+                logger.error("Postrun standard out:" + scriptOutput.stdOutContents)
+                logger.error("Postrun standard err:" + scriptOutput.stdErrContents)
+                Failure(error)
+              case None=>
+                Success(scriptOutput)
+            }
+          case Failure(error) =>
+            logger.error("Unable to start postrun script: ", error)
+            restoreBackupFile(backupPath, projectFileName) match {
+              case Failure(restoreError)=>
+                logger.error(s"Cannot restore backup, project file $projectFileName may be corrupted")
+                Failure(error)
+              case Success(unitval)=>
+                Failure(error)
+            }
+        }
+    }
+  }
 }
 
 class PostrunActionRow(tag:Tag) extends Table[PostrunAction](tag, "PostrunAction") {

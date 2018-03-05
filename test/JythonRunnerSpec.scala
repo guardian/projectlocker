@@ -3,6 +3,7 @@ import org.specs2.mutable._
 import org.specs2.runner._
 import org.junit.runner._
 
+import scala.concurrent.duration._
 @RunWith(classOf[JUnitRunner])
 class JythonRunnerSpec extends Specification {
   sequential
@@ -40,6 +41,7 @@ class JythonRunnerSpec extends Specification {
     }
 
     "call a specific function with arguments" in {
+      implicit val timeout:Duration = 5.seconds
       val args = Map("project_id"->"AA-1234","something_else"->"rabbit rabbit")
 
       val result = JythonRunner.runScript("postrun/test_scripts/args_test_4.py", args)

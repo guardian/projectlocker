@@ -4,9 +4,13 @@ import java.io.ByteArrayOutputStream
 
 import org.python.core.{PyDictionary, PyObject, PyString}
 import org.python.util.PythonInterpreter
-import scala.collection.JavaConverters._
 
+import scala.collection.JavaConverters._
+import scala.concurrent.{Await, Future}
 import scala.util.{Failure, Success, Try}
+import scala.concurrent.{Await, Future}
+import scala.concurrent.duration._
+import scala.concurrent.ExecutionContext.Implicits.global
 
 /**
   * this case class represents the result of the invokation of a script in Jython
@@ -53,14 +57,20 @@ object JythonRunner {
   }
 
   /**
+    * convenience function to run the script and wait for result
+    */
+  def runScript(scriptName: String, args:Map[String,String])(implicit timeout:Duration):Try[JythonOutput] =
+    Await.result(runScriptAsync(scriptName, args), timeout)
+
+  /**
     * Runs the given script, with a string->string map of arguments.
-    * This style of invokation requires  the Python script to define a function `postrun`, which will receive
+    * This style of invokation requires the Python script to define a function `postrun`, which will receive
     * the string->string map in the form of a dictionary of kwargs.
     * @param scriptName name of script to call
-    * @param args string-string map
+    * @param args string-string map of arguments passed as kwargs to the `postrun` function in the script
     * @return Try containing a [[JythonOutput]] if successful or a relevant error if not
     */
-  def runScript(scriptName: String, args:Map[String,String]):Try[JythonOutput] = {
+  def runScriptAsync(scriptName: String, args:Map[String,String]):Future[Try[JythonOutput]] = Future {
     val outStream = new ByteArrayOutputStream
     val errStream = new ByteArrayOutputStream
 

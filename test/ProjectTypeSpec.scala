@@ -31,7 +31,7 @@ class ProjectTypeSpec extends Specification {
       val result = Await.result(pt.get.postrunActions,10.seconds)
       result must beSuccessfulTry
 
-      result.get.length mustEqual 1
+      result.get.length mustEqual 2
 
     }
   }

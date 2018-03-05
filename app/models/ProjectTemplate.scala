@@ -54,7 +54,7 @@ class ProjectTemplateRow(tag: Tag) extends Table[ProjectTemplate](tag,"ProjectTe
   def * = (id.?, name, projectType, fileRef) <> (ProjectTemplate.tupled, ProjectTemplate.unapply)
 }
 
-object ProjectTemplateHelper {
+object ProjectTemplate extends ((Option[Int],String,Int,Int)=>ProjectTemplate) {
   def entryFor(entryId: Int)(implicit db:slick.jdbc.JdbcProfile#Backend#Database):Future[Option[ProjectTemplate]] =
     db.run(
       TableQuery[ProjectTemplateRow].filter(_.id===entryId).result.asTry

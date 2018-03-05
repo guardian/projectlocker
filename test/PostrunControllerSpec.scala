@@ -32,7 +32,7 @@ class PostrunControllerSpec extends GenericControllerSpec {
 
   "PostrunActionController.associate" should {
     "create an association between postrun action and project type" in {
-      val response= route(application, FakeRequest(PUT, s"$uriRoot/1/projecttype/2").withSession("uid"->"testuser")).get
+      val response= route(application, FakeRequest(PUT, s"$uriRoot/1/projecttype/4").withSession("uid"->"testuser")).get
 
       status(response) must equalTo(OK)
       val jsondata = Await.result(bodyAsJsonFuture(response), 5.seconds).as[JsValue]
@@ -43,7 +43,7 @@ class PostrunControllerSpec extends GenericControllerSpec {
 
   "PostrunActionController.unassociate" should {
     "remove an association between postrun action and project type" in {
-      val response= route(application, FakeRequest(DELETE, s"$uriRoot/1/projecttype/1").withSession("uid"->"testuser")).get
+      val response= route(application, FakeRequest(DELETE, s"$uriRoot/3/projecttype/4").withSession("uid"->"testuser")).get
 
       status(response) must equalTo(OK)
       val jsondata = Await.result(bodyAsJsonFuture(response), 5.seconds).as[JsValue]

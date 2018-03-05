@@ -12,6 +12,7 @@ INSERT INTO "FileEntry" (id, S_FILEPATH, K_STORAGE_ID, S_USER, I_VERSION, T_CTIM
 INSERT INTO "ProjectType" (id, S_NAME, S_OPENS_WITH, S_TARGET_VERSION, S_FILE_EXTENSION) VALUES (1, 'Premiere 2014 test', 'AdobePremierePro.app', '14.0', '.prproj');
 INSERT INTO "ProjectType" (id, S_NAME, S_OPENS_WITH, S_TARGET_VERSION, S_FILE_EXTENSION) VALUES (2, 'Prelude 2014 test', 'AdobePrelude.app', '14.0', '.plproj');
 INSERT INTO "ProjectType" (id, S_NAME, S_OPENS_WITH, S_TARGET_VERSION, S_FILE_EXTENSION) VALUES (3, 'Cubase test', 'Cubase.app', '6.0', '.cpr');
+INSERT INTO "ProjectType" (id, S_NAME, S_OPENS_WITH, S_TARGET_VERSION, S_FILE_EXTENSION) VALUES (4, 'Aftereffects test', 'AdobeAfterEffects.app', '6.0', '.aep');
 
 INSERT INTO "ProjectEntry" (id, K_PROJECT_TYPE, S_TITLE, T_CREATED,S_USER) VALUES (1, 1, 'InitialTestProject', '2016-12-11 12:21:11.021', 'me');
 INSERT INTO "ProjectEntry" (id, K_PROJECT_TYPE, S_TITLE, S_VIDISPINE_ID,T_CREATED,S_USER) VALUES (2, 1, 'AnotherTestProject', 'VX-1234', '2016-12-11 12:21:11.021', 'you');
@@ -29,12 +30,13 @@ INSERT INTO "PostrunAction" (id, S_RUNNABLE, S_TITLE, S_OWNER, I_VERSION, T_CTIM
 INSERT INTO "PostrunAction" (id, S_RUNNABLE, S_TITLE, S_OWNER, I_VERSION, T_CTIME) VALUES (3, 'thirdTestScript.py', 'Third test postrun', 'system',1, '2018-01-01T14:15:31.000');
 INSERT INTO "PostrunAssociationRow" (id, K_POSTRUN, K_PROJECTTYPE) VALUES (1, 1, 1);
 INSERT INTO "PostrunAssociationRow" (id, K_POSTRUN, K_PROJECTTYPE) VALUES (2, 2, 1);
+INSERT INTO "PostrunAssociationRow" (id, K_POSTRUN, K_PROJECTTYPE) VALUES (3, 2, 4);
 
 ------------------------
 SELECT pg_catalog.setval('"PostrunAction_id_seq"', 4, true);
-SELECT pg_catalog.setval('"PostrunAssociationRow_id_seq"', 3, true);
+SELECT pg_catalog.setval('"PostrunAssociationRow_id_seq"', 4, true);
 SELECT pg_catalog.setval('"ProjectTemplate_id_seq"', 2, true);
-SELECT pg_catalog.setval('"ProjectType_id_seq"', 3, true);
+SELECT pg_catalog.setval('"ProjectType_id_seq"', 4, true);
 SELECT pg_catalog.setval('"StorageEntry_id_seq"', 3, true);
 SELECT pg_catalog.setval('"ProjectFileAssociation_id_seq"', 3, false);
 SELECT pg_catalog.setval('"ProjectEntry_id_seq"', 5, false);

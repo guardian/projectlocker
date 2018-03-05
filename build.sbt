@@ -29,7 +29,8 @@ libraryDependencies ++= Seq(
   "postgresql" % "postgresql" % "9.1-901.jdbc3",
   // https://mvnrepository.com/artifact/com.typesafe.play/play-slick
   "com.typesafe.play" %% "play-slick" % "3.0.3",
-  "com.typesafe.play" %% "play-slick-evolutions" % "3.0.3"
+  "com.typesafe.play" %% "play-slick-evolutions" % "3.0.3",
+  "commons-io" % "commons-io" % "2.6"
 )
 
 //authentication

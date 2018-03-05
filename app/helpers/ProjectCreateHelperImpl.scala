@@ -1,16 +1,17 @@
 package helpers
 
-import models.{FileEntry, ProjectEntry, ProjectRequestFull, ProjectType}
+import models._
 import java.sql.Timestamp
 
-import scala.concurrent.Future
+import scala.concurrent.{Await, Future}
 import java.time.LocalDateTime
 import javax.inject.Singleton
 
-import exceptions.ProjectCreationError
+import exceptions.{PostrunActionError, ProjectCreationError}
 import play.api.Logger
 
 import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.duration.Duration
 import scala.util.{Failure, Success, Try}
 
 @Singleton
@@ -65,15 +66,69 @@ class ProjectCreateHelperImpl extends ProjectCreateHelper {
       case Failure(error)=>Future(Failure(error))
     })
 
+  protected def runEach(action:PostrunAction, projectFileName:String, projectEntry:ProjectEntry,projectType:ProjectType)
+                     (implicit db: slick.jdbc.JdbcProfile#Backend#Database, config:play.api.Configuration):Try[JythonOutput] = {
+
+    val timeout:Duration = Duration(config.getOptional[String]("postrun.timeout").getOrElse("30 seconds"))
+
+    Await.result(action.run(projectFileName,projectEntry, projectType),timeout)
+  }
+
+  /**
+    * Traverses a sequence of a Try of type A and returns either a Right with all results if they all succeeded or a Left
+    * with all of the errors if any failed.
+    * https://stackoverflow.com/questions/15495678/flatten-scala-try
+    * @param xs - sequence to traverse
+    * @tparam A - type of sequence xs
+    * @return either Left containing a sequence of Throwable or Right containing sequence of A
+    */
+  protected def collectFailures[A](xs:Seq[Try[A]]):Either[Seq[Throwable],Seq[A]] =
+    Try(Right(xs.map(_.get))).getOrElse(Left(xs.collect({case Failure(err)=>err})))
+
+  def doPostrunActions(fileEntry: FileEntry, eventualTriedEntry: Future[Try[ProjectEntry]], template: ProjectTemplate)
+                      (implicit db: slick.jdbc.JdbcProfile#Backend#Database, config:play.api.Configuration):Future[Either[String,String]]= {
+    val futureSequence = Future.sequence(Seq(eventualTriedEntry, template.projectType, fileEntry.getFullPath))
+
+    futureSequence.flatMap(completedFutures=>{
+      val projectEntryTry:Try[ProjectEntry] = completedFutures.head.asInstanceOf[Try[ProjectEntry]]
+      projectEntryTry match {
+        case Failure(error)=>Future(Left(error.toString))
+        case Success(projectEntry)=>
+          val projectType:ProjectType = completedFutures(1).asInstanceOf[ProjectType]
+          val writtenPath = completedFutures(2).asInstanceOf[String]
+
+          val actionResults:Future[Seq[Try[JythonOutput]]] = projectType.postrunActions.map({
+            case Failure(error)=>Seq(Failure(error))
+            case Success(actionsList)=>
+              actionsList.map(action=>runEach(action, writtenPath, projectEntry, projectType))
+          })
+
+          val actionSuccess = actionResults.map(collectFailures _)
+          actionSuccess map {
+            case Left(errorSeq)=>
+              val msg = s"${errorSeq.length} postrun actions failed for project $writtenPath, see log for details"
+              logger.error(msg)
+              errorSeq.foreach(err=>logger.error(s"\tMethod failed with:", err))
+              Left(msg)
+            case Right(results)=>
+              val msg = s"Successfully ran ${results.length} postrun actions for project $writtenPath"
+              logger.info(s"Successfully ran ${results.length} postrun actions for project $writtenPath")
+              Right(s"Successfully ran ${results.length} postrun actions for project $writtenPath")
+          }
+      }
+    })
+  }
+
   /**
     * Logic to create a project.  This runs asynchronously, taking in a project request in the form of a [[models.ProjectRequestFull]]
     * and copying the requested template to the final destination
     * @param rq [[ProjectRequestFull]] object representing the project request
     * @param createTime optional [[LocalDateTime]] as the create time.  If None is provided then current date/time is used
     * @param db implicitly provided [[slick.jdbc.JdbcProfile#Backend#Database]]
-    * @return a [[Try]] containing a saved [[models.ProjectEntry]] object if successful, wrapped in a  [[Future]]
+    * @return a [[Try]] containing a saved [[models.ProjectEntry]] object if successful, wrapped in a [[Future]]
     */
-  def create(rq:ProjectRequestFull,createTime:Option[LocalDateTime])(implicit db: slick.jdbc.JdbcProfile#Backend#Database):Future[Try[ProjectEntry]] = {
+  def create(rq:ProjectRequestFull,createTime:Option[LocalDateTime])
+            (implicit db: slick.jdbc.JdbcProfile#Backend#Database, config: play.api.Configuration):Future[Try[ProjectEntry]] = {
     logger.info(s"Creating project from $rq")
     rq.destinationStorage.getStorageDriver match {
       case None=>
@@ -102,9 +157,26 @@ class ProjectCreateHelperImpl extends ProjectCreateHelper {
                 Future(Failure(new RuntimeException(error.mkString("\n"))))
               case Right(writtenFile)=>
                 logger.info(s"Creating new project entry from $writtenFile")
-                val result = ProjectEntry.createFromFile(writtenFile, rq.projectTemplate, rq.title, createTime,rq.user)
+                val createResult = ProjectEntry.createFromFile(writtenFile, rq.projectTemplate, rq.title, createTime,rq.user)
                 logger.info("Done")
-                result
+                val postruns = doPostrunActions(writtenFile, createResult, rq.projectTemplate) map {
+                  case Left(errorMessage)=>
+                    Failure(new PostrunActionError(errorMessage))
+                  case Right(successMessage)=>
+                    Success(successMessage)
+                }
+
+                Future.sequence(Seq(createResult, postruns)) map { results=>
+                  val finalCreateResult = results.head.asInstanceOf[Try[ProjectEntry]]
+                  val finalPostrunResult = results(1).asInstanceOf[Try[String]]
+
+                  if(finalPostrunResult.isFailure)
+                    Failure(finalPostrunResult.failed.get)
+                  else if(finalCreateResult.isFailure)
+                    Failure(finalCreateResult.failed.get)
+                  else
+                    finalCreateResult
+                }
             })
           case Failure(error)=>
             logger.error("Unable to save destination file entry to database", error)

@@ -40,6 +40,18 @@ case class ProjectType(id: Option[Int],name:String, opensWith: String, targetVer
 
     db.run(query.result.asTry)
   }
+
+  /**
+    * returns the contents as a string->string map, for passing to postrun actions
+    * @return
+    */
+  def asStringMap:Map[String,String] = Map(
+    "projectTypeId"->id.getOrElse("").toString,
+    "projectTypeName"->name,
+    "projectOpensWith"->opensWith,
+    "projectTargetVersion"->targetVersion,
+    "projectFileExtension"->fileExtension.getOrElse("")
+  )
 }
 
 class ProjectTypeRow(tag: Tag) extends Table[ProjectType](tag, "ProjectType") {

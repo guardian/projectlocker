@@ -38,6 +38,19 @@ case class ProjectEntry (id: Option[Int], projectTypeId: Int, vidispineProjectId
     })
   }
 
+  /**
+    * returns the contents of this record as a string->string map, for passing to postrun actions
+    * @return
+    */
+  def asStringMap:Map[String,String] = {
+    Map(
+      "projectId"->id.getOrElse("").toString,
+      "vidispineProjectId"->vidispineProjectId.getOrElse(""),
+      "projectTitle"->projectTitle,
+      "projectCreated"->created.toString,
+      "projectOwner"->user
+    )
+  }
 }
 
 class ProjectEntryRow(tag:Tag) extends Table[ProjectEntry](tag, "ProjectEntry") {

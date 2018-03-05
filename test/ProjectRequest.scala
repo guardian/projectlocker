@@ -24,7 +24,7 @@ class ProjectRequest extends Specification {
       val pr = ProjectRequest("testfile",1,"MyTestProject", 1,"testuser")
 
       val testStorage = Await.result(StorageEntryHelper.entryFor(1),10.seconds)
-      val testTemplate = Await.result(ProjectTemplateHelper.entryFor(1),10.seconds)
+      val testTemplate = Await.result(ProjectTemplate.entryFor(1),10.seconds)
 
       val result:Option[ProjectRequestFull] = Await.result(pr.hydrate,10.seconds)
 

@@ -34,6 +34,7 @@ class ProjectEntryController @Inject() (cc:ControllerComponents, config: Configu
   override implicit val cache:SyncCacheApi = cacheImpl
 
   val dbConfig = dbConfigProvider.get[JdbcProfile]
+  implicit val implicitConfig = config
 
   override def deleteid(requestedId: Int) = dbConfig.db.run(
     TableQuery[ProjectEntryRow].filter(_.id === requestedId).delete.asTry
