@@ -42,6 +42,7 @@ ALTER SEQUENCE "PostrunAssociationRow_id_seq" OWNED BY "PostrunAssociationRow".i
 ALTER TABLE public."PostrunAssociationRow_id_seq" OWNER TO projectlocker;
 
 ALTER TABLE "PostrunAssociationRow_id_seq" OWNER TO "projectlocker";
+ALTER TABLE ONLY "PostrunAssociationRow" ALTER COLUMN id SET DEFAULT nextval('"PostrunAssociationRow_id_seq"'::regclass);
 
 # -- !Downs
 DROP TABLE "PostrunAssociationRow";

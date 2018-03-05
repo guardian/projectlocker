@@ -49,6 +49,8 @@ PUT     /api/postrun                   @controllers.PostrunActionController.crea
 GET     /api/postrun/:id               @controllers.PostrunActionController.getitem(id: Int)
 PUT     /api/postrun/:id               @controllers.PostrunActionController.update(id: Int)
 DELETE  /api/postrun/:id               @controllers.PostrunActionController.delete(id: Int)
+PUT     /api/postrun/:id/projecttype/:typeid   @controllers.PostrunActionController.associate(id: Int, typeid:Int)
+DELETE  /api/postrun/:id/projecttype/:typeid   @controllers.PostrunActionController.unassociate(id: Int, typeid: Int)
 
 POST    /api/login                         @controllers.Application.authenticate
 POST    /api/logout                        @controllers.Application.logout
