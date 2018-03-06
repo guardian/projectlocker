@@ -31,7 +31,10 @@ describe("ProjectTypeCompletionComponent", ()=>{
     });
 
     it("should make a REST call to save data when Confirm is clicked then redirect to index", (done)=>{
-        const rendered=shallow(<ProjectTypeCompletionComponent projectType={fakeProjectType}/>);
+        const rendered=shallow(<ProjectTypeCompletionComponent projectType={fakeProjectType}
+                                                               postrunActions={[]}
+                                                               selectedPostruns={[]}
+                                                               currentEntry={null}/>);
 
         const button = rendered.find('button');
         button.simulate('click');

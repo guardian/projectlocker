@@ -28,7 +28,7 @@ class PostrunActionScanner @Inject() (dbConfigProvider: DatabaseConfigProvider, 
       case Success(results)=>
         if(results.isEmpty){
           logger.info(s"Adding newly found script ${scriptFile.getAbsolutePath} to database")
-          val newRecord = PostrunAction(None,scriptFile.getName,scriptFile.getName,None,"system",1,new Timestamp(ZonedDateTime.now().toEpochSecond))
+          val newRecord = PostrunAction(None,scriptFile.getName,scriptFile.getName,None,"system",1,new Timestamp(ZonedDateTime.now().toEpochSecond*1000))
           newRecord.save map {
             case Failure(error)=>
               logger.error("Unable to save postrun script to database: ", error)
@@ -51,7 +51,9 @@ class PostrunActionScanner @Inject() (dbConfigProvider: DatabaseConfigProvider, 
       case Failure(error)=>
         logger.error(s"Could not scan $scriptsDir: ", error)
       case Success(filesList)=>
-        filesList.foreach(file=>addIfNotExists(file))
+        filesList
+            .filter(file=>file.getName.endsWith(".py") && ! file.getName.startsWith("__"))
+            .foreach(file=>addIfNotExists(file))
     })
   }
 }
