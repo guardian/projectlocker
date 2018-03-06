@@ -5,7 +5,6 @@ import ErrorViewComponent from '../common/ErrorViewComponent.jsx';
 class PostrunActionSelector extends React.Component {
     static propTypes = {
         actionsList: PropTypes.array.isRequired,
-        loadErrors: PropTypes.object,
         valueWasSet: PropTypes.func.isRequired,
         selectedEntries: PropTypes.array
     };
@@ -25,7 +24,8 @@ class PostrunActionSelector extends React.Component {
     }
 
     checkboxUpdated(event, selectedId, cb){
-        if(event.target.checked){
+        console.log(event.target);
+        if(!event.target.checked){
             console.log("target was checked");
             this.setState({selectedEntries: this.state.selectedEntries.filter(value=>value!==selectedId)}, ()=>cb(this.state.selectedEntries));
         } else {
@@ -37,16 +37,15 @@ class PostrunActionSelector extends React.Component {
     }
 
     render() {
-        if(this.props.loadErrors) return <ErrorViewComponent error={this.state.loadErrors}/>;
-
         return <ul className="selection-list">
             {this.props.actionsList.map(action=>
-                <li key={"action-" + action.id}>
-                    <label htmlFor={"action-check-" + action.id}>{action.title}</label>
-                    <input id={"action-check-" + action.id} type="checkbox"
+                <li className="selection-list" key={"action-" + action.id}>
+                    <label className="selection-list">
+                    <input className="selection-list" id={"action-check-" + action.id} type="checkbox"
                            onChange={(event)=>this.checkboxUpdated(event, action.id, this.props.valueWasSet)}
-                           checked={this.state.selectedEntries.includes(action.id)}
-                    />
+                           defaultChecked={this.state.selectedEntries.includes(action.id)}/>
+                        {action.title}
+                    </label>
                 </li>)}
         </ul>
     }

@@ -9,7 +9,7 @@ import org.apache.commons.io.{FileUtils, FilenameUtils}
 import play.api.{Configuration, Logger}
 import play.api.libs.json.{JsPath, Reads, Writes}
 import play.api.libs.functional.syntax._
-import slick.lifted.Tag
+import slick.lifted.{TableQuery, Tag}
 import slick.jdbc.PostgresProfile.api._
 
 import scala.concurrent.Future
@@ -20,6 +20,26 @@ case class PostrunAction (id:Option[Int],runnable:String, title:String, descript
                           owner:String, version:Int, ctime: Timestamp) {
   val logger = Logger(this.getClass)
 
+  /**
+    *  writes this model into the database, inserting if id is None and returning a fresh object with id set. If an id
+    * was set, then returns the same object. */
+  def save(implicit db: slick.jdbc.JdbcProfile#Backend#Database):Future[Try[PostrunAction]] = id match {
+    case None=>
+      val insertQuery = TableQuery[PostrunActionRow] returning TableQuery[PostrunActionRow].map(_.id) into ((item,id)=>item.copy(id=Some(id)))
+      db.run(
+        (insertQuery+=this).asTry
+      ).map({
+        case Success(insertResult)=>Success(insertResult.asInstanceOf[PostrunAction])  //maybe only intellij needs the cast here?
+        case Failure(error)=>Failure(error)
+      })
+    case Some(realEntityId)=>
+      db.run(
+        TableQuery[PostrunActionRow].filter(_.id===realEntityId).update(this).asTry
+      ).map({
+        case Success(rowsAffected)=>Success(this)
+        case Failure(error)=>Failure(error)
+      })
+  }
   /**
     * asynchronously creates a backup of the given project file as a temp file
     * @param projectFileName project file to back up
@@ -92,6 +112,13 @@ case class PostrunAction (id:Option[Int],runnable:String, title:String, descript
         }
     }
   }
+}
+
+object PostrunAction extends ((Option[Int],String,String,Option[String],String,Int,Timestamp)=>PostrunAction) {
+  def entryForRunnable(scriptName:String)(implicit db:slick.jdbc.JdbcProfile#Backend#Database):Future[Try[Seq[PostrunAction]]] =
+    db.run(
+      TableQuery[PostrunActionRow].filter(_.runnable===scriptName).result.asTry
+    )
 }
 
 class PostrunActionRow(tag:Tag) extends Table[PostrunAction](tag, "PostrunAction") {

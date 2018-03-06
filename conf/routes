@@ -41,6 +41,7 @@ GET     /api/project/:id                   @controllers.ProjectEntryController.g
 GET     /api/projecttype                   @controllers.ProjectTypeController.list(startAt:Int ?=0,limit:Int ?=100)
 PUT     /api/projecttype                   @controllers.ProjectTypeController.create
 GET     /api/projecttype/:id               @controllers.ProjectTypeController.getitem(id: Int)
+GET     /api/projecttype/:id/postrun       @controllers.ProjectTypeController.listPostrun(id: Int)
 PUT     /api/projecttype/:id               @controllers.ProjectTypeController.update(id: Int)
 DELETE  /api/projecttype/:id               @controllers.ProjectTypeController.delete(id: Int)
 

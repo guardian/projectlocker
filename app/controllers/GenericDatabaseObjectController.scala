@@ -155,7 +155,7 @@ trait GenericDatabaseObjectControllerWithFilter[M,F] extends InjectedController 
   def update(id: Int) = IsAuthenticatedAsync(parse.json) { uid=>{request =>
     this.validate(request).fold(
       errors=>Future(BadRequest(Json.obj("status"->"error","detail"->JsError.toJson(errors)))),
-      StorageEntry=>Future(Ok(""))
+      StorageEntry=>Future(Ok(Json.obj("status"->"ok","detail"->"Record updated", "id"->id)))
     )
   }}
 
