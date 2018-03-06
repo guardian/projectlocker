@@ -16,7 +16,10 @@ class ProjectTypeMultistep extends React.Component {
 
         this.state = {
             projectType: null,
-            currentEntry: null
+            currentEntry: null,
+            postrunList: [],
+            loading: false,
+            loadingError: null
         }
     }
 
@@ -24,6 +27,16 @@ class ProjectTypeMultistep extends React.Component {
         if(this.props.match && this.props.match.params && this.props.match.params.itemid && this.props.match.params.itemid!=="new"){
             this.setState({currentEntry: this.props.match.params.itemid})
         }
+        this.loadPostrunActions();
+    }
+
+    loadPostrunActions(){
+        //load in the list of postrun actions from the server
+        this.setState({loading: true},()=> {
+            axios.get("/api/postrun")
+                .then(response => this.setState({postrunList: response.data.result, loading: false}))
+                .catch(error => this.setState({loadingError: error, loading:false}))
+        });
     }
 
     render(){
