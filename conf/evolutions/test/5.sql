@@ -24,6 +24,7 @@ INSERT INTO "ProjectFileAssociation" (id, K_PROJECT_ENTRY, K_FILE_ENTRY) VALUES 
 
 INSERT INTO "ProjectTemplate" (id, S_NAME, K_PROJECT_TYPE, K_FILE_REF) VALUES (1, 'Premiere test template 1', 1, 1);
 INSERT INTO "ProjectTemplate" (id, S_NAME, K_PROJECT_TYPE, K_FILE_REF) VALUES (2, 'Another wonderful test template', 2, 2);
+INSERT INTO "ProjectTemplate" (id, S_NAME, K_PROJECT_TYPE, K_FILE_REF) VALUES (3, 'Some random test template', 2, 2);
 
 INSERT INTO "PostrunAction" (id, S_RUNNABLE, S_TITLE, S_OWNER, I_VERSION, T_CTIME) VALUES (1, 'FirstTestScript.py', 'First test postrun', 'system',1, '2018-01-01T12:13:24.000');
 INSERT INTO "PostrunAction" (id, S_RUNNABLE, S_TITLE, S_OWNER, I_VERSION, T_CTIME) VALUES (2, 'SecondTestScript.py', 'Second test postrun', 'system',1, '2018-01-01T14:15:31.000');
@@ -42,9 +43,9 @@ INSERT INTO "PostrunDependency" (id,K_SOURCE, K_DEPENDSON) VALUES (3, 4, 5);
 INSERT INTO "PostrunDependency" (id,K_SOURCE, K_DEPENDSON) VALUES (4, 2, 1);
 
 ------------------------
-SELECT pg_catalog.setval('"PostrunAction_id_seq"', 4, true);
+SELECT pg_catalog.setval('"PostrunAction_id_seq"', 7, true);
 SELECT pg_catalog.setval('"PostrunAssociationRow_id_seq"', 4, true);
-SELECT pg_catalog.setval('"ProjectTemplate_id_seq"', 2, true);
+SELECT pg_catalog.setval('"ProjectTemplate_id_seq"', 4, true);
 SELECT pg_catalog.setval('"ProjectType_id_seq"', 4, true);
 SELECT pg_catalog.setval('"StorageEntry_id_seq"', 3, true);
 SELECT pg_catalog.setval('"ProjectFileAssociation_id_seq"', 3, false);

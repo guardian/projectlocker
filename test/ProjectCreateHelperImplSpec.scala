@@ -55,6 +55,7 @@ class ProjectCreateHelperImplSpec extends Specification with Mockito {
       val request = ProjectRequest("testfile",1,"MyTestProjectFile", 3,"test-user").hydrate
 
       val fullRequest = Await.result(request, 10.seconds)
+      fullRequest must beSome
 
       val createTime=LocalDateTime.now()
 
