@@ -66,6 +66,23 @@ class ProjectCreateHelperImpl extends ProjectCreateHelper {
       case Failure(error)=>Future(Failure(error))
     })
 
+  def orderPostruns(unodererdList:Seq[PostrunAction],dependencies:Map[Int,Seq[Int]]):Seq[PostrunAction] = unodererdList sortWith { (postrunA,postrunB)=>
+    val firstTest = dependencies.get(postrunA.id.get) match {
+      case Some(dependencies)=>
+//        if(dependencies.contains(postrunB.id.get))
+//          println(s"'${postrunA.title}' Adeps '${postrunB.title}'")
+//        else
+//          println(s"'${postrunA.title}' not deps '${postrunB.title}'")
+        dependencies.contains(postrunB.id.get)  //if A depends on B, then reverse the order
+      case None=>
+//        println(s"'${postrunA.runnable}' has no dependencies")
+        logger.debug(s"${postrunA.runnable} has no dependencies")
+        false
+    }
+
+    !firstTest
+  }
+
   protected def runEach(action:PostrunAction, projectFileName:String, projectEntry:ProjectEntry,projectType:ProjectType)
                      (implicit db: slick.jdbc.JdbcProfile#Backend#Database, config:play.api.Configuration):Try[JythonOutput] = {
 

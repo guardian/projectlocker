@@ -1,9 +1,9 @@
 import java.io.IOError
 import java.sql.Timestamp
-import java.time.{Instant, LocalDateTime}
+import java.time.{Instant, LocalDateTime, ZonedDateTime}
 
 import helpers._
-import models._
+import models.{PostrunAction, _}
 
 import sys.process._
 import org.junit.runner.RunWith
@@ -52,7 +52,7 @@ class ProjectCreateHelperImplSpec extends Specification with Mockito {
 
       val p = new ProjectCreateHelperImpl { override protected val storageHelper:StorageHelper=mockedStorageHelper }
 
-      val request = ProjectRequest("testfile",1,"MyTestProjectFile", 2,"test-user").hydrate
+      val request = ProjectRequest("testfile",1,"MyTestProjectFile", 3,"test-user").hydrate
 
       val fullRequest = Await.result(request, 10.seconds)
 
@@ -214,6 +214,35 @@ class ProjectCreateHelperImplSpec extends Specification with Mockito {
 
       val result = Await.result(p.doPostrunActions(testFileEntry,Future(Success(testProjectEntry)),testProjectTemplate),5.seconds)
       result must beLeft("1 postrun actions failed for project /path/to/a/file.project, see log for details")
+    }
+  }
+
+  "ProjectCreateHelper.orderPostruns" should {
+    "take an unordered set of postruns and dependency information and produce an ordered set of postruns" in {
+      val postrunSet = Seq(
+        PostrunAction(Some(1),"first_test.py","First test depends on 5 and 6",None,"test",1,Timestamp.valueOf(LocalDateTime.now())),
+          PostrunAction(Some(2),"second_test.py","Second test depends on 1",None,"test",1,Timestamp.valueOf(LocalDateTime.now())),
+          PostrunAction(Some(3),"third_test.py","Third test depends on nothing",None,"test",1,Timestamp.valueOf(LocalDateTime.now())),
+          PostrunAction(Some(4),"fourth_test.py","Fourth test depends on 3",None,"test",1,Timestamp.valueOf(LocalDateTime.now())),
+          PostrunAction(Some(5),"fifth_test.py","Fifth test depends on 7 and 4",None,"test",1,Timestamp.valueOf(LocalDateTime.now())),
+          PostrunAction(Some(6),"sixth_test.py","Sixth test depends on nothing",None,"test",1,Timestamp.valueOf(LocalDateTime.now())),
+          PostrunAction(Some(7),"seventh_test.py","Seventh test depends on nothing",None,"test",1,Timestamp.valueOf(LocalDateTime.now()))
+      )
+
+      val dependencyGraph = Map(
+        1->Seq(5,6),
+        2->Seq(1),
+        5->Seq(7,4),
+        4->Seq(3)
+      )
+
+      val p = new ProjectCreateHelperImpl
+      val result = p.orderPostruns(postrunSet, dependencyGraph)
+      //keeping below line as it's handy for debugging!
+      //result.foreach(action=>println(action.title))
+
+      val idSeq = result.map(action=>action.id.get)
+      idSeq mustEqual Seq(7,6,3,4,5,1,2)
     }
   }
 }
