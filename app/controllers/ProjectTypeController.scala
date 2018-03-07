@@ -46,6 +46,10 @@ class ProjectTypeController @Inject() (config: Configuration, dbConfigProvider: 
     (TableQuery[ProjectTypeRow] returning TableQuery[ProjectTypeRow].map(_.id) += entry).asTry
   )
 
+  override def dbupdate(itemId:Int, entry:ProjectType) = dbConfig.db.run(
+    TableQuery[ProjectTypeRow].filter(_.id===itemId).update(entry).asTry
+  )
+
   override def validate(request:Request[JsValue]) = request.body.validate[ProjectType]
 
   def fetchPostruns(projectTypeId: Int) = PostrunAssociation.entriesForProjectType(projectTypeId)

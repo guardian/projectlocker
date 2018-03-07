@@ -36,7 +36,7 @@ class ProjectCreateHelperImplSpec extends Specification with Mockito {
   private implicit val db = dbConfigProvider.get[JdbcProfile].db
 
   private implicit val config:Configuration = Configuration.from(Map(
-    "postrun.timeout"->"10 seconds",
+    "postrun.timeout"->"30 seconds",
     "postrun.scriptsPath"->"postrun/test_scripts"
   ))
 

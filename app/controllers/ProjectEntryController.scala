@@ -48,6 +48,8 @@ class ProjectEntryController @Inject() (cc:ControllerComponents, config: Configu
     TableQuery[ProjectEntryRow].filter(_.vidispineProjectId === vsid).result.asTry
   )
 
+  override def dbupdate(itemId:Int, entry:ProjectEntry) = Future(Failure(new RuntimeException("Not implemented")))
+
   def getByVsid(vsid:String) = IsAuthenticatedAsync {uid=>{request=>
     selectVsid(vsid).map({
       case Success(result)=>

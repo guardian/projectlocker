@@ -48,6 +48,7 @@ DELETE  /api/projecttype/:id               @controllers.ProjectTypeController.de
 GET     /api/postrun                   @controllers.PostrunActionController.list(startAt:Int ?=0,limit:Int ?=100)
 PUT     /api/postrun                   @controllers.PostrunActionController.create
 GET     /api/postrun/:id               @controllers.PostrunActionController.getitem(id: Int)
+GET     /api/postrun/:id/source        @controllers.PostrunActionController.getSource(id:Int)
 PUT     /api/postrun/:id               @controllers.PostrunActionController.update(id: Int)
 DELETE  /api/postrun/:id               @controllers.PostrunActionController.delete(id: Int)
 PUT     /api/postrun/:id/projecttype/:typeid   @controllers.PostrunActionController.associate(id: Int, typeid:Int)

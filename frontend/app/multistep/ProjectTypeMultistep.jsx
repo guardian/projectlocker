@@ -31,7 +31,6 @@ class ProjectTypeMultistep extends React.Component {
         } else {
             this.loadPostrunActions();
         }
-
     }
 
     loadPostrunActions(){
@@ -49,10 +48,6 @@ class ProjectTypeMultistep extends React.Component {
                     })
                 })
                 .catch(error=>this.setState({loading:false, loadingError: error}));
-
-            // axios.get("/api/postrun")
-            //     .then(response => this.setState({postrunList: response.data.result, loading: false}))
-            //     .catch(error => this.setState({loadingError: error, loading:false}))
         });
     }
 

@@ -70,6 +70,8 @@ trait GenericDatabaseObjectControllerWithFilter[M,F] extends InjectedController 
   def deleteid(requestedId: Int):Future[Try[Int]]
 
   def insert(entry: M,uid:String):Future[Try[Int]]
+  def dbupdate(itemId: Int, entry:M):Future[Try[Int]]
+
   def jstranslate(result:Seq[M]):Json.JsValueWrapper
   def jstranslate(result:M):Json.JsValueWrapper
 
@@ -155,7 +157,11 @@ trait GenericDatabaseObjectControllerWithFilter[M,F] extends InjectedController 
   def update(id: Int) = IsAuthenticatedAsync(parse.json) { uid=>{request =>
     this.validate(request).fold(
       errors=>Future(BadRequest(Json.obj("status"->"error","detail"->JsError.toJson(errors)))),
-      StorageEntry=>Future(Ok(Json.obj("status"->"ok","detail"->"Record updated", "id"->id)))
+      validRecord=>
+        this.dbupdate(id,validRecord) map {
+          case Success(rowsUpdated)=>Ok(Json.obj("status"->"ok","detail"->"Record updated", "id"->id))
+          case Failure(error)=>InternalServerError(Json.obj("status"->"error", "detail"->error.toString))
+        }
     )
   }}
 

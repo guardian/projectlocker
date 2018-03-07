@@ -2,6 +2,7 @@ package controllers
 
 import javax.inject.{Inject, Singleton}
 
+import auth.Security
 import exceptions.AlreadyExistsException
 import models._
 import play.api.Configuration
@@ -16,13 +17,13 @@ import play.api.libs.json._
 
 import scala.concurrent.Future
 import scala.util.{Failure, Success, Try}
-
 import scala.concurrent.ExecutionContext.Implicits.global
+import scala.io.Source
 
 @Singleton
 class PostrunActionController  @Inject() (config: Configuration, dbConfigProvider: DatabaseConfigProvider,
                                           cacheImpl:SyncCacheApi)
-  extends GenericDatabaseObjectController[PostrunAction] with PostrunActionSerializer {
+  extends GenericDatabaseObjectController[PostrunAction] with PostrunActionSerializer with Security {
 
   implicit val cache:SyncCacheApi = cacheImpl
   val dbConfig = dbConfigProvider.get[JdbcProfile]
@@ -48,6 +49,10 @@ class PostrunActionController  @Inject() (config: Configuration, dbConfigProvide
   override def insert(entry: PostrunAction, uid:String) = dbConfig.db.run(
     (TableQuery[PostrunActionRow] returning TableQuery[PostrunActionRow].map(_.id) += entry).asTry)
 
+  override def dbupdate(itemId:Int, entry:PostrunAction) = dbConfig.db.run(
+    TableQuery[PostrunActionRow].filter(_.id===itemId).update(entry).asTry
+  )
+
   def insertAssociation(postrunId: Int, projectTypeId: Int) = dbConfig.db.run(
     (TableQuery[PostrunAssociationRow] returning TableQuery[PostrunAssociationRow].map(_.id) += (projectTypeId, postrunId)).asTry
   )
@@ -56,20 +61,20 @@ class PostrunActionController  @Inject() (config: Configuration, dbConfigProvide
     TableQuery[PostrunAssociationRow].filter(_.postrunEntry===postrunId).filter(_.projectType===projectTypeId).delete.asTry
   )
 
-  def associate(postrunId: Int, projectTypeId: Int) = Action.async {
+  def associate(postrunId: Int, projectTypeId: Int) = IsAuthenticatedAsync {uid=> { request =>
     insertAssociation(postrunId, projectTypeId).map({
-      case Success(newRowId)=>Ok(Json.obj("status"->"ok", "detail"->s"added association with id newRowId"))
-      case Failure(error)=>
+      case Success(newRowId) => Ok(Json.obj("status" -> "ok", "detail" -> s"added association with id newRowId"))
+      case Failure(error) =>
         logger.error("Could not create postrun association:", error)
         val errorString = error.toString
-        if(errorString.contains("violates foreign key constraint") || errorString.contains("Referential integrity constraint violation"))
-          Conflict(Json.obj("status"->"error","detail"->"This association either already exists or refers to objects which do not exist"))
+        if (errorString.contains("violates foreign key constraint") || errorString.contains("Referential integrity constraint violation"))
+          Conflict(Json.obj("status" -> "error", "detail" -> "This association either already exists or refers to objects which do not exist"))
         else
-          InternalServerError(Json.obj("status"->"error","detail"->error.toString))
+          InternalServerError(Json.obj("status" -> "error", "detail" -> error.toString))
     })
-  }
+  }}
 
-  def unassociate(postrunId: Int, projectTypeId: Int) = Action.async {
+  def unassociate(postrunId: Int, projectTypeId: Int) = IsAuthenticatedAsync {uid=>{request=>
     removeAssociation(postrunId, projectTypeId) map {
       case Success(affectedRows)=>Ok(Json.obj("status"->"ok", "detail"->"removed association"))
       case Failure(error)=>
@@ -80,5 +85,23 @@ class PostrunActionController  @Inject() (config: Configuration, dbConfigProvide
         else
           InternalServerError(Json.obj("status"->"error","detail"->error.toString))
     }
-  }
+  }}
+
+  def getSource(itemId:Int) = IsAuthenticatedAsync {uid=>{request=>
+    implicit val configImplicit=config
+    selectid(itemId) map {
+      case Failure(error)=>
+        logger.error("Could not load postrun source",error)
+        InternalServerError(Json.obj("status"->"error","detail"->error.toString))
+      case Success(rows)=>
+        val scriptpath = rows.head.getScriptPath.toAbsolutePath
+        try {
+          Ok(Source.fromFile(scriptpath.toString).mkString).withHeaders("Content-Type" -> "text/x-python")
+        } catch {
+          case e:Throwable=>
+            logger.error("Could not read postrun source code", e)
+            InternalServerError(Json.obj("status"->"error","detail"->e.toString))
+        }
+    }
+  }}
 }

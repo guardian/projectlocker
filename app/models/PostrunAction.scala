@@ -67,6 +67,10 @@ case class PostrunAction (id:Option[Int],runnable:String, title:String, descript
   }
 
   /**
+    * returns the on-disk path for the executable script
+    */
+  def getScriptPath(implicit config:Configuration) = Paths.get(config.get[String]("postrun.scriptsPath"), this.runnable)
+  /**
     * asynchronously executes this postrun action on a newly created project
     * @param projectFileName - filename of the newly created project
     * @param projectEntry - models.projectEntry object representing the newly created project
@@ -76,7 +80,8 @@ case class PostrunAction (id:Option[Int],runnable:String, title:String, descript
     */
   def run(projectFileName:String,projectEntry:ProjectEntry,projectType:ProjectType)
          (implicit config:Configuration):Future[Try[JythonOutput]] = {
-    val inputPath = Paths.get(config.get[String]("postrun.scriptsPath"), this.runnable)
+    val inputPath = this.getScriptPath
+
     backupProjectFile(projectFileName) flatMap {
       case Failure(error) =>
         logger.error(s"Unable to back up project file $projectFileName:", error)

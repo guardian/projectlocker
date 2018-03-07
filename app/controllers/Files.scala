@@ -71,6 +71,10 @@ class Files @Inject() (configuration: Configuration, dbConfigProvider: DatabaseC
 
   }
 
+  override def dbupdate(itemId:Int, entry:FileEntry) = dbConfig.db.run(
+    TableQuery[FileEntryRow].filter(_.id===itemId).update(entry).asTry
+  )
+
   override def validate(request: Request[JsValue]) = request.body.validate[FileEntry]
 
   def uploadContent(requestedId: Int) = IsAuthenticatedAsync(parse.anyContent) {uid=>{ request =>
