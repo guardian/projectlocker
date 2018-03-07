@@ -163,10 +163,10 @@ label.selection-list {
 input.selection-list {
     margin-right: 1em;
 }
+
 li.selection-list {
     list-style: none;
 }
-
 li.horizontal-list-item {
     display: inline;
     margin-right: 1em;
