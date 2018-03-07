@@ -46,7 +46,7 @@ class PostrunActionScanner @Inject() (dbConfigProvider: DatabaseConfigProvider, 
   val cancellable = actorSystem.scheduler.schedule(1 second,60 seconds) {
     logger.info("Rescanning postrun actions")
 
-    val scriptsDir = config.get[String]("postrun.scriptsPath") + "scripts"
+    val scriptsDir = config.get[String]("postrun.scriptsPath")
     DirectoryScanner.scanAll(scriptsDir).map({
       case Failure(error)=>
         logger.error(s"Could not scan $scriptsDir: ", error)

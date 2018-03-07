@@ -21,6 +21,8 @@ object DirectoryScanner {
   def scanAll(dir:String):Future[Try[Seq[File]]] = scanAll(new File(dir))
 
   def scanAll(dir:File):Future[Try[Seq[File]]] = Future {
+    if(!dir.exists()) return Future(Failure(new RuntimeException(s"Directory ${dir.toString} does not exist")))
+    if(!dir.isDirectory) return Future(Failure(new RuntimeException(s"Path ${dir.toString} is not a directory")))
     Try { dir.listFiles().toSeq } match {
       case Success(allFiles)=>Success(allFiles.filter(_.isFile))
       case Failure(error)=>Failure(error)
