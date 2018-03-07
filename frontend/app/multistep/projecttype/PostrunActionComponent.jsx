@@ -1,7 +1,7 @@
 import CommonMultistepComponent from '../common/CommonMultistepComponent.jsx';
 import ErrorViewComponent from '../common/ErrorViewComponent.jsx';
 import PropTypes from 'prop-types';
-import PostrunActionSelector from './PostrunActionSelector.jsx';
+import PostrunActionSelector from '../postrun/PostrunActionSelector.jsx';
 
 class PostrunActionComponent extends CommonMultistepComponent {
     static propTypes = {

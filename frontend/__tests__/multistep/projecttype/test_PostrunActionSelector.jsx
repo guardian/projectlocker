@@ -1,7 +1,7 @@
 import React from 'react';
 import {shallow,mount} from 'enzyme';
 import moxios from 'moxios';
-import PostrunActionSelector from '../../../app/multistep/projecttype/PostrunActionSelector.jsx';
+import PostrunActionSelector from '../../../app/multistep/postrun/PostrunActionSelector.jsx';
 import sinon from 'sinon';
 import assert from 'assert';
 

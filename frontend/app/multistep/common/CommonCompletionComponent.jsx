@@ -15,6 +15,11 @@ class CommonCompletionComponent extends React.Component {
         throw "Not implemented";
     }
 
+    /* you can override this method to do something before the page gets redirected. This should return a Promise */
+    recordDidSave(){
+        return new Promise((accept, reject)=>accept());
+    }
+
     /*confirmClicked handler to send data to the server*/
     confirmClicked(event){
         this.setState({inProgress: true});
@@ -22,8 +27,13 @@ class CommonCompletionComponent extends React.Component {
 
         axios.request({method: "PUT", url: endpoint,data: this.requestContent()}).then(
             (response)=>{
-                this.setState({inProgress: false});
-                window.location.assign(this.successRedirect);
+                this.setState({inProgress: false}, ()=>{
+                    this.recordDidSave()
+                        .then(()=>{
+                            console.log("save succeeded");
+                            window.location.assign(this.successRedirect)
+                        });    //rely on catch() below to log errors
+                });
             }
         ).catch(
             (error)=>{

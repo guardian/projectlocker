@@ -53,6 +53,7 @@ PUT     /api/postrun/:id               @controllers.PostrunActionController.upda
 DELETE  /api/postrun/:id               @controllers.PostrunActionController.delete(id: Int)
 PUT     /api/postrun/:id/projecttype/:typeid   @controllers.PostrunActionController.associate(id: Int, typeid:Int)
 DELETE  /api/postrun/:id/projecttype/:typeid   @controllers.PostrunActionController.unassociate(id: Int, typeid: Int)
+GET     /api/postrun/:id/depends        @controllers.PostrunActionController.listDependencies(id:Int)
 PUT     /api/postrun/:id/depends/:dep   @controllers.PostrunActionController.addDependency(id:Int, dep:Int)
 DELETE  /api/postrun/:id/depends/:dep   @controllers.PostrunActionController.removeDependency(id:Int, dep:Int)
 

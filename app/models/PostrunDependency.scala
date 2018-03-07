@@ -1,4 +1,6 @@
 package models
+import play.api.libs.json.{JsPath, JsValue, Reads, Writes}
+import play.api.libs.functional.syntax._
 import slick.lifted.Tag
 import slick.jdbc.PostgresProfile.api._
 
@@ -42,6 +44,12 @@ object PostrunDependencyGraph {
   def loadAllById(implicit db:slick.jdbc.JdbcProfile#Backend#Database):Future[Map[Int,Seq[Int]]] = loadAll map { data=>
     data.mapValues(_.map(_.dependsOn))
   }
+}
 
-
+trait PostrunDependencySerializer {
+  implicit val postrunDependencyWrites:Writes[PostrunDependency] = (
+    (JsPath \ "id").writeNullable[Int] and
+    (JsPath \ "sourceAction").write[Int] and
+      (JsPath \ "dependsOn").write[Int]
+  )(unlift(PostrunDependency.unapply))
 }

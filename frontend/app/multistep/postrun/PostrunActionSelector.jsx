@@ -6,7 +6,8 @@ class PostrunActionSelector extends React.Component {
     static propTypes = {
         actionsList: PropTypes.array.isRequired,
         valueWasSet: PropTypes.func.isRequired,
-        selectedEntries: PropTypes.array
+        selectedEntries: PropTypes.array,
+        shouldExclude: PropTypes.array
     };
 
     constructor(props){
@@ -36,9 +37,18 @@ class PostrunActionSelector extends React.Component {
         }
     }
 
+    /* if shouldExclude is present, filter those out */
+    filteredActions(){
+        if(this.props.shouldExclude){
+            return this.props.actionsList.filter(entry=>!this.props.shouldExclude.includes(entry.id));
+        } else {
+            return this.props.actionsList;
+        }
+
+    }
     render() {
         return <ul className="selection-list">
-            {this.props.actionsList.map(action=>
+            {this.filteredActions().map(action=>
                 <li className="selection-list" key={"action-" + action.id}>
                     <label className="selection-list">
                     <input className="selection-list" id={"action-check-" + action.id} type="checkbox"

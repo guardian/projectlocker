@@ -1,7 +1,7 @@
 import React from 'react';
 import ShowPasswordComponent from '../ShowPasswordComponent.jsx';
 import PropTypes from 'prop-types';
-import PostrunActionList from './PostrunActionList.jsx';
+import PostrunActionList from '../postrun/PostrunActionList.jsx';
 
 class SummaryComponent extends React.Component {
     static propTypes = {

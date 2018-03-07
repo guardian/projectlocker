@@ -23,7 +23,7 @@ import scala.io.Source
 @Singleton
 class PostrunActionController  @Inject() (config: Configuration, dbConfigProvider: DatabaseConfigProvider,
                                           cacheImpl:SyncCacheApi)
-  extends GenericDatabaseObjectController[PostrunAction] with PostrunActionSerializer with Security {
+  extends GenericDatabaseObjectController[PostrunAction] with PostrunActionSerializer with PostrunDependencySerializer with Security {
 
   implicit val cache:SyncCacheApi = cacheImpl
   val dbConfig = dbConfigProvider.get[JdbcProfile]
@@ -113,6 +113,19 @@ class PostrunActionController  @Inject() (config: Configuration, dbConfigProvide
   def deleteDependency(entry: PostrunDependency) = dbConfig.db.run(
     TableQuery[PostrunDependencyRow].filter(_.sourceAction === entry.sourceAction).filter(_.dependsOn === entry.dependsOn).delete.asTry
   )
+
+  def selectDependencies(postrunId:Int) = dbConfig.db.run(
+    TableQuery[PostrunDependencyRow].filter(_.sourceAction===postrunId).result.asTry
+  )
+
+  def listDependencies(postrunId: Int) = IsAuthenticatedAsync {uid=>{request=>
+    selectDependencies(postrunId).map({
+      case Success(dependencyList)=>Ok(Json.obj("status"->"ok", "result"->dependencyList))
+      case Failure(error)=>
+        logger.error(s"Could not list postrun dependencies for $postrunId: ", error)
+        InternalServerError(Json.obj("status"->"error", "detail"->error.toString))
+    })
+  }}
 
   def addDependency(sourceId:Int, dependsOn:Int) = IsAuthenticatedAsync {uid=>{request=>
     insertDependency(PostrunDependency(None,sourceId,dependsOn)).map({
