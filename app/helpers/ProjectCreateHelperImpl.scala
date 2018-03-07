@@ -102,9 +102,19 @@ class ProjectCreateHelperImpl extends ProjectCreateHelper {
   protected def collectFailures[A](xs:Seq[Try[A]]):Either[Seq[Throwable],Seq[A]] =
     Try(Right(xs.map(_.get))).getOrElse(Left(xs.collect({case Failure(err)=>err})))
 
+  /**
+    * Main method to execute the postrun actions for a given project type, during project creation
+    * @param fileEntry [[FileEntry]] representing the created file
+    * @param eventualTriedEntry a Future, containing a Try, containing the [[ProjectEntry]] that has been created
+    * @param template [[ProjectTemplate]] representing the project template used to create ProjectEntry
+    * @param db Implicitly provided database object
+    * @param config Implicitly provided Play app configuration
+    * @return a Future, containing either a Left with a string describing the number of actions that errored
+    *         or a Right with a string indicating how many actions were run
+    */
   def doPostrunActions(fileEntry: FileEntry, eventualTriedEntry: Future[Try[ProjectEntry]], template: ProjectTemplate)
                       (implicit db: slick.jdbc.JdbcProfile#Backend#Database, config:play.api.Configuration):Future[Either[String,String]]= {
-    val futureSequence = Future.sequence(Seq(eventualTriedEntry, template.projectType, fileEntry.getFullPath))
+    val futureSequence = Future.sequence(Seq(eventualTriedEntry, template.projectType, fileEntry.getFullPath, PostrunDependencyGraph.loadAllById))
 
     futureSequence.flatMap(completedFutures=>{
       val projectEntryTry:Try[ProjectEntry] = completedFutures.head.asInstanceOf[Try[ProjectEntry]]
@@ -113,11 +123,12 @@ class ProjectCreateHelperImpl extends ProjectCreateHelper {
         case Success(projectEntry)=>
           val projectType:ProjectType = completedFutures(1).asInstanceOf[ProjectType]
           val writtenPath = completedFutures(2).asInstanceOf[String]
+          val postrunDependencyGraph = completedFutures(3).asInstanceOf[Map[Int, Seq[Int]]]
 
           val actionResults:Future[Seq[Try[JythonOutput]]] = projectType.postrunActions.map({
             case Failure(error)=>Seq(Failure(error))
             case Success(actionsList)=>
-              actionsList.map(action=>runEach(action, writtenPath, projectEntry, projectType))
+              orderPostruns(actionsList, postrunDependencyGraph).map(action=>runEach(action, writtenPath, projectEntry, projectType))
           })
 
           val actionSuccess = actionResults.map(collectFailures _)
