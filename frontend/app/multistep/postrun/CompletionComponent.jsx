@@ -40,7 +40,6 @@ class CompletionComponent extends CommonCompletionComponent {
 
     /*work out which dependencies need to be added and which removed, and add those to the state*/
     updateAddRemoveDeps(){
-        console.log("updateAddRemoveDeps");
         this.setState({
             depsToRemove: this.props.originalDependencies.filter(depId=>!this.props.selectedDependencies.includes(depId)),
             depsToAdd: this.props.selectedDependencies.filter(depId=>!this.props.originalDependencies.includes(depId))

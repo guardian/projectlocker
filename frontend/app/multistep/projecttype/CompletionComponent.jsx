@@ -9,7 +9,8 @@ class ProjectTypeCompletionComponent extends CommonCompletionComponent {
     static propTypes = {
         currentEntry: PropTypes.object.isRequired,
         postrunActions: PropTypes.array.isRequired,
-        selectedPostruns: PropTypes.array.isRequired
+        selectedPostruns: PropTypes.array.isRequired,
+        originalPostruns: PropTypes.array.isRequired
     };
 
     constructor(props){
@@ -22,8 +23,21 @@ class ProjectTypeCompletionComponent extends CommonCompletionComponent {
         this.endpoint = "/api/projecttype"; // override this to the api endpoint that you want to hit
         this.successRedirect = "/type/";    //override this to the page to go to when successfully saved
 
-        this.confirmClicked = this.confirmClicked.bind(this);
+        this.recordDidSave = this.recordDidSave.bind(this);
     }
+
+    componentWillMount(){
+        this.updateAddRemoveDeps();
+    }
+
+    /*work out which dependencies need to be added and which removed, and add those to the state*/
+    updateAddRemoveDeps(){
+        this.setState({
+            depsToRemove: this.props.originalPostruns.filter(depId=>!this.props.selectedPostruns.includes(depId)),
+            depsToAdd: this.props.selectedPostruns.filter(depId=>!this.props.originalPostruns.includes(depId))
+        });
+    }
+
 
     savePostruns(projecttypeid) {
         const promiseList = this.props.selectedPostruns.map(postrunId => axios.put("/api/postrun/" + postrunId + "/projecttype/" + projecttypeid))
@@ -31,7 +45,10 @@ class ProjectTypeCompletionComponent extends CommonCompletionComponent {
     }
 
     recordDidSave(){
-        return this.savePostruns(this.props.currentEntry);
+        //first add any postruns associations that need adding, then remove postrun associations that need removing.
+        return Promise.all(this.state.depsToAdd.map(depId=>axios.put("/api/postrun/" + depId + "/projecttype/" + this.props.currentEntry))).then(
+            Promise.all(this.state.depsToRemove.map(depId=>axios.delete("/api/postrun/" + depId + "/projecttype/" + this.props.currentEntry)))
+        );
     }
 
     requestContent(){
