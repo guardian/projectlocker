@@ -143,7 +143,7 @@ def save_updated_xml(xmltree, project_file, doctype, isCompressed=False):
         raise
 
 
-def postrun(projectFilename=None,**kwargs):
+def postrun(projectFilename=None,projectFileExtension=None,**kwargs):
     """
     Main postrun function that is called by projectlocker
     :param projectFilename: project filename to update
@@ -153,6 +153,7 @@ def postrun(projectFilename=None,**kwargs):
     print "Updating project {0}".format(projectFilename)
     premiereAttribSpec = [ {'xpath': 'Project/RootProjectItem', 'attrib': 'ObjectURef'},
                         {'xpath': 'RootProjectItem', 'attrib': 'ObjectUID' }]
+    preludeAttribSpec = [ {'xpath': None, 'attrib': 'ClassID'} ]
     (xmltree, is_compressed) = loadFile(projectFilename)
 
     doctype = None
@@ -162,9 +163,12 @@ def postrun(projectFilename=None,**kwargs):
     except Exception as e:
         print "WARNING: Unable to get doctype: %s" % e.message
 
-    doUpdate(xmltree,premiereAttribSpec)
-
+    if projectFileExtension=="prproj":
+        doUpdate(xmltree,premiereAttribSpec)
+    elif projectFileExtension=="plproj":
+        doUpdate(xmltree,preludeAttribSpec)
+    else:
+        raise ValueError("Expected a projectFileExtension of prproj or plproj, not '{0}'".format(projectFileExtension))
     save_updated_xml(xmltree,projectFilename, doctype, is_compressed)
 
-    preludeAttribSpec = [ {'xpath': None, 'attrib': 'ClassID'} ]
     #doRewrite("%s/%s.plproj" % (args.destpath,args.vsid), preludeAttribSpec)

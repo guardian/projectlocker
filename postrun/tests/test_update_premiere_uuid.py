@@ -10,7 +10,7 @@ class TestGetDoctype(unittest2.TestCase):
         getDoctype should return the doctype annotation of a document
         :return:
         """
-        from scripts.update_premiere_uuid import getDoctype
+        from scripts.update_adobe_uuid import getDoctype
         result = getDoctype("data/blank_premiere_2017.prproj")
 
         self.assertEqual(result,None)
@@ -22,7 +22,7 @@ class TestLoadFile(unittest2.TestCase):
         loadFile should load a regular compressed pr2017 project
         :return:
         """
-        from scripts.update_premiere_uuid import loadFile
+        from scripts.update_adobe_uuid import loadFile
 
         xmltree, isCompressed = loadFile("data/blank_premiere_2017.prproj")
         self.assertEqual(isCompressed, True)
@@ -34,7 +34,7 @@ class TestLoadFile(unittest2.TestCase):
         loadFile should raise an IOError if the file is not found
         :return:
         """
-        from scripts.update_premiere_uuid import loadFile
+        from scripts.update_adobe_uuid import loadFile
 
         with self.assertRaises(IOError):
             xmltree, isCompressed = loadFile("someinvalidfilename")
@@ -51,7 +51,7 @@ class TestDoUpdate(unittest2.TestCase):
         ET.SubElement(xmltree,"ProjectThingy",attrib={'Myuuid': "nothing"})
 
         with patch('uuid.uuid4', return_value="new_uuid"):
-            from scripts.update_premiere_uuid import doUpdate
+            from scripts.update_adobe_uuid import doUpdate
             result = doUpdate(xmltree,[{"xpath": "ProjectThingy", "attrib": "Myuuid"}])
 
         self.assertEqual(xmltree.find("ProjectThingy").attrib["Myuuid"], "new_uuid")
@@ -64,12 +64,22 @@ class TestDoPostrun(unittest2.TestCase):
         :return:
         """
         with patch("uuid.uuid4",return_value="fake_uuid") as mock_save:
-            from scripts.update_premiere_uuid import loadFile, postrun
+            from scripts.update_adobe_uuid import loadFile, postrun
             shutil.copy("data/blank_premiere_2017.prproj","/tmp/testproject.prproj")
 
-            result = postrun(projectFilename="/tmp/testproject.prproj")
+            result = postrun(projectFilename="/tmp/testproject.prproj", projectFileExtension="prproj")
 
             xmltree, is_compressed = loadFile("/tmp/testproject.prproj")
             self.assertEqual(xmltree.find('Project/RootProjectItem').attrib['ObjectURef'],"fake_uuid")
             self.assertEqual(xmltree.find('RootProjectItem').attrib['ObjectUID'],"fake_uuid")
             unlink("/tmp/testproject.prproj")
+
+    def test_invalid_extension(self):
+        """
+        postrun should raise a ValueError if the project file extension is not recognised
+        :return:
+        """
+        from scripts.update_adobe_uuid import loadFile, postrun
+        with self.assertRaises(ValueError):
+            shutil.copy("data/blank_premiere_2017.prproj","/tmp/testproject.prproj")
+            postrun(projectFilename="/tmp/testproject.prproj", projectFileExtension="wibble")
