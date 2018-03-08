@@ -167,6 +167,7 @@ input.selection-list {
 li.selection-list {
     list-style: none;
 }
+
 li.horizontal-list-item {
     display: inline;
     margin-right: 1em;

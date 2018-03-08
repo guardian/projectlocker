@@ -15,7 +15,9 @@ class CommonCompletionComponent extends React.Component {
         throw "Not implemented";
     }
 
-    /* you can override this method to do something before the page gets redirected. This should return a Promise */
+    /* you can override this method to do something before the page gets redirected.
+    This should return a Promise - if the promise rejects, then the page does not get redirected and the error returned
+     should be displayed as the component error. If the promise accepts, then the page is redirected to `this.successRedirect`. */
     recordDidSave(){
         return new Promise((accept, reject)=>accept());
     }

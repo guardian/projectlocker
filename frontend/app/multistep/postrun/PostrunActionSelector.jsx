@@ -25,12 +25,9 @@ class PostrunActionSelector extends React.Component {
     }
 
     checkboxUpdated(event, selectedId, cb){
-        console.log(event.target);
         if(!event.target.checked){
-            console.log("target was checked");
             this.setState({selectedEntries: this.state.selectedEntries.filter(value=>value!==selectedId)}, ()=>cb(this.state.selectedEntries));
         } else {
-            console.log("target was unchecked");
             const newval = this.state.selectedEntries;
             newval.push(selectedId);
             this.setState({selectedEntries: newval}, ()=>cb(this.state.selectedEntries));

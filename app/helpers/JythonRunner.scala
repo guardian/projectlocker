@@ -28,7 +28,6 @@ object JythonRunner {
   val props = new Properties
   props.put("python.home", "postrun/lib/python")
   props.put("python.console.encoding", "UTF-8") // Used to prevent: console: Failed to install '': java.nio.charset.UnsupportedCharsetException: cp0.
-  //props.put("python.security.respectJavaAccessibility", "false") //don't respect java accessibility, so that we can access protected members on subclasses
   props.put("python.import.site", "false")
 
   val preprops: Properties = System.getProperties

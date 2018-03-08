@@ -37,10 +37,6 @@ class CompletionComponent extends CommonCompletionComponent {
     componentWillMount(){
         this.updateAddRemoveDeps();
     }
-    // componentDidUpdate(prevProps,prevState) {
-    //     console.log("componentDidUpdate", prevProps);
-    //     if(prevProps.selectedDependencies!==this.props.selectedDependencies) this.updateAddRemoveDeps();
-    // }
 
     /*work out which dependencies need to be added and which removed, and add those to the state*/
     updateAddRemoveDeps(){
@@ -62,11 +58,6 @@ class CompletionComponent extends CommonCompletionComponent {
     }
 
     recordDidSave(){
-        console.log("Record saved.");
-        console.log("To remove: ", this.state.depsToRemove);
-        console.log("To add: ", this.state.depsToAdd);
-
-        //return this.doRemoveDeps().then(this.doAddDeps());
         return Promise.all(this.state.depsToRemove.map(depId=>axios.delete("/api/postrun/" + this.props.currentEntry + "/depends/" + depId)))
             .then(Promise.all(this.state.depsToAdd.map(depId=>axios.put("/api/postrun/" + this.props.currentEntry + "/depends/" + depId))))
     }

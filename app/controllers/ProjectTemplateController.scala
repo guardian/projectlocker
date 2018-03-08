@@ -57,13 +57,7 @@ class ProjectTemplateController @Inject() (config: Configuration, dbConfigProvid
           else
             Ok(Json.obj("status" -> "warning", "detail" -> "Template deleted but file could not be deleted", "id" -> requestedId))
         }
-      case Failure(error)=>
-        val errorString = error.toString
-        logger.error(errorString)
-        if(errorString.contains("violates foreign key constraint") || errorString.contains("Referential integrity constraint violation"))
-          Conflict(Json.obj("status"->"error","detail"->"This is still referenced by sub-objects"))
-        else
-          InternalServerError(Json.obj("status"->"error","detail"->error.toString))
+      case Failure(error)=>handleConflictErrors(error,"file",isInsert = false)
     })
   }
 

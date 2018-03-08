@@ -59,7 +59,6 @@ class ProjectCreateHelperImplSpec extends Specification with Mockito {
 
       val createTime=LocalDateTime.now()
 
-      println(s"create time is $createTime")
       val response = p.create(fullRequest.get, Some(createTime))
       val createResult = Await.result(response, 10.seconds)
 
@@ -106,7 +105,6 @@ class ProjectCreateHelperImplSpec extends Specification with Mockito {
       val fullRequest = Await.result(request, 10.seconds)
       val createTime=LocalDateTime.now()
 
-      println(s"create time is $createTime")
       val response = p.create(fullRequest.get, Some(createTime))
       val createResult = Await.result(response, 10.seconds)
 
@@ -132,7 +130,6 @@ class ProjectCreateHelperImplSpec extends Specification with Mockito {
 
       val result = p.testRunEach(testPostrunAction,pretendProjectName,testProjectEntry,testProjectType)
       result must beSuccessfulTry
-      println(result.get.stdOutContents)
       result.get.raisedError must beNone
       result.get.stdOutContents mustEqual "I was provided with {'projectFile': '/tmp/pretendproject', 'vidispineProjectId': '', 'projectTypeId': '', 'projectTypeName': 'TestProject', 'projectFileExtension': '', 'projectCreated': '2018-02-02 03:04:05.0', 'projectOwner': 'testuser', 'projectTargetVersion': '1.0', 'projectOpensWith': 'TestProjectApp', 'projectId': '', 'projectTitle': 'Test project title'}\n"
     }
@@ -199,7 +196,6 @@ class ProjectCreateHelperImplSpec extends Specification with Mockito {
       val p = new ProjectCreateHelperImpl {
         override protected def runEach(action: PostrunAction, projectFileName: String, projectEntry: ProjectEntry, projectType: ProjectType)
                                       (implicit db: JdbcBackend#DatabaseDef, config: Configuration): Try[JythonOutput] = {
-          println(s"runEach: action id ${action.id.get}")
           if (action.id.get == 1)
             //this is normally mapped into a failure by models.PostrunAction.run, and detailed debug output to the log there too.
             Failure(new RuntimeException("my hovercraft is full of eels"))
