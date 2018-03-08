@@ -65,7 +65,7 @@ class ProjectTemplateController @Inject() (config: Configuration, dbConfigProvid
     implicit val db:slick.jdbc.JdbcProfile#Backend#Database=dbConfig.db
 
     if(requestedId<0)
-      Future(Conflict(Json.obj("status"->"error","detail"->"This is still referenced by sub-objects")))
+      Future(Conflict(Json.obj("status"->"error","detail"->"This object is still referred to by sub-objects")))
     else {
       /* step one - get the file for the template object that we want to delete */
       val fileFuture = selectid(requestedId).flatMap({
