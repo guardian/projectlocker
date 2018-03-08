@@ -1,12 +1,11 @@
 import org.junit.runner._
 import org.specs2.runner._
-
-/**
- * Add your spec here.
- * You can mock out a whole application including requests, plugins etc.
- * For more information, consult the wiki.
- */
 import play.api.libs.json._
+import play.api.test.{FakeHeaders, FakeRequest}
+import play.api.test.Helpers._
+
+import scala.concurrent.Await
+import scala.concurrent.duration._
 
 @RunWith(classOf[JUnitRunner])
 class ProjectTypeControllerSpec extends GenericControllerSpec {
@@ -29,4 +28,21 @@ class ProjectTypeControllerSpec extends GenericControllerSpec {
   override val minimumNewRecordId = 4
   override val testDeleteId: Int = 3
   override val testConflictId: Int = 1
+
+  "ProjectTypeController.listPostrun" should {
+    "return a list of the postrun ids associated with the project type" in {
+      val response = route(application, FakeRequest(
+        method = "GET",
+        uri = s"$uriRoot/$testGetId/postrun",
+        headers = FakeHeaders(),
+        body = "").withSession("uid"->"testuser")
+      ).get
+
+      status(response) must equalTo(OK)
+      val jsondata = Await.result(bodyAsJsonFuture(response), 5.seconds).as[JsValue]
+
+      (jsondata \ "status").as[String] mustEqual "ok"
+      (jsondata \ "result").as[Array[Int]] mustEqual Array(1, 2)
+    }
+  }
 }

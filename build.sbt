@@ -1,3 +1,5 @@
+import NativePackagerHelper._
+
 name := "projectlocker"
 
 version := "1.0"
@@ -27,11 +29,16 @@ libraryDependencies ++= Seq(
   "postgresql" % "postgresql" % "9.1-901.jdbc3",
   // https://mvnrepository.com/artifact/com.typesafe.play/play-slick
   "com.typesafe.play" %% "play-slick" % "3.0.3",
-  "com.typesafe.play" %% "play-slick-evolutions" % "3.0.3"
+  "com.typesafe.play" %% "play-slick-evolutions" % "3.0.3",
+  "commons-io" % "commons-io" % "2.6"
 )
 
 //authentication
 libraryDependencies += "com.unboundid" % "unboundid-ldapsdk" % "2.3.6"
+
+// https://mvnrepository.com/artifact/org.python/jython
+libraryDependencies += "org.python" % "jython" % "2.7.1b2"
+
 
 enablePlugins(UniversalPlugin)
 
@@ -40,6 +47,7 @@ enablePlugins(LinuxPlugin)
 enablePlugins(RpmPlugin, JavaServerAppPackaging, SystemdPlugin)
 
 //Generic Linux package build configuration
+mappings in Universal ++= directory("postrun/")
 
 packageSummary in Linux := "A system to manage, backup and archive multimedia project files"
 

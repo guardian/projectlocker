@@ -41,8 +41,21 @@ GET     /api/project/:id                   @controllers.ProjectEntryController.g
 GET     /api/projecttype                   @controllers.ProjectTypeController.list(startAt:Int ?=0,limit:Int ?=100)
 PUT     /api/projecttype                   @controllers.ProjectTypeController.create
 GET     /api/projecttype/:id               @controllers.ProjectTypeController.getitem(id: Int)
+GET     /api/projecttype/:id/postrun       @controllers.ProjectTypeController.listPostrun(id: Int)
 PUT     /api/projecttype/:id               @controllers.ProjectTypeController.update(id: Int)
 DELETE  /api/projecttype/:id               @controllers.ProjectTypeController.delete(id: Int)
+
+GET     /api/postrun                   @controllers.PostrunActionController.list(startAt:Int ?=0,limit:Int ?=100)
+PUT     /api/postrun                   @controllers.PostrunActionController.create
+GET     /api/postrun/:id               @controllers.PostrunActionController.getitem(id: Int)
+GET     /api/postrun/:id/source        @controllers.PostrunActionController.getSource(id:Int)
+PUT     /api/postrun/:id               @controllers.PostrunActionController.update(id: Int)
+DELETE  /api/postrun/:id               @controllers.PostrunActionController.delete(id: Int)
+PUT     /api/postrun/:id/projecttype/:typeid   @controllers.PostrunActionController.associate(id: Int, typeid:Int)
+DELETE  /api/postrun/:id/projecttype/:typeid   @controllers.PostrunActionController.unassociate(id: Int, typeid: Int)
+GET     /api/postrun/:id/depends        @controllers.PostrunActionController.listDependencies(id:Int)
+PUT     /api/postrun/:id/depends/:dep   @controllers.PostrunActionController.addDependency(id:Int, dep:Int)
+DELETE  /api/postrun/:id/depends/:dep   @controllers.PostrunActionController.removeDependency(id:Int, dep:Int)
 
 POST    /api/login                         @controllers.Application.authenticate
 POST    /api/logout                        @controllers.Application.logout

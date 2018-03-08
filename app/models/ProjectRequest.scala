@@ -10,7 +10,7 @@ case class ProjectRequest(filename:String,destinationStorageId:Int,title:String,
   /* looks up the ids of destination storage and project template, and returns a new object with references to them or None */
   def hydrate(implicit db:slick.jdbc.JdbcProfile#Backend#Database):Future[Option[ProjectRequestFull]] = {
     val storageFuture = StorageEntryHelper.entryFor(this.destinationStorageId)
-    val projectTemplateFuture = ProjectTemplateHelper.entryFor(this.projectTemplateId)
+    val projectTemplateFuture = ProjectTemplate.entryFor(this.projectTemplateId)
 
     Future.sequence(Seq(storageFuture, projectTemplateFuture)).map(resultSeq=>{
       val successfulResults = resultSeq.flatten

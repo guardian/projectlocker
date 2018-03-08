@@ -42,6 +42,9 @@ if [ "$?" != "0" ]; then
 fi
 
 psql ${TEST_DB_NAME} << EOF
+drop table "PostrunDependency" cascade;
+drop table "PostrunAssociationRow" cascade;
+drop table "PostrunAction" cascade;
 drop table "ProjectFileAssociation" cascade;
 drop table "FileEntry" cascade;
 drop table "ProjectEntry" cascade;
@@ -50,7 +53,3 @@ drop table "ProjectType" cascade;
 drop table "StorageEntry" cascade;
 drop table "play_evolutions" cascade;
 EOF
-
-#for x in `ls ${BASEPATH}/../conf/evolutions/test/*.sql`; do
-#    psql projectlocker_test < "$x"
-#done

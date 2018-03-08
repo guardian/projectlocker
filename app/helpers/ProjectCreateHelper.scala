@@ -22,5 +22,5 @@ trait ProjectCreateHelper {
     * @return a [[Try]] containing a saved [[models.ProjectEntry]] object if successful, wrapped in a  [[Future]]
     */
   def create(rq:ProjectRequestFull,createTime:Option[LocalDateTime])
-            (implicit db: slick.jdbc.JdbcProfile#Backend#Database):Future[Try[ProjectEntry]]
+            (implicit db: slick.jdbc.JdbcProfile#Backend#Database, config: play.api.Configuration):Future[Try[ProjectEntry]]
 }

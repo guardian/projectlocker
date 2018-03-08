@@ -12,7 +12,6 @@ class StorageTypeComponent extends React.Component {
     }
 
     render() {
-        console.log(this.props.strgTypes);
         return(<div>
             <h3>Storage Type</h3>
             <p className="information">The first piece of information we need is what kind of storage to connect to.

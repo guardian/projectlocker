@@ -4,8 +4,9 @@ import PropTypes from 'prop-types';
 
 import SummaryComponent from './SummaryComponent.jsx';
 import ErrorViewComponent from '../common/ErrorViewComponent.jsx';
+import CommonCompletionComponent from '../common/CommonCompletionComponent.jsx';
 
-class StorageCompletionComponent extends React.Component {
+class StorageCompletionComponent extends CommonCompletionComponent {
     static propTypes = {
         loginDetails: PropTypes.object.required,
         rootpath: PropTypes.string.required,
@@ -20,6 +21,9 @@ class StorageCompletionComponent extends React.Component {
             inProgress: false,
             error: null
         };
+
+        this.endpoint = "/api/storage";
+        this.successRedirect = "/storage/";
         this.confirmClicked = this.confirmClicked.bind(this);
     }
 
@@ -34,21 +38,6 @@ class StorageCompletionComponent extends React.Component {
             user: this.props.loginDetails.username,
             password: this.props.loginDetails.password
         }
-    }
-
-    confirmClicked(event){
-        this.setState({inProgress: true});
-        axios.request({method: "PUT", url: "/api/storage",data: this.requestContent()}).then(
-            (response)=>{
-                this.setState({inProgress: false});
-                window.location.assign('/storage/');
-            }
-        ).catch(
-            (error)=>{
-                this.setState({inProgress: false, error: error});
-                console.error(error)
-            }
-        )
     }
 
     render() {

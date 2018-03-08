@@ -134,7 +134,7 @@ trait GenericControllerSpec extends Specification with MockedCacheApi{
       status(response) must equalTo(CONFLICT)
       val jsondata = Await.result(bodyAsJsonFuture(response), 5.seconds).as[JsValue]
       (jsondata \ "status").as[String] must equalTo("error")
-      (jsondata \ "detail").as[String] must equalTo("This is still referenced by sub-objects")
+      (jsondata \ "detail").as[String] must equalTo("This object is still referred to by sub-objects")
     }
   }
 }

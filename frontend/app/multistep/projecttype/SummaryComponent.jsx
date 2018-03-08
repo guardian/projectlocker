@@ -1,7 +1,18 @@
 import React from 'react';
 import ShowPasswordComponent from '../ShowPasswordComponent.jsx';
+import PropTypes from 'prop-types';
+import PostrunActionList from '../postrun/PostrunActionList.jsx';
 
 class SummaryComponent extends React.Component {
+    static propTypes = {
+        name: PropTypes.string.isRequired,
+        opensWith: PropTypes.string.isRequired,
+        version: PropTypes.string.isRequired,
+        fileExtension: PropTypes.string.isRequired,
+        postrunActions: PropTypes.array.isRequired,
+        selectedPostruns: PropTypes.array.isRequired
+    };
+
     constructor(props){
         super(props);
     }
@@ -24,6 +35,10 @@ class SummaryComponent extends React.Component {
             <tr>
                 <td>File extension</td>
                 <td id="projectTypeFileExtension">{this.props.fileExtension}</td>
+            </tr>
+            <tr>
+                <td>Postrun actions</td>
+                <td><PostrunActionList actionList={this.props.postrunActions} selectedActions={this.props.selectedPostruns}/></td>
             </tr>
             </tbody>
         </table>;

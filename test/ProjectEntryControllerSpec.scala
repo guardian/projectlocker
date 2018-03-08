@@ -58,7 +58,7 @@ class ProjectEntryControllerSpec extends Specification with Mockito with Project
         """.stripMargin
 
       val fakeProjectEntry = ProjectEntry(Some(999),1,None,"MyTestProjectEntry",Timestamp.valueOf(LocalDateTime.now()),"test-user")
-      mockedProjectHelper.create(any[ProjectRequestFull],org.mockito.Matchers.eq(None))(org.mockito.Matchers.eq(db)) answers((arglist,mock)=>Future(Success(fakeProjectEntry)))
+      mockedProjectHelper.create(any[ProjectRequestFull],org.mockito.Matchers.eq(None))(org.mockito.Matchers.eq(db),org.mockito.Matchers.any[play.api.Configuration]) answers((arglist,mock)=>Future(Success(fakeProjectEntry)))
       val response = route(application, FakeRequest(
         method="PUT",
         uri="/api/project",

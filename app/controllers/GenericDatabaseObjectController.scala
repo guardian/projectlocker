@@ -70,8 +70,33 @@ trait GenericDatabaseObjectControllerWithFilter[M,F] extends InjectedController 
   def deleteid(requestedId: Int):Future[Try[Int]]
 
   def insert(entry: M,uid:String):Future[Try[Int]]
+  def dbupdate(itemId: Int, entry:M):Future[Try[Int]]
+
   def jstranslate(result:Seq[M]):Json.JsValueWrapper
   def jstranslate(result:M):Json.JsValueWrapper
+
+  /**
+    * Generic error handler that will return a 409 Conflict on a database conflict error or a 500 Internal Server Error
+    * otherwise
+    * @param error throwable representing the error
+    * @param thing string describing what is being created or deleted, for error message output
+    * @param isInsert boolean - true if the failed operation is an insert or create, or false if the failed operation is a delete
+    * @return Play response indicating the relevant error code
+    */
+  def handleConflictErrors(error:Throwable, thing: String, isInsert:Boolean) = {
+    val verb = if(isInsert) "create" else "delete"
+
+    logger.error(s"Could not $verb $thing:", error)
+    val errorString = error.toString
+    if (errorString.contains("violates foreign key constraint") || errorString.contains("Referential integrity constraint violation")) {
+      val errmsg = if (isInsert)
+        s"This $thing either already exists or refers to objects which do not exist"
+      else
+        s"This $thing is still referred to by sub-objects"
+      Conflict(Json.obj("status" -> "error", "detail" -> errmsg))
+    } else
+      InternalServerError(Json.obj("status" -> "error", "detail" -> error.toString))
+  }
 
   /**
     * Endpoint implementation for list, requiring auth. Link this up in route config as a GET.
@@ -155,7 +180,11 @@ trait GenericDatabaseObjectControllerWithFilter[M,F] extends InjectedController 
   def update(id: Int) = IsAuthenticatedAsync(parse.json) { uid=>{request =>
     this.validate(request).fold(
       errors=>Future(BadRequest(Json.obj("status"->"error","detail"->JsError.toJson(errors)))),
-      StorageEntry=>Future(Ok(""))
+      validRecord=>
+        this.dbupdate(id,validRecord) map {
+          case Success(rowsUpdated)=>Ok(Json.obj("status"->"ok","detail"->"Record updated", "id"->id))
+          case Failure(error)=>InternalServerError(Json.obj("status"->"error", "detail"->error.toString))
+        }
     )
   }}
 
@@ -166,13 +195,7 @@ trait GenericDatabaseObjectControllerWithFilter[M,F] extends InjectedController 
           NotFound(Json.obj("status" -> "notfound", "id"->requestedId))
         else
           Ok(Json.obj("status" -> "ok", "detail" -> "deleted", "id" -> requestedId))
-      case Failure(error)=>
-        val errorString = error.toString
-        logger.error(errorString)
-        if(errorString.contains("violates foreign key constraint") || errorString.contains("Referential integrity constraint violation"))
-          Conflict(Json.obj("status"->"error","detail"->"This is still referenced by sub-objects"))
-        else
-          InternalServerError(Json.obj("status"->"error","detail"->error.toString))
+      case Failure(error)=>handleConflictErrors(error,"object",isInsert=false)
     })
   }
 

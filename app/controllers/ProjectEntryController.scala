@@ -34,6 +34,7 @@ class ProjectEntryController @Inject() (cc:ControllerComponents, config: Configu
   override implicit val cache:SyncCacheApi = cacheImpl
 
   val dbConfig = dbConfigProvider.get[JdbcProfile]
+  implicit val implicitConfig = config
 
   override def deleteid(requestedId: Int) = dbConfig.db.run(
     TableQuery[ProjectEntryRow].filter(_.id === requestedId).delete.asTry
@@ -46,6 +47,8 @@ class ProjectEntryController @Inject() (cc:ControllerComponents, config: Configu
   protected def selectVsid(vsid: String):Future[Try[Seq[ProjectEntry]]] = dbConfig.db.run(
     TableQuery[ProjectEntryRow].filter(_.vidispineProjectId === vsid).result.asTry
   )
+
+  override def dbupdate(itemId:Int, entry:ProjectEntry) = Future(Failure(new RuntimeException("Not implemented")))
 
   def getByVsid(vsid:String) = IsAuthenticatedAsync {uid=>{request=>
     selectVsid(vsid).map({

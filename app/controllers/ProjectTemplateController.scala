@@ -41,6 +41,10 @@ class ProjectTemplateController @Inject() (config: Configuration, dbConfigProvid
   override def jstranslate(result: Seq[ProjectTemplate]) = result
   override def jstranslate(result: ProjectTemplate) = result  //implicit translation should handle this
 
+  override def dbupdate(itemId:Int, entry:ProjectTemplate) = dbConfig.db.run(
+    TableQuery[ProjectTemplateRow].filter(_.id===itemId).update(entry).asTry
+  )
+
   /* custom implementation of deleteAction to reflect whether the previous file delete operation succeeded or not */
   def deleteAction(requestedId: Int, didDeleteFile: Boolean): Future[Result] = {
     deleteid(requestedId).map({
@@ -53,13 +57,7 @@ class ProjectTemplateController @Inject() (config: Configuration, dbConfigProvid
           else
             Ok(Json.obj("status" -> "warning", "detail" -> "Template deleted but file could not be deleted", "id" -> requestedId))
         }
-      case Failure(error)=>
-        val errorString = error.toString
-        logger.error(errorString)
-        if(errorString.contains("violates foreign key constraint") || errorString.contains("Referential integrity constraint violation"))
-          Conflict(Json.obj("status"->"error","detail"->"This is still referenced by sub-objects"))
-        else
-          InternalServerError(Json.obj("status"->"error","detail"->error.toString))
+      case Failure(error)=>handleConflictErrors(error,"file",isInsert = false)
     })
   }
 
@@ -67,7 +65,7 @@ class ProjectTemplateController @Inject() (config: Configuration, dbConfigProvid
     implicit val db:slick.jdbc.JdbcProfile#Backend#Database=dbConfig.db
 
     if(requestedId<0)
-      Future(Conflict(Json.obj("status"->"error","detail"->"This is still referenced by sub-objects")))
+      Future(Conflict(Json.obj("status"->"error","detail"->"This object is still referred to by sub-objects")))
     else {
       /* step one - get the file for the template object that we want to delete */
       val fileFuture = selectid(requestedId).flatMap({

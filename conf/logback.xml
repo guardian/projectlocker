@@ -16,6 +16,7 @@
 
     <logger name="play" level="INFO" />
     <logger name="application" level="DEBUG" />
+    <logger name="services.PostrunActionScanner" level="DEBUG"/>
     <logger name="models.FileEntry" level="DEBUG" />
     <logger name="controllers.Files" level="DEBUG" />
     <logger name="StorageControllerSpec" level="DEBUG"/>

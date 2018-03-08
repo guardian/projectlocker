@@ -50,6 +50,10 @@ class StoragesController @Inject()
     (TableQuery[StorageEntryRow] returning TableQuery[StorageEntryRow].map(_.id) += storageEntry).asTry
   )
 
+  override def dbupdate(itemId:Int, entry:StorageEntry) = dbConfig.db.run(
+    TableQuery[StorageEntryRow].filter(_.id===itemId).update(entry).asTry
+  )
+
   override def validate(request:Request[JsValue]) = request.body.validate[StorageEntry]
 
   def types = Action {
