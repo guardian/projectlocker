@@ -50,9 +50,15 @@ class StoragesController @Inject()
     (TableQuery[StorageEntryRow] returning TableQuery[StorageEntryRow].map(_.id) += storageEntry).asTry
   )
 
-  override def dbupdate(itemId:Int, entry:StorageEntry) = dbConfig.db.run(
-    TableQuery[StorageEntryRow].filter(_.id===itemId).update(entry).asTry
-  )
+  override def dbupdate(itemId:Int, entry:StorageEntry) = {
+    val newRecord = entry.id match {
+      case Some(id)=>entry
+      case None=>entry.copy(id=Some(itemId))
+    }
+    dbConfig.db.run(
+      TableQuery[StorageEntryRow].filter(_.id===itemId).update(newRecord).asTry
+    )
+  }
 
   override def validate(request:Request[JsValue]) = request.body.validate[StorageEntry]
 

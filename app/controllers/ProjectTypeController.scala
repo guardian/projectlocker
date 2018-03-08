@@ -46,9 +46,15 @@ class ProjectTypeController @Inject() (config: Configuration, dbConfigProvider: 
     (TableQuery[ProjectTypeRow] returning TableQuery[ProjectTypeRow].map(_.id) += entry).asTry
   )
 
-  override def dbupdate(itemId:Int, entry:ProjectType) = dbConfig.db.run(
-    TableQuery[ProjectTypeRow].filter(_.id===itemId).update(entry).asTry
-  )
+  override def dbupdate(itemId:Int, entry:ProjectType) = {
+    val newRecord = entry.id match {
+      case Some(id)=>entry
+      case None=>entry.copy(id=Some(itemId))
+    }
+    dbConfig.db.run(
+      TableQuery[ProjectTypeRow].filter(_.id===itemId).update(newRecord).asTry
+    )
+  }
 
   override def validate(request:Request[JsValue]) = request.body.validate[ProjectType]
 

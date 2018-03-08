@@ -41,9 +41,15 @@ class ProjectTemplateController @Inject() (config: Configuration, dbConfigProvid
   override def jstranslate(result: Seq[ProjectTemplate]) = result
   override def jstranslate(result: ProjectTemplate) = result  //implicit translation should handle this
 
-  override def dbupdate(itemId:Int, entry:ProjectTemplate) = dbConfig.db.run(
-    TableQuery[ProjectTemplateRow].filter(_.id===itemId).update(entry).asTry
-  )
+  override def dbupdate(itemId:Int, entry:ProjectTemplate) = {
+    val newRecord = entry.id match {
+      case Some(id)=>entry
+      case None=>entry.copy(id=Some(itemId))
+    }
+    dbConfig.db.run(
+      TableQuery[ProjectTemplateRow].filter(_.id===itemId).update(newRecord).asTry
+    )
+  }
 
   /* custom implementation of deleteAction to reflect whether the previous file delete operation succeeded or not */
   def deleteAction(requestedId: Int, didDeleteFile: Boolean): Future[Result] = {

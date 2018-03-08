@@ -49,9 +49,15 @@ class PostrunActionController  @Inject() (config: Configuration, dbConfigProvide
   override def insert(entry: PostrunAction, uid:String) = dbConfig.db.run(
     (TableQuery[PostrunActionRow] returning TableQuery[PostrunActionRow].map(_.id) += entry).asTry)
 
-  override def dbupdate(itemId:Int, entry:PostrunAction) = dbConfig.db.run(
-    TableQuery[PostrunActionRow].filter(_.id===itemId).update(entry).asTry
-  )
+  override def dbupdate(itemId:Int, entry:PostrunAction) = {
+    val newRecord = entry.id match {
+      case Some(id)=>entry
+      case None=>entry.copy(id=Some(itemId))
+    }
+    dbConfig.db.run(
+      TableQuery[PostrunActionRow].filter(_.id===itemId).update(newRecord).asTry
+    )
+  }
 
   def insertAssociation(postrunId: Int, projectTypeId: Int) = dbConfig.db.run(
     (TableQuery[PostrunAssociationRow] returning TableQuery[PostrunAssociationRow].map(_.id) += (projectTypeId, postrunId)).asTry

@@ -71,9 +71,16 @@ class Files @Inject() (configuration: Configuration, dbConfigProvider: DatabaseC
 
   }
 
-  override def dbupdate(itemId:Int, entry:FileEntry) = dbConfig.db.run(
-    TableQuery[FileEntryRow].filter(_.id===itemId).update(entry).asTry
-  )
+  override def dbupdate(itemId:Int, entry:FileEntry) = {
+    val newRecord = entry.id match {
+      case Some(id)=>entry
+      case None=>entry.copy(id=Some(itemId))
+    }
+
+    dbConfig.db.run(
+      TableQuery[FileEntryRow].filter(_.id===itemId).update(newRecord).asTry
+    )
+  }
 
   override def validate(request: Request[JsValue]) = request.body.validate[FileEntry]
 

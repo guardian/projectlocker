@@ -3,8 +3,9 @@ import PropTypes from 'prop-types';
 import axios from 'axios';
 import SummaryComponent from './SummaryComponent.jsx';
 import ErrorViewComponent from '../common/ErrorViewComponent.jsx';
+import CommonCompletionComponent from '../common/CommonCompletionComponent.jsx';
 
-class ProjectTypeCompletionComponent extends React.Component {
+class ProjectTypeCompletionComponent extends CommonCompletionComponent {
     static propTypes = {
         currentEntry: PropTypes.object.isRequired,
         postrunActions: PropTypes.array.isRequired,
@@ -18,6 +19,9 @@ class ProjectTypeCompletionComponent extends React.Component {
             inProgress: false,
             error: null
         };
+        this.endpoint = "/api/projecttype"; // override this to the api endpoint that you want to hit
+        this.successRedirect = "/type/";    //override this to the page to go to when successfully saved
+
         this.confirmClicked = this.confirmClicked.bind(this);
     }
 
@@ -26,24 +30,8 @@ class ProjectTypeCompletionComponent extends React.Component {
         return Promise.all(promiseList)
     }
 
-    confirmClicked(event){
-        this.setState({inProgress: true});
-        const restUrl = this.props.currentEntry ? "/api/projecttype/" + this.props.currentEntry : "/api/projecttype";
-
-        axios.put(restUrl,this.requestContent()).then(
-            (response)=>{
-                this.savePostruns(response.data.id)
-                    .then(()=>{
-                        this.setState({inProgress: false});
-                        window.location.assign('/type/');
-                    });
-            }
-        ).catch(
-            (error)=>{
-                this.setState({inProgress: false, error: error});
-                console.error(error)
-            }
-        )
+    recordDidSave(){
+        return this.savePostruns(this.props.currentEntry);
     }
 
     requestContent(){
