@@ -3,12 +3,14 @@ import PropTypes from 'prop-types';
 import axios from 'axios';
 import SummaryComponent from './SummaryComponent.jsx';
 import ErrorViewComponent from '../common/ErrorViewComponent.jsx';
+import CommonCompletionComponent from '../common/CommonCompletionComponent.jsx';
 
-class ProjectTypeCompletionComponent extends React.Component {
+class ProjectTypeCompletionComponent extends CommonCompletionComponent {
     static propTypes = {
         currentEntry: PropTypes.object.isRequired,
         postrunActions: PropTypes.array.isRequired,
-        selectedPostruns: PropTypes.array.isRequired
+        selectedPostruns: PropTypes.array.isRequired,
+        originalPostruns: PropTypes.array.isRequired
     };
 
     constructor(props){
@@ -18,32 +20,29 @@ class ProjectTypeCompletionComponent extends React.Component {
             inProgress: false,
             error: null
         };
-        this.confirmClicked = this.confirmClicked.bind(this);
+        this.endpoint = "/api/projecttype"; // override this to the api endpoint that you want to hit
+        this.successRedirect = "/type/";    //override this to the page to go to when successfully saved
+
+        this.recordDidSave = this.recordDidSave.bind(this);
     }
 
-    savePostruns(projecttypeid) {
-        const promiseList = this.props.selectedPostruns.map(postrunId => axios.put("/api/postrun/" + postrunId + "/projecttype/" + projecttypeid))
-        return Promise.all(promiseList)
+    componentWillMount(){
+        this.updateAddRemoveDeps();
     }
 
-    confirmClicked(event){
-        this.setState({inProgress: true});
-        const restUrl = this.props.currentEntry ? "/api/projecttype/" + this.props.currentEntry : "/api/projecttype";
+    /*work out which dependencies need to be added and which removed, and add those to the state*/
+    updateAddRemoveDeps(){
+        this.setState({
+            depsToRemove: this.props.originalPostruns.filter(depId=>!this.props.selectedPostruns.includes(depId)),
+            depsToAdd: this.props.selectedPostruns.filter(depId=>!this.props.originalPostruns.includes(depId))
+        });
+    }
 
-        axios.put(restUrl,this.requestContent()).then(
-            (response)=>{
-                this.savePostruns(response.data.id)
-                    .then(()=>{
-                        this.setState({inProgress: false});
-                        window.location.assign('/type/');
-                    });
-            }
-        ).catch(
-            (error)=>{
-                this.setState({inProgress: false, error: error});
-                console.error(error)
-            }
-        )
+    recordDidSave(){
+        //first add any postruns associations that need adding, then remove postrun associations that need removing.
+        return Promise.all(this.state.depsToAdd.map(depId=>axios.put("/api/postrun/" + depId + "/projecttype/" + this.props.currentEntry))).then(
+            Promise.all(this.state.depsToRemove.map(depId=>axios.delete("/api/postrun/" + depId + "/projecttype/" + this.props.currentEntry)))
+        );
     }
 
     requestContent(){

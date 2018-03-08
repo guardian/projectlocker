@@ -21,7 +21,8 @@ class ProjectTypeMultistep extends React.Component {
             postrunList: [],
             loading: false,
             loadingError: null,
-            selectedPostruns: []
+            selectedPostruns: [],
+            originalPostruns: []
         }
     }
 
@@ -44,6 +45,7 @@ class ProjectTypeMultistep extends React.Component {
                     this.setState({
                         postrunList: responseList[0].data.result,
                         selectedPostruns: responseList[1] ? responseList[1].data.result : [],
+                        originalPostruns: responseList[1] ? Object.assign([], responseList[1].data.result) : [],
                         loading: false
                     })
                 })
@@ -75,6 +77,7 @@ class ProjectTypeMultistep extends React.Component {
                                                            currentEntry={this.state.currentEntry}
                                                            postrunActions={this.state.postrunList}
                                                            selectedPostruns={this.state.selectedPostruns}
+                                                           originalPostruns={this.state.originalPostruns}
                 />
             }
         ];
