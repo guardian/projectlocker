@@ -38,12 +38,6 @@ class ProjectTypeCompletionComponent extends CommonCompletionComponent {
         });
     }
 
-
-    savePostruns(projecttypeid) {
-        const promiseList = this.props.selectedPostruns.map(postrunId => axios.put("/api/postrun/" + postrunId + "/projecttype/" + projecttypeid))
-        return Promise.all(promiseList)
-    }
-
     recordDidSave(){
         //first add any postruns associations that need adding, then remove postrun associations that need removing.
         return Promise.all(this.state.depsToAdd.map(depId=>axios.put("/api/postrun/" + depId + "/projecttype/" + this.props.currentEntry))).then(
