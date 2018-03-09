@@ -39,7 +39,6 @@ libraryDependencies += "com.unboundid" % "unboundid-ldapsdk" % "2.3.6"
 // https://mvnrepository.com/artifact/org.python/jython
 libraryDependencies += "org.python" % "jython" % "2.7.1b2"
 
-
 enablePlugins(UniversalPlugin)
 
 enablePlugins(LinuxPlugin)

@@ -112,26 +112,28 @@ class ProjectCreateHelperImplSpec extends Specification with Mockito {
     }
   }
 
-  "ProjectCreateHelper.runEach" should {
+  "ProjectCreateHelper.runNextAction" should {
     "call the run method of the postrun action entry and wait for result" in {
       val pretendProjectName = "/tmp/pretendproject"
       Seq("/bin/dd","if=/dev/urandom",s"of=$pretendProjectName","bs=1k","count=600").!
 
-      val p = new ProjectCreateHelperImpl {
-        def testRunEach(action:PostrunAction, projectFileName:String, projectEntry:ProjectEntry,projectType:ProjectType)
-                       (implicit db: slick.jdbc.JdbcProfile#Backend#Database, config:play.api.Configuration) =
-          runEach(action,projectFileName,projectEntry, projectType)(db, config)
-      }
-
+      val p = new ProjectCreateHelperImpl
+      implicit val scriptTimeout = 5.seconds
       val testTimestamp = Timestamp.valueOf("2018-02-02 03:04:05")
       val testPostrunAction = PostrunAction(None,"args_test_4.py","Test script",None,"testuser",1,testTimestamp)
       val testProjectEntry = ProjectEntry(None,1,None,"Test project title",testTimestamp, "testuser")
       val testProjectType = ProjectType(None,"TestProject","TestProjectApp","1.0",None)
 
-      val result = p.testRunEach(testPostrunAction,pretendProjectName,testProjectEntry,testProjectType)
-      result must beSuccessfulTry
-      result.get.raisedError must beNone
-      result.get.stdOutContents mustEqual "I was provided with {'projectFile': '/tmp/pretendproject', 'vidispineProjectId': '', 'projectTypeId': '', 'projectTypeName': 'TestProject', 'projectFileExtension': '', 'projectCreated': '2018-02-02 03:04:05.0', 'projectOwner': 'testuser', 'projectTargetVersion': '1.0', 'projectOpensWith': 'TestProjectApp', 'projectId': '', 'projectTitle': 'Test project title'}\n"
+      val result = p.runNextAction(actions=Seq(testPostrunAction),
+        results=Seq(),
+        cache=PostrunDataCache(Map("key_one"->"value_one","key_two"->"value_two")),
+        projectFileName="/tmp/pretendproject",
+        projectEntry=testProjectEntry,
+        projectType=testProjectType)
+
+      result.head must beSuccessfulTry
+      result.head.get.raisedError must beNone
+      result.head.get.stdOutContents mustEqual "I was provided with {'projectFile': '/tmp/pretendproject', 'vidispineProjectId': '', 'projectTypeId': '', 'projectTypeName': 'TestProject', 'projectFileExtension': '', 'projectCreated': '2018-02-02 03:04:05.0', 'projectOwner': 'testuser', 'projectTargetVersion': '1.0', 'projectOpensWith': 'TestProjectApp', 'dataCache': {'key_two': 'value_two', 'key_one': 'value_one'}, 'projectId': '', 'projectTitle': 'Test project title'}\n"
     }
 
     "return a Failure if the postrun action script can't be found" in {
@@ -141,7 +143,7 @@ class ProjectCreateHelperImplSpec extends Specification with Mockito {
       val p = new ProjectCreateHelperImpl {
         def testRunEach(action:PostrunAction, projectFileName:String, projectEntry:ProjectEntry,projectType:ProjectType)
                        (implicit db: slick.jdbc.JdbcProfile#Backend#Database, config:play.api.Configuration) =
-          runEach(action,projectFileName,projectEntry, projectType)(db, config)
+          runEach(action,projectFileName,projectEntry,PostrunDataCache(), projectType)(db, config)
       }
 
       val testTimestamp = Timestamp.valueOf("2018-02-02 03:04:05")
@@ -159,9 +161,9 @@ class ProjectCreateHelperImplSpec extends Specification with Mockito {
       Seq("/bin/dd","if=/dev/urandom",s"of=$pretendProjectName","bs=1k","count=600").!
 
       val p = new ProjectCreateHelperImpl {
-        def testRunEach(action:PostrunAction, projectFileName:String, projectEntry:ProjectEntry,projectType:ProjectType)
+        def testRunEach(action:PostrunAction, projectFileName:String, projectEntry:ProjectEntry,dataCache: PostrunDataCache,projectType:ProjectType)
                        (implicit db: slick.jdbc.JdbcProfile#Backend#Database, config:play.api.Configuration) =
-          runEach(action,projectFileName,projectEntry, projectType)(db, config)
+          runEach(action,projectFileName,projectEntry, dataCache, projectType)(db, config)
       }
 
       val testTimestamp = Timestamp.valueOf("2018-02-02 03:04:05")
@@ -169,7 +171,7 @@ class ProjectCreateHelperImplSpec extends Specification with Mockito {
       val testProjectEntry = ProjectEntry(None,1,None,"Test project title",testTimestamp, "testuser")
       val testProjectType = ProjectType(None,"TestProject","TestProjectApp","1.0",None)
 
-      val result = p.testRunEach(testPostrunAction,pretendProjectName,testProjectEntry,testProjectType)
+      val result = p.testRunEach(testPostrunAction,pretendProjectName,testProjectEntry,PostrunDataCache(),testProjectType)
       result must beFailedTry
       result.failed.get.toString must contain("StandardError(\"My hovercraft is full of eels\")")
     }
@@ -178,9 +180,8 @@ class ProjectCreateHelperImplSpec extends Specification with Mockito {
   "PostrunCreateHelper.doPostrunActions" should {
     "execute all postrun actions for a project type" in {
       val p = new ProjectCreateHelperImpl {
-        override protected def runEach(action: PostrunAction, projectFileName: String, projectEntry: ProjectEntry, projectType: ProjectType)
-                                      (implicit db: JdbcBackend#DatabaseDef, config: Configuration): Try[JythonOutput] =
-          Success(JythonOutput("this worked","",None))
+        override protected def syncExecScript(action: PostrunAction, projectFileName: String, entry: ProjectEntry, projectType: ProjectType, cache: PostrunDataCache)(implicit db: slick.jdbc.JdbcProfile#Backend#Database, config:play.api.Configuration, timeout: Duration) : Try[JythonOutput] =
+          Success(JythonOutput("this worked","",cache,None))
       }
 
       val testTimestamp = Timestamp.valueOf("2018-02-02 03:04:05")
@@ -194,14 +195,12 @@ class ProjectCreateHelperImplSpec extends Specification with Mockito {
 
     "indicate a failure if any postrun action failed" in {
       val p = new ProjectCreateHelperImpl {
-        override protected def runEach(action: PostrunAction, projectFileName: String, projectEntry: ProjectEntry, projectType: ProjectType)
-                                      (implicit db: JdbcBackend#DatabaseDef, config: Configuration): Try[JythonOutput] = {
+        override protected def syncExecScript(action: PostrunAction, projectFileName: String, entry: ProjectEntry, projectType: ProjectType, cache: PostrunDataCache)(implicit db: slick.jdbc.JdbcProfile#Backend#Database, config:play.api.Configuration, timeout: Duration) : Try[JythonOutput] =
           if (action.id.get == 1)
-            //this is normally mapped into a failure by models.PostrunAction.run, and detailed debug output to the log there too.
+          //this is normally mapped into a failure by models.PostrunAction.run, and detailed debug output to the log there too.
             Failure(new RuntimeException("my hovercraft is full of eels"))
           else
-            Success(JythonOutput("this worked", "", None))
-        }
+            Success(JythonOutput("this worked", "",cache, None))
       }
 
       val testTimestamp = Timestamp.valueOf("2018-02-02 03:04:05")
