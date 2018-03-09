@@ -4,7 +4,7 @@ import java.io.File
 import java.nio.file.{Files, Path, Paths}
 import java.sql.Timestamp
 
-import helpers.{JythonOutput, JythonRunner}
+import helpers.{JythonOutput, JythonRunner, PostrunDataCache}
 import org.apache.commons.io.{FileUtils, FilenameUtils}
 import play.api.{Configuration, Logger}
 import play.api.libs.json.{JsPath, Reads, Writes}
@@ -78,7 +78,7 @@ case class PostrunAction (id:Option[Int],runnable:String, title:String, descript
     * @param config - implicitly provided play.api.Configuration object, representing the app configuration
     * @return a Future containing a Try containing either the script output or an error
     */
-  def run(projectFileName:String,projectEntry:ProjectEntry,projectType:ProjectType)
+  def run(projectFileName:String,projectEntry:ProjectEntry,projectType:ProjectType,dataCache:PostrunDataCache)
          (implicit config:Configuration):Future[Try[JythonOutput]] = {
     val inputPath = this.getScriptPath
 
@@ -93,7 +93,7 @@ case class PostrunAction (id:Option[Int],runnable:String, title:String, descript
           "projectFile" -> projectFileName
         ) ++ projectEntry.asStringMap ++ projectType.asStringMap
 
-        JythonRunner.runScriptAsync(inputPath.toString, scriptArgs) map {
+        JythonRunner.runScriptAsync(inputPath.toString, scriptArgs, dataCache) map {
           case Success(scriptOutput) =>
             logger.debug("Script started successfully")
             scriptOutput.raisedError match {
