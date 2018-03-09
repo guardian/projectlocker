@@ -133,7 +133,7 @@ class ProjectCreateHelperImplSpec extends Specification with Mockito {
 
       result.head must beSuccessfulTry
       result.head.get.raisedError must beNone
-      result.head.get.stdOutContents mustEqual "I was provided with {'projectFile': '/tmp/pretendproject', 'vidispineProjectId': '', 'projectTypeId': '', 'projectTypeName': 'TestProject', 'projectFileExtension': '', 'projectCreated': '2018-02-02 03:04:05.0', 'projectOwner': 'testuser', 'projectTargetVersion': '1.0', 'projectOpensWith': 'TestProjectApp', 'projectId': '', 'projectTitle': 'Test project title'}\n"
+      result.head.get.stdOutContents mustEqual "I was provided with {'projectFile': '/tmp/pretendproject', 'vidispineProjectId': '', 'projectTypeId': '', 'projectTypeName': 'TestProject', 'projectFileExtension': '', 'projectCreated': '2018-02-02 03:04:05.0', 'projectOwner': 'testuser', 'projectTargetVersion': '1.0', 'projectOpensWith': 'TestProjectApp', 'dataCache': {'key_two': 'value_two', 'key_one': 'value_one'}, 'projectId': '', 'projectTitle': 'Test project title'}\n"
     }
 
     "return a Failure if the postrun action script can't be found" in {

@@ -24,7 +24,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 case class JythonOutput(stdOutContents: String, stdErrContents: String, newDataCache:PostrunDataCache, raisedError: Option[Throwable])
 
 object JythonRunner {
-  val logger = Logger(this.getClass)
+  private val logger = Logger(this.getClass)
 
   def initialise = {
     logger.info("Initialising jython runner")
@@ -42,7 +42,7 @@ object JythonRunner {
 class JythonRunner {
   import org.python.util.PythonInterpreter
   import java.util.Properties
-
+  private val logger = Logger(this.getClass)
   private val interpreter = new PythonInterpreter()
 
   def runScript(scriptName: String, dataCache: PostrunDataCache) = {
@@ -87,14 +87,22 @@ class JythonRunner {
 
     //the cast is annoying but it should always work, since PyString is a subclass of PyObject. No idea why
     // func.__call__ seems to not like this though.
-    val pythonifiedArgs = args.map(kvTuple=>new PyString(kvTuple._2).asInstanceOf[PyObject]) ++ Seq(dataCache.asPython.asInstanceOf[PyObject])
-    val pythonifiedNames = args.keys ++ Seq("dataCache")
+    val pythonifiedArgs = args.map(kvTuple=>new PyString(kvTuple._2).asInstanceOf[PyObject]).toArray
+    val pythonifiedNames = args.keys.toArray
+    val updatedPythonifiedArgs = pythonifiedArgs ++ Array(dataCache.asPython.asInstanceOf[PyObject])
+    val updatedPythonifiedNames = pythonifiedNames ++ Array("dataCache")
+
+    logger.info(s"updatedPythonifiedArgs = ${updatedPythonifiedArgs.toString}")
+    logger.info(s"updatedPythonifiedNames = ${updatedPythonifiedNames.toString}")
 
     try {
+
       interpreter.execfile(scriptName)
       val func = interpreter.get("postrun")
 
-      val result = Try { func.__call__(pythonifiedArgs.toArray, pythonifiedNames.toArray) }
+      val result = Try {
+        val returnedObject = func.__call__(updatedPythonifiedArgs, updatedPythonifiedNames)
+      }
       val raisedError = result match {
         case Success(nothing) => None
         case Failure(error) => Some(error)
