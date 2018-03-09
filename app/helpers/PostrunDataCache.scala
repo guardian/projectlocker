@@ -1,10 +1,14 @@
 package helpers
 
-import org.python.core.{PyDictionary, PyNone, PyObject, PyString}
+import org.python.core._
+import play.api.Logger
 
 import collection.JavaConverters._
+import scala.collection.immutable.HashMap
 
 class PostrunDataCache(entries:PyDictionary) {
+  private val logger = Logger(getClass)
+
   /**
     * appends a string->string map of entries to the data cache and returns a new cache instance with them in it
     * @param values values to append
@@ -18,12 +22,14 @@ class PostrunDataCache(entries:PyDictionary) {
     new PostrunDataCache(newDict)
   }
 
-  def ++(values:PyDictionary):PostrunDataCache = {
-    if(values==null){
+  def ++(values:PyObject):PostrunDataCache = {
+    logger.debug(s"++: got values ${values}")
+
+    if(values==null || values==Py.None || !values.isMappingType){
       this
     } else {
       val newDict = entries.copy()
-      newDict.update(values)
+      newDict.update(values.asInstanceOf[PyDictionary])
       new PostrunDataCache(newDict)
     }
   }
@@ -35,8 +41,11 @@ class PostrunDataCache(entries:PyDictionary) {
     * @return An Option with None if no value exists or Some(string) if it does
     */
   def get(key:String):Option[String] = {
+    logger.debug(s"asking for ${(new PyString(key)).toString}")
+    logger.debug(s"entries are ${entries.toString}")
     val pythonValue = entries.get(new PyString(key))
-    if(pythonValue==null)
+    logger.debug(s"Got python value $pythonValue")
+    if(pythonValue==null || pythonValue==Py.None)
       None
     else
       Some(pythonValue.asString())
@@ -47,7 +56,7 @@ class PostrunDataCache(entries:PyDictionary) {
     * @return a Map[String,String] of the cache contents
     */
   def asScala:Map[String,String] = {
-    entries.getMap.asScala.map(kvTuple=>(kvTuple._1.asString(), kvTuple._2.asString())).asInstanceOf[Map[String,String]]
+    entries.getMap.asScala.map(kvTuple=>(kvTuple._1.asString(), kvTuple._2.asString())).toMap
   }
 
   /**

@@ -92,8 +92,8 @@ class JythonRunner {
     val updatedPythonifiedArgs = pythonifiedArgs ++ Array(dataCache.asPython.asInstanceOf[PyObject])
     val updatedPythonifiedNames = pythonifiedNames ++ Array("dataCache")
 
-    logger.info(s"updatedPythonifiedArgs = ${updatedPythonifiedArgs.toString}")
-    logger.info(s"updatedPythonifiedNames = ${updatedPythonifiedNames.toString}")
+    logger.debug(s"updatedPythonifiedArgs = ${updatedPythonifiedArgs.toString}")
+    logger.debug(s"updatedPythonifiedNames = ${updatedPythonifiedNames.toString}")
 
     try {
 
@@ -103,7 +103,8 @@ class JythonRunner {
       val result = Try { func.__call__(updatedPythonifiedArgs, updatedPythonifiedNames) }
       result match {
         case Success(returnedObject) =>
-          val updatedDataCache = dataCache ++ returnedObject.getDict.asInstanceOf[PyDictionary]
+          val updatedDataCache = dataCache ++ returnedObject
+          logger.debug(s"Updated data cache: ${updatedDataCache.asPython.toString}")
           Success(JythonOutput(outStream.toString, errStream.toString, updatedDataCache, None))
         case Failure(error) =>
           Success(JythonOutput(outStream.toString, errStream.toString, dataCache, Some(error)))
