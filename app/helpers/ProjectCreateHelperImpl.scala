@@ -106,13 +106,17 @@ class ProjectCreateHelperImpl extends ProjectCreateHelper {
   def runNextAction(actions: Seq[PostrunAction], results:Seq[Try[JythonOutput]], cache: PostrunDataCache,
                     projectFileName: String, projectEntry: ProjectEntry, projectType: ProjectType)
                    (implicit db: slick.jdbc.JdbcProfile#Backend#Database, config:play.api.Configuration):Seq[Try[JythonOutput]] = {
-    val timeout:Duration = Duration(config.getOptional[String]("postrun.timeout").getOrElse("30 seconds"))
+    val timeout:Duration = Duration(config.getOptional[String]("postrun.timeout").getOrElse("5 seconds"))
 
+    logger.debug(s"runNextAction: remaining actions: ${actions.toString()}")
     actions.headOption match {
       case Some(nextAction)=>
+        logger.info(s"running action ${nextAction.toString}")
         val newResults = results ++ Seq(Await.result(nextAction.run(projectFileName,projectEntry, projectType, cache),timeout))
+        logger.info(s"got results: ${newResults.toString()}")
         runNextAction(actions.tail, newResults, cache, projectFileName, projectEntry, projectType)
       case None=>
+        logger.info("recursion ends")
         results
     }
   }

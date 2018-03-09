@@ -1,9 +1,11 @@
 package helpers
 
 import java.io.ByteArrayOutputStream
+import java.util.Properties
 
 import org.python.core.{PyDictionary, PyObject, PyString}
 import org.python.util.PythonInterpreter
+import play.api.Logger
 
 import scala.collection.JavaConverters._
 import scala.concurrent.{Await, Future}
@@ -22,24 +24,31 @@ import scala.concurrent.ExecutionContext.Implicits.global
 case class JythonOutput(stdOutContents: String, stdErrContents: String, newDataCache:PostrunDataCache, raisedError: Option[Throwable])
 
 object JythonRunner {
+  val logger = Logger(this.getClass)
+
+  def initialise = {
+    logger.info("Initialising jython runner")
+    val props = new Properties
+    props.put("python.home", "postrun/lib/python")
+    props.put("python.console.encoding", "UTF-8") // Used to prevent: console: Failed to install '': java.nio.charset.UnsupportedCharsetException: cp0.
+    props.put("python.import.site", "false")
+
+    val preprops: Properties = System.getProperties
+
+    PythonInterpreter.initialize(preprops, props, new Array[String](0))
+  }
+}
+
+class JythonRunner {
   import org.python.util.PythonInterpreter
   import java.util.Properties
 
-  val props = new Properties
-  props.put("python.home", "postrun/lib/python")
-  props.put("python.console.encoding", "UTF-8") // Used to prevent: console: Failed to install '': java.nio.charset.UnsupportedCharsetException: cp0.
-  props.put("python.import.site", "false")
-
-  val preprops: Properties = System.getProperties
-
-  PythonInterpreter.initialize(preprops, props, new Array[String](0))
-
+  private val interpreter = new PythonInterpreter()
 
   def runScript(scriptName: String, dataCache: PostrunDataCache) = {
     val outStream = new ByteArrayOutputStream
     val errStream = new ByteArrayOutputStream
 
-    val interpreter = new PythonInterpreter()
     interpreter.setOut(outStream)
     interpreter.setErr(errStream)
     val result = Try {
@@ -73,7 +82,6 @@ object JythonRunner {
     val outStream = new ByteArrayOutputStream
     val errStream = new ByteArrayOutputStream
 
-    val interpreter = new PythonInterpreter()
     interpreter.setOut(outStream)
     interpreter.setErr(errStream)
 

@@ -82,6 +82,7 @@ case class PostrunAction (id:Option[Int],runnable:String, title:String, descript
          (implicit config:Configuration):Future[Try[JythonOutput]] = {
     val inputPath = this.getScriptPath
 
+    val runner = new JythonRunner
     backupProjectFile(projectFileName) flatMap {
       case Failure(error) =>
         logger.error(s"Unable to back up project file $projectFileName:", error)
@@ -93,12 +94,12 @@ case class PostrunAction (id:Option[Int],runnable:String, title:String, descript
           "projectFile" -> projectFileName
         ) ++ projectEntry.asStringMap ++ projectType.asStringMap
 
-        JythonRunner.runScriptAsync(inputPath.toString, scriptArgs, dataCache) map {
+        runner.runScriptAsync(inputPath.toString, scriptArgs, dataCache) map {
           case Success(scriptOutput) =>
             logger.debug("Script started successfully")
             scriptOutput.raisedError match {
               case Some(error)=>
-                logger.error("Postrun script could not run: ",error)
+                logger.error("Postrun script could not complete: ",error)
                 logger.error("Postrun standard out:" + scriptOutput.stdOutContents)
                 logger.error("Postrun standard err:" + scriptOutput.stdErrContents)
                 Failure(error)
