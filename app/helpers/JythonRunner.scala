@@ -2,13 +2,9 @@ package helpers
 
 import java.io.ByteArrayOutputStream
 import java.util.Properties
-
-import org.python.core.{PyDictionary, PyObject, PyString}
+import org.python.core.{PyObject, PyString}
 import org.python.util.PythonInterpreter
 import play.api.Logger
-
-import scala.collection.JavaConverters._
-import scala.concurrent.{Await, Future}
 import scala.util.{Failure, Success, Try}
 import scala.concurrent.{Await, Future}
 import scala.concurrent.duration._
