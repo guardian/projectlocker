@@ -15,15 +15,15 @@
     </appender>
 
     <logger name="play" level="INFO" />
-    <logger name="application" level="DEBUG" />
+    <logger name="application" level="WARN" />
     <logger name="services.PostrunActionScanner" level="INFO"/>
-    <logger name="helpers.ProjectCreateHelperImpl" level="DEBUG"/>
-    <logger name="models.FileEntry" level="DEBUG" />
-    <logger name="controllers.Files" level="DEBUG" />
-    <logger name="StorageControllerSpec" level="DEBUG"/>
+    <logger name="helpers.ProjectCreateHelperImpl" level="INFO"/>
+    <logger name="models.FileEntry" level="INFO" />
+    <logger name="controllers.Files" level="INFO" />
+    <logger name="StorageControllerSpec" level="INFO"/>
     <logger name="com.gargoylesoftware.htmlunit.javascript" level="OFF" />
 
-    <root level="INFO">
+    <root level="ERROR">
         <appender-ref ref="STDOUT" />
     </root>
 
