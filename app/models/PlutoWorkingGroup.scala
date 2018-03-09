@@ -14,7 +14,6 @@ import scala.concurrent.ExecutionContext.Implicits.global
 
 case class PlutoWorkingGroup (id:Option[Int], hide:Option[String], name:String, uuid:String) {
   private val logger = Logger(getClass)
-
   /**
     *  writes this model into the database, inserting if id is None and returning a fresh object with id set. If an id
     * was set, then updates the database record and returns the same object. */
