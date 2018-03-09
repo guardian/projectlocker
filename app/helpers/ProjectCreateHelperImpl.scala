@@ -91,6 +91,10 @@ class ProjectCreateHelperImpl extends ProjectCreateHelper {
     Await.result(action.run(projectFileName,projectEntry, projectType, dataCache),timeout)
   }
 
+  protected def syncExecScript(action: PostrunAction, projectFileName: String, entry: ProjectEntry, projectType: ProjectType, cache: PostrunDataCache)
+                    (implicit db: slick.jdbc.JdbcProfile#Backend#Database, config:play.api.Configuration, timeout: Duration) =
+    Await.result(action.run(projectFileName,entry,projectType,cache), timeout)
+
   /**
     * Recursively iterates a list of postrun actions, running each
     * @param actions list of actions to run
@@ -105,14 +109,12 @@ class ProjectCreateHelperImpl extends ProjectCreateHelper {
     */
   def runNextAction(actions: Seq[PostrunAction], results:Seq[Try[JythonOutput]], cache: PostrunDataCache,
                     projectFileName: String, projectEntry: ProjectEntry, projectType: ProjectType)
-                   (implicit db: slick.jdbc.JdbcProfile#Backend#Database, config:play.api.Configuration):Seq[Try[JythonOutput]] = {
-    val timeout:Duration = Duration(config.getOptional[String]("postrun.timeout").getOrElse("5 seconds"))
-
+                   (implicit db: slick.jdbc.JdbcProfile#Backend#Database, config:play.api.Configuration, timeout: Duration):Seq[Try[JythonOutput]] = {
     logger.debug(s"runNextAction: remaining actions: ${actions.toString()}")
     actions.headOption match {
       case Some(nextAction)=>
         logger.info(s"running action ${nextAction.toString}")
-        val newResults = results ++ Seq(Await.result(nextAction.run(projectFileName,projectEntry, projectType, cache),timeout))
+        val newResults = results ++ Seq(syncExecScript(nextAction, projectFileName,projectEntry, projectType, cache))
         logger.info(s"got results: ${newResults.toString()}")
         runNextAction(actions.tail, newResults, cache, projectFileName, projectEntry, projectType)
       case None=>
@@ -146,6 +148,7 @@ class ProjectCreateHelperImpl extends ProjectCreateHelper {
                       (implicit db: slick.jdbc.JdbcProfile#Backend#Database, config:play.api.Configuration):Future[Either[String,String]]= {
     val futureSequence = Future.sequence(Seq(eventualTriedEntry, template.projectType, fileEntry.getFullPath, PostrunDependencyGraph.loadAllById))
 
+    implicit val timeout:Duration = Duration(config.getOptional[String]("postrun.timeout").getOrElse("30 seconds"))
     futureSequence.flatMap(completedFutures=>{
       val projectEntryTry:Try[ProjectEntry] = completedFutures.head.asInstanceOf[Try[ProjectEntry]]
       projectEntryTry match {
