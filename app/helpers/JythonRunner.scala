@@ -100,17 +100,20 @@ class JythonRunner {
       interpreter.execfile(scriptName)
       val func = interpreter.get("postrun")
 
-      val result = Try {
-        val returnedObject = func.__call__(updatedPythonifiedArgs, updatedPythonifiedNames)
-      }
-      val raisedError = result match {
-        case Success(nothing) => None
-        case Failure(error) => Some(error)
+      val result = Try { func.__call__(updatedPythonifiedArgs, updatedPythonifiedNames) }
+      result match {
+        case Success(returnedObject) =>
+          val updatedDataCache = dataCache ++ returnedObject.getDict.asInstanceOf[PyDictionary]
+          Success(JythonOutput(outStream.toString, errStream.toString, updatedDataCache, None))
+        case Failure(error) =>
+          Success(JythonOutput(outStream.toString, errStream.toString, dataCache, Some(error)))
       }
 
-      Success(JythonOutput(outStream.toString, errStream.toString, dataCache, raisedError))
+
     } catch {
-      case err:Throwable=>Failure(err)
+      case err:Throwable=>
+        logger.error("Could not start postrun script: ", err)
+        Failure(err)
     }
   }
 }

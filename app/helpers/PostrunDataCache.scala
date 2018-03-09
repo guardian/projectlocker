@@ -18,6 +18,16 @@ class PostrunDataCache(entries:PyDictionary) {
     new PostrunDataCache(newDict)
   }
 
+  def ++(values:PyDictionary):PostrunDataCache = {
+    if(values==null){
+      this
+    } else {
+      val newDict = entries.copy()
+      newDict.update(values)
+      new PostrunDataCache(newDict)
+    }
+  }
+
   /**
     * Retrieve a value from the data cache, as a string. The internally held python object is converted back to a Scala
     * string in the process
