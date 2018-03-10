@@ -57,6 +57,9 @@ GET     /api/postrun/:id/depends        @controllers.PostrunActionController.lis
 PUT     /api/postrun/:id/depends/:dep   @controllers.PostrunActionController.addDependency(id:Int, dep:Int)
 DELETE  /api/postrun/:id/depends/:dep   @controllers.PostrunActionController.removeDependency(id:Int, dep:Int)
 
+GET     /api/pluto/workinggroup            @controllers.PlutoWorkingGroupController.list(startAt:Int ?=0,limit:Int ?=100)
+GET     /api/pluto/workinggroup/:id        @controllers.PlutoWorkingGroupController.getitem(id:Int)
+
 POST    /api/login                         @controllers.Application.authenticate
 POST    /api/logout                        @controllers.Application.logout
 GET     /api/isLoggedIn                    @controllers.Application.isLoggedIn
