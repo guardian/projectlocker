@@ -4,7 +4,7 @@ CREATE TABLE "PlutoWorkingGroup" (
   id INTEGER NOT NULL PRIMARY KEY,
   S_HIDE CHARACTER VARYING NULL,
   S_NAME CHARACTER VARYING NOT NULL,
-  S_UUID CHARACTER VARYING NOT NULL UNIQUE
+  U_UUID UUID NOT NULL UNIQUE
 );
 
 CREATE SEQUENCE "PlutoWorkingGroup_id_seq"
@@ -52,5 +52,5 @@ ALTER TABLE "PlutoCommission_id_seq" OWNER TO projectlocker;
 ALTER TABLE ONLY "PlutoCommission" ALTER COLUMN id SET DEFAULT nextval('"PlutoCommission_id_seq"'::regclass);
 
 # -- !Downs
-DROP TABLE "PlutoWorkingGroup";
-DROP TABLE "PlutoCommission";
+DROP TABLE "PlutoCommission" CASCADE ;
+DROP TABLE "PlutoWorkingGroup" CASCADE ;

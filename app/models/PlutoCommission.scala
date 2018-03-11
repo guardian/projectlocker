@@ -63,7 +63,7 @@ case class PlutoCommission (id:Option[Int], collectionId:Int, siteId: String, cr
 class PlutoCommissionRow (tag:Tag) extends Table[PlutoCommission](tag,"PlutoCommission"){
   def id = column[Int]("id",O.PrimaryKey, O.AutoInc)
   def collectionId = column[Int]("i_collection_id")
-  def siteId = column[String]("i_site_id")
+  def siteId = column[String]("s_site_id")
   def created = column[Timestamp]("t_created")
   def updated = column[Timestamp]("t_updated")
   def title = column[String]("s_title")
@@ -75,7 +75,7 @@ class PlutoCommissionRow (tag:Tag) extends Table[PlutoCommission](tag,"PlutoComm
 }
 
 trait PlutoCommissionSerializer extends TimestampSerialization {
-  val plutoCommissionWrites:Writes[PlutoCommission] = (
+  implicit val plutoCommissionWrites:Writes[PlutoCommission] = (
     (JsPath \ "id").writeNullable[Int] and
       (JsPath \ "collectionId").write[Int] and
       (JsPath \ "siteId").write[String] and
@@ -86,6 +86,18 @@ trait PlutoCommissionSerializer extends TimestampSerialization {
       (JsPath \ "description").writeNullable[String] and
       (JsPath \ "workingGroupId").write[Int]
   )(unlift(PlutoCommission.unapply))
+
+  implicit val plutoCommissionReads:Reads[PlutoCommission] = (
+    (JsPath \ "id").readNullable[Int] and
+      (JsPath \ "collectionId").read[Int] and
+      (JsPath \ "siteId").read[String] and
+      (JsPath \ "created").read[Timestamp] and
+      (JsPath \ "updated").read[Timestamp] and
+      (JsPath \ "title").read[String] and
+      (JsPath \ "status").read[String] and
+      (JsPath \ "description").readNullable[String] and
+      (JsPath \ "workingGroupId").read[Int]
+    )(PlutoCommission.apply _)
 }
 
 object PlutoCommission extends ((Option[Int],Int,String,Timestamp,Timestamp,String,String,Option[String],Int)=>PlutoCommission){

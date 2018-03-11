@@ -42,7 +42,14 @@ INSERT INTO "PostrunDependency" (id,K_SOURCE, K_DEPENDSON) VALUES (2, 1, 6);
 INSERT INTO "PostrunDependency" (id,K_SOURCE, K_DEPENDSON) VALUES (3, 4, 5);
 INSERT INTO "PostrunDependency" (id,K_SOURCE, K_DEPENDSON) VALUES (4, 2, 1);
 
+INSERT INTO "PlutoWorkingGroup" (id, S_HIDE, S_NAME, U_UUID) VALUES (1, NULL, 'Multimedia Social', '13CCF63C-F248-41C1-8EAA-138D0758E9AB');
+INSERT INTO "PlutoWorkingGroup" (id, S_HIDE, S_NAME, U_UUID) VALUES (2, 'hidden', 'Multimedia Anti-Social', 'DA60602E-55C1-4F2A-8EDD-2737BEB4916E');
+
+INSERT INTO "PlutoCommission" (id, I_COLLECTION_ID, S_SITE_ID, T_CREATED, T_UPDATED, S_TITLE, S_STATUS, S_DESCRIPTION, K_WORKING_GROUP) VALUES (1, 1234, 'VX', '2018-01-01T12:13:24.000', '2018-01-01T12:13:24.000', 'My test commission', 'New', 'some very long description goes here', 1);
+
 ------------------------
+SELECT pg_catalog.setval('"PlutoCommission_id_seq"', 2, true);
+SELECT pg_catalog.setval('"PlutoWorkingGroup_id_seq"', 3, true);
 SELECT pg_catalog.setval('"PostrunAction_id_seq"', 7, true);
 SELECT pg_catalog.setval('"PostrunAssociationRow_id_seq"', 4, true);
 SELECT pg_catalog.setval('"ProjectTemplate_id_seq"', 4, true);
