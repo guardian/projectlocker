@@ -5,6 +5,7 @@ import TemplateComponent from './projectcreate/TemplateComponent.jsx';
 import NameComponent from './projectcreate/NameComponent.jsx';
 import DestinationStorageComponent from './projectcreate/DestinationStorageComponent.jsx';
 import ProjectCompletionComponent from "./projectcreate/CompletionComponent.jsx";
+import PlutoLinkageComponent from './projectcreate/PlutoLinkageComponent.jsx';
 
 class ProjectCreateMultistep extends React.Component {
     static propTypes = {
@@ -18,6 +19,8 @@ class ProjectCreateMultistep extends React.Component {
             projectTemplates: [],
             selectedProjectTemplate: null,
             storages: [],
+            wgList: [],
+            selectedWorkingGroup:null,
             selectedStorage: null,
             projectName: "",
             projectFilename: "",
@@ -27,6 +30,7 @@ class ProjectCreateMultistep extends React.Component {
         this.templateSelectionUpdated = this.templateSelectionUpdated.bind(this);
         this.nameSelectionUpdated = this.nameSelectionUpdated.bind(this);
         this.storageSelectionUpdated = this.storageSelectionUpdated.bind(this);
+        this.plutoDataUpdated = this.plutoDataUpdated.bind(this);
     }
 
     componentWillMount(){
@@ -48,7 +52,13 @@ class ProjectCreateMultistep extends React.Component {
             .catch(error=>{
                 console.error(error);
                 this.setState({lastError: error});
-            })
+            });
+
+        axios.get("/api/pluto/workinggroup").then(response=>{
+            this.setState({wgList: response.data.result});
+        }).catch(error=>{
+            this.setState({lastError: error});
+        });
     }
 
     templateSelectionUpdated(newTemplate, cb){
@@ -63,6 +73,12 @@ class ProjectCreateMultistep extends React.Component {
         this.setState({selectedStorage: newStorage});
     }
 
+    plutoDataUpdated(newdata){
+        this.setState({
+            selectedWorkingGroup: newdata.workingGroupRef
+        })
+    }
+
     render(){
         const steps = [
             {
@@ -73,8 +89,13 @@ class ProjectCreateMultistep extends React.Component {
             },
             {
                 name: "Name your project",
-                component: <NameComponent projectName={this.state.projectName} fileName={this.state.fileName}
+                component: <NameComponent projectName={this.state.projectName}
+                                          fileName={this.state.fileName}
                                           selectionUpdated={this.nameSelectionUpdated}/>
+            },
+            {
+                name: "Working Group & Commission",
+                component: <PlutoLinkageComponent valueWasSet={this.plutoDataUpdated} workingGroupList={this.state.wgList}/>
             },
             {
                 name: "Destination storage",

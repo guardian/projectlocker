@@ -37,6 +37,7 @@ case class PlutoCommission (id:Option[Int], collectionId:Int, siteId: String, cr
           Failure(error)
       })
     case Some(realEntityId)=>
+      logger.debug(s"Updating commission record $realEntityId")
       db.run(
         TableQuery[PlutoCommissionRow].filter(_.id===realEntityId).update(this).asTry
       ).map({

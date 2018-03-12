@@ -3,6 +3,7 @@ package services
 import java.net.URLEncoder
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
+import java.time.temporal.TemporalUnit
 import javax.inject.{Inject, Singleton}
 
 import akka.actor.ActorSystem
@@ -52,8 +53,8 @@ class PlutoWGCommissionScanner @Inject() (configuration:Configuration, actorSyst
   protected def refreshCommissionsInfo(workingGroup:PlutoWorkingGroup, forSite:String, sinceParam:String, startAt:Int, pageSize: Int):Future[Try[Int]] = {
     val authorization = headers.Authorization(BasicHttpCredentials(configuration.get[String]("pluto.username"),configuration.get[String]("pluto.password")))
 
-    val commissionUrl = s"${configuration.get[String]("pluto.server_url")}/commission/api/external/list/?uuid=${workingGroup.uuid}&start=$startAt&length=$pageSize$sinceParam"
-    logger.info(s"refreshing commissions $startAt -> ${startAt + pageSize} for ${workingGroup.name} (${workingGroup.uuid}) via url $commissionUrl")
+    val commissionUrl = s"${configuration.get[String]("pluto.server_url")}/commission/api/external/list/?group=${workingGroup.uuid}&start=$startAt&length=$pageSize$sinceParam"
+    logger.info(s"refreshing commissions $startAt -> ${startAt + pageSize} for ${workingGroup.name} (${workingGroup.id}) via url $commissionUrl")
 
     Http().singleRequest(HttpRequest(uri = commissionUrl, headers = List(authorization))).flatMap(response=>{
       if(response.status==StatusCodes.OK){
@@ -108,17 +109,14 @@ class PlutoWGCommissionScanner @Inject() (configuration:Configuration, actorSyst
             val sinceParam = maybeCommission match {
               case Some(recentCommission)=>
                 logger.info(s"Got most recent commission for $workingGroupId: $recentCommission")
-                s"&since=${URLEncoder.encode(formatter.format(recentCommission.updated.toInstant),"UTF-8")}"
+                s"&since=${URLEncoder.encode(formatter.format(recentCommission.updated.toInstant.plus(java.time.Duration.ofSeconds(1))),"UTF-8")}"
               case None=>
                 logger.info(s"No commissions for $workingGroupId")
                 ""
             }
 
             //yah, having the site as a config setting is not good but it will do for the time being
-            if(sinceParam!="")
-              refreshCommissionsInfo(workingGroup, configuration.get[String]("pluto.sitename"),sinceParam, 0, configuration.get[Int]("pluto.pageSize"))
-            else
-              Future(Success(0))
+            refreshCommissionsInfo(workingGroup, configuration.get[String]("pluto.sitename"),sinceParam, 0, configuration.get[Int]("pluto.pageSize"))
         })
       case None=>
         logger.error("Can't refresh commissions before working group has been saved.")
