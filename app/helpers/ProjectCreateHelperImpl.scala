@@ -220,7 +220,8 @@ class ProjectCreateHelperImpl extends ProjectCreateHelper {
                 Future(Failure(new RuntimeException(error.mkString("\n"))))
               case Right(writtenFile)=>
                 logger.info(s"Creating new project entry from $writtenFile")
-                val createResult = ProjectEntry.createFromFile(writtenFile, rq.projectTemplate, rq.title, createTime,rq.user)
+                val createResult = ProjectEntry.createFromFile(writtenFile, rq.projectTemplate, rq.title, createTime,
+                  rq.user,rq.workingGroupId, rq.commissionId)
                 logger.info("Done")
                 val postruns = doPostrunActions(writtenFile, createResult, rq.projectTemplate) map {
                   case Left(errorMessage)=>
