@@ -18,7 +18,8 @@
     <logger name="application" level="WARN" />
     <logger name="services.PostrunActionScanner" level="INFO"/>
     <logger name="helpers.ProjectCreateHelperImpl" level="INFO"/>
-    <logger name="models.PlutoWorkingGroup" level="DEBUG"/>
+    <logger name="models.PlutoWorkingGroup" level="INFO"/>
+    <logger name="models.PlutoCommission" level="INFO"/>
     <logger name="services.PlutoWGCommissionScanner" level="INFO"/>
     <logger name="models.FileEntry" level="INFO" />
     <logger name="controllers.Files" level="INFO" />

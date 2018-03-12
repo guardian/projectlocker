@@ -1,5 +1,8 @@
 package services
 
+import java.net.URLEncoder
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
 import javax.inject.{Inject, Singleton}
 
 import akka.actor.ActorSystem
@@ -46,8 +49,11 @@ class PlutoWGCommissionScanner @Inject() (configuration:Configuration, actorSyst
       )
   }
 
-  protected def refreshCommissionsInfo(commissionUrl:String):Future[Try[Int]] = {
+  protected def refreshCommissionsInfo(workingGroup:PlutoWorkingGroup, forSite:String, sinceParam:String, startAt:Int, pageSize: Int):Future[Try[Int]] = {
     val authorization = headers.Authorization(BasicHttpCredentials(configuration.get[String]("pluto.username"),configuration.get[String]("pluto.password")))
+
+    val commissionUrl = s"${configuration.get[String]("pluto.server_url")}/commission/api/external/list/?uuid=${workingGroup.uuid}&start=$startAt&length=$pageSize$sinceParam"
+    logger.info(s"refreshing commissions $startAt -> ${startAt + pageSize} for ${workingGroup.name} (${workingGroup.uuid}) via url $commissionUrl")
 
     Http().singleRequest(HttpRequest(uri = commissionUrl, headers = List(authorization))).flatMap(response=>{
       if(response.status==StatusCodes.OK){
@@ -68,11 +74,17 @@ class PlutoWGCommissionScanner @Inject() (configuration:Configuration, actorSyst
     }).map({
       case Right(parsedData)=>
         logger.debug(s"Received $parsedData from server")
-          val commissionList = parsedData.as[List[PlutoCommission]]
+          val commissionList = parsedData.as[List[JsValue]]
+            .map(PlutoCommission.fromServerRepresentation(_,workingGroup.id.get,forSite))
+              .collect({
+                case Success(comm)=>comm
+              })
           logger.debug(s"Got commission list:")
-          Success(commissionList.foldLeft[Int](0)((acc, comm)=>{
+          Success(
+            commissionList.foldLeft[Int](0)((acc, comm)=>{
               logger.debug(s"\t$comm")
               Await.result(comm.ensureRecorded,10.seconds)
+              if(acc>=pageSize-1) refreshCommissionsInfo(workingGroup, forSite,sinceParam, startAt+acc, pageSize)
               acc+1
             }))
       case Left(string)=>
@@ -90,16 +102,23 @@ class PlutoWGCommissionScanner @Inject() (configuration:Configuration, actorSyst
         PlutoCommission.mostRecentByWorkingGroup(workingGroupId).flatMap({
           case Failure(error)=>Future(Failure(error))
           case Success(maybeCommission)=>
+            logger.debug(s"most recent commission: ${maybeCommission}")
+            val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:MM:ss.SSSZ").withZone(ZoneId.of("UTC"))
+
             val sinceParam = maybeCommission match {
               case Some(recentCommission)=>
-                s"?since=${recentCommission.updated.toString}"
+                logger.info(s"Got most recent commission for $workingGroupId: $recentCommission")
+                s"&since=${URLEncoder.encode(formatter.format(recentCommission.updated.toInstant),"UTF-8")}"
               case None=>
+                logger.info(s"No commissions for $workingGroupId")
                 ""
             }
-            //FIXME: this url is probably wrong
-            val commissionUrl = s"${configuration.get[String]("pluto.server_url")}/commission/api/list/${workingGroup.uuid}?since=$sinceParam"
-            logger.debug(s"refreshing commissions for ${workingGroup.name} (${workingGroup.uuid}) via url $commissionUrl")
-            refreshCommissionsInfo(commissionUrl)
+
+            //yah, having the site as a config setting is not good but it will do for the time being
+            if(sinceParam!="")
+              refreshCommissionsInfo(workingGroup, configuration.get[String]("pluto.sitename"),sinceParam, 0, configuration.get[Int]("pluto.pageSize"))
+            else
+              Future(Success(0))
         })
       case None=>
         logger.error("Can't refresh commissions before working group has been saved.")
@@ -151,8 +170,9 @@ class PlutoWGCommissionScanner @Inject() (configuration:Configuration, actorSyst
                     case Failure(error)=>
                       logger.error(s"Unable to save working group to database: ", error)
                   }
-
                 })
+              case Left(unparsedData)=>
+                Failure(new RuntimeException(s"Could not parse data from server, got $unparsedData"))
             }
           case Failure(error)=>logger.error(s"Unable to get working groups from server: $error")
         })

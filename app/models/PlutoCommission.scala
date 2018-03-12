@@ -1,13 +1,16 @@
 package models
 
 import java.sql.Timestamp
+import java.time.ZonedDateTime
 
+import org.joda.time.DateTime
 import play.api.Logger
 import play.api.libs.functional.syntax.unlift
-import play.api.libs.json.{JsPath, Reads, Writes}
+import play.api.libs.json._
 import play.api.libs.functional.syntax._
 import slick.lifted.{TableQuery, Tag}
 import slick.jdbc.PostgresProfile.api._
+
 import scala.concurrent.Future
 import scala.util.{Failure, Success, Try}
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -21,12 +24,17 @@ case class PlutoCommission (id:Option[Int], collectionId:Int, siteId: String, cr
     * was set, then updates the database record and returns the same object. */
   def save(implicit db: slick.jdbc.JdbcProfile#Backend#Database):Future[Try[PlutoCommission]] = id match {
     case None=>
+      logger.debug("Inserting commission record")
       val insertQuery = TableQuery[PlutoCommissionRow] returning TableQuery[PlutoCommissionRow].map(_.id) into ((item,id)=>item.copy(id=Some(id)))
       db.run(
         (insertQuery+=this).asTry
       ).map({
-        case Success(insertResult)=>Success(insertResult.asInstanceOf[PlutoCommission])  //maybe only intellij needs the cast here?
-        case Failure(error)=>Failure(error)
+        case Success(insertResult)=>
+          logger.debug(s"Successful insert: $insertResult")
+          Success(insertResult.asInstanceOf[PlutoCommission])  //maybe only intellij needs the cast here?
+        case Failure(error)=>
+          logger.error(s"could not insert record: ",error)
+          Failure(error)
       })
     case Some(realEntityId)=>
       db.run(
@@ -52,9 +60,13 @@ case class PlutoCommission (id:Option[Int], collectionId:Int, siteId: String, cr
           logger.info(s"Saving commission $title ($siteId-$collectionId) to the database")
           this.save
         } else {
-          Future(Success(rows.head))
+          logger.info(s"Commission $title ($siteId-$collectionId) already existed")
+          val updatedInfo = this.copy(id=Some(rows.head.id.get))
+          updatedInfo.save
+          Future(Success(updatedInfo))
         }
       case Failure(error)=>
+        logger.error("could not check commission: ",error)
         Future(Failure(error))
     })
   }
@@ -100,7 +112,51 @@ trait PlutoCommissionSerializer extends TimestampSerialization {
     )(PlutoCommission.apply _)
 }
 
-object PlutoCommission extends ((Option[Int],Int,String,Timestamp,Timestamp,String,String,Option[String],Int)=>PlutoCommission){
+/*
+[
+    {
+        "collection_id": 11,
+        "user": 1,
+        "created": "2017-12-04T16:11:23.632",
+        "updated": "2017-12-04T16:11:28.288",
+        "gnm_commission_title": "addasads",
+        "gnm_commission_status": "New",
+        "gnm_commission_workinggroup": "8b2bc331-7a11-40d0-a1e5-1266bdf8dce5",
+        "gnm_commission_description": null,
+        "gnm_commission_owner": [
+            1
+        ]
+    },
+    {
+        "collection_id": 26,
+        "user": 1,
+        "created": "2017-12-06T15:17:19.425",
+        "updated": "2017-12-06T15:17:20.808",
+        "gnm_commission_title": "fwqggrgqggreqgr",
+        "gnm_commission_status": "New",
+        "gnm_commission_workinggroup": "8b2bc331-7a11-40d0-a1e5-1266bdf8dce5",
+        "gnm_commission_description": null,
+        "gnm_commission_owner": [
+            1
+        ]
+    },
+    {
+        "collection_id": 13,
+        "user": 1,
+        "created": "2017-12-04T16:18:12.105",
+        "updated": "2018-01-04T14:14:35.346",
+        "gnm_commission_title": "addasadsf",
+        "gnm_commission_status": "In production",
+        "gnm_commission_workinggroup": "8b2bc331-7a11-40d0-a1e5-1266bdf8dce5",
+        "gnm_commission_description": null,
+        "gnm_commission_owner": [
+            1
+        ]
+    }
+]
+ */
+
+object PlutoCommission extends ((Option[Int],Int,String,Timestamp,Timestamp,String,String,Option[String],Int)=>PlutoCommission)  {
   def mostRecentByWorkingGroup(workingGroupId: Int)(implicit db: slick.jdbc.JdbcProfile#Backend#Database):Future[Try[Option[PlutoCommission]]] = {
     db.run(
       TableQuery[PlutoCommissionRow].filter(_.workingGroup===workingGroupId).sortBy(_.updated.desc).take(1).result.asTry
@@ -108,5 +164,38 @@ object PlutoCommission extends ((Option[Int],Int,String,Timestamp,Timestamp,Stri
       case Failure(error)=>Failure(error)
       case Success(resultList)=> Success(resultList.headOption)
     })
+  }
+
+  //handle different explicit time format
+  def timestampToDateTime(t: Timestamp): DateTime = new DateTime(t.getTime)
+  def dateTimeToTimestamp(dt: DateTime): Timestamp = new Timestamp(dt.getMillis)
+  implicit val dateWrites = JodaWrites.jodaDateWrites("yyyy-MM-dd'T'HH:mm:ss.SSS") //this DOES take numeric timezones - Z means Zone, not literal letter Z
+  implicit val dateReads = JodaReads.jodaDateReads("yyyy-MM-dd'T'HH:mm:ss.SSS")
+
+  /**
+    *  performs a conversion from java.sql.Timestamp to Joda DateTime and back again
+    */
+  implicit val timestampFormat = new Format[Timestamp] {
+    def writes(t: Timestamp): JsValue = Json.toJson(timestampToDateTime(t))
+    def reads(json: JsValue): JsResult[Timestamp] = Json.fromJson[DateTime](json).map(dateTimeToTimestamp)
+  }
+
+  def fromServerRepresentation(serverRep: JsValue, forWorkingGroup: Int, forSiteId: String):Try[PlutoCommission] = {
+    try {
+      val comm = new PlutoCommission(
+        id = None,
+        collectionId = (serverRep \ "collection_id").as[Int],
+        siteId = forSiteId,
+        created = (serverRep \ "created").as[Timestamp],
+        updated = (serverRep \ "updated").as[Timestamp],
+        title = (serverRep \ "gnm_commission_title").as[String],
+        status = (serverRep \ "gnm_commission_status").as[String],
+        description = (serverRep \ "gnm_commission_description").asOpt[String],
+        workingGroup = forWorkingGroup
+      )
+      Success(comm)
+    } catch {
+      case t:Throwable=>Failure(t)
+    }
   }
 }
