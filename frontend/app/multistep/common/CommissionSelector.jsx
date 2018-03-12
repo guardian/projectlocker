@@ -21,6 +21,10 @@ class CommissionSelector extends React.Component {
         }
     }
 
+    componentWillMount(){
+        this.loadData();
+    }
+
     loadData(){
         this.setState({loading:true, error: null, commissionList:[]},()=>{
             const searchDoc = {workingGroupId: this.props.workingGroupId, status: this.props.showStatus, match: "W_EXACT" };

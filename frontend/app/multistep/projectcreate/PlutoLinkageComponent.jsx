@@ -1,7 +1,7 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import CommonMultistepComponent from '../common/CommonMultistepComponent.jsx';
-import WorkingGroupList from '../common/WorkingGroupList.jsx';
+import WorkingGroupSelector from '../common/WorkingGroupSelector.jsx';
 import CommissionSelector from '../common/CommissionSelector.jsx';
 
 class PlutoLinkageComponent extends CommonMultistepComponent {
@@ -34,7 +34,7 @@ class PlutoLinkageComponent extends CommonMultistepComponent {
                 <tbody>
                 <tr>
                     <td>Working group</td>
-                    <td><WorkingGroupList valueWasSet={value=>this.setState({workingGroupRef: value})}
+                    <td><WorkingGroupSelector valueWasSet={value=>this.setState({workingGroupRef: value})}
                                           workingGroupList={this.props.workingGroupList}
                                           currentValue={this.state.workingGroupRef}/></td>
                 </tr>

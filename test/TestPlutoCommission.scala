@@ -1,10 +1,28 @@
+import helpers.ProjectCreateHelper
 import models._
 import org.specs2.mutable.Specification
+import play.api.db.slick.DatabaseConfigProvider
+import play.api.inject.bind
+import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.libs.json._
 import play.api.libs.functional.syntax._
+import slick.jdbc.JdbcProfile
+import testHelpers.TestDatabase
+
+import scala.concurrent.Await
+import scala.concurrent.duration._
 
 class TestPlutoCommission extends Specification with TimestampSerialization {
-  "TestPlutoCommission" should {
+  protected val application = new GuiceApplicationBuilder()
+    .overrides(bind[DatabaseConfigProvider].to[TestDatabase.testDbProvider])
+    .build
+
+  private val injector = application.injector
+
+  protected val dbConfigProvider = injector.instanceOf(classOf[DatabaseConfigProvider])
+  protected implicit val db = dbConfigProvider.get[JdbcProfile].db
+
+  "PlutoCommission" should {
     "deserialize a response from the pluto server " in {
       val jsonData = Json.parse("""[
                                   |    {
@@ -59,6 +77,17 @@ class TestPlutoCommission extends Specification with TimestampSerialization {
       data(2).get.title mustEqual "addasadsf"
       data(2).get.status mustEqual "In production"
 
+    }
+  }
+
+  "PlutoCommission.mostRecentByWorkingGroup" should {
+    "return the most recently modified commission in the provided group" in {
+      val result = Await.result(PlutoCommission.mostRecentByWorkingGroup(1),10.seconds)
+
+      result must beSuccessfulTry
+      result.get must beSome
+      result.get.get.collectionId mustEqual 4567
+      result.get.get.title mustEqual "My test commission 4"
     }
   }
 }

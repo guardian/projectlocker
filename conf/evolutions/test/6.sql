@@ -46,9 +46,12 @@ INSERT INTO "PlutoWorkingGroup" (id, S_HIDE, S_NAME, U_UUID) VALUES (1, NULL, 'M
 INSERT INTO "PlutoWorkingGroup" (id, S_HIDE, S_NAME, U_UUID) VALUES (2, 'hidden', 'Multimedia Anti-Social', 'DA60602E-55C1-4F2A-8EDD-2737BEB4916E');
 
 INSERT INTO "PlutoCommission" (id, I_COLLECTION_ID, S_SITE_ID, T_CREATED, T_UPDATED, S_TITLE, S_STATUS, S_DESCRIPTION, K_WORKING_GROUP) VALUES (1, 1234, 'VX', '2018-01-01T12:13:24.000', '2018-01-01T12:13:24.000', 'My test commission', 'New', 'some very long description goes here', 1);
+INSERT INTO "PlutoCommission" (id, I_COLLECTION_ID, S_SITE_ID, T_CREATED, T_UPDATED, S_TITLE, S_STATUS, S_DESCRIPTION, K_WORKING_GROUP) VALUES (2, 2345, 'VX', '2018-01-02T12:13:24.000', '2018-01-02T12:13:24.000', 'My test commission 2', 'In production', 'some very long description goes here', 1);
+INSERT INTO "PlutoCommission" (id, I_COLLECTION_ID, S_SITE_ID, T_CREATED, T_UPDATED, S_TITLE, S_STATUS, S_DESCRIPTION, K_WORKING_GROUP) VALUES (3, 3456, 'VX', '2018-01-03T12:13:24.000', '2018-01-03T12:13:24.000', 'My test commission 3', 'Held', 'some very long description goes here', 1);
+INSERT INTO "PlutoCommission" (id, I_COLLECTION_ID, S_SITE_ID, T_CREATED, T_UPDATED, S_TITLE, S_STATUS, S_DESCRIPTION, K_WORKING_GROUP) VALUES (4, 4567, 'VX', '2018-01-04T12:13:24.000', '2018-01-04T12:13:24.000', 'My test commission 4', 'Completed', 'some very long description goes here', 1);
 
 ------------------------
-SELECT pg_catalog.setval('"PlutoCommission_id_seq"', 2, true);
+SELECT pg_catalog.setval('"PlutoCommission_id_seq"', 5, true);
 SELECT pg_catalog.setval('"PlutoWorkingGroup_id_seq"', 3, true);
 SELECT pg_catalog.setval('"PostrunAction_id_seq"', 7, true);
 SELECT pg_catalog.setval('"PostrunAssociationRow_id_seq"', 4, true);
@@ -58,3 +61,9 @@ SELECT pg_catalog.setval('"StorageEntry_id_seq"', 3, true);
 SELECT pg_catalog.setval('"ProjectFileAssociation_id_seq"', 3, false);
 SELECT pg_catalog.setval('"ProjectEntry_id_seq"', 5, false);
 SELECT pg_catalog.setval('"FileEntry_id_seq"', 5, true);
+
+# --!Downs
+DELETE FROM "PlutoCommission";
+DELETE FROM "PlutoWorkingGroup";
+DELETE FROM "PostrunActionAssociationRow";
+DELETE FROM "PostrunAction";

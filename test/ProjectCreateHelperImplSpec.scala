@@ -52,7 +52,7 @@ class ProjectCreateHelperImplSpec extends Specification with Mockito {
 
       val p = new ProjectCreateHelperImpl { override protected val storageHelper:StorageHelper=mockedStorageHelper }
 
-      val request = ProjectRequest("testfile",1,"MyTestProjectFile", 3,"test-user").hydrate
+      val request = ProjectRequest("testfile",1,"MyTestProjectFile", 3,"test-user",None,None).hydrate
 
       val fullRequest = Await.result(request, 10.seconds)
       fullRequest must beSome
@@ -62,7 +62,7 @@ class ProjectCreateHelperImplSpec extends Specification with Mockito {
       val response = p.create(fullRequest.get, Some(createTime))
       val createResult = Await.result(response, 10.seconds)
 
-      createResult must beSuccessfulTry(ProjectEntry(Some(5),2,None,"MyTestProjectFile",Timestamp.valueOf(createTime),"test-user"))
+      createResult must beSuccessfulTry(ProjectEntry(Some(5),2,None,"MyTestProjectFile",Timestamp.valueOf(createTime),"test-user",None,None))
     }
 
     "refuse to overwrite an existing file that has data on it" in {
@@ -76,7 +76,7 @@ class ProjectCreateHelperImplSpec extends Specification with Mockito {
 
       val p = new ProjectCreateHelperImpl { override protected val storageHelper:StorageHelper=mockedStorageHelper }
 
-      val request = ProjectRequest("/path/to/a/file.project",1,"MyTestProjectFile", 1,"test-user").hydrate
+      val request = ProjectRequest("/path/to/a/file.project",1,"MyTestProjectFile", 1,"test-user",None,None).hydrate
 
       val fullRequest = Await.result(request, 10.seconds)
 
@@ -100,7 +100,7 @@ class ProjectCreateHelperImplSpec extends Specification with Mockito {
 
       val p = new ProjectCreateHelperImpl { override protected val storageHelper:StorageHelper=mockedStorageHelper }
 
-      val request = ProjectRequest("testfile",2,"MyTestProjectFile",1,"test-user").hydrate
+      val request = ProjectRequest("testfile",2,"MyTestProjectFile",1,"test-user",None,None).hydrate
 
       val fullRequest = Await.result(request, 10.seconds)
       val createTime=LocalDateTime.now()
@@ -121,7 +121,7 @@ class ProjectCreateHelperImplSpec extends Specification with Mockito {
       implicit val scriptTimeout = 5.seconds
       val testTimestamp = Timestamp.valueOf("2018-02-02 03:04:05")
       val testPostrunAction = PostrunAction(None,"args_test_4.py","Test script",None,"testuser",1,testTimestamp)
-      val testProjectEntry = ProjectEntry(None,1,None,"Test project title",testTimestamp, "testuser")
+      val testProjectEntry = ProjectEntry(None,1,None,"Test project title",testTimestamp, "testuser",None,None)
       val testProjectType = ProjectType(None,"TestProject","TestProjectApp","1.0",None)
 
       val result = p.runNextAction(actions=Seq(testPostrunAction),
@@ -148,7 +148,7 @@ class ProjectCreateHelperImplSpec extends Specification with Mockito {
 
       val testTimestamp = Timestamp.valueOf("2018-02-02 03:04:05")
       val testPostrunAction = PostrunAction(None,"notexistingscript.py","Test script",None,"testuser",1,testTimestamp)
-      val testProjectEntry = ProjectEntry(None,1,None,"Test project title",testTimestamp, "testuser")
+      val testProjectEntry = ProjectEntry(None,1,None,"Test project title",testTimestamp, "testuser",None,None)
       val testProjectType = ProjectType(None,"TestProject","TestProjectApp","1.0",None)
 
       val result = p.testRunEach(testPostrunAction,pretendProjectName,testProjectEntry,testProjectType)
@@ -168,7 +168,7 @@ class ProjectCreateHelperImplSpec extends Specification with Mockito {
 
       val testTimestamp = Timestamp.valueOf("2018-02-02 03:04:05")
       val testPostrunAction = PostrunAction(None,"error_test_2.py","Test script",None,"testuser",1,testTimestamp)
-      val testProjectEntry = ProjectEntry(None,1,None,"Test project title",testTimestamp, "testuser")
+      val testProjectEntry = ProjectEntry(None,1,None,"Test project title",testTimestamp, "testuser",None,None)
       val testProjectType = ProjectType(None,"TestProject","TestProjectApp","1.0",None)
 
       val result = p.testRunEach(testPostrunAction,pretendProjectName,testProjectEntry,PostrunDataCache(),testProjectType)
@@ -186,7 +186,7 @@ class ProjectCreateHelperImplSpec extends Specification with Mockito {
 
       val testTimestamp = Timestamp.valueOf("2018-02-02 03:04:05")
       val testFileEntry = Await.result(FileEntry.entryFor("/path/to/a/file.project",1),5.seconds).get.head
-      val testProjectEntry = ProjectEntry(None,1,None,"Test project title",testTimestamp, "testuser")
+      val testProjectEntry = ProjectEntry(None,1,None,"Test project title",testTimestamp, "testuser",None,None)
       val testProjectTemplate = Await.result(ProjectTemplate.entryFor(1),5.seconds).get
 
       val result = Await.result(p.doPostrunActions(testFileEntry,Future(Success(testProjectEntry)),testProjectTemplate),5.seconds)
@@ -205,7 +205,7 @@ class ProjectCreateHelperImplSpec extends Specification with Mockito {
 
       val testTimestamp = Timestamp.valueOf("2018-02-02 03:04:05")
       val testFileEntry = Await.result(FileEntry.entryFor("/path/to/a/file.project",1),5.seconds).get.head
-      val testProjectEntry = ProjectEntry(None,1,None,"Test project title",testTimestamp, "testuser")
+      val testProjectEntry = ProjectEntry(None,1,None,"Test project title",testTimestamp, "testuser",None,None)
       val testProjectTemplate = Await.result(ProjectTemplate.entryFor(1),5.seconds).get
 
       val result = Await.result(p.doPostrunActions(testFileEntry,Future(Success(testProjectEntry)),testProjectTemplate),5.seconds)

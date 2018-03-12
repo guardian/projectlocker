@@ -1,7 +1,7 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 
-class WorkingGroupList extends React.Component {
+class WorkingGroupSelector extends React.Component {
     static propTypes = {
         valueWasSet: PropTypes.func.isRequired,
         workingGroupList: PropTypes.array.isRequired,
@@ -21,4 +21,4 @@ class WorkingGroupList extends React.Component {
     }
 }
 
-export default WorkingGroupList;
+export default WorkingGroupSelector;
