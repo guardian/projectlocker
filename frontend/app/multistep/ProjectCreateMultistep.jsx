@@ -21,6 +21,7 @@ class ProjectCreateMultistep extends React.Component {
             storages: [],
             wgList: [],
             selectedWorkingGroup:null,
+            selectedCommissionId:null,
             selectedStorage: null,
             projectName: "",
             projectFilename: "",
@@ -75,7 +76,8 @@ class ProjectCreateMultistep extends React.Component {
 
     plutoDataUpdated(newdata){
         this.setState({
-            selectedWorkingGroup: newdata.workingGroupRef
+            selectedWorkingGroup: newdata.workingGroupRef,
+            selectedCommissionId: newdata.plutoCommissionRef
         })
     }
 
@@ -110,7 +112,11 @@ class ProjectCreateMultistep extends React.Component {
                                              storages={this.state.storages}
                                              selectedStorage={this.state.selectedStorage}
                                              projectName={this.state.projectName}
-                                             projectFilename={this.state.projectFilename}/>
+                                             projectFilename={this.state.projectFilename}
+                                             selectedWorkingGroupId={this.state.selectedWorkingGroup}
+                                             selectedCommissionId={this.state.selectedCommissionId}
+                                             wgList={this.state.wgList}
+                />
             }
         ];
 
