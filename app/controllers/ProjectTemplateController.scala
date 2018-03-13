@@ -8,7 +8,7 @@ import play.api.{Configuration, Logger}
 import play.api.mvc._
 import play.api.db.slick.DatabaseConfigProvider
 import play.api.libs.json._
-import slick.jdbc.JdbcProfile
+import slick.jdbc.PostgresProfile
 import slick.lifted.TableQuery
 import slick.jdbc.PostgresProfile.api._
 
@@ -21,7 +21,7 @@ class ProjectTemplateController @Inject() (config: Configuration, dbConfigProvid
   extends GenericDatabaseObjectController[ProjectTemplate] with ProjectTemplateSerializer with StorageSerializer{
 
   implicit val cache:SyncCacheApi = cacheImpl
-  val dbConfig = dbConfigProvider.get[JdbcProfile]
+  val dbConfig = dbConfigProvider.get[PostgresProfile]
 
   override def deleteid(requestedId: Int) = dbConfig.db.run(
     TableQuery[ProjectTemplateRow].filter(_.id === requestedId).delete.asTry
@@ -68,7 +68,7 @@ class ProjectTemplateController @Inject() (config: Configuration, dbConfigProvid
   }
 
   override def delete(requestedId: Int) = Action.async { request =>
-    implicit val db:slick.jdbc.JdbcProfile#Backend#Database=dbConfig.db
+    implicit val db:slick.jdbc.PostgresProfile#Backend#Database=dbConfig.db
 
     if(requestedId<0)
       Future(Conflict(Json.obj("status"->"error","detail"->"This object is still referred to by sub-objects")))

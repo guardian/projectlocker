@@ -34,6 +34,9 @@ libraryDependencies ++= Seq(
   // https://mvnrepository.com/artifact/com.typesafe.play/play-json-joda
   "com.typesafe.play" %% "play-json-joda" % "2.6.9"
 )
+// https://mvnrepository.com/artifact/com.typesafe.slick/slick
+libraryDependencies += "com.typesafe.slick" %% "slick" % "3.2.2"
+
 
 //authentication
 libraryDependencies += "com.unboundid" % "unboundid-ldapsdk" % "2.3.6"

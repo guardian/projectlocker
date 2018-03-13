@@ -18,7 +18,7 @@ class PostrunAssociationRow(tag:Tag) extends Table[(Int,Int)](tag,"PostrunAssoci
 }
 
 object PostrunAssociation {
-  def entriesForProjectType(projectTypeId: Int)(implicit db:slick.jdbc.JdbcProfile#Backend#Database):Future[Try[Seq[(Int, Int)]]] = {
+  def entriesForProjectType(projectTypeId: Int)(implicit db:slick.jdbc.PostgresProfile#Backend#Database):Future[Try[Seq[(Int, Int)]]] = {
     db.run(
       TableQuery[PostrunAssociationRow].filter(_.projectType===projectTypeId).result.asTry
     )

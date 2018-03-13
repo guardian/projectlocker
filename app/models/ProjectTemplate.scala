@@ -27,14 +27,14 @@ trait ProjectTemplateSerializer {
 }
 
 case class ProjectTemplate (id: Option[Int],name: String, projectTypeId: Int, fileRef: Int) {
-  def projectType(implicit db: slick.jdbc.JdbcProfile#Backend#Database):Future[ProjectType] = db.run(
+  def projectType(implicit db: slick.jdbc.PostgresProfile#Backend#Database):Future[ProjectType] = db.run(
     TableQuery[ProjectTypeRow].filter(_.id===projectTypeId).result.asTry
   ).map({
     case Success(result)=>result.head
     case Failure(error)=>throw error
   })
 
-  def file(implicit db:slick.jdbc.JdbcProfile#Backend#Database):Future[FileEntry] = db.run(
+  def file(implicit db:slick.jdbc.PostgresProfile#Backend#Database):Future[FileEntry] = db.run(
     TableQuery[FileEntryRow].filter(_.id===fileRef).result.asTry
   ).map({
     case Success(result)=>result.head
@@ -55,7 +55,7 @@ class ProjectTemplateRow(tag: Tag) extends Table[ProjectTemplate](tag,"ProjectTe
 }
 
 object ProjectTemplate extends ((Option[Int],String,Int,Int)=>ProjectTemplate) {
-  def entryFor(entryId: Int)(implicit db:slick.jdbc.JdbcProfile#Backend#Database):Future[Option[ProjectTemplate]] =
+  def entryFor(entryId: Int)(implicit db:slick.jdbc.PostgresProfile#Backend#Database):Future[Option[ProjectTemplate]] =
     db.run(
       TableQuery[ProjectTemplateRow].filter(_.id===entryId).result.asTry
     ).map({

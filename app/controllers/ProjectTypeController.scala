@@ -9,7 +9,7 @@ import play.api.cache.SyncCacheApi
 import play.api.db.slick.DatabaseConfigProvider
 import play.api.libs.json.{JsValue, Json}
 import play.api.mvc.Request
-import slick.jdbc.JdbcProfile
+import slick.jdbc.PostgresProfile
 import slick.lifted.TableQuery
 import slick.jdbc.PostgresProfile.api._
 
@@ -23,7 +23,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 class ProjectTypeController @Inject() (config: Configuration, dbConfigProvider: DatabaseConfigProvider,
                                        cacheImpl:SyncCacheApi)
   extends GenericDatabaseObjectController[ProjectType] with ProjectTypeSerializer{
-  val dbConfig = dbConfigProvider.get[JdbcProfile]
+  val dbConfig = dbConfigProvider.get[PostgresProfile]
 
   implicit val db = dbConfig.db
 

@@ -19,7 +19,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 
 case class ProjectEntry (id: Option[Int], projectTypeId: Int, vidispineProjectId: Option[String],
                          projectTitle: String, created:Timestamp, user: String, workingGroupId: Option[Int], commissionId: Option[Int]) {
-  def associatedFiles(implicit db:slick.jdbc.JdbcProfile#Backend#Database): Future[Seq[FileEntry]] = {
+  def associatedFiles(implicit db:slick.jdbc.PostgresProfile#Backend#Database): Future[Seq[FileEntry]] = {
     db.run(
       TableQuery[FileAssociationRow].filter(_.projectEntry===this.id.get).result.asTry
     ).map({
@@ -28,7 +28,7 @@ case class ProjectEntry (id: Option[Int], projectTypeId: Int, vidispineProjectId
     }).flatMap(Future.sequence(_)).map(_.flatten)
   }
 
-  def save(implicit db:slick.jdbc.JdbcProfile#Backend#Database):Future[Try[ProjectEntry]] = {
+  def save(implicit db:slick.jdbc.PostgresProfile#Backend#Database):Future[Try[ProjectEntry]] = {
     val insertQuery = TableQuery[ProjectEntryRow] returning TableQuery[ProjectEntryRow].map(_.id) into ((item,id)=>item.copy(id=Some(id)))
     db.run(
       (insertQuery+=this).asTry
@@ -98,17 +98,17 @@ trait ProjectEntrySerializer extends TimestampSerialization {
 object ProjectEntry extends ((Option[Int], Int, Option[String], String, Timestamp, String, Option[Int], Option[Int])=>ProjectEntry) {
   def createFromFile(sourceFile: FileEntry, projectTemplate: ProjectTemplate, title:String, created:Option[LocalDateTime],
                      user:String, workingGroupId: Option[Int], commissionId: Option[Int])
-                    (implicit db:slick.jdbc.JdbcProfile#Backend#Database):Future[Try[ProjectEntry]] = {
+                    (implicit db:slick.jdbc.PostgresProfile#Backend#Database):Future[Try[ProjectEntry]] = {
     createFromFile(sourceFile, projectTemplate.projectTypeId, title, created, user, workingGroupId, commissionId)
   }
 
-  def entryForId(requestedId: Int)(implicit db:slick.jdbc.JdbcProfile#Backend#Database):Future[Try[ProjectEntry]] = {
+  def entryForId(requestedId: Int)(implicit db:slick.jdbc.PostgresProfile#Backend#Database):Future[Try[ProjectEntry]] = {
     db.run(
       TableQuery[ProjectEntryRow].filter(_.id===requestedId).result.asTry
     ).map(_.map(_.head))
   }
 
-  protected def insertFileAssociation(projectEntryId:Int, sourceFileId:Int)(implicit db:slick.jdbc.JdbcProfile#Backend#Database) = db.run(
+  protected def insertFileAssociation(projectEntryId:Int, sourceFileId:Int)(implicit db:slick.jdbc.PostgresProfile#Backend#Database) = db.run(
     (TableQuery[FileAssociationRow]+=(projectEntryId,sourceFileId)).asTry
   )
 
@@ -116,7 +116,7 @@ object ProjectEntry extends ((Option[Int], Int, Option[String], String, Timestam
 
   def createFromFile(sourceFile: FileEntry, projectTypeId: Int, title:String, created:Option[LocalDateTime],
                      user:String, workingGroupId: Option[Int], commissionId: Option[Int])
-                    (implicit db:slick.jdbc.JdbcProfile#Backend#Database):Future[Try[ProjectEntry]] = {
+                    (implicit db:slick.jdbc.PostgresProfile#Backend#Database):Future[Try[ProjectEntry]] = {
 
     /* step one - create a new project entry */
     println(s"Passed time: $created")

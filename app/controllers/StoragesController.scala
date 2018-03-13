@@ -8,7 +8,7 @@ import play.api.db.slick.DatabaseConfigProvider
 import play.api.libs.json._
 import play.api.mvc.{Action, BodyParsers, Request}
 import slick.basic.DatabaseConfig
-import slick.jdbc.JdbcProfile
+import slick.jdbc.PostgresProfile
 import slick.lifted.TableQuery
 import slick.jdbc.PostgresProfile.api._
 
@@ -29,7 +29,7 @@ class StoragesController @Inject()
     StorageType("S3",needsLogin = true,hasSubfolders = true)
   )
 
-  implicit val dbConfig:DatabaseConfig[JdbcProfile] = dbConfigProvider.get[JdbcProfile]
+  implicit val dbConfig:DatabaseConfig[PostgresProfile] = dbConfigProvider.get[PostgresProfile]
 
   override def selectid(requestedId: Int) = dbConfig.db.run(
     TableQuery[StorageEntryRow].filter(_.id === requestedId).result.asTry

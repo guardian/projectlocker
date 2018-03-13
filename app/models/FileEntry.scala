@@ -36,7 +36,7 @@ case class FileEntry(id: Option[Int], filepath: String, storageId: Int, user:Str
   /**
     *  writes this model into the database, inserting if id is None and returning a fresh object with id set. If an id
     * was set, then returns the same object. */
-  def save(implicit db: slick.jdbc.JdbcProfile#Backend#Database):Future[Try[FileEntry]] = id match {
+  def save(implicit db: slick.jdbc.PostgresProfile#Backend#Database):Future[Try[FileEntry]] = id match {
     case None=>
       val insertQuery = TableQuery[FileEntryRow] returning TableQuery[FileEntryRow].map(_.id) into ((item,id)=>item.copy(id=Some(id)))
       db.run(
@@ -56,7 +56,7 @@ case class FileEntry(id: Option[Int], filepath: String, storageId: Int, user:Str
 
   /**
     *  returns a StorageEntry object for the id of the storage of this FileEntry */
-  def storage(implicit db: slick.jdbc.JdbcProfile#Backend#Database):Future[Option[StorageEntry]] = {
+  def storage(implicit db: slick.jdbc.PostgresProfile#Backend#Database):Future[Option[StorageEntry]] = {
     db.run(
       TableQuery[StorageEntryRow].filter(_.id===storageId).result.asTry
     ).map({
@@ -67,10 +67,10 @@ case class FileEntry(id: Option[Int], filepath: String, storageId: Int, user:Str
 
   /**
     * Get a full path of the file, including the root path of the storage
-    * @param db implicitly provided [[slick.jdbc.JdbcProfile#Backend#Database]]
+    * @param db implicitly provided [[slick.jdbc.PostgresProfile#Backend#Database]]
     * @return Future containing a string
     */
-  def getFullPath(implicit db: slick.jdbc.JdbcProfile#Backend#Database):Future[String] = {
+  def getFullPath(implicit db: slick.jdbc.PostgresProfile#Backend#Database):Future[String] = {
     this.storage.map({
       case Some(storage)=>
         Paths.get(storage.rootpath.getOrElse(""), filepath).toString
@@ -82,10 +82,10 @@ case class FileEntry(id: Option[Int], filepath: String, storageId: Int, user:Str
   /**
     * this attempts to delete the file from disk, using the configured storage driver
     *
-    * @param db implicitly provided [[slick.jdbc.JdbcProfile#Backend#Database]]
+    * @param db implicitly provided [[slick.jdbc.PostgresProfile#Backend#Database]]
     * @return A future containing either a Right() containing a Boolean indicating whether the delete happened,  or a Left with an error string
     */
-  def deleteFromDisk(implicit db:slick.jdbc.JdbcProfile#Backend#Database):Future[Either[String,Boolean]] = {
+  def deleteFromDisk(implicit db:slick.jdbc.PostgresProfile#Backend#Database):Future[Either[String,Boolean]] = {
     /**/
     /*it either returns a Right(), with a boolean indicating whether the delete happened or not, or a Left() with an error string*/
     val maybeStorageDriverFuture = this.storage.map({
@@ -108,7 +108,7 @@ case class FileEntry(id: Option[Int], filepath: String, storageId: Int, user:Str
     * @param db
     * @return
     */
-  def deleteSelf(implicit db:slick.jdbc.JdbcProfile#Backend#Database):Future[Either[Throwable, Unit]] =
+  def deleteSelf(implicit db:slick.jdbc.PostgresProfile#Backend#Database):Future[Either[Throwable, Unit]] =
     id match {
       case Some(databaseId)=>
         logger.info(s"Deleting database record for file $databaseId ($filepath on storage $storageId)")
@@ -145,10 +145,10 @@ case class FileEntry(id: Option[Int], filepath: String, storageId: Int, user:Str
 
   /**
     * Update the hasContent flag
-    * @param db implicitly provided [[slick.jdbc.JdbcProfile#Backend#Database]]
+    * @param db implicitly provided [[slick.jdbc.PostgresProfile#Backend#Database]]
     * @return a Future containing a Try, which contains an updated [[models.FileEntry]] instance
     */
-  def updateFileHasContent(implicit db:slick.jdbc.JdbcProfile#Backend#Database) = {
+  def updateFileHasContent(implicit db:slick.jdbc.PostgresProfile#Backend#Database) = {
     id match {
       case Some(recordId)=>
         val updateFileref = this.copy (hasContent = true)
@@ -162,7 +162,7 @@ case class FileEntry(id: Option[Int], filepath: String, storageId: Int, user:Str
   }
 
   /* Asynchronously writes the given buffer to this file*/
-  def writeToFile(buffer: RawBuffer)(implicit db:slick.jdbc.JdbcProfile#Backend#Database):Future[Try[Unit]] = {
+  def writeToFile(buffer: RawBuffer)(implicit db:slick.jdbc.PostgresProfile#Backend#Database):Future[Try[Unit]] = {
     val storageResult = this.storage
 
     storageResult.map({
@@ -198,10 +198,10 @@ object FileEntry extends ((Option[Int], String, Int, String, Int, Timestamp, Tim
   /**
     * Get a [[FileEntry]] instance for the given database ID
     * @param entryId database ID to look up
-    * @param db database object, instance of [[slick.jdbc.JdbcProfile#Backend#Database]]
+    * @param db database object, instance of [[slick.jdbc.PostgresProfile#Backend#Database]]
     * @return a Future, containing an Option that may contain a [[FileEntry]] instance
     */
-  def entryFor(entryId: Int, db:slick.jdbc.JdbcProfile#Backend#Database):Future[Option[FileEntry]] =
+  def entryFor(entryId: Int, db:slick.jdbc.PostgresProfile#Backend#Database):Future[Option[FileEntry]] =
     db.run(
       TableQuery[FileEntryRow].filter(_.id===entryId).result.asTry
     ).map({
@@ -214,10 +214,10 @@ object FileEntry extends ((Option[Int], String, Int, String, Int, Timestamp, Tim
     * Get a FileEntry instance for the given filename and storage
     * @param fileName file name to search for (exact match to file path)
     * @param storageId storage ID to search for
-    * @param db implicitly provided database object, instance of slick.jdbc.JdbcProfile#Backend#Database
+    * @param db implicitly provided database object, instance of slick.jdbc.PostgresProfile#Backend#Database
     * @return a Future, containing a Try that contains a sequnce of zero or more FileEntry instances
     */
-  def entryFor(fileName: String, storageId: Int)(implicit db:slick.jdbc.JdbcProfile#Backend#Database):Future[Try[Seq[FileEntry]]] =
+  def entryFor(fileName: String, storageId: Int)(implicit db:slick.jdbc.PostgresProfile#Backend#Database):Future[Try[Seq[FileEntry]]] =
     db.run(
       TableQuery[FileEntryRow].filter(_.filepath===fileName).filter(_.storage===storageId).result.asTry
     )

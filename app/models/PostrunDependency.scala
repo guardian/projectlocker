@@ -27,7 +27,7 @@ object PostrunDependencyGraph {
     * @param db implicitly provided database object
     * @return a Future, containing a Map of Int (representing postrun ID) to a Seq of PostrunDependency objects
     */
-  def loadAll(implicit db:slick.jdbc.JdbcProfile#Backend#Database):Future[Map[Int,Seq[PostrunDependency]]] =
+  def loadAll(implicit db:slick.jdbc.PostgresProfile#Backend#Database):Future[Map[Int,Seq[PostrunDependency]]] =
     db.run(TableQuery[PostrunDependencyRow].result.asTry) map {
       case Failure(error)=>throw error  //fail the future if an error occurs
       case Success(rows)=>
@@ -41,7 +41,7 @@ object PostrunDependencyGraph {
     * @param db
     * @return
     */
-  def loadAllById(implicit db:slick.jdbc.JdbcProfile#Backend#Database):Future[Map[Int,Seq[Int]]] = loadAll map { data=>
+  def loadAllById(implicit db:slick.jdbc.PostgresProfile#Backend#Database):Future[Map[Int,Seq[Int]]] = loadAll map { data=>
     data.mapValues(_.map(_.dependsOn))
   }
 }
