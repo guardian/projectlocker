@@ -41,6 +41,9 @@ libraryDependencies += "com.unboundid" % "unboundid-ldapsdk" % "2.3.6"
 // https://mvnrepository.com/artifact/org.python/jython
 libraryDependencies += "org.python" % "jython" % "2.7.1b2"
 
+// upgrade jackson-databind to remove Deserialization of Untrusted Data vuln
+libraryDependencies += "com.fasterxml.jackson.core" % "jackson-databind" % "2.8.11.1"
+
 enablePlugins(UniversalPlugin)
 
 enablePlugins(LinuxPlugin)
