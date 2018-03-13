@@ -18,7 +18,7 @@ import models.{PlutoCommission, PlutoCommissionSerializer, PlutoWorkingGroup, Pl
 import play.api.db.slick.DatabaseConfigProvider
 import play.api.libs.json.{JsValue, Json}
 import play.api.{Configuration, Logger}
-import slick.jdbc.JdbcProfile
+import slick.jdbc.PostgresProfile
 
 import scala.concurrent.{Await, Future}
 import scala.util.{Failure, Success, Try}
@@ -33,7 +33,7 @@ class PlutoWGCommissionScanner @Inject() (configuration:Configuration, actorSyst
 
   private val logger = Logger(getClass)
 
-  implicit val db = dbConfigProvider.get[JdbcProfile].db
+  implicit val db = dbConfigProvider.get[PostgresProfile].db
 
   private def bodyAsJsonFuture(response:HttpResponse):Future[Either[String, JsValue]] = {
     val sink = Sink.fold[String, ByteString]("")(_ + _.decodeString("UTF-8"))

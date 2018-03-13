@@ -56,7 +56,7 @@ class ProjectCreateMultistep extends React.Component {
             });
 
         axios.get("/api/pluto/workinggroup").then(response=>{
-            this.setState({wgList: response.data.result});
+            this.setState({wgList: response.data.result, selectedWorkingGroup: response.data.result.length ? response.data.result[0].id : null});
         }).catch(error=>{
             this.setState({lastError: error});
         });
@@ -97,7 +97,10 @@ class ProjectCreateMultistep extends React.Component {
             },
             {
                 name: "Working Group & Commission",
-                component: <PlutoLinkageComponent valueWasSet={this.plutoDataUpdated} workingGroupList={this.state.wgList}/>
+                component: <PlutoLinkageComponent valueWasSet={this.plutoDataUpdated}
+                                                  workingGroupList={this.state.wgList}
+                                                  currentWorkingGroup={this.state.selectedWorkingGroup }
+                />
             },
             {
                 name: "Destination storage",

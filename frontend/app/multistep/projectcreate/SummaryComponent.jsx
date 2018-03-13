@@ -43,11 +43,11 @@ class SummaryComponent extends React.Component {
             </tr>
             <tr>
                 <td>Working group</td>
-                <tr id="working-group"><WorkingGroupEntryView entryId={this.props.selectedWorkingGroupId}/></tr>
+                <td id="working-group"><WorkingGroupEntryView entryId={this.props.selectedWorkingGroupId}/></td>
             </tr>
             <tr>
                 <td>Commission</td>
-                <tr id="commission"><CommissionEntryView entryId={this.props.selectedCommissionId}/></tr>
+                <td id="commission"><CommissionEntryView entryId={this.props.selectedCommissionId}/></td>
             </tr>
             </tbody>
         </table>;

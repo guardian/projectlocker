@@ -4,7 +4,7 @@ import java.util.UUID
 
 import play.api.Logger
 import play.api.libs.functional.syntax.unlift
-import play.api.libs.json.{JsPath, Reads, Writes}
+import play.api.libs.json._
 import play.api.libs.functional.syntax._
 import slick.lifted.{TableQuery, Tag}
 import slick.jdbc.PostgresProfile.api._
@@ -70,6 +70,12 @@ class PlutoWorkingGroupRow(tag:Tag) extends Table[PlutoWorkingGroup](tag, "Pluto
 }
 
 trait PlutoWorkingGroupSerializer extends TimestampSerialization {
+  implicit val uuidFormat = new Format[UUID] {
+    override def writes(o: UUID): JsValue = Json.toJson(o.toString)
+
+    override def reads(json: JsValue): JsResult[UUID] = Json.fromJson[String](json).map(UUID.fromString)
+  }
+
   implicit val workingGroupWrites:Writes[PlutoWorkingGroup] = (
     (JsPath \ "id").writeNullable[Int] and
     (JsPath \ "hide").writeNullable[String] and

@@ -29,7 +29,13 @@ class CommissionSelector extends React.Component {
         this.setState({loading:true, error: null, commissionList:[]},()=>{
             const searchDoc = {workingGroupId: this.props.workingGroupId, status: this.props.showStatus, match: "W_EXACT" };
             axios.put("/api/pluto/commission/list", searchDoc).then(response=>{
-                this.setState({loading: false, error: null, commissionList: response.data.result})
+                this.setState({loading: false,
+                    error: null,
+                    commissionList: response.data.result,
+                    selectedCommissionId:  response.data.result.length ? response.data.result[0].id : null
+                },()=>{
+                    this.props.valueWasSet(this.state.selectedCommissionId);
+                })
             }).catch(error=>this.setState({loading: false, error: error}));
         })
     }
@@ -46,7 +52,7 @@ class CommissionSelector extends React.Component {
             return <ErrorViewComponent error={this.state.error}/>;
         else
             return <select id="commission-selector"
-                           onChange={event=>this.props.valueWasSet(event.target.value)}
+                           onChange={event=>this.props.valueWasSet(parseInt(event.target.value))}
                            defaultValue={this.props.selectedCommissionId}>
                 {
                     this.state.commissionList.map(comm=><option key={comm.id} value={comm.id}>{comm.title}</option>)

@@ -10,10 +10,7 @@ class WorkingGroupEntryView extends GenericEntryView {
         super(props);
         this.endpoint = "/api/pluto/workinggroup"
     }
-
-    render(){
-        return <span>{this.state.content.name}</span>
-    }
+    
 }
 
 export default WorkingGroupEntryView;

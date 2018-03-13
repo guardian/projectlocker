@@ -6,7 +6,7 @@ import play.api.cache.SyncCacheApi
 import play.api.db.slick.DatabaseConfigProvider
 import play.api.libs.json.{JsResult, JsValue, Json}
 import play.api.mvc.Request
-import slick.jdbc.JdbcProfile
+import slick.jdbc.PostgresProfile
 import slick.lifted.TableQuery
 import slick.jdbc.PostgresProfile.api._
 
@@ -17,7 +17,7 @@ import scala.util.Try
 class PlutoWorkingGroupController @Inject() (dbConfigProvider:DatabaseConfigProvider, cacheImpl:SyncCacheApi)
   extends GenericDatabaseObjectController[PlutoWorkingGroup] with PlutoWorkingGroupSerializer {
 
-  implicit val db = dbConfigProvider.get[JdbcProfile].db
+  implicit val db = dbConfigProvider.get[PostgresProfile].db
   implicit val cache:SyncCacheApi = cacheImpl
 
   override def selectall(startAt: Int, limit: Int): Future[Try[Seq[PlutoWorkingGroup]]] = db.run(
