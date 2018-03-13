@@ -5,6 +5,7 @@ import TemplateComponent from './projectcreate/TemplateComponent.jsx';
 import NameComponent from './projectcreate/NameComponent.jsx';
 import DestinationStorageComponent from './projectcreate/DestinationStorageComponent.jsx';
 import ProjectCompletionComponent from "./projectcreate/CompletionComponent.jsx";
+import PlutoLinkageComponent from './projectcreate/PlutoLinkageComponent.jsx';
 
 class ProjectCreateMultistep extends React.Component {
     static propTypes = {
@@ -18,6 +19,9 @@ class ProjectCreateMultistep extends React.Component {
             projectTemplates: [],
             selectedProjectTemplate: null,
             storages: [],
+            wgList: [],
+            selectedWorkingGroup:null,
+            selectedCommissionId:null,
             selectedStorage: null,
             projectName: "",
             projectFilename: "",
@@ -27,6 +31,7 @@ class ProjectCreateMultistep extends React.Component {
         this.templateSelectionUpdated = this.templateSelectionUpdated.bind(this);
         this.nameSelectionUpdated = this.nameSelectionUpdated.bind(this);
         this.storageSelectionUpdated = this.storageSelectionUpdated.bind(this);
+        this.plutoDataUpdated = this.plutoDataUpdated.bind(this);
     }
 
     componentWillMount(){
@@ -48,7 +53,13 @@ class ProjectCreateMultistep extends React.Component {
             .catch(error=>{
                 console.error(error);
                 this.setState({lastError: error});
-            })
+            });
+
+        axios.get("/api/pluto/workinggroup").then(response=>{
+            this.setState({wgList: response.data.result, selectedWorkingGroup: response.data.result.length ? response.data.result[0].id : null});
+        }).catch(error=>{
+            this.setState({lastError: error});
+        });
     }
 
     templateSelectionUpdated(newTemplate, cb){
@@ -63,6 +74,13 @@ class ProjectCreateMultistep extends React.Component {
         this.setState({selectedStorage: newStorage});
     }
 
+    plutoDataUpdated(newdata){
+        this.setState({
+            selectedWorkingGroup: newdata.workingGroupRef,
+            selectedCommissionId: newdata.plutoCommissionRef
+        })
+    }
+
     render(){
         const steps = [
             {
@@ -73,8 +91,16 @@ class ProjectCreateMultistep extends React.Component {
             },
             {
                 name: "Name your project",
-                component: <NameComponent projectName={this.state.projectName} fileName={this.state.fileName}
+                component: <NameComponent projectName={this.state.projectName}
+                                          fileName={this.state.fileName}
                                           selectionUpdated={this.nameSelectionUpdated}/>
+            },
+            {
+                name: "Working Group & Commission",
+                component: <PlutoLinkageComponent valueWasSet={this.plutoDataUpdated}
+                                                  workingGroupList={this.state.wgList}
+                                                  currentWorkingGroup={this.state.selectedWorkingGroup }
+                />
             },
             {
                 name: "Destination storage",
@@ -89,7 +115,11 @@ class ProjectCreateMultistep extends React.Component {
                                              storages={this.state.storages}
                                              selectedStorage={this.state.selectedStorage}
                                              projectName={this.state.projectName}
-                                             projectFilename={this.state.projectFilename}/>
+                                             projectFilename={this.state.projectFilename}
+                                             selectedWorkingGroupId={this.state.selectedWorkingGroup}
+                                             selectedCommissionId={this.state.selectedCommissionId}
+                                             wgList={this.state.wgList}
+                />
             }
         ];
 

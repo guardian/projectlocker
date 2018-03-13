@@ -30,7 +30,9 @@ libraryDependencies ++= Seq(
   // https://mvnrepository.com/artifact/com.typesafe.play/play-slick
   "com.typesafe.play" %% "play-slick" % "3.0.3",
   "com.typesafe.play" %% "play-slick-evolutions" % "3.0.3",
-  "commons-io" % "commons-io" % "2.6"
+  "commons-io" % "commons-io" % "2.6",
+  // https://mvnrepository.com/artifact/com.typesafe.play/play-json-joda
+  "com.typesafe.play" %% "play-json-joda" % "2.6.9"
 )
 
 //authentication
@@ -38,6 +40,9 @@ libraryDependencies += "com.unboundid" % "unboundid-ldapsdk" % "2.3.6"
 
 // https://mvnrepository.com/artifact/org.python/jython
 libraryDependencies += "org.python" % "jython" % "2.7.1b2"
+
+// upgrade jackson-databind to remove Deserialization of Untrusted Data vuln
+libraryDependencies += "com.fasterxml.jackson.core" % "jackson-databind" % "2.8.11.1"
 
 enablePlugins(UniversalPlugin)
 

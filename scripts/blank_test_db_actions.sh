@@ -42,6 +42,8 @@ if [ "$?" != "0" ]; then
 fi
 
 psql ${TEST_DB_NAME} << EOF
+drop table "PlutoCommission" cascade;
+drop table "PlutoWorkingGroup" cascade;
 drop table "PostrunDependency" cascade;
 drop table "PostrunAssociationRow" cascade;
 drop table "PostrunAction" cascade;

@@ -13,6 +13,9 @@ class ProjectCompletionComponent extends React.Component {
         selectedStorage: PropTypes.number.isRequired,
         projectName: PropTypes.string.isRequired,
         projectFilename: PropTypes.string.isRequired,
+        selectedWorkingGroupId: PropTypes.number.isRequired,
+        selectedCommissionId: PropTypes.number.isRequired,
+        wgList: PropTypes.array.isRequired
     };
 
     constructor(props){
@@ -31,7 +34,9 @@ class ProjectCompletionComponent extends React.Component {
             destinationStorageId: this.props.selectedStorage,
             title: this.props.projectName,
             projectTemplateId: this.props.selectedProjectTemplate,
-            user: "frontend"    //this should be deprecated as the backend ignores it
+            user: "frontend",    //this should be deprecated as the backend ignores it
+            workingGroupId: this.props.selectedWorkingGroupId,
+            commissionId: this.props.selectedCommissionId
         };
     }
 
@@ -57,7 +62,10 @@ class ProjectCompletionComponent extends React.Component {
             <p className="information">Press "Confirm" to go ahead, or press Previous if you need to amend any details.</p>
             <SummaryComponent projectTemplates={this.props.projectTemplates} selectedProjectTemplate={this.props.selectedProjectTemplate}
                               storages={this.props.storages} selectedStorage={this.props.selectedStorage}
-                              projectName={this.props.projectName} projectFilename={this.props.projectFilename}/>
+                              projectName={this.props.projectName} projectFilename={this.props.projectFilename}
+                              selectedWorkingGroupId={this.props.selectedWorkingGroupId}
+                              wgList={this.props.wgList}
+                              selectedCommissionId={this.props.selectedCommissionId}/>
             
             <ErrorViewComponent error={this.state.error}/>
             <span style={{float: "right"}}><button onClick={this.confirmClicked}>Confirm</button></span>

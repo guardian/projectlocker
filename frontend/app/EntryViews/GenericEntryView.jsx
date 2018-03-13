@@ -35,7 +35,10 @@ class GenericEntryView extends React.Component {
     }
 
     render(){
-        return <span>{this.state.content.name}</span>
+        if(this.state.content)
+            return <span>{this.state.content.name}</span>
+        else
+            return <span><i>(none)</i></span>
     }
 }
 

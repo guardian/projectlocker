@@ -18,7 +18,7 @@ import scala.util.{Failure, Success, Try}
 import scala.concurrent.ExecutionContext.Implicits.global
 
 case class ProjectEntry (id: Option[Int], projectTypeId: Int, vidispineProjectId: Option[String],
-                         projectTitle: String, created:Timestamp, user: String) {
+                         projectTitle: String, created:Timestamp, user: String, workingGroupId: Option[Int], commissionId: Option[Int]) {
   def associatedFiles(implicit db:slick.jdbc.JdbcProfile#Backend#Database): Future[Seq[FileEntry]] = {
     db.run(
       TableQuery[FileAssociationRow].filter(_.projectEntry===this.id.get).result.asTry
@@ -63,9 +63,11 @@ class ProjectEntryRow(tag:Tag) extends Table[ProjectEntry](tag, "ProjectEntry") 
   def projectTitle=column[String]("s_title")
   def created=column[Timestamp]("t_created")
   def user=column[String]("s_user")
+  def workingGroup=column[Option[Int]]("k_working_group")
+  def commission=column[Option[Int]]("k_commission")
 
   def projectTypeKey=foreignKey("fk_project_type",projectType,TableQuery[ProjectTypeRow])(_.id)
-  def * = (id.?, projectType, vidispineProjectId, projectTitle, created, user) <> (ProjectEntry.tupled, ProjectEntry.unapply)
+  def * = (id.?, projectType, vidispineProjectId, projectTitle, created, user, workingGroup, commission) <> (ProjectEntry.tupled, ProjectEntry.unapply)
 }
 
 trait ProjectEntrySerializer extends TimestampSerialization {
@@ -76,7 +78,9 @@ trait ProjectEntrySerializer extends TimestampSerialization {
       (JsPath \ "vidispineId").writeNullable[String] and
       (JsPath \ "title").write[String] and
       (JsPath \ "created").write[Timestamp] and
-      (JsPath \ "user").write[String]
+      (JsPath \ "user").write[String] and
+      (JsPath \ "workingGroupId").writeNullable[Int] and
+      (JsPath \ "commissionId").writeNullable[Int]
     )(unlift(ProjectEntry.unapply))
 
   implicit val templateReads:Reads[ProjectEntry] = (
@@ -85,14 +89,17 @@ trait ProjectEntrySerializer extends TimestampSerialization {
       (JsPath \ "vidispineId").readNullable[String] and
       (JsPath \ "title").read[String] and
       (JsPath \ "created").read[Timestamp] and
-      (JsPath \ "user").read[String]
+      (JsPath \ "user").read[String] and
+      (JsPath \ "workingGroupId").readNullable[Int] and
+      (JsPath \ "commissionId").readNullable[Int]
     )(ProjectEntry.apply _)
 }
 
-object ProjectEntry extends ((Option[Int], Int, Option[String], String, Timestamp, String)=>ProjectEntry) {
-  def createFromFile(sourceFile: FileEntry, projectTemplate: ProjectTemplate, title:String, created:Option[LocalDateTime], user:String)
+object ProjectEntry extends ((Option[Int], Int, Option[String], String, Timestamp, String, Option[Int], Option[Int])=>ProjectEntry) {
+  def createFromFile(sourceFile: FileEntry, projectTemplate: ProjectTemplate, title:String, created:Option[LocalDateTime],
+                     user:String, workingGroupId: Option[Int], commissionId: Option[Int])
                     (implicit db:slick.jdbc.JdbcProfile#Backend#Database):Future[Try[ProjectEntry]] = {
-    createFromFile(sourceFile, projectTemplate.projectTypeId, title, created, user)
+    createFromFile(sourceFile, projectTemplate.projectTypeId, title, created, user, workingGroupId, commissionId)
   }
 
   def entryForId(requestedId: Int)(implicit db:slick.jdbc.JdbcProfile#Backend#Database):Future[Try[ProjectEntry]] = {
@@ -107,12 +114,14 @@ object ProjectEntry extends ((Option[Int], Int, Option[String], String, Timestam
 
   private def dateTimeToTimestamp(from: LocalDateTime) = Timestamp.valueOf(from)
 
-  def createFromFile(sourceFile: FileEntry, projectTypeId: Int, title:String, created:Option[LocalDateTime], user:String)
+  def createFromFile(sourceFile: FileEntry, projectTypeId: Int, title:String, created:Option[LocalDateTime],
+                     user:String, workingGroupId: Option[Int], commissionId: Option[Int])
                     (implicit db:slick.jdbc.JdbcProfile#Backend#Database):Future[Try[ProjectEntry]] = {
 
     /* step one - create a new project entry */
     println(s"Passed time: $created")
-    val entry = ProjectEntry(None, projectTypeId, None, title, dateTimeToTimestamp(created.getOrElse(LocalDateTime.now())), user)
+    val entry = ProjectEntry(None, projectTypeId, None, title, dateTimeToTimestamp(created.getOrElse(LocalDateTime.now())),
+      user, workingGroupId, commissionId)
     val savedEntry = entry.save
 
     /* step two - set up file association. Project entry must be saved, so this is done as a future map */

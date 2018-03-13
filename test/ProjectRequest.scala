@@ -21,18 +21,18 @@ class ProjectRequest extends Specification {
 
   "ProjectRequest.hydrate" should {
     "return Some(ProjectRequestFull) when provided with existing IDs" in {
-      val pr = ProjectRequest("testfile",1,"MyTestProject", 1,"testuser")
+      val pr = ProjectRequest("testfile",1,"MyTestProject", 1,"testuser",None,None)
 
       val testStorage = Await.result(StorageEntryHelper.entryFor(1),10.seconds)
       val testTemplate = Await.result(ProjectTemplate.entryFor(1),10.seconds)
 
       val result:Option[ProjectRequestFull] = Await.result(pr.hydrate,10.seconds)
 
-      result must beSome(ProjectRequestFull("testfile",testStorage.get,"MyTestProject", testTemplate.get,"testuser"))
+      result must beSome(ProjectRequestFull("testfile",testStorage.get,"MyTestProject", testTemplate.get,"testuser",None,None))
     }
 
     "return None if provided storage ID is invalid" in {
-      val pr = ProjectRequest("testfile",999999,"MyTestProject",1,"testuser")
+      val pr = ProjectRequest("testfile",999999,"MyTestProject",1,"testuser",None,None)
 
       val result:Option[ProjectRequestFull] = Await.result(pr.hydrate,10.seconds)
 
@@ -40,7 +40,7 @@ class ProjectRequest extends Specification {
     }
 
     "return None if provided template ID is invalid" in {
-      val pr = ProjectRequest("testfile",1,"MyTestProject",999999,"testuser")
+      val pr = ProjectRequest("testfile",1,"MyTestProject",999999,"testuser",None,None)
 
       val result:Option[ProjectRequestFull] = Await.result(pr.hydrate,10.seconds)
 
@@ -48,7 +48,7 @@ class ProjectRequest extends Specification {
     }
 
     "return None if all provided IDs are invalid" in {
-      val pr = ProjectRequest("testfile",999999,"MyTestProject",999999,"testuser")
+      val pr = ProjectRequest("testfile",999999,"MyTestProject",999999,"testuser",None,None)
 
       val result:Option[ProjectRequestFull] = Await.result(pr.hydrate,10.seconds)
 

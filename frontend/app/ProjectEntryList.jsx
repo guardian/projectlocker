@@ -3,6 +3,8 @@ import GeneralListComponent from './GeneralListComponent.jsx';
 import ProjectEntryFiles from './ProjectEntryFiles.jsx';
 import ProjectTypeView from './EntryViews/ProjectTypeView.jsx';
 import ProjectEntryFilterComponent from './filter/ProjectEntryFilterComponent.jsx';
+import WorkingGroupEntryView from './EntryViews/WorkingGroupEntryView.jsx';
+import CommissionEntryView from './EntryViews/CommissionEntryView.jsx';
 
 class ProjectEntryList extends GeneralListComponent {
     constructor(props){
@@ -39,6 +41,18 @@ class ProjectEntryList extends GeneralListComponent {
             },
             GeneralListComponent.dateTimeColumn("Created", "created"),
             GeneralListComponent.standardColumn("Owner","user"),
+            {
+                header: "Working group",
+                key: "workingGroupId",
+                render: typeId=><WorkingGroupEntryView entryId={typeId}/>,
+                headerProps: {className: 'dashboardheader'}
+            },
+            {
+                header: "Commission",
+                key: "commissionId",
+                render: typeId=><CommissionEntryView entryId={typeId}/>,
+                headerProps: {className: 'dashboardheader'}
+            },
             this.actionIcons(),
             {
                 header: "",
