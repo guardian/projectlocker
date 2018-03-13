@@ -73,7 +73,7 @@ class StorageEntryRow(tag:Tag) extends Table[StorageEntry](tag, "StorageEntry") 
 
 
 object StorageEntryHelper {
-  def entryFor(entryId: Int)(implicit db:slick.jdbc.JdbcProfile#Backend#Database):Future[Option[StorageEntry]] =
+  def entryFor(entryId: Int)(implicit db:slick.jdbc.PostgresProfile#Backend#Database):Future[Option[StorageEntry]] =
     db.run(
       TableQuery[StorageEntryRow].filter(_.id===entryId).result.asTry
     ).map({

@@ -10,7 +10,7 @@ import play.api.cache.SyncCacheApi
 import play.api.db.slick.DatabaseConfigProvider
 import play.api.libs.json.{JsValue, Json}
 import play.api.mvc.Request
-import slick.jdbc.JdbcProfile
+import slick.jdbc.PostgresProfile
 import slick.lifted.TableQuery
 import slick.jdbc.PostgresProfile.api._
 import play.api.libs.json._
@@ -26,7 +26,7 @@ class PostrunActionController  @Inject() (config: Configuration, dbConfigProvide
   extends GenericDatabaseObjectController[PostrunAction] with PostrunActionSerializer with PostrunDependencySerializer with Security {
 
   implicit val cache:SyncCacheApi = cacheImpl
-  val dbConfig = dbConfigProvider.get[JdbcProfile]
+  val dbConfig = dbConfigProvider.get[PostgresProfile]
 
   override def selectid(requestedId: Int): Future[Try[Seq[PostrunAction]]] = dbConfig.db.run(
     TableQuery[PostrunActionRow].filter(_.id === requestedId).result.asTry

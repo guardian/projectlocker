@@ -9,7 +9,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 case class ProjectRequest(filename:String,destinationStorageId:Int,title:String, projectTemplateId:Int,
                           user:String, workingGroupId: Option[Int], commissionId: Option[Int]) {
   /* looks up the ids of destination storage and project template, and returns a new object with references to them or None */
-  def hydrate(implicit db:slick.jdbc.JdbcProfile#Backend#Database):Future[Option[ProjectRequestFull]] = {
+  def hydrate(implicit db:slick.jdbc.PostgresProfile#Backend#Database):Future[Option[ProjectRequestFull]] = {
     val storageFuture = StorageEntryHelper.entryFor(this.destinationStorageId)
     val projectTemplateFuture = ProjectTemplate.entryFor(this.projectTemplateId)
 

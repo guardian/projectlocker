@@ -33,7 +33,7 @@ case class ProjectType(id: Option[Int],name:String, opensWith: String, targetVer
     * @param db implicitly provided database object
     * @return A Future, containing a Try indicating whether the database action was successful, containing a Sequence of PostrunAction instances
     */
-  def postrunActions(implicit db: slick.jdbc.JdbcProfile#Backend#Database):Future[Try[Seq[PostrunAction]]] = {
+  def postrunActions(implicit db: slick.jdbc.PostgresProfile#Backend#Database):Future[Try[Seq[PostrunAction]]] = {
     val query = for {
       (assoc, matchingPostrun) <- TableQuery[PostrunAssociationRow] join TableQuery[PostrunActionRow] on (_.postrunEntry === _.id) if assoc.projectType === this.id.get
     } yield matchingPostrun
@@ -65,7 +65,7 @@ class ProjectTypeRow(tag: Tag) extends Table[ProjectType](tag, "ProjectType") {
 }
 
 object ProjectType extends ((Option[Int],String,String,String,Option[String])=>ProjectType) {
-  def entryFor(entryId: Int)(implicit db:slick.jdbc.JdbcProfile#Backend#Database):Future[Try[ProjectType]] = {
+  def entryFor(entryId: Int)(implicit db:slick.jdbc.PostgresProfile#Backend#Database):Future[Try[ProjectType]] = {
     db.run(
       TableQuery[ProjectTypeRow].filter(_.id===entryId).result.asTry
     ).map({

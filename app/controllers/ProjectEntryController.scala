@@ -12,7 +12,7 @@ import play.api.{Configuration, Logger}
 import play.api.db.slick.DatabaseConfigProvider
 import play.api.libs.json.{JsError, JsResult, JsValue, Json}
 import play.api.mvc._
-import slick.jdbc.JdbcProfile
+import slick.jdbc.PostgresProfile
 import slick.lifted.TableQuery
 import slick.jdbc.PostgresProfile.api._
 
@@ -33,7 +33,7 @@ class ProjectEntryController @Inject() (cc:ControllerComponents, config: Configu
 {
   override implicit val cache:SyncCacheApi = cacheImpl
 
-  val dbConfig = dbConfigProvider.get[JdbcProfile]
+  val dbConfig = dbConfigProvider.get[PostgresProfile]
   implicit val implicitConfig = config
 
   override def deleteid(requestedId: Int) = dbConfig.db.run(

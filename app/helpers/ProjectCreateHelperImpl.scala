@@ -43,7 +43,7 @@ class ProjectCreateHelperImpl extends ProjectCreateHelper {
     * @param db implicitly provided database instance
     * @return a Future, containing a Try, containing a saved FileEntry instance if successful
     */
-  def getDestFileFor(rq:ProjectRequestFull, recordTimestamp:Timestamp)(implicit db: slick.jdbc.JdbcProfile#Backend#Database): Future[Try[FileEntry]] =
+  def getDestFileFor(rq:ProjectRequestFull, recordTimestamp:Timestamp)(implicit db: slick.jdbc.PostgresProfile#Backend#Database): Future[Try[FileEntry]] =
     FileEntry.entryFor(rq.filename, rq.destinationStorage.id.get).flatMap({
       case Success(filesList)=>
         if(filesList.isEmpty) {
@@ -84,7 +84,7 @@ class ProjectCreateHelperImpl extends ProjectCreateHelper {
   }
 
   protected def runEach(action:PostrunAction, projectFileName:String, projectEntry:ProjectEntry, dataCache: PostrunDataCache, projectType:ProjectType)
-                     (implicit db: slick.jdbc.JdbcProfile#Backend#Database, config:play.api.Configuration):Try[JythonOutput] = {
+                     (implicit db: slick.jdbc.PostgresProfile#Backend#Database, config:play.api.Configuration):Try[JythonOutput] = {
 
     val timeout:Duration = Duration(config.getOptional[String]("postrun.timeout").getOrElse("30 seconds"))
 
@@ -92,7 +92,7 @@ class ProjectCreateHelperImpl extends ProjectCreateHelper {
   }
 
   protected def syncExecScript(action: PostrunAction, projectFileName: String, entry: ProjectEntry, projectType: ProjectType, cache: PostrunDataCache)
-                    (implicit db: slick.jdbc.JdbcProfile#Backend#Database, config:play.api.Configuration, timeout: Duration) =
+                    (implicit db: slick.jdbc.PostgresProfile#Backend#Database, config:play.api.Configuration, timeout: Duration) =
     Await.result(action.run(projectFileName,entry,projectType,cache), timeout)
 
   /**
@@ -109,7 +109,7 @@ class ProjectCreateHelperImpl extends ProjectCreateHelper {
     */
   def runNextAction(actions: Seq[PostrunAction], results:Seq[Try[JythonOutput]], cache: PostrunDataCache,
                     projectFileName: String, projectEntry: ProjectEntry, projectType: ProjectType)
-                   (implicit db: slick.jdbc.JdbcProfile#Backend#Database, config:play.api.Configuration, timeout: Duration):Seq[Try[JythonOutput]] = {
+                   (implicit db: slick.jdbc.PostgresProfile#Backend#Database, config:play.api.Configuration, timeout: Duration):Seq[Try[JythonOutput]] = {
     logger.debug(s"runNextAction: remaining actions: ${actions.toString()}")
     actions.headOption match {
       case Some(nextAction)=>
@@ -145,7 +145,7 @@ class ProjectCreateHelperImpl extends ProjectCreateHelper {
     *         or a Right with a string indicating how many actions were run
     */
   def doPostrunActions(fileEntry: FileEntry, eventualTriedEntry: Future[Try[ProjectEntry]], template: ProjectTemplate)
-                      (implicit db: slick.jdbc.JdbcProfile#Backend#Database, config:play.api.Configuration):Future[Either[String,String]]= {
+                      (implicit db: slick.jdbc.PostgresProfile#Backend#Database, config:play.api.Configuration):Future[Either[String,String]]= {
     val futureSequence = Future.sequence(Seq(eventualTriedEntry, template.projectType, fileEntry.getFullPath, PostrunDependencyGraph.loadAllById))
 
     implicit val timeout:Duration = Duration(config.getOptional[String]("postrun.timeout").getOrElse("30 seconds"))
@@ -187,11 +187,11 @@ class ProjectCreateHelperImpl extends ProjectCreateHelper {
     * and copying the requested template to the final destination
     * @param rq [[ProjectRequestFull]] object representing the project request
     * @param createTime optional [[LocalDateTime]] as the create time.  If None is provided then current date/time is used
-    * @param db implicitly provided [[slick.jdbc.JdbcProfile#Backend#Database]]
+    * @param db implicitly provided [[slick.jdbc.PostgresProfile#Backend#Database]]
     * @return a [[Try]] containing a saved [[models.ProjectEntry]] object if successful, wrapped in a [[Future]]
     */
   def create(rq:ProjectRequestFull,createTime:Option[LocalDateTime])
-            (implicit db: slick.jdbc.JdbcProfile#Backend#Database, config: play.api.Configuration):Future[Try[ProjectEntry]] = {
+            (implicit db: slick.jdbc.PostgresProfile#Backend#Database, config: play.api.Configuration):Future[Try[ProjectEntry]] = {
     logger.info(s"Creating project from $rq")
     rq.destinationStorage.getStorageDriver match {
       case None=>

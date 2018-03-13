@@ -5,7 +5,7 @@ import javax.inject.{Inject, Singleton}
 import models.{FileEntry, _}
 import play.api.{Configuration, Logger}
 import play.api.db.slick.DatabaseConfigProvider
-import slick.jdbc.JdbcProfile
+import slick.jdbc.PostgresProfile
 import slick.lifted.TableQuery
 import slick.jdbc.PostgresProfile.api._
 import java.sql.Timestamp
@@ -23,7 +23,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 @Singleton
 class DatabaseHelper @Inject()(configuration: Configuration, dbConfigProvider: DatabaseConfigProvider) {
 
-  private val dbConfig = dbConfigProvider.get[JdbcProfile]
+  private val dbConfig = dbConfigProvider.get[PostgresProfile]
   private val logger: Logger = Logger(this.getClass)
 
   /**

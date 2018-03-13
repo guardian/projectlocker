@@ -12,7 +12,7 @@ import testHelpers.TestDatabase
 import scala.concurrent.Await
 import scala.concurrent.duration._
 
-class TestPlutoCommission extends Specification with TimestampSerialization {
+class PlutoCommissionSpec extends Specification with TimestampSerialization {
   protected val application = new GuiceApplicationBuilder()
     .overrides(bind[DatabaseConfigProvider].to[TestDatabase.testDbProvider])
     .build

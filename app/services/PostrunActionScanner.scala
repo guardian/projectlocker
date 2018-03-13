@@ -11,7 +11,7 @@ import models.PostrunAction
 import java.time.{Instant, ZonedDateTime}
 
 import play.api.db.slick.DatabaseConfigProvider
-import slick.jdbc.JdbcProfile
+import slick.jdbc.PostgresProfile
 
 import scala.concurrent.duration._
 import scala.util.{Failure, Success}
@@ -21,7 +21,7 @@ class PostrunActionScanner @Inject() (dbConfigProvider: DatabaseConfigProvider, 
   private val logger = Logger(this.getClass)
   import actorSystem.dispatcher
 
-  implicit val db = dbConfigProvider.get[JdbcProfile].db
+  implicit val db = dbConfigProvider.get[PostgresProfile].db
 
   protected def addIfNotExists(scriptFile: File) = {
     PostrunAction.entryForRunnable(scriptFile.getName) map {

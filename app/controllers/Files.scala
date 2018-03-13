@@ -6,7 +6,7 @@ import exceptions.{AlreadyExistsException, BadDataException}
 import play.api.{Configuration, Logger}
 import play.api.db.slick.DatabaseConfigProvider
 import play.api.mvc._
-import slick.jdbc.JdbcProfile
+import slick.jdbc.PostgresProfile
 import play.api.libs.json._
 import slick.jdbc.PostgresProfile.api._
 
@@ -25,7 +25,7 @@ class Files @Inject() (configuration: Configuration, dbConfigProvider: DatabaseC
 
   implicit val cache:SyncCacheApi = cacheImpl
 
-  val dbConfig = dbConfigProvider.get[JdbcProfile]
+  val dbConfig = dbConfigProvider.get[PostgresProfile]
 
   override def deleteid(requestedId: Int) = dbConfig.db.run(
     TableQuery[FileEntryRow].filter(_.id === requestedId).delete.asTry

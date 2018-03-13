@@ -23,7 +23,7 @@ case class PostrunAction (id:Option[Int],runnable:String, title:String, descript
   /**
     *  writes this model into the database, inserting if id is None and returning a fresh object with id set. If an id
     * was set, then returns the same object. */
-  def save(implicit db: slick.jdbc.JdbcProfile#Backend#Database):Future[Try[PostrunAction]] = id match {
+  def save(implicit db: slick.jdbc.PostgresProfile#Backend#Database):Future[Try[PostrunAction]] = id match {
     case None=>
       val insertQuery = TableQuery[PostrunActionRow] returning TableQuery[PostrunActionRow].map(_.id) into ((item,id)=>item.copy(id=Some(id)))
       db.run(
@@ -121,7 +121,7 @@ case class PostrunAction (id:Option[Int],runnable:String, title:String, descript
 }
 
 object PostrunAction extends ((Option[Int],String,String,Option[String],String,Int,Timestamp)=>PostrunAction) {
-  def entryForRunnable(scriptName:String)(implicit db:slick.jdbc.JdbcProfile#Backend#Database):Future[Try[Seq[PostrunAction]]] =
+  def entryForRunnable(scriptName:String)(implicit db:slick.jdbc.PostgresProfile#Backend#Database):Future[Try[Seq[PostrunAction]]] =
     db.run(
       TableQuery[PostrunActionRow].filter(_.runnable===scriptName).result.asTry
     )

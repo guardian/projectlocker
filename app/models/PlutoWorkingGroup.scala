@@ -14,12 +14,12 @@ import scala.concurrent.Future
 import scala.util.{Failure, Success, Try}
 import scala.concurrent.ExecutionContext.Implicits.global
 
-case class PlutoWorkingGroup (id:Option[Int], hide:Option[String], name:String, uuid:UUID) {
+case class PlutoWorkingGroup (id:Option[Int], hide:Option[String], name:String, uuid:String) {
   private val logger = Logger(getClass)
   /**
     *  writes this model into the database, inserting if id is None and returning a fresh object with id set. If an id
     * was set, then updates the database record and returns the same object. */
-  def save(implicit db: slick.jdbc.JdbcProfile#Backend#Database):Future[Try[PlutoWorkingGroup]] = id match {
+  def save(implicit db: slick.jdbc.PostgresProfile#Backend#Database):Future[Try[PlutoWorkingGroup]] = id match {
     case None=>
       val insertQuery = TableQuery[PlutoWorkingGroupRow] returning TableQuery[PlutoWorkingGroupRow].map(_.id) into ((item,id)=>item.copy(id=Some(id)))
       db.run(
@@ -43,7 +43,7 @@ case class PlutoWorkingGroup (id:Option[Int], hide:Option[String], name:String, 
     * @return a Future containing a Try containing a [[PlutoWorkingGroup]] object.
     *         If it was newly saved, or exists in the db, the id member will be set.
     */
-  def ensureRecorded(implicit db: slick.jdbc.JdbcProfile#Backend#Database):Future[Try[PlutoWorkingGroup]] = {
+  def ensureRecorded(implicit db: slick.jdbc.PostgresProfile#Backend#Database):Future[Try[PlutoWorkingGroup]] = {
     db.run(
       TableQuery[PlutoWorkingGroupRow].filter(_.uuid===uuid).result.asTry
     ).flatMap({
@@ -55,6 +55,7 @@ case class PlutoWorkingGroup (id:Option[Int], hide:Option[String], name:String, 
           Future(Success(rows.head))
         }
       case Failure(error)=>
+        throw error
         Future(Failure(error))
     })
   }
@@ -64,30 +65,24 @@ class PlutoWorkingGroupRow(tag:Tag) extends Table[PlutoWorkingGroup](tag, "Pluto
   def id = column[Int]("id",O.PrimaryKey, O.AutoInc)
   def hide = column[Option[String]]("s_hide")
   def name = column[String]("s_name")
-  def uuid = column[UUID]("u_uuid", SqlType("UUID"))
+  def uuid = column[String]("u_uuid")
 
   def * = (id.?, hide, name, uuid) <> (PlutoWorkingGroup.tupled, PlutoWorkingGroup.unapply)
 }
 
 trait PlutoWorkingGroupSerializer extends TimestampSerialization {
-  implicit val uuidFormat = new Format[UUID] {
-    override def writes(o: UUID): JsValue = Json.toJson(o.toString)
-
-    override def reads(json: JsValue): JsResult[UUID] = Json.fromJson[String](json).map(UUID.fromString)
-  }
-
   implicit val workingGroupWrites:Writes[PlutoWorkingGroup] = (
     (JsPath \ "id").writeNullable[Int] and
     (JsPath \ "hide").writeNullable[String] and
       (JsPath \ "name").write[String] and
-      (JsPath \ "uuid").write[UUID]
+      (JsPath \ "uuid").write[String]
     )(unlift(PlutoWorkingGroup.unapply))
 
   implicit val workingGroupReads:Reads[PlutoWorkingGroup] = (
     (JsPath \ "id").readNullable[Int] and
     (JsPath \ "hide").readNullable[String] and
       (JsPath \ "name").read[String] and
-      (JsPath \ "uuid").read[UUID]
+      (JsPath \ "uuid").read[String]
     )(PlutoWorkingGroup.apply _)
 }
 
