@@ -83,17 +83,20 @@ class ProjectCreateHelperImpl extends ProjectCreateHelper {
     !firstTest
   }
 
-  protected def runEach(action:PostrunAction, projectFileName:String, projectEntry:ProjectEntry, dataCache: PostrunDataCache, projectType:ProjectType)
-                     (implicit db: slick.jdbc.PostgresProfile#Backend#Database, config:play.api.Configuration):Try[JythonOutput] = {
+//  protected def runEach(action:PostrunAction, projectFileName:String, projectEntry:ProjectEntry,
+//                        dataCache: PostrunDataCache, projectType:ProjectType)
+//                     (implicit db: slick.jdbc.PostgresProfile#Backend#Database, config:play.api.Configuration):Try[JythonOutput] = {
+//
+//    val timeout:Duration = Duration(config.getOptional[String]("postrun.timeout").getOrElse("30 seconds"))
+//
+//    Await.result(action.run(projectFileName,projectEntry, projectType, dataCache),timeout)
+//  }
 
-    val timeout:Duration = Duration(config.getOptional[String]("postrun.timeout").getOrElse("30 seconds"))
-
-    Await.result(action.run(projectFileName,projectEntry, projectType, dataCache),timeout)
-  }
-
-  protected def syncExecScript(action: PostrunAction, projectFileName: String, entry: ProjectEntry, projectType: ProjectType, cache: PostrunDataCache)
+  protected def syncExecScript(action: PostrunAction, projectFileName: String, entry: ProjectEntry,
+                               projectType: ProjectType, cache: PostrunDataCache,
+                               workingGroupMaybe: Option[PlutoWorkingGroup], commissionMaybe: Option[PlutoCommission])
                     (implicit db: slick.jdbc.PostgresProfile#Backend#Database, config:play.api.Configuration, timeout: Duration) =
-    Await.result(action.run(projectFileName,entry,projectType,cache), timeout)
+    Await.result(action.run(projectFileName,entry,projectType,cache, workingGroupMaybe, commissionMaybe), timeout)
 
   /**
     * Recursively iterates a list of postrun actions, running each
@@ -108,17 +111,18 @@ class ProjectCreateHelperImpl extends ProjectCreateHelper {
     * @return ultimate sequence of results
     */
   def runNextAction(actions: Seq[PostrunAction], results:Seq[Try[JythonOutput]], cache: PostrunDataCache,
-                    projectFileName: String, projectEntry: ProjectEntry, projectType: ProjectType)
+                    projectFileName: String, projectEntry: ProjectEntry, projectType: ProjectType,
+                    workingGroupMaybe:Option[PlutoWorkingGroup],commissionMaybe:Option[PlutoCommission])
                    (implicit db: slick.jdbc.PostgresProfile#Backend#Database, config:play.api.Configuration, timeout: Duration):Seq[Try[JythonOutput]] = {
     logger.debug(s"runNextAction: remaining actions: ${actions.toString()}")
     actions.headOption match {
       case Some(nextAction)=>
-        logger.info(s"running action ${nextAction.toString}")
-        val newResults = results ++ Seq(syncExecScript(nextAction, projectFileName,projectEntry, projectType, cache))
-        logger.info(s"got results: ${newResults.toString()}")
-        runNextAction(actions.tail, newResults, cache, projectFileName, projectEntry, projectType)
+        logger.debug(s"running action ${nextAction.toString}")
+        val newResults = results ++ Seq(syncExecScript(nextAction, projectFileName,projectEntry, projectType, cache, workingGroupMaybe, commissionMaybe))
+        logger.debug(s"got results: ${newResults.toString()}")
+        runNextAction(actions.tail, newResults, cache, projectFileName, projectEntry, projectType, workingGroupMaybe, commissionMaybe)
       case None=>
-        logger.info("recursion ends")
+        logger.debug("recursion ends")
         results
     }
   }
@@ -137,48 +141,55 @@ class ProjectCreateHelperImpl extends ProjectCreateHelper {
   /**
     * Main method to execute the postrun actions for a given project type, during project creation
     * @param fileEntry [[FileEntry]] representing the created file
-    * @param eventualTriedEntry a Future, containing a Try, containing the [[ProjectEntry]] that has been created
+    * @param createdProjectEntry the project entry that has been created
     * @param template [[ProjectTemplate]] representing the project template used to create ProjectEntry
     * @param db Implicitly provided database object
     * @param config Implicitly provided Play app configuration
     * @return a Future, containing either a Left with a string describing the number of actions that errored
     *         or a Right with a string indicating how many actions were run
     */
-  def doPostrunActions(fileEntry: FileEntry, eventualTriedEntry: Future[Try[ProjectEntry]], template: ProjectTemplate)
+  def doPostrunActions(fileEntry: FileEntry, createdProjectEntry: ProjectEntry, template: ProjectTemplate)
                       (implicit db: slick.jdbc.PostgresProfile#Backend#Database, config:play.api.Configuration):Future[Either[String,String]]= {
-    val futureSequence = Future.sequence(Seq(eventualTriedEntry, template.projectType, fileEntry.getFullPath, PostrunDependencyGraph.loadAllById))
+    //kick off all of the async operations that we need to be completed before we can start executing postruns
+    val futureSequence = Future.sequence(Seq(
+      template.projectType,
+      fileEntry.getFullPath,
+      PostrunDependencyGraph.loadAllById,
+      createdProjectEntry.getWorkingGroup,
+      createdProjectEntry.getCommission
+    ))
 
     implicit val timeout:Duration = Duration(config.getOptional[String]("postrun.timeout").getOrElse("30 seconds"))
     futureSequence.flatMap(completedFutures=>{
-      val projectEntryTry:Try[ProjectEntry] = completedFutures.head.asInstanceOf[Try[ProjectEntry]]
-      projectEntryTry match {
-        case Failure(error)=>Future(Left(error.toString))
-        case Success(projectEntry)=>
-          val projectType:ProjectType = completedFutures(1).asInstanceOf[ProjectType]
-          val writtenPath = completedFutures(2).asInstanceOf[String]
-          val postrunDependencyGraph = completedFutures(3).asInstanceOf[Map[Int, Seq[Int]]]
+      val projectType:ProjectType = completedFutures.head.asInstanceOf[ProjectType]
+      val writtenPath = completedFutures(1).asInstanceOf[String]
+      val postrunDependencyGraph = completedFutures(2).asInstanceOf[Map[Int, Seq[Int]]]
+      val workingGroupMaybe = completedFutures(3).asInstanceOf[Option[PlutoWorkingGroup]]
+      val commissionMaybe = completedFutures(4).asInstanceOf[Option[PlutoCommission]]
 
-          val actionResults:Future[Seq[Try[JythonOutput]]] = projectType.postrunActions.map({
-            case Failure(error)=>Seq(Failure(error))
-            case Success(actionsList)=>
-              //.map(action=>runEach(action, writtenPath, projectEntry, projectType))
-              val sortedActions = orderPostruns(actionsList, postrunDependencyGraph)
-              runNextAction(sortedActions, Seq(), PostrunDataCache(), writtenPath, projectEntry, projectType)
-          })
+      val actionResults:Future[Seq[Try[JythonOutput]]] = projectType.postrunActions.map({
+        case Failure(error)=>Seq(Failure(error))
+        case Success(actionsList)=>
+          val sortedActions = orderPostruns(actionsList, postrunDependencyGraph)
+          runNextAction(sortedActions, Seq(), PostrunDataCache(), writtenPath, createdProjectEntry, projectType, workingGroupMaybe, commissionMaybe)
+      })
 
-          val actionSuccess = actionResults.map(collectFailures _)
-          actionSuccess map {
-            case Left(errorSeq)=>
-              val msg = s"${errorSeq.length} postrun actions failed for project $writtenPath, see log for details"
-              logger.error(msg)
-              errorSeq.foreach(err=>logger.error(s"\tMethod failed with:", err))
-              Left(msg)
-            case Right(results)=>
-              val msg = s"Successfully ran ${results.length} postrun actions for project $writtenPath"
-              logger.info(s"Successfully ran ${results.length} postrun actions for project $writtenPath")
-              Right(s"Successfully ran ${results.length} postrun actions for project $writtenPath")
-          }
+      val actionSuccess = actionResults.map(collectFailures _)
+      actionSuccess map {
+        case Left(errorSeq)=>
+          val msg = s"${errorSeq.length} postrun actions failed for project $writtenPath, see log for details"
+          logger.error(msg)
+          errorSeq.foreach(err=>logger.error(s"\tMethod failed with:", err))
+          Left(msg)
+        case Right(results)=>
+          val msg = s"Successfully ran ${results.length} postrun actions for project $writtenPath"
+          logger.info(s"Successfully ran ${results.length} postrun actions for project $writtenPath")
+          Right(s"Successfully ran ${results.length} postrun actions for project $writtenPath")
       }
+    }).recoverWith({
+      case error:Throwable=>
+        logger.error("Could not prepare for postruns", error)
+        Future(Left(error.toString))
     })
   }
 
@@ -220,27 +231,21 @@ class ProjectCreateHelperImpl extends ProjectCreateHelper {
                 Future(Failure(new RuntimeException(error.mkString("\n"))))
               case Right(writtenFile)=>
                 logger.info(s"Creating new project entry from $writtenFile")
-                val createResult = ProjectEntry.createFromFile(writtenFile, rq.projectTemplate, rq.title, createTime,
-                  rq.user,rq.workingGroupId, rq.commissionId)
-                logger.info("Done")
-                val postruns = doPostrunActions(writtenFile, createResult, rq.projectTemplate) map {
-                  case Left(errorMessage)=>
-                    Failure(new PostrunActionError(errorMessage))
-                  case Right(successMessage)=>
-                    Success(successMessage)
-                }
-
-                Future.sequence(Seq(createResult, postruns)) map { results=>
-                  val finalCreateResult = results.head.asInstanceOf[Try[ProjectEntry]]
-                  val finalPostrunResult = results(1).asInstanceOf[Try[String]]
-
-                  if(finalPostrunResult.isFailure)
-                    Failure(finalPostrunResult.failed.get)
-                  else if(finalCreateResult.isFailure)
-                    Failure(finalCreateResult.failed.get)
-                  else
-                    finalCreateResult
-                }
+                ProjectEntry.createFromFile(writtenFile, rq.projectTemplate, rq.title, createTime,
+                  rq.user,rq.workingGroupId, rq.commissionId).flatMap({
+                    case Success(createdProjectEntry)=>
+                      logger.info(s"Project entry created as id ${createdProjectEntry.id}")
+                      doPostrunActions(writtenFile, createdProjectEntry, rq.projectTemplate) map {
+                        case Left(errorMessage)=>
+                          Failure(new PostrunActionError(errorMessage))
+                        case Right(successMessage)=>
+                          logger.info(successMessage)
+                          Success(createdProjectEntry)
+                      }
+                    case Failure(error)=>
+                      logger.error("Could not create project file: ", error)
+                      Future(Failure(error))
+                })
             })
           case Failure(error)=>
             logger.error("Unable to save destination file entry to database", error)

@@ -28,6 +28,42 @@ case class ProjectEntry (id: Option[Int], projectTypeId: Int, vidispineProjectId
     }).flatMap(Future.sequence(_)).map(_.flatten)
   }
 
+  /**
+    * Gets the working group record associated with this project entry
+    * @param db implicitly provided database object
+    * @return a Future, containing a Try representing whether the db operation succeeded, containing an Option which has the working group, if there is one.
+    */
+  def getWorkingGroup(implicit db:slick.jdbc.PostgresProfile#Backend#Database):Future[Option[PlutoWorkingGroup]] = {
+    workingGroupId match {
+      case None=>Future(None)
+      case Some(groupId)=>
+        db.run(
+          TableQuery[PlutoWorkingGroupRow].filter(_.id===groupId).result.asTry
+        ).map({
+          case Success(matchingEntries)=>matchingEntries.headOption //should only ever be one or zero matches as id is a unique primary key
+          case Failure(error)=>throw error
+        })
+    }
+  }
+
+  /**
+    * Gets the commission record associated with this project entry
+    * @param db implicitly provided database object
+    * @return a Future, containing a Try representing whether the db operation succeeded, containing an Option which has the working group, if there is one.
+    */
+  def getCommission(implicit db:slick.jdbc.PostgresProfile#Backend#Database):Future[Option[PlutoCommission]] = {
+    commissionId match {
+      case None=>Future(None)
+      case Some(commId)=>
+        db.run(
+          TableQuery[PlutoCommissionRow].filter(_.id===commId).result.asTry
+        ).map({
+          case Success(matchingEntries)=>matchingEntries.headOption  //should only ever be one or zero matches as id is a unique primary key
+          case Failure(error)=>throw error
+        })
+    }
+  }
+
   def save(implicit db:slick.jdbc.PostgresProfile#Backend#Database):Future[Try[ProjectEntry]] = {
     val insertQuery = TableQuery[ProjectEntryRow] returning TableQuery[ProjectEntryRow].map(_.id) into ((item,id)=>item.copy(id=Some(id)))
     db.run(

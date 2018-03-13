@@ -78,7 +78,8 @@ case class PostrunAction (id:Option[Int],runnable:String, title:String, descript
     * @param config - implicitly provided play.api.Configuration object, representing the app configuration
     * @return a Future containing a Try containing either the script output or an error
     */
-  def run(projectFileName:String,projectEntry:ProjectEntry,projectType:ProjectType,dataCache:PostrunDataCache)
+  def run(projectFileName:String,projectEntry:ProjectEntry,projectType:ProjectType,dataCache:PostrunDataCache,
+          workingGroupMaybe: Option[PlutoWorkingGroup], commissionMaybe: Option[PlutoCommission])
          (implicit config:Configuration):Future[Try[JythonOutput]] = {
     val inputPath = this.getScriptPath
 
@@ -92,7 +93,7 @@ case class PostrunAction (id:Option[Int],runnable:String, title:String, descript
         logger.debug(s"Going to try to run script at path $inputPath...")
         val scriptArgs = Map(
           "projectFile" -> projectFileName
-        ) ++ projectEntry.asStringMap ++ projectType.asStringMap
+        ) ++ projectEntry.asStringMap ++ projectType.asStringMap ++ commissionMaybe.map(_.asStringMap).getOrElse(Map()) ++ workingGroupMaybe.map(_.asStringMap).getOrElse(Map())
 
         runner.runScriptAsync(inputPath.toString, scriptArgs, dataCache) map {
           case Success(scriptOutput) =>

@@ -71,6 +71,18 @@ case class PlutoCommission (id:Option[Int], collectionId:Int, siteId: String, cr
         Future(Failure(error))
     })
   }
+
+  /**
+    * returns the contents as a string->string map, for passing to postrun actions
+    * @return
+    */
+  def asStringMap:Map[String,String] = Map(
+    "commissionId"->s"$siteId-$collectionId",
+    "commissionCreated"->created.toString,
+    "commissionUpdated"->updated.toString,
+    "commissionTitle"->title,
+    "commissionDescription"->description.getOrElse("")
+  )
 }
 
 class PlutoCommissionRow (tag:Tag) extends Table[PlutoCommission](tag,"PlutoCommission"){

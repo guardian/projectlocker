@@ -29,6 +29,8 @@ the UI.
 A postrun script should provide a function called `postrun`.
 This will be called with the following keyword arguments:
 
+- **dataCache**: dictionary of string->string pairs containing information persisted by previous actions. 
+If you rely on values here you should use the UI to declare a dependency on the action that sets the value you need.
 - **projectFile**: path of the created project file
 - **projectId**: numeric ID of the created project entry
 - **vidispineProjectId**: vidispine ID of the project, or an empty string if none is set
@@ -40,6 +42,14 @@ This will be called with the following keyword arguments:
 - **projectOpensWith**: app required client-side to open the project
 - **projectTargetVersion**: version of the app which this is intended for
 - **projectFileExtension**: recognised file extension of the project
+- **workingGroupName**: name of the working group specified when creating the project. May not be present if no working group data available
+- **workingGroupUuid**: uuid of the working group specified when creating the project. May not be present
+- **workingGroupHide**: a string indicating whether the working group should be hidden. May not be present
+- **commissionId**: Vidispine ID of the commission that this project is a member of. May not be present.
+- **commissionCreated**: String representing create time of commission that this project is a member of. May not be present.
+- **commissionUpdated**: String representing last update time of commission that this project is a member of. May not be present
+- **commissionTitle**: Title of the commission that this project is associated with. May not be present.
+- **commissionDescription**: Description of the commission that this project is associated with. May not be present.
 
 If all of that seems like a lot of typing, as normal in Python you can get all kwargs as a dictionary
 by using the double-splat `**` operator, e.g.:
@@ -51,7 +61,11 @@ def postrun(**kwargs):
 
 ### Returning
 
-Currently, the script exit code and return values are ignored.
+The script should return a dictionary of any values that it wants to persist to dependent
+postrun actions.  This will be stored in a cache as key->value pairs by the server, and passed
+to subsequent calls via the dataCache argument.
+Dependencies between postrun actions can be declared using the Postrun section of the user interface,
+by editing the postrun action definition 
 Anything output to stdout and stderr is captured and will be shown
 in the projectlocker log if the creation fails.
 
