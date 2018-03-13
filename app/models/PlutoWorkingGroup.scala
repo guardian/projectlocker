@@ -14,7 +14,7 @@ import scala.concurrent.Future
 import scala.util.{Failure, Success, Try}
 import scala.concurrent.ExecutionContext.Implicits.global
 
-case class PlutoWorkingGroup (id:Option[Int], hide:Option[String], name:String, uuid:String) {
+case class PlutoWorkingGroup (id:Option[Int], hide:Option[String], name:String, uuid:UUID) {
   private val logger = Logger(getClass)
   /**
     *  writes this model into the database, inserting if id is None and returning a fresh object with id set. If an id
@@ -64,7 +64,7 @@ class PlutoWorkingGroupRow(tag:Tag) extends Table[PlutoWorkingGroup](tag, "Pluto
   def id = column[Int]("id",O.PrimaryKey, O.AutoInc)
   def hide = column[Option[String]]("s_hide")
   def name = column[String]("s_name")
-  def uuid = column[String]("u_uuid", SqlType("UUID"))
+  def uuid = column[UUID]("u_uuid", SqlType("UUID"))
 
   def * = (id.?, hide, name, uuid) <> (PlutoWorkingGroup.tupled, PlutoWorkingGroup.unapply)
 }
@@ -80,14 +80,14 @@ trait PlutoWorkingGroupSerializer extends TimestampSerialization {
     (JsPath \ "id").writeNullable[Int] and
     (JsPath \ "hide").writeNullable[String] and
       (JsPath \ "name").write[String] and
-      (JsPath \ "uuid").write[String]
+      (JsPath \ "uuid").write[UUID]
     )(unlift(PlutoWorkingGroup.unapply))
 
   implicit val workingGroupReads:Reads[PlutoWorkingGroup] = (
     (JsPath \ "id").readNullable[Int] and
     (JsPath \ "hide").readNullable[String] and
       (JsPath \ "name").read[String] and
-      (JsPath \ "uuid").read[String]
+      (JsPath \ "uuid").read[UUID]
     )(PlutoWorkingGroup.apply _)
 }
 

@@ -174,6 +174,8 @@ class PlutoWGCommissionScanner @Inject() (configuration:Configuration, actorSyst
             }
           case Failure(error)=>logger.error(s"Unable to get working groups from server: $error")
         })
+      case Some(_)=>
+        logger.warn("pluto sync is not enabled. set pluto.sync_enabled to 'yes' in order to enable it")
       case None=>
         logger.error("pluto sync is not enbled")
     }
