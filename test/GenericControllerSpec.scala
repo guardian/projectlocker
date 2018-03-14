@@ -27,11 +27,15 @@ import play.api.libs.json._
 
 @RunWith(classOf[JUnitRunner])
 trait GenericControllerSpec extends Specification with MockedCacheApi{
-  //needed for body.consumeData
-  implicit val system = ActorSystem("storage-controller-spec")
-  implicit val materializer = ActorMaterializer()
-
   val logger: Logger = Logger(this.getClass)
+  //can over-ride bindings here. see https://www.playframework.com/documentation/2.5.x/ScalaTestingWithGuice
+  val application:Application = new GuiceApplicationBuilder().disable(classOf[EhCacheModule])
+    .overrides(bind[DatabaseConfigProvider].to[TestDatabase.testDbProvider])
+    .overrides(bind[SyncCacheApi].toInstance(mockedSyncCacheApi))
+    .build
+  //needed for body.consumeData
+  implicit val system:ActorSystem = application.actorSystem
+  implicit val materializer:ActorMaterializer = ActorMaterializer()
 
   val componentName:String
   val uriRoot:String
@@ -47,12 +51,6 @@ trait GenericControllerSpec extends Specification with MockedCacheApi{
 
   val expectedDeleteStatus = "ok"
   val expectedDeleteDetail = "deleted"
-
-  //can over-ride bindings here. see https://www.playframework.com/documentation/2.5.x/ScalaTestingWithGuice
-  val application:Application = new GuiceApplicationBuilder().disable(classOf[EhCacheModule])
-    .overrides(bind[DatabaseConfigProvider].to[TestDatabase.testDbProvider])
-    .overrides(bind[SyncCacheApi].toInstance(mockedSyncCacheApi))
-    .build
 
   def bodyAsJsonFuture(response:Future[play.api.mvc.Result]) = response.flatMap(result=>
     result.body.consumeData.map(contentBytes=> {
