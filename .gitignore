@@ -18,3 +18,5 @@ dist
 node_modules/
 bundle.js
 /postrun/lib/python/
+*$py.class
+/postrun/references/

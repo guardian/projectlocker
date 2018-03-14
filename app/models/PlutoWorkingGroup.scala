@@ -59,6 +59,16 @@ case class PlutoWorkingGroup (id:Option[Int], hide:Option[String], name:String, 
         Future(Failure(error))
     })
   }
+
+  /**
+    * returns the contents as a string->string map, for passing to postrun actions
+    * @return
+    */
+  def asStringMap:Map[String,String] = Map(
+    "workingGroupName"->name,
+    "workingGroupUuid"->uuid,
+    "workingGroupHide"->hide.getOrElse("")
+  )
 }
 
 class PlutoWorkingGroupRow(tag:Tag) extends Table[PlutoWorkingGroup](tag, "PlutoWorkingGroup") {

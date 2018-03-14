@@ -17,8 +17,6 @@ dependencies:
     #install jython so we can pull in pip modules, and get the default python module set
     - curl http://search.maven.org/remotecontent?filepath=org/python/jython-installer/2.7.0/jython-installer-2.7.0.jar > jython-installer-2.7.0.jar
     - if [ ! -d ~/jython ]; then java -jar jython-installer-2.7.0.jar -s -d ~/jython -t standard -e doc; fi
-    - mkdir -p postrun/lib/python
-    - cp -a ~/jython/Lib postrun/lib/python
   # Cache resolution-cache and streams for faster dependency resolution in sbt
   # Cache node_modules and bower_components for faster client-side build
   cache_directories:
@@ -30,6 +28,9 @@ dependencies:
     - cd frontend; npm install
     - cd frontend; npm run build
     - sbt test:compile
+    - ~/jython/bin/pip install -r postrun/requirements.txt
+    - mkdir -p postrun/lib/python
+    - cp -a ~/jython/Lib postrun/lib/python
 
 database:
   pre:
@@ -42,6 +43,7 @@ test:
     - sbt test
     - cd frontend; npm run test
     - scripts/check_evolutions.sh
+    - PYTHONPATH=postrun/scripts ~/jython/bin/nosetests -w postrun/tests
 
 deployment:
   make_rpm:

@@ -1,10 +1,13 @@
 package helpers
 
-import java.io.ByteArrayOutputStream
+import java.io.{ByteArrayOutputStream, File}
+import java.nio.file.{Path, Paths}
 import java.util.Properties
+
 import org.python.core.{PyObject, PyString}
 import org.python.util.PythonInterpreter
 import play.api.Logger
+
 import scala.util.{Failure, Success, Try}
 import scala.concurrent.{Await, Future}
 import scala.concurrent.duration._
@@ -26,6 +29,7 @@ object JythonRunner {
     logger.info("Initialising jython runner")
     val props = new Properties
     props.put("python.home", "postrun/lib/python")
+    props.put("python.path", "postrun/lib/python:postrun/lib:postrun/scripts:postrun")
     props.put("python.console.encoding", "UTF-8") // Used to prevent: console: Failed to install '': java.nio.charset.UnsupportedCharsetException: cp0.
     props.put("python.import.site", "false")
 
@@ -41,12 +45,16 @@ class JythonRunner {
   private val logger = Logger(this.getClass)
   private val interpreter = new PythonInterpreter()
 
+  def getAbsolutePath(scriptName: String):String = new File(scriptName).getCanonicalPath
+
   def runScript(scriptName: String, dataCache: PostrunDataCache) = {
     val outStream = new ByteArrayOutputStream
     val errStream = new ByteArrayOutputStream
 
     interpreter.setOut(outStream)
     interpreter.setErr(errStream)
+    interpreter.set("__file__", new PyString(getAbsolutePath(scriptName)))
+
     val result = Try {
       interpreter.execfile(scriptName)
     }
@@ -80,6 +88,7 @@ class JythonRunner {
 
     interpreter.setOut(outStream)
     interpreter.setErr(errStream)
+    interpreter.set("__file__", new PyString(getAbsolutePath(scriptName)))
 
     //the cast is annoying but it should always work, since PyString is a subclass of PyObject. No idea why
     // func.__call__ seems to not like this though.

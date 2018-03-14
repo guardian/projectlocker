@@ -162,6 +162,9 @@ class GeneralListComponent extends React.Component {
                 {this.getFilterComponent()}
                 {this.itemLimitWarning()}
 
+                <span className="banner-control">
+                    <button id="newElementButton" onClick={this.newElementCallback}>New</button>
+                </span>
                 <SortableTable
                     data={ this.state.data}
                     columns={this.columns}
@@ -170,9 +173,6 @@ class GeneralListComponent extends React.Component {
                     tableProps={ {className: "dashboardpanel"} }
                 />
 
-                <span className="banner-control">
-                    <button id="newElementButton" onClick={this.newElementCallback}>New</button>
-                </span>
             </div>
         );
     }
