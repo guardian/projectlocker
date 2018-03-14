@@ -28,12 +28,6 @@ class ProjectEntryList extends GeneralListComponent {
                 headerProps: { className: 'dashboardheader'}
             },
             {
-                header: "Files",
-                key: "id",
-                render: (itemid)=><ProjectEntryFiles entryId={itemid}/>,
-                headerProps: { className: 'dashboardheader'}
-            },
-            {
                 header: "Project type",
                 key: "projectTypeId",
                 render: (typeId)=><ProjectTypeView entryId={typeId}/>,

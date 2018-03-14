@@ -27,7 +27,7 @@ class TestPostrun(unittest2.TestCase):
 
         shutil.copy("data/blank_premiere_2017.prproj", destprojectfile)
 
-        postrun(projectFilename=destprojectfile, projectFileExtension=".prproj", dataCache={
+        postrun(projectFile=destprojectfile, projectFileExtension=".prproj", dataCache={
             'created_asset_folder': '/tmp/testassets/folder'
         })
 

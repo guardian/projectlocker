@@ -100,7 +100,7 @@ case class PostrunAction (id:Option[Int],runnable:String, title:String, descript
             logger.debug("Script started successfully")
             scriptOutput.raisedError match {
               case Some(error)=>
-                logger.error("Postrun script could not complete: ",error)
+                logger.error("Postrun script could not complete due to a Python exception: ")
                 logger.error("Postrun standard out:" + scriptOutput.stdOutContents)
                 logger.error("Postrun standard err:" + scriptOutput.stdErrContents)
                 Failure(error)

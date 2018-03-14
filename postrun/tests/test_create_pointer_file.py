@@ -9,7 +9,7 @@ class TestCreatePointerFile(unittest2.TestCase):
         """
         from scripts.create_pointer_file import postrun
 
-        postrun(projectFilename="/tmp/myproject.prproj",projectFileExtension=".prproj",
+        postrun(projectFile="/tmp/myproject.prproj",projectFileExtension=".prproj",
                 dataCache={'created_asset_folder':"/path/to/my/assets"})
 
         self.assertTrue(os.path.exists("/tmp/myproject.ptr"))
@@ -28,6 +28,6 @@ class TestCreatePointerFile(unittest2.TestCase):
         from scripts.create_pointer_file import postrun
 
         with self.assertRaises(RuntimeError) as raised_excep:
-            postrun(projectFilename="/tmp/myproject.prproj",projectFileExtension=".prproj",
+            postrun(projectFile="/tmp/myproject.prproj",projectFileExtension=".prproj",
                 dataCache={'invalidkey':"/path/to/my/assets"})
         self.assertEqual(str(raised_excep.exception),"No created_asset_folder in data cache. This postrun must depend on make_asset_folder")

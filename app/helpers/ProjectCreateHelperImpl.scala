@@ -117,14 +117,14 @@ class ProjectCreateHelperImpl extends ProjectCreateHelper {
           case Success(output)=>
             output.raisedError match {
               case None=> // no error raised
-                runNextAction(actions.tail, newResults, cache, projectFileName, projectEntry, projectType, workingGroupMaybe, commissionMaybe)
+                runNextAction(actions.tail, newResults, output.newDataCache, projectFileName, projectEntry, projectType, workingGroupMaybe, commissionMaybe)
               case Some(scriptError)=>  //script ran but failed
                 logger.error(s"Postrun script ${nextAction.runnable} failed: ", scriptError)
                 logger.error("Aborting postruns due to failure")
                 newResults
             }
           case Failure(error)=>
-            logger.error(s"Could not start postrun script ${nextAction.runnable}: ", error)
+            logger.error(s"Could not start postrun script ${nextAction.runnable}.")
             logger.error("Aborting postruns due to failure")
             newResults
         }

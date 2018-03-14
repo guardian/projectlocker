@@ -43,7 +43,7 @@ class TestDoPostrun(unittest2.TestCase):
             from scripts.update_adobe_uuid import loadFile, postrun
             shutil.copy("data/blank_premiere_2017.prproj","/tmp/testproject.prproj")
 
-            result = postrun(projectFilename="/tmp/testproject.prproj", projectFileExtension="prproj")
+            result = postrun(projectFile="/tmp/testproject.prproj", projectFileExtension=".prproj")
 
             xmltree, is_compressed = loadFile("/tmp/testproject.prproj")
             self.assertEqual(xmltree.find('Project/RootProjectItem').attrib['ObjectURef'],"fake_uuid")
@@ -58,4 +58,4 @@ class TestDoPostrun(unittest2.TestCase):
         from scripts.update_adobe_uuid import loadFile, postrun
         with self.assertRaises(ValueError):
             shutil.copy("data/blank_premiere_2017.prproj","/tmp/testproject.prproj")
-            postrun(projectFilename="/tmp/testproject.prproj", projectFileExtension="wibble")
+            postrun(projectFile="/tmp/testproject.prproj", projectFileExtension=".wibble")

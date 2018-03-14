@@ -51,12 +51,12 @@ def load_premiere_project(project_file):
     return xmltree, isCompressed
 
 
-def postrun(projectFilename="", projectFileExtension="", dataCache={}, **kwargs):
+def postrun(projectFile="", projectFileExtension="", dataCache={}, **kwargs):
     if not 'created_asset_folder' in dataCache:
         raise RuntimeError("No created_asset_folder value in datacache. This postrun must depend on make_asset_folder.")
 
-    logger.info("Loading XML from %s..." % projectFilename)
-    xmltree, is_compressed = load_premiere_project(projectFilename)
+    logger.info("Loading XML from %s..." % projectFile)
+    xmltree, is_compressed = load_premiere_project(projectFile)
 
     backups_path = getattr(postrun_settings,'BACKUPS_PATH', '/tmp')
     logger.info("Project backup path is {0}".format(backups_path))
@@ -86,4 +86,4 @@ def postrun(projectFilename="", projectFileExtension="", dataCache={}, **kwargs)
     setNodeTo(scratchNode,'TransferMediaLocation',transfer_folder)
     print ET.dump(scratchNode)
 
-    writeFile(xmltree, projectFilename, is_compressed=is_compressed,backups_path=backups_path)
+    writeFile(xmltree, projectFile, is_compressed=is_compressed,backups_path=backups_path)
