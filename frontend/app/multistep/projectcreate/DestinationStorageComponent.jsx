@@ -22,7 +22,7 @@ class DestinationStorageComponent extends CommonMultistepComponent {
                 <tr>
                     <td>Storage</td>
                     <td><select id="storageSelector" value={this.props.selectedStorage}
-                                onChange={event=>this.props.selectionUpdated(event.target.value)}>
+                                onChange={event=>this.props.selectionUpdated(parseInt(event.target.value))}>
                         {
                             this.props.storageList.map(storage=><option key={storage.id} value={storage.id}>{storage.rootpath} on {storage.storageType}</option>)
                         }
