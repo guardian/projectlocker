@@ -10,80 +10,9 @@ import xml.etree.ElementTree as ET
 import uuid
 import shutil
 import traceback
+from PremiereProjectFile import *
 
 backups_path = "/tmp/.backup"
-
-
-def setNodeAttrib(rootNode,nodePath,attribName,attribValue):
-    global args
-
-    print rootNode.__class__
-
-    if rootNode.__class__ == "<class 'xml.etree.ElementTree.ElementTree'>":
-        print "info: re-checking root node"
-        rootNode=rootNode.getroot()
-
-    if nodePath is None:
-        sourceNode = rootNode
-    else:
-        sourceNode=rootNode.find(nodePath)
-        if sourceNode is None:
-            raise Exception("Unable to find %s node" % nodePath)
-
-    sourceNode.attrib[attribName] = attribValue
-
-
-def getDoctype(filepath):
-    check_expr=re.compile(r'!DOCTYPE')
-    found = None
-
-    try:
-        f = gzip.open(filepath,"r")
-        for line in f:
-            line=line.rstrip('\n')
-            #print line
-            if check_expr.search(line) is not None:
-                found = line
-                f.close()
-                break
-    except IOError:
-        f = open(filepath,"r")
-        for line in f:
-            line=line.rstrip('\n')
-            #print line
-            #print check_expr.search(line)
-            if check_expr.search(line) is not None:
-                #print "Found it!"
-                found = line
-                f.close()
-                break
-    finally:
-        f.close()
-        return found
-
-
-def loadFile(project_file):
-    """
-    loads the provided premiere project file as an XML element tree, possibly de-compressing it in memory
-    :param project_file:  path to .prproj file
-    :return: tuple of (XML elementttree, wasCompressed) where wasCompressed is a boolean indicating whether it should be compressed
-    again on output
-    """
-    print "Loading XML from %s..." % project_file
-
-    #larger premiere projects tend to be gzipped
-    isCompressed = True
-
-    try:
-        f = gzip.open(project_file,"rb")
-        xmltree = ET.fromstring(f.read())
-        f.close()
-    except IOError: #if gzip doesn't want to read it, then try as a plain file...
-        isCompressed = False
-        xmltree = ET.parse(project_file)
-        xmltree=xmltree.getroot()
-
-    return xmltree, isCompressed
 
 def doUpdate(xmltree,attrib_spec,new_uuid=None):
     """

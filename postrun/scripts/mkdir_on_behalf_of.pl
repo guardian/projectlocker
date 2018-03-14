@@ -1,8 +1,8 @@
 #!/usr/bin/perl -wT
 
 #Why is this Perl?  Well, because perl has a "sudo-aware" mode, which is VERY paranoid about strings and such getting
-#passed around, and forces you to sanitize everything or it breaks.  This is therefore safe to run in sudo mode,
-#wheras another script in some other language might not be.
+#passed around, and forces you to sanitize everything or it breaks.  This is therefore safer to run in sudo mode,
+#than another script in some other language might not be; and is WAY safer than running the whole server as root.
 use warnings;
 use strict;
 use File::Path qw/make_path/;

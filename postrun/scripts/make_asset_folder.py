@@ -10,6 +10,7 @@ import re
 logger = logging.getLogger("make_asset_folder")
 logger.level = logging.DEBUG
 
+
 class FolderCreationFailed(StandardError):
     pass
 
