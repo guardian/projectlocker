@@ -25,7 +25,7 @@ class TestRunHelperScript(unittest2.TestCase):
             mypath = os.path.realpath(os.path.dirname(os.path.realpath(__file__)) + "/..")
             scriptpath = os.path.join(mypath, 'scripts','mkdir_on_behalf_of.pl')
 
-            expected_run_args = "sudo {0} \"/path/to/my/asset_folder\" 500 500".format(scriptpath)
+            expected_run_args = "/usr/bin/sudo -n {0} \"/path/to/my/asset_folder\" 500 500".format(scriptpath)
 
             _run_helper_script("/path/to/my/asset_folder",None,False)
 
@@ -43,7 +43,7 @@ class TestRunHelperScript(unittest2.TestCase):
             mypath = os.path.realpath(os.path.dirname(os.path.realpath(__file__)) + "/..")
             scriptpath = os.path.join(mypath, 'scripts','mkdir_on_behalf_of.pl')
 
-            expected_run_args = "sudo {0} \"/path/to/my/asset_folder\" 500 500".format(scriptpath)
+            expected_run_args = "/usr/bin/sudo -n {0} \"/path/to/my/asset_folder\" 500 500".format(scriptpath)
 
             with self.assertRaises(FolderCreationFailed) as raised_excep:
                 _run_helper_script("/path/to/my/asset_folder",None,False)

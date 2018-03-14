@@ -83,19 +83,11 @@ class ProjectCreateHelperImpl extends ProjectCreateHelper {
     !firstTest
   }
 
-//  protected def runEach(action:PostrunAction, projectFileName:String, projectEntry:ProjectEntry,
-//                        dataCache: PostrunDataCache, projectType:ProjectType)
-//                     (implicit db: slick.jdbc.PostgresProfile#Backend#Database, config:play.api.Configuration):Try[JythonOutput] = {
-//
-//    val timeout:Duration = Duration(config.getOptional[String]("postrun.timeout").getOrElse("30 seconds"))
-//
-//    Await.result(action.run(projectFileName,projectEntry, projectType, dataCache),timeout)
-//  }
 
   protected def syncExecScript(action: PostrunAction, projectFileName: String, entry: ProjectEntry,
                                projectType: ProjectType, cache: PostrunDataCache,
                                workingGroupMaybe: Option[PlutoWorkingGroup], commissionMaybe: Option[PlutoCommission])
-                    (implicit db: slick.jdbc.PostgresProfile#Backend#Database, config:play.api.Configuration, timeout: Duration) =
+                    (implicit db: slick.jdbc.PostgresProfile#Backend#Database, config:play.api.Configuration, timeout: Duration):Try[JythonOutput] =
     Await.result(action.run(projectFileName,entry,projectType,cache, workingGroupMaybe, commissionMaybe), timeout)
 
   /**
@@ -116,12 +108,28 @@ class ProjectCreateHelperImpl extends ProjectCreateHelper {
                    (implicit db: slick.jdbc.PostgresProfile#Backend#Database, config:play.api.Configuration, timeout: Duration):Seq[Try[JythonOutput]] = {
     logger.debug(s"runNextAction: remaining actions: ${actions.toString()}")
     actions.headOption match {
-      case Some(nextAction)=>
+      case Some(nextAction)=> //run next action
         logger.debug(s"running action ${nextAction.toString}")
-        val newResults = results ++ Seq(syncExecScript(nextAction, projectFileName,projectEntry, projectType, cache, workingGroupMaybe, commissionMaybe))
+        val scriptResult = syncExecScript(nextAction, projectFileName,projectEntry, projectType, cache, workingGroupMaybe, commissionMaybe)
+        val newResults = results ++ Seq(scriptResult)
         logger.debug(s"got results: ${newResults.toString()}")
-        runNextAction(actions.tail, newResults, cache, projectFileName, projectEntry, projectType, workingGroupMaybe, commissionMaybe)
-      case None=>
+        scriptResult match {
+          case Success(output)=>
+            output.raisedError match {
+              case None=> // no error raised
+                runNextAction(actions.tail, newResults, cache, projectFileName, projectEntry, projectType, workingGroupMaybe, commissionMaybe)
+              case Some(scriptError)=>  //script ran but failed
+                logger.error(s"Postrun script ${nextAction.runnable} failed: ", scriptError)
+                logger.error("Aborting postruns due to failure")
+                newResults
+            }
+          case Failure(error)=>
+            logger.error(s"Could not start postrun script ${nextAction.runnable}: ", error)
+            logger.error("Aborting postruns due to failure")
+            newResults
+        }
+
+      case None=> //no more actions left to run
         logger.debug("recursion ends")
         results
     }
