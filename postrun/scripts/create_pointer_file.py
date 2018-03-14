@@ -1,6 +1,8 @@
 import os.path
 import logging
 
+logging.basicConfig(level=logging.ERROR)
+
 logger = logging.getLogger("create_pointer_file")
 
 

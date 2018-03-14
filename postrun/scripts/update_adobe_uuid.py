@@ -11,6 +11,9 @@ import uuid
 import shutil
 import traceback
 from PremiereProjectFile import *
+import logging
+
+logging.basicConfig(level=logging.ERROR)
 
 backups_path = "/tmp/.backup"
 

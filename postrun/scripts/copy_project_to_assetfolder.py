@@ -2,6 +2,8 @@ import shutil
 import os.path
 import logging
 
+logging.basicConfig(level=logging.ERROR)
+
 logger = logging.getLogger("copy_project_to_assetfolder")
 
 

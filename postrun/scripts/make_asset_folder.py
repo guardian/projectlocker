@@ -7,6 +7,8 @@ from pprint import pformat, pprint
 import os.path
 import re
 
+logging.basicConfig(level=logging.ERROR)
+
 logger = logging.getLogger("make_asset_folder")
 logger.level = logging.DEBUG
 
@@ -42,7 +44,7 @@ def _run_helper_script(asset_folder_location,raven_client,fixmode=False):
     mypath = os.path.dirname(os.path.realpath(__file__))
     logger.debug("My path is {0}".format(mypath))
 
-    args = "sudo {p} \"{f}\" {o} {g}".format(p=os.path.join(mypath, 'mkdir_on_behalf_of.pl'),
+    args = "/usr/bin/sudo -n {p} \"{f}\" {o} {g}".format(p=os.path.join(mypath, 'mkdir_on_behalf_of.pl'),
                                              f=asset_folder_location,
                                              o=str(af_owner), g=str(af_group))
     if fixmode:

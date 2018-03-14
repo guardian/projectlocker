@@ -5,6 +5,8 @@ import logging
 from PremiereProjectFile import *
 import postrun_settings
 
+logging.basicConfig(level=logging.ERROR)
+
 logger = logging.getLogger("update_premiere_scratchpaths")
 
 
