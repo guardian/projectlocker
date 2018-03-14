@@ -1,6 +1,7 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import CommonMultistepComponent from '../common/CommonMultistepComponent.jsx';
+import StorageSelector from '../../Selectors/StorageSelector.jsx';
 
 class DestinationStorageComponent extends CommonMultistepComponent {
     static propTypes = {
@@ -21,12 +22,9 @@ class DestinationStorageComponent extends CommonMultistepComponent {
                 <tbody>
                 <tr>
                     <td>Storage</td>
-                    <td><select id="storageSelector" value={this.props.selectedStorage}
-                                onChange={event=>this.props.selectionUpdated(parseInt(event.target.value))}>
-                        {
-                            this.props.storageList.map(storage=><option key={storage.id} value={storage.id}>{storage.rootpath} on {storage.storageType}</option>)
-                        }
-                    </select></td>
+                    <td><StorageSelector selectedStorage={this.props.selectedStorage}
+                                         selectionUpdated={this.props.selectionUpdated}
+                                         storageList={this.props.storageList}/></td>
                 </tr>
                 </tbody>
             </table>

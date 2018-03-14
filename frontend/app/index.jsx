@@ -28,6 +28,8 @@ import PostrunList from './PostrunList.jsx';
 import PostrunMultistep from './multistep/PostrunMultistep.jsx';
 import PostrunDeleteComponent from './delete/PostrunDeleteComponent.jsx';
 
+import ServerDefaults from './ServerDefaults.jsx';
+
 import axios from 'axios';
 
 window.React = require('react');
@@ -86,6 +88,7 @@ class App extends React.Component {
                 <li><Link to="/project/">Projects...</Link></li>
                 <li><Link to="/postrun/">Postrun Actions...</Link></li>
                 <li><Link to="/file/">Files...</Link></li>
+                <li><Link to="/defaults/">Server defaults...</Link></li>
             </ul>
         } else {
             return <ul className="leftmenu">
@@ -120,6 +123,7 @@ class App extends React.Component {
                         <Route path="/postrun/:itemid/delete" component={PostrunDeleteComponent}/>
                         <Route path="/postrun/:itemid" component={PostrunMultistep}/>
                         <Route path="/postrun/" component={PostrunList}/>
+                        <Route path="/defaults/" component={ServerDefaults}/>
                         <Route exact path="/" component={()=><RootComponent
                             onLoggedOut={this.onLoggedOut}
                             onLoggedIn={this.onLoggedIn}
