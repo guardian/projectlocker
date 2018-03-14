@@ -55,6 +55,19 @@ class ProjectCompletionComponent extends React.Component {
         )
     }
 
+    getWarnings(){
+        let list=[];
+        if(this.props.selectedWorkingGroupId==null || this.props.selectedWorkingGroupId===0)
+            list.push("If you don't select a working group, asset folder creation will fail");
+        if(this.props.selectedCommissionId==null || this.props.selectedCommissionId===0)
+            list.push("If you don't select a commission, asset folder creation will fail");
+        if(this.props.selectedProjectTemplate==null)
+            list.push("You can't create a project without a project template");
+        if(this.props.projectFilename==null || this.props.projectFilename==="")
+            list.push("You can't create a project without a filename");
+        return list;
+    }
+
     render() {
         return(<div>
             <h3>Create new project</h3>
@@ -66,7 +79,8 @@ class ProjectCompletionComponent extends React.Component {
                               selectedWorkingGroupId={this.props.selectedWorkingGroupId}
                               wgList={this.props.wgList}
                               selectedCommissionId={this.props.selectedCommissionId}/>
-            
+
+            {this.getWarnings().map(warning=><p className="error-text">{warning}</p>)}
             <ErrorViewComponent error={this.state.error}/>
             <span style={{float: "right"}}><button onClick={this.confirmClicked}>Confirm</button></span>
         </div>)

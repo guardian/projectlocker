@@ -5,7 +5,7 @@ import logging
 logging.basicConfig(level=logging.ERROR)
 
 logger = logging.getLogger("copy_project_to_assetfolder")
-
+logger.level=logging.INFO
 
 def postrun(projectFile="",projectFileExtension="",dataCache={},**kwargs):
     if not 'created_asset_folder' in dataCache:

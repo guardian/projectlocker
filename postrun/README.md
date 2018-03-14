@@ -78,7 +78,9 @@ stdout or stderr will be output to the projectlocker log to be examined
 
 ### Time limit
 
-At present, a time limit of 30s for any postrun action is hardcoded.
+There is a global time limit for each postrun action, which is set via `postrun.timeout` in the `application.conf` file.
+If it's not present, then there is a limit of 30s for each postrun action to complete and return.
+
 
 ## Execution environment
 

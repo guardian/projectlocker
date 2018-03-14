@@ -12,10 +12,11 @@ import shutil
 import traceback
 from PremiereProjectFile import *
 import logging
+import postrun_settings
 
 logging.basicConfig(level=logging.ERROR)
 
-backups_path = "/tmp/.backup"
+backups_path = postrun_settings.BACKUPS_PATH
 
 def doUpdate(xmltree,attrib_spec,new_uuid=None):
     """
@@ -55,10 +56,10 @@ def save_updated_xml(xmltree, project_file, doctype, isCompressed=False):
         shutil.copy(project_file,os.path.join(backups_path,os.path.basename(project_file)))
 
         if isCompressed:
-            print "INFO: writing gzip compressed file"
+            logger.info("writing gzip compressed file")
             f = gzip.open(project_file,"wb")
         else:
-            print "INFO: writing plain, uncompressed file"
+            logger.info("INFO: writing plain, uncompressed file")
             f = open(project_file,"wb")
 
         if(doctype):
@@ -68,9 +69,9 @@ def save_updated_xml(xmltree, project_file, doctype, isCompressed=False):
         f.close()
 
     except Exception as e:
-        print "ERROR: Unable to back up or replace original project file with modified version: %s" % e.message
-        print traceback.print_exc()
-        print "Restoring project from backup..."
+        logger.error("Unable to back up or replace original project file with modified version: %s" % e.message)
+        logger.error(traceback.format_exc())
+        logger.warning("Restoring project from backup...")
         shutil.copy(os.path.join(backups_path,os.path.basename(project_file)),project_file)
         raise
 
@@ -82,7 +83,7 @@ def postrun(projectFile=None,projectFileExtension=None,**kwargs):
     :param kwargs: other arguments
     :return: None
     """
-    print "Updating project {0}".format(projectFile)
+    logger.info("Updating project {0}".format(projectFile))
     premiereAttribSpec = [ {'xpath': 'Project/RootProjectItem', 'attrib': 'ObjectURef'},
                         {'xpath': 'RootProjectItem', 'attrib': 'ObjectUID' }]
     preludeAttribSpec = [ {'xpath': None, 'attrib': 'ClassID'} ]
@@ -91,9 +92,9 @@ def postrun(projectFile=None,projectFileExtension=None,**kwargs):
     doctype = None
     try:
         doctype = getDoctype(projectFile)
-        print "got doctype %s" % doctype
+        logger.debug("got doctype %s" % doctype)
     except Exception as e:
-        print "WARNING: Unable to get doctype: %s" % e.message
+        logger.warning("Unable to get doctype: %s" % e.message)
 
     if projectFileExtension==".prproj":
         doUpdate(xmltree,premiereAttribSpec)
@@ -102,5 +103,3 @@ def postrun(projectFile=None,projectFileExtension=None,**kwargs):
     else:
         raise ValueError("Expected a projectFileExtension of .prproj or .plproj, not '{0}'".format(projectFileExtension))
     save_updated_xml(xmltree,projectFile, doctype, is_compressed)
-
-    #doRewrite("%s/%s.plproj" % (args.destpath,args.vsid), preludeAttribSpec)

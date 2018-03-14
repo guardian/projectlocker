@@ -4,7 +4,7 @@ import logging
 logging.basicConfig(level=logging.ERROR)
 
 logger = logging.getLogger("create_pointer_file")
-
+logger.level = logging.INFO
 
 def postrun(projectFile="", projectFileExtension="", dataCache={}, **kwargs):
     if not 'created_asset_folder' in dataCache:

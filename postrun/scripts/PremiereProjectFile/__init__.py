@@ -7,14 +7,10 @@ import logging
 
 logger = logging.getLogger("PremiereProjectFile")
 
-
 def setNodeAttrib(rootNode,nodePath,attribName,attribValue):
     global args
 
-    print rootNode.__class__
-
     if rootNode.__class__ == "<class 'xml.etree.ElementTree.ElementTree'>":
-        print "info: re-checking root node"
         rootNode=rootNode.getroot()
 
     if nodePath is None:
@@ -22,7 +18,7 @@ def setNodeAttrib(rootNode,nodePath,attribName,attribValue):
     else:
         sourceNode=rootNode.find(nodePath)
         if sourceNode is None:
-            raise Exception("Unable to find %s node" % nodePath)
+            raise RuntimeError("Unable to find %s node" % nodePath)
 
     sourceNode.attrib[attribName] = attribValue
 
@@ -44,10 +40,7 @@ def getDoctype(filepath):
         f = open(filepath,"r")
         for line in f:
             line=line.rstrip('\n')
-            #print line
-            #print check_expr.search(line)
             if check_expr.search(line) is not None:
-                #print "Found it!"
                 found = line
                 f.close()
                 break
