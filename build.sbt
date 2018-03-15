@@ -48,6 +48,12 @@ libraryDependencies += "org.python" % "jython" % "2.7.1b2"
 // upgrade jackson-databind to remove Deserialization of Untrusted Data vuln
 libraryDependencies += "com.fasterxml.jackson.core" % "jackson-databind" % "2.8.11.1"
 
+//messaging persistence
+libraryDependencies ++= Seq(
+  "net.debasishg" %% "redisclient" % "3.5",
+  "com.typesafe.akka" %% "akka-persistence" % "2.5.4"
+)
+
 enablePlugins(UniversalPlugin)
 
 enablePlugins(LinuxPlugin)
