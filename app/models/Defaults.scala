@@ -57,9 +57,6 @@ class DefaultsRow(tag:Tag) extends Table[Defaults](tag,"defaults") {
 }
 
 object Defaults extends ((Option[Int],String,String)=>Defaults) {
-//  def apply(id:Option[Int],name:String, value:String):Defaults = new Defaults(id,name,value)
-//  def apply(id:Option[Int],name:String, intValue:Int):Defaults = new Defaults(id,name,intValue.toString)
-
   def entryFor(name:String)(implicit db:slick.jdbc.PostgresProfile#Backend#Database):Future[Try[Option[Defaults]]] =
     db.run(
       TableQuery[DefaultsRow].filter(_.name===name).result.asTry
