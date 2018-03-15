@@ -16,7 +16,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 
 trait Redisson {
   val config:Configuration  //implemented by user
-  val logger:Logger
+  protected val logger:Logger
 
   def getRedissonClient = {
     val redissonConfig = new Config()
@@ -24,6 +24,8 @@ trait Redisson {
     logger.info(s"Connecting to redis at $serverAddress")
 
     redissonConfig.setTransportMode(TransportMode.NIO)
+    redissonConfig.setThreads(3)
+    redissonConfig.setNettyThreads(3)
     redissonConfig.useSingleServer().setAddress(serverAddress)
     Redisson.create(redissonConfig)
   }
@@ -43,7 +45,8 @@ trait Redisson {
 
   //def makeJson[T](message:T)(implicit writes:Writes[T]) = Json.toJson(message).toString()
 
-  def queueMessage[T](queuename:String, message:T, maybeDelay: Option[Duration])(implicit client:RedissonClient, writes:Writes[T]) = Future {
+  def queueMessage[T](queuename:String, message:T, maybeDelay: Option[Duration])
+                     (implicit client:RedissonClient, writes:Writes[T]) = Future {
     retry(5) {
       val q = client.getBlockingQueue[String](queuename)
       val messageAsString = Json.toJson(message).toString

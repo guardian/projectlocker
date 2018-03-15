@@ -8,22 +8,26 @@ import java.time.{Instant, LocalDateTime, ZoneOffset, ZonedDateTime}
 import javax.inject.{Inject, Singleton}
 
 import exceptions.{PostrunActionError, ProjectCreationError}
-import models.messages.{NamedQueues, NewProjectCreated, NewProjectCreatedSerializer}
+import models.messages._
 import org.redisson.api.RedissonClient
+import play.api.db.slick.DatabaseConfigProvider
 import play.api.{Configuration, Logger}
 import services.Redisson
+import slick.jdbc.PostgresProfile
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration.Duration
 import scala.util.{Failure, Success, Try}
 
 @Singleton
-class ProjectCreateHelperImpl @Inject() (playConfig: Configuration) extends ProjectCreateHelper with Redisson with NewProjectCreatedSerializer{
+class ProjectCreateHelperImpl @Inject() (playConfig: Configuration, dbConfigProvider:DatabaseConfigProvider)
+  extends ProjectCreateHelper with Redisson with NewProjectCreatedSerializer with NewAssetFolderSerializer {
   protected val storageHelper:StorageHelper = new StorageHelper
   val logger: Logger = Logger(this.getClass)
 
   implicit val config = playConfig
   implicit val redissonClient:RedissonClient = getRedissonClient
+  implicit val db = dbConfigProvider.get[PostgresProfile].db
 
   /**
     * Combines the provided filename with a (possibly) provided extension
@@ -142,6 +146,22 @@ class ProjectCreateHelperImpl @Inject() (playConfig: Configuration) extends Proj
   }
 
   /**
+    * recursively searches the result list for the first value of the given key in the datastore
+    * @param reversedResults a Sequence of JythonOutput. Normally reverse this, to get the final value of a key rather than the first.
+    * @return an Option which contains the value, if there is one.
+    */
+  def locateCacheValue(reversedResults:Seq[JythonOutput],key:String):Option[String] = {
+    if(reversedResults.isEmpty) return None
+
+    val scalaMap = reversedResults.head.newDataCache.asScala
+    if(scalaMap.contains(key)){
+      Some(scalaMap(key))
+    } else {
+      locateCacheValue(reversedResults.tail,key)
+    }
+  }
+
+  /**
     * Traverses a sequence of a Try of type A and returns either a Right with all results if they all succeeded or a Left
     * with all of the errors if any failed.
     * https://stackoverflow.com/questions/15495678/flatten-scala-try
@@ -198,12 +218,49 @@ class ProjectCreateHelperImpl @Inject() (playConfig: Configuration) extends Proj
         case Right(results)=>
           val msg = s"Successfully ran ${results.length} postrun actions for project $writtenPath"
           logger.info(s"Successfully ran ${results.length} postrun actions for project $writtenPath")
+          locateCacheValue(results.reverse,"created_asset_folder") match {
+            case Some(createdAssetFolder)=>
+              sendAssetFolderMessageToSelf(createdAssetFolder, createdProjectEntry)
+            case None=>
+              logger.error("No asset folder was set, so I can't inform pluto about a new asset folder.")
+          }
+
           Right(s"Successfully ran ${results.length} postrun actions for project $writtenPath")
       }
     }).recoverWith({
       case error:Throwable=>
         logger.error("Could not prepare for postruns", error)
         Future(Left(error.toString))
+    })
+  }
+
+  def sendAssetFolderMessageToSelf(assetFolderPath:String, createdProjectEntry: ProjectEntry) ={
+    //It doesn't matter that the vidispine ID is almost certainly not set at this point.  The receiver for the message
+    //will use the Projectlocker project id to look it up from the database; if it's still not set the message will be re-sent
+    //to the back of the queue with a 1s delay.
+    queueMessage(NamedQueues.ASSET_FOLDER,NewAssetFolder(assetFolderPath,
+      createdProjectEntry.id,
+      createdProjectEntry.vidispineProjectId
+    ), None)
+  }
+
+  def sendCreateMessageToSelf(createdProjectEntry: ProjectEntry):Future[Unit] = {
+    Future.sequence(Seq(
+      createdProjectEntry.getWorkingGroup,
+      createdProjectEntry.getCommission
+    )).map(results=>{
+      val maybeWorkingGroup = results.head.asInstanceOf[Option[PlutoWorkingGroup]]
+      val maybeCommission = results(1).asInstanceOf[Option[PlutoCommission]]
+
+      if(maybeWorkingGroup.isDefined && maybeCommission.isDefined){
+        queueMessage(NamedQueues.PROJECT_CREATE,
+          NewProjectCreated(createdProjectEntry,
+            maybeWorkingGroup.get,
+            maybeCommission.get,
+            ZonedDateTime.now().toEpochSecond), None)
+      } else {
+        logger.error(s"Can't sync project ${createdProjectEntry.projectTitle} (${createdProjectEntry.id}) to Pluto - missing working group and/or commission")
+      }
     })
   }
 
@@ -249,7 +306,7 @@ class ProjectCreateHelperImpl @Inject() (playConfig: Configuration) extends Proj
                   rq.user,rq.workingGroupId, rq.commissionId).flatMap({
                     case Success(createdProjectEntry)=>
                       logger.info(s"Project entry created as id ${createdProjectEntry.id}")
-                      queueMessage(NamedQueues.PROJECT_CREATE, NewProjectCreated(createdProjectEntry, ZonedDateTime.now().toEpochSecond), None)
+                      sendCreateMessageToSelf(createdProjectEntry)
                       doPostrunActions(writtenFile, createdProjectEntry, rq.projectTemplate) map {
                         case Left(errorMessage)=>
                           Failure(new PostrunActionError(errorMessage))
