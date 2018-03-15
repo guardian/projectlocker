@@ -62,4 +62,14 @@ object ProjectTemplate extends ((Option[Int],String,Int,Int)=>ProjectTemplate) {
       case Success(result)=>result.headOption
       case Failure(error)=>throw error
     })
+
+  def defaultEntryFor(plutoProjectType:String)(implicit db:slick.jdbc.PostgresProfile#Backend#Database):Future[Option[ProjectTemplate]] =
+    Defaults.entryFor(plutoProjectType).flatMap({
+      case Success(maybeEntry)=>
+        maybeEntry match {
+          case Some(defaultEntry)=>ProjectTemplate.entryFor(defaultEntry.toInt)
+          case None=>Future(None)
+        }
+      case Failure(error)=>throw error
+    })
 }

@@ -50,7 +50,7 @@ class ProjectCreateHelperImplSpec extends Specification with Mockito {
         Future(Right(parameters(1).asInstanceOf[FileEntry]))
       })
 
-      val p = new ProjectCreateHelperImpl { override protected val storageHelper:StorageHelper=mockedStorageHelper }
+      val p = new ProjectCreateHelperImpl(config, dbConfigProvider) { override protected val storageHelper:StorageHelper=mockedStorageHelper }
 
       val request = ProjectRequest("testfile",1,"MyTestProjectFile", 3,"test-user",None,None).hydrate
 
@@ -74,7 +74,7 @@ class ProjectCreateHelperImplSpec extends Specification with Mockito {
         Future(Right(parameters(1).asInstanceOf[FileEntry]))
       })
 
-      val p = new ProjectCreateHelperImpl { override protected val storageHelper:StorageHelper=mockedStorageHelper }
+      val p = new ProjectCreateHelperImpl(config, dbConfigProvider) { override protected val storageHelper:StorageHelper=mockedStorageHelper }
 
       val request = ProjectRequest("/path/to/a/file.project",1,"MyTestProjectFile", 1,"test-user",None,None).hydrate
 
@@ -98,7 +98,7 @@ class ProjectCreateHelperImplSpec extends Specification with Mockito {
         Future(Right(parameters(1).asInstanceOf[FileEntry]))
       })
 
-      val p = new ProjectCreateHelperImpl { override protected val storageHelper:StorageHelper=mockedStorageHelper }
+      val p = new ProjectCreateHelperImpl(config, dbConfigProvider) { override protected val storageHelper:StorageHelper=mockedStorageHelper }
 
       val request = ProjectRequest("testfile",2,"MyTestProjectFile",1,"test-user",None,None).hydrate
 
@@ -117,7 +117,7 @@ class ProjectCreateHelperImplSpec extends Specification with Mockito {
       val pretendProjectName = "/tmp/pretendproject"
       Seq("/bin/dd","if=/dev/urandom",s"of=$pretendProjectName","bs=1k","count=600").!
 
-      val p = new ProjectCreateHelperImpl
+      val p = new ProjectCreateHelperImpl(config, dbConfigProvider)
       implicit val scriptTimeout = 5.seconds
       val testTimestamp = Timestamp.valueOf("2018-02-02 03:04:05")
       val testPostrunAction = PostrunAction(None,"args_test_4.py","Test script",None,"testuser",1,testTimestamp)
@@ -145,7 +145,7 @@ class ProjectCreateHelperImplSpec extends Specification with Mockito {
 
   "PostrunCreateHelper.doPostrunActions" should {
     "execute all postrun actions for a project type" in {
-      val p = new ProjectCreateHelperImpl {
+      val p = new ProjectCreateHelperImpl(config, dbConfigProvider) {
         override protected def syncExecScript(action: PostrunAction, projectFileName: String, entry: ProjectEntry, projectType: ProjectType, cache: PostrunDataCache, workingGroupMaybe: Option[PlutoWorkingGroup], commissionMaybe: Option[PlutoCommission])(implicit db: slick.jdbc.JdbcProfile#Backend#Database, config:play.api.Configuration, timeout: Duration) : Try[JythonOutput] =
           Success(JythonOutput("this worked","",cache,None))
       }
@@ -160,7 +160,7 @@ class ProjectCreateHelperImplSpec extends Specification with Mockito {
     }
 
     "indicate a failure if any postrun action failed" in {
-      val p = new ProjectCreateHelperImpl {
+      val p = new ProjectCreateHelperImpl(config, dbConfigProvider) {
         override protected def syncExecScript(action: PostrunAction, projectFileName: String, entry: ProjectEntry, projectType: ProjectType, cache: PostrunDataCache, workingGroupMaybe: Option[PlutoWorkingGroup], commissionMaybe: Option[PlutoCommission])(implicit db: slick.jdbc.JdbcProfile#Backend#Database, config:play.api.Configuration, timeout: Duration) : Try[JythonOutput] =
           if (action.id.get == 1)
           //this is normally mapped into a failure by models.PostrunAction.run, and detailed debug output to the log there too.
@@ -198,7 +198,7 @@ class ProjectCreateHelperImplSpec extends Specification with Mockito {
         4->Seq(3)
       )
 
-      val p = new ProjectCreateHelperImpl
+      val p = new ProjectCreateHelperImpl(config, dbConfigProvider)
       val result = p.orderPostruns(postrunSet, dependencyGraph)
       //keeping below line as it's handy for debugging!
       //result.foreach(action=>println(action.title))
