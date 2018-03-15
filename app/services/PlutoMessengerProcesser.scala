@@ -27,6 +27,7 @@ class PlutoMessengerProcesser @Inject()(config:Configuration, system:ActorSystem
   def callback(pubsub: PubSubMessage) = pubsub match {
     case S(channel, no) => logger.debug(s"subscribed to $channel and count = $no")
     case U(channel, no) => logger.debug(s"unsubscribed from $channel and count = $no")
+    case E(excep) => logger.error("PlutoMessageProcessor received exception: ", excep)
     case M(channel, msg) => msg match {
       // exit will unsubscribe from all channels and stop subscription service
       case "exit" =>

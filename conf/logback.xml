@@ -19,6 +19,8 @@
     <logger name="services.PostrunActionScanner" level="INFO"/>
     <logger name="helpers.ProjectCreateHelperImpl" level="DEBUG"/>
     <logger name="services.PlutoMessengerProcesser" level="DEBUG"/>
+    <logger name="services.PlutoQueueListener" level="DEBUG"/>
+    <logger name="controllers.MessageTest" level="DEBUG"/>
     <logger name="models.PlutoWorkingGroup" level="INFO"/>
     <logger name="models.PlutoCommission" level="WARN"/>
     <logger name="services.PlutoWGCommissionScanner" level="INFO"/>

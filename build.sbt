@@ -51,7 +51,7 @@ libraryDependencies += "com.fasterxml.jackson.core" % "jackson-databind" % "2.8.
 //messaging persistence
 libraryDependencies ++= Seq(
   "net.debasishg" %% "redisclient" % "3.5",
-  "com.typesafe.akka" %% "akka-persistence" % "2.5.4"
+  "org.redisson" % "redisson" % "3.6.3"
 )
 
 enablePlugins(UniversalPlugin)
