@@ -1,7 +1,7 @@
 import com.google.inject.AbstractModule
 import helpers.JythonRunner
 import play.api.Logger
-import services.{PlutoMessengerProcesser, PlutoQueueListener, PlutoWGCommissionScanner, PostrunActionScanner}
+import services.{PlutoMessengerProcesser, PlutoCommunicator, PlutoWGCommissionScanner, PostrunActionScanner}
 
 class Module extends AbstractModule{
   private val logger = Logger(getClass)
@@ -11,7 +11,7 @@ class Module extends AbstractModule{
     bind(classOf[PostrunActionScanner]).asEagerSingleton()
     bind(classOf[PlutoWGCommissionScanner]).asEagerSingleton()
     try {
-      bind(classOf[PlutoQueueListener]).asEagerSingleton()
+      bind(classOf[PlutoCommunicator]).asEagerSingleton()
     } catch {
       case ex:Throwable=>
         logger.error("Could not intialise PlutoMessenger subscriber: ", ex)

@@ -25,30 +25,16 @@ import scala.util.{Failure, Success, Try}
 import scala.concurrent.duration._
 
 @Singleton
-class PlutoWGCommissionScanner @Inject() (configuration:Configuration, actorSystem:ActorSystem, dbConfigProvider: DatabaseConfigProvider)
-  extends PlutoCommissionSerializer with PlutoWorkingGroupSerializer {
-  implicit val systemImplicit = actorSystem
+class PlutoWGCommissionScanner @Inject() (playConfig:Configuration, actorSystemI:ActorSystem, dbConfigProvider: DatabaseConfigProvider)
+  extends JsonComms with PlutoCommissionSerializer with PlutoWorkingGroupSerializer {
+
+  implicit val actorSystem = actorSystemI
+  implicit val configuration = playConfig
   implicit val materializer = ActorMaterializer()
   implicit val executionContext = actorSystem.dispatcher
-
-  private val logger = Logger(getClass)
+  protected val logger = Logger(getClass)
 
   implicit val db = dbConfigProvider.get[PostgresProfile].db
-
-  private def bodyAsJsonFuture(response:HttpResponse):Future[Either[String, JsValue]] = {
-    val sink = Sink.fold[String, ByteString]("")(_ + _.decodeString("UTF-8"))
-
-    response.entity.dataBytes.runWith(sink)
-      .map(dataString=>
-        try {
-          Right(Json.parse(dataString))
-        } catch {
-          case error:Throwable=>
-            logger.error(s"Could not decode json object: ", error)
-            Left(dataString)
-        }
-      )
-  }
 
   protected def refreshCommissionsInfo(workingGroup:PlutoWorkingGroup, forSite:String, sinceParam:String, startAt:Int, pageSize: Int):Future[Try[Int]] = {
     val authorization = headers.Authorization(BasicHttpCredentials(configuration.get[String]("pluto.username"),configuration.get[String]("pluto.password")))

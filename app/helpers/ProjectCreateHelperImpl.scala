@@ -4,20 +4,26 @@ import models._
 import java.sql.Timestamp
 
 import scala.concurrent.{Await, Future}
-import java.time.LocalDateTime
-import javax.inject.Singleton
+import java.time.{Instant, LocalDateTime, ZoneOffset, ZonedDateTime}
+import javax.inject.{Inject, Singleton}
 
 import exceptions.{PostrunActionError, ProjectCreationError}
-import play.api.Logger
+import models.messages.{NamedQueues, NewProjectCreated, NewProjectCreatedSerializer}
+import org.redisson.api.RedissonClient
+import play.api.{Configuration, Logger}
+import services.Redisson
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration.Duration
 import scala.util.{Failure, Success, Try}
 
 @Singleton
-class ProjectCreateHelperImpl extends ProjectCreateHelper {
+class ProjectCreateHelperImpl @Inject() (playConfig: Configuration) extends ProjectCreateHelper with Redisson with NewProjectCreatedSerializer{
   protected val storageHelper:StorageHelper = new StorageHelper
   val logger: Logger = Logger(this.getClass)
+
+  implicit val config = playConfig
+  implicit val redissonClient:RedissonClient = getRedissonClient
 
   /**
     * Combines the provided filename with a (possibly) provided extension
@@ -243,6 +249,7 @@ class ProjectCreateHelperImpl extends ProjectCreateHelper {
                   rq.user,rq.workingGroupId, rq.commissionId).flatMap({
                     case Success(createdProjectEntry)=>
                       logger.info(s"Project entry created as id ${createdProjectEntry.id}")
+                      queueMessage(NamedQueues.PROJECT_CREATE, NewProjectCreated(createdProjectEntry, ZonedDateTime.now().toEpochSecond), None)
                       doPostrunActions(writtenFile, createdProjectEntry, rq.projectTemplate) map {
                         case Left(errorMessage)=>
                           Failure(new PostrunActionError(errorMessage))

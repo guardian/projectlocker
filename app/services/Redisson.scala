@@ -1,9 +1,12 @@
 package services
 
+import java.util.concurrent.TimeUnit
+
 import akka.actor.ActorSystem
 import org.redisson._
 import org.redisson.api.RedissonClient
 import org.redisson.config.{Config, TransportMode}
+import play.api.libs.json.{Json, Writes}
 import play.api.{Configuration, Logger}
 
 import scala.concurrent.Future
@@ -31,7 +34,6 @@ trait Redisson {
     } catch {
       case ex: Throwable =>
         logger.error("Could not send redis message. Retrying after 1s...", ex)
-        //Thread.sleep(1000)
         if(n>1)
           retry(n -1)(fn)
         else
@@ -39,10 +41,18 @@ trait Redisson {
     }
   }
 
-  def queueMessage[T](queuename:String, message:T)(implicit client:RedissonClient) = Future {
+  //def makeJson[T](message:T)(implicit writes:Writes[T]) = Json.toJson(message).toString()
+
+  def queueMessage[T](queuename:String, message:T, maybeDelay: Option[Duration])(implicit client:RedissonClient, writes:Writes[T]) = Future {
     retry(5) {
-      val q = client.getBlockingQueue[T](queuename)
-      q.add(message)
+      val q = client.getBlockingQueue[String](queuename)
+      val messageAsString = Json.toJson(message).toString
+      maybeDelay match {
+        case None=>q.add(messageAsString)
+        case Some(delay)=>
+          val delayedQueue = client.getDelayedQueue(q)
+          delayedQueue.offer(messageAsString, delay.toSeconds, TimeUnit.SECONDS)
+      }
     }
   }
 }
