@@ -57,6 +57,11 @@ GET     /api/postrun/:id/depends        @controllers.PostrunActionController.lis
 PUT     /api/postrun/:id/depends/:dep   @controllers.PostrunActionController.addDependency(id:Int, dep:Int)
 DELETE  /api/postrun/:id/depends/:dep   @controllers.PostrunActionController.removeDependency(id:Int, dep:Int)
 
+GET     /api/default                    @controllers.DefaultsController.list
+GET     /api/default/:key               @controllers.DefaultsController.getForKey(key:String)
+PUT     /api/default/:key               @controllers.DefaultsController.putForKey(key:String)
+DELETE  /api/default/:key               @controllers.DefaultsController.deleteForKey(key:String)
+
 GET     /api/pluto/workinggroup            @controllers.PlutoWorkingGroupController.list(startAt:Int ?=0,limit:Int ?=100)
 GET     /api/pluto/workinggroup/:id        @controllers.PlutoWorkingGroupController.getitem(id:Int)
 

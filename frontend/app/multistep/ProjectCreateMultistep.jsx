@@ -34,30 +34,43 @@ class ProjectCreateMultistep extends React.Component {
         this.plutoDataUpdated = this.plutoDataUpdated.bind(this);
     }
 
+    requestDefaultProjectStorage(defaultValue){
+        return new Promise((resolve,reject)=>axios.get("/api/default/project_storage_id")
+            .then(response=>{
+                const defaultStorage = parseInt(response.data.result.value);
+                console.log("Got default storage of ", defaultStorage);
+                resolve(defaultStorage);
+            }).catch(error=>{
+                if(error.response && error.response.status===404){
+                    console.log("No default storage has been set");
+                    resolve(defaultValue);
+                } else {
+                    console.error(error);
+                    this.setState({lastError: error})
+                }
+            })
+        );
+    }
+
     componentWillMount(){
-        axios.get("/api/template")
-            .then(response=>{
-                const firstTemplate = response.data.result[0] ? response.data.result[0].id : null;
-                this.setState({projectTemplates: response.data.result, selectedProjectTemplate: firstTemplate});
-            })
-            .catch(error=>{
-                console.error(error);
-                this.setState({lastError: error});
-            });
+        Promise.all([
+            axios.get("/api/template"),
+            axios.get("/api/storage"),
+            axios.get("/api/pluto/workinggroup")
+        ]).then(responses=>{
+            const firstTemplate = responses[0].data.result[0] ? responses[0].data.result[0].id : null;
+            const firstStorage = responses[1].data.result[0] ? responses[1].data.result[0].id : null;
+            const firstWorkingGroup = responses[2].data.result.length ? responses[2].data.result[0].id : null;
 
-        axios.get("/api/storage")
-            .then(response=>{
-                const firstStorage = response.data.result[0] ? response.data.result[0].id : null;
-                this.setState({storages: response.data.result, selectedStorage: firstStorage});
-            })
-            .catch(error=>{
-                console.error(error);
-                this.setState({lastError: error});
-            });
-
-        axios.get("/api/pluto/workinggroup").then(response=>{
-            this.setState({wgList: response.data.result, selectedWorkingGroup: response.data.result.length ? response.data.result[0].id : null});
+            this.requestDefaultProjectStorage(firstStorage).then(projectStorage=>
+                this.setState({
+                    projectTemplates: responses[0].data.result, selectedProjectTemplate: firstTemplate,
+                    storages: responses[1].data.result, selectedStorage: projectStorage,
+                    wgList: responses[2].data.result, selectedWorkingGroup: firstWorkingGroup
+                })
+            );
         }).catch(error=>{
+            console.error(error);
             this.setState({lastError: error});
         });
     }
