@@ -54,7 +54,7 @@ trait ListenProjectCreate extends Redisson with NewProjectCreatedSerializer with
   }
 
   def sendProjectCreatedMessage(msg: NewProjectCreated)(implicit ec:ExecutionContext):Future[Either[Boolean,Unit]] = {
-    val notifyUrl =  s"${configuration.get[String]("pluto.server_url")}/projects/api/notify"
+    val notifyUrl =  s"${configuration.get[String]("pluto.server_url")}/project/api/external/notifycreated/"
     val bodyContent:String = Json.toJson(msg).toString()
     logger.debug(s"Going to send json: $bodyContent to $notifyUrl")
 
