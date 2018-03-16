@@ -253,22 +253,22 @@ class ProjectCreateHelperImpl @Inject() (playConfig: Configuration, dbConfigProv
     ), None)
   }
 
-  def sendCreateMessageToSelf(createdProjectEntry: ProjectEntry):Future[Unit] = {
+  def sendCreateMessageToSelf(createdProjectEntry: ProjectEntry, projectTemplate: ProjectTemplate):Future[Unit] = {
     Future.sequence(Seq(
-      createdProjectEntry.getWorkingGroup,
+      projectTemplate.projectType,
       createdProjectEntry.getCommission
     )).map(results=>{
-      val maybeWorkingGroup = results.head.asInstanceOf[Option[PlutoWorkingGroup]]
+      val projectType = results.head.asInstanceOf[ProjectType]
       val maybeCommission = results(1).asInstanceOf[Option[PlutoCommission]]
 
-      if(maybeWorkingGroup.isDefined && maybeCommission.isDefined){
+      if(maybeCommission.isDefined){
         queueMessage(NamedQueues.PROJECT_CREATE,
           NewProjectCreated(createdProjectEntry,
-            maybeWorkingGroup.get,
+            projectType,
             maybeCommission.get,
             ZonedDateTime.now().toEpochSecond), None)
       } else {
-        logger.error(s"Can't sync project ${createdProjectEntry.projectTitle} (${createdProjectEntry.id}) to Pluto - missing working group and/or commission")
+        logger.error(s"Can't sync project ${createdProjectEntry.projectTitle} (${createdProjectEntry.id}) to Pluto - missing commission")
       }
     })
   }
@@ -315,7 +315,7 @@ class ProjectCreateHelperImpl @Inject() (playConfig: Configuration, dbConfigProv
                   rq.user,rq.workingGroupId, rq.commissionId).flatMap({
                     case Success(createdProjectEntry)=>
                       logger.info(s"Project entry created as id ${createdProjectEntry.id}")
-                      sendCreateMessageToSelf(createdProjectEntry)
+                      sendCreateMessageToSelf(createdProjectEntry, rq.projectTemplate)
                       doPostrunActions(writtenFile, createdProjectEntry, rq.projectTemplate) map {
                         case Left(errorMessage)=>
                           Failure(new PostrunActionError(errorMessage))

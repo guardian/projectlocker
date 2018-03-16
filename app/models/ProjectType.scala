@@ -10,7 +10,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 
 trait ProjectTypeSerializer {
   /*https://www.playframework.com/documentation/2.5.x/ScalaJson*/
-  implicit val templateWrites:Writes[ProjectType] = (
+  implicit val typeWrites:Writes[ProjectType] = (
     (JsPath \ "id").writeNullable[Int] and
       (JsPath \ "name").write[String] and
       (JsPath \ "opensWith").write[String] and
@@ -20,7 +20,7 @@ trait ProjectTypeSerializer {
       (JsPath \ "plutoSubtype").writeNullable[String]
     )(unlift(ProjectType.unapply))
 
-  implicit val templateReads:Reads[ProjectType] = (
+  implicit val typeReads:Reads[ProjectType] = (
     (JsPath \ "id").readNullable[Int] and
       (JsPath \ "name").read[String] and
       (JsPath \ "opensWith").read[String] and

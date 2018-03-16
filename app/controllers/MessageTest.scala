@@ -3,7 +3,7 @@ package controllers
 import java.time.ZonedDateTime
 import javax.inject.{Inject, Singleton}
 
-import models.{PlutoCommission, PlutoWorkingGroup, ProjectEntry}
+import models._
 import models.messages._
 import org.redisson.api.RedissonClient
 import org.redisson.client.codec.StringCodec
@@ -52,38 +52,39 @@ class MessageTest @Inject() (cc:ControllerComponents, sender:PlutoMessengerSende
     })
   }
 
-  def sendCreateMessageToSelf(createdProjectEntry: ProjectEntry):Future[Try[AnyVal]] = {
+  def sendCreateMessageToSelf(createdProjectEntry: ProjectEntry, projectTemplate: ProjectTemplate):Future[Unit] = {
     Future.sequence(Seq(
-      createdProjectEntry.getWorkingGroup,
+      projectTemplate.projectType,
       createdProjectEntry.getCommission
-    )).flatMap(results=>{
-      val maybeWorkingGroup = results.head.asInstanceOf[Option[PlutoWorkingGroup]]
+    )).map(results=>{
+      val projectType = results.head.asInstanceOf[ProjectType]
       val maybeCommission = results(1).asInstanceOf[Option[PlutoCommission]]
 
-      if(maybeWorkingGroup.isDefined && maybeCommission.isDefined){
+      logger.info(s"${maybeCommission}")
+      logger.info(s"$projectType")
+
+      if(maybeCommission.isDefined){
         queueMessage(NamedQueues.PROJECT_CREATE,
           NewProjectCreated(createdProjectEntry,
-            maybeWorkingGroup.get,
+            projectType,
             maybeCommission.get,
             ZonedDateTime.now().toEpochSecond), None)
       } else {
-        logger.error(s"Can't sync project ${createdProjectEntry.projectTitle} (${createdProjectEntry.id}) to Pluto - missing working group and/or commission")
-        Future(Failure(new RuntimeException("missing working group and/or commission")))
+        logger.error(s"Can't sync project ${createdProjectEntry.projectTitle} (${createdProjectEntry.id}) to Pluto - missing commission")
       }
     })
   }
 
   def testprojectcreate = Action.async {
-    ProjectEntry.entryForId(1).flatMap({
-      case Success(entry)=>
-        sendCreateMessageToSelf(entry).map({
-          case Success(value)=>Ok(s"test queue succeeded: $value")
-          case Failure(error)=>
-            logger.error("could not send test message: ", error)
-            InternalServerError(error.toString)
-        })
-      case Failure(error)=>
-        Future(InternalServerError(error.toString))
+    Future.sequence(Seq(ProjectEntry.entryForId(6), ProjectTemplate.entryFor(1))).flatMap(results=>{
+      results.head.asInstanceOf[Try[ProjectEntry]] match {
+        case Success(entry) =>
+          sendCreateMessageToSelf(entry, results(1).asInstanceOf[Option[ProjectTemplate]].get).map(unit=>{
+            Ok(s"test queue succeeded")
+          })
+        case Failure(error) =>
+          Future(InternalServerError(error.toString))
+      }
     })
   }
 }
