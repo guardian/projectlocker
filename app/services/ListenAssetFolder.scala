@@ -13,54 +13,7 @@ import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success}
 import scala.concurrent.duration._
 
-trait ListenAssetFolder extends Redisson with NewAssetFolderSerializer with JsonComms{
-  val configuration:Configuration
-
-  /**
-    * queue listener for asset folder
-    * @param queuename name of the queue to listen
-    * @return a Future that does not terminate.
-    */
-  def listenAssetFolder(queuename:String)(implicit ec:ExecutionContext, db: slick.jdbc.JdbcBackend#DatabaseDef):Future[Unit] = Future {
-    implicit val client = getRedissonClient
-    val q = client.getBlockingDeque[String](queuename)
-    val enq = client.getBlockingQueue[String](queuename)
-
-    logger.info(s"Setting up queue listener for $queuename")
-
-    while(true){
-      val msg = q.pollFirst(60, TimeUnit.SECONDS)
-      logger.info(s"Got message for new asset folder: ${msg.toString}")
-
-      Json.fromJson[NewAssetFolder](Json.parse(msg)).asEither match {
-        case Right(msgAsObject) =>
-          getPlutoProjectForAssetFolder(msgAsObject).map({
-            case Left(errormessage) =>
-              logger.error(s"Could not prepare asset folder message for ${msgAsObject.assetFolderPath} to be sent: $errormessage, pushing it to the back of the queue")
-              queueMessage(queuename,msgAsObject,Some(1.seconds)) //put the message to the back of the queue to retry
-            case Right(updatedMessage) =>
-              logger.debug(s"Updated asset folder message to send: $updatedMessage")
-              sendNewAssetFolderMessage(updatedMessage).map({
-                case Right(_) =>
-                  logger.info(s"Updated pluto with new asset folder ${msgAsObject.assetFolderPath} for ${msgAsObject.plutoProjectId.get}")
-                case Left(true) =>
-                  logger.debug("requeueing message after 1s delay")
-                  queueMessage(queuename, updatedMessage,Some(1.seconds))
-                case Left(false) =>
-                  logger.error("Not retrying any more.")
-              }).recoverWith({
-                case err:Throwable=>
-                  logger.error("Could not set up communication with pluto:", err)
-                  logger.debug("requeueing message after 1s delay")
-                  queueMessage(queuename, updatedMessage, Some(1.seconds))
-              })
-          })
-        case Left(validationErrors)=>
-          logger.error(s"could not deserialize message from queue: $validationErrors")
-      }
-    }
-  }
-
+trait ListenAssetFolder extends NewAssetFolderSerializer with JsonComms{
   /**
     * ensures that the provided message has the pluto project ID field set.
     * @param msg incoming message.

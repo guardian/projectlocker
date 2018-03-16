@@ -5,14 +5,13 @@ import java.sql.Timestamp
 
 import scala.concurrent.{Await, Future}
 import java.time.{Instant, LocalDateTime, ZoneOffset, ZonedDateTime}
-import javax.inject.{Inject, Singleton}
+import javax.inject.{Inject, Named, Singleton}
 
+import akka.actor.{ActorRef, ActorSystem, Props}
 import exceptions.{PostrunActionError, ProjectCreationError}
 import models.messages._
-import org.redisson.api.RedissonClient
 import play.api.db.slick.DatabaseConfigProvider
 import play.api.{Configuration, Logger}
-import services.Redisson
 import slick.jdbc.PostgresProfile
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -20,13 +19,13 @@ import scala.concurrent.duration.Duration
 import scala.util.{Failure, Success, Try}
 
 @Singleton
-class ProjectCreateHelperImpl @Inject() (playConfig: Configuration, dbConfigProvider:DatabaseConfigProvider)
-  extends ProjectCreateHelper with Redisson with NewProjectCreatedSerializer with NewAssetFolderSerializer {
+class ProjectCreateHelperImpl @Inject() (@Named("message-processor-actor") messageProcessor:ActorRef,
+                                         playConfig: Configuration,
+                                         dbConfigProvider:DatabaseConfigProvider) extends ProjectCreateHelper{
   protected val storageHelper:StorageHelper = new StorageHelper
   val logger: Logger = Logger(this.getClass)
 
   implicit val config = playConfig
-  implicit val redissonClient:RedissonClient = getRedissonClient
   implicit val db = dbConfigProvider.get[PostgresProfile].db
 
   /**
@@ -247,10 +246,10 @@ class ProjectCreateHelperImpl @Inject() (playConfig: Configuration, dbConfigProv
     //It doesn't matter that the vidispine ID is almost certainly not set at this point.  The receiver for the message
     //will use the Projectlocker project id to look it up from the database; if it's still not set the message will be re-sent
     //to the back of the queue with a 1s delay.
-    queueMessage(NamedQueues.ASSET_FOLDER,NewAssetFolder(assetFolderPath,
+    messageProcessor ! NewAssetFolder(assetFolderPath,
       createdProjectEntry.id,
       createdProjectEntry.vidispineProjectId
-    ), None)
+    )
   }
 
   def sendCreateMessageToSelf(createdProjectEntry: ProjectEntry, projectTemplate: ProjectTemplate):Future[Unit] = {
@@ -262,11 +261,11 @@ class ProjectCreateHelperImpl @Inject() (playConfig: Configuration, dbConfigProv
       val maybeCommission = results(1).asInstanceOf[Option[PlutoCommission]]
 
       if(maybeCommission.isDefined){
-        queueMessage(NamedQueues.PROJECT_CREATE,
-          NewProjectCreated(createdProjectEntry,
-            projectType,
-            maybeCommission.get,
-            ZonedDateTime.now().toEpochSecond), None)
+        messageProcessor ! NewProjectCreated(createdProjectEntry,
+          projectType,
+          maybeCommission.get,
+          ZonedDateTime.now().toEpochSecond
+        )
       } else {
         logger.error(s"Can't sync project ${createdProjectEntry.projectTitle} (${createdProjectEntry.id}) to Pluto - missing commission")
       }
