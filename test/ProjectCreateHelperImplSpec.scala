@@ -122,7 +122,7 @@ class ProjectCreateHelperImplSpec extends Specification with Mockito {
       val testTimestamp = Timestamp.valueOf("2018-02-02 03:04:05")
       val testPostrunAction = PostrunAction(None,"args_test_4.py","Test script",None,"testuser",1,testTimestamp)
       val testProjectEntry = ProjectEntry(None,1,None,"Test project title",testTimestamp, "testuser",None,None,None)
-      val testProjectType = ProjectType(None,"TestProject","TestProjectApp","1.0",None)
+      val testProjectType = ProjectType(None,"TestProject","TestProjectApp","1.0",None,None,None)
       val testWorkingGroup = PlutoWorkingGroup(None,None,"Test working group","230C365E-9F88-42BC-87AB-B88A3F0B8101")
       val testCommission = PlutoCommission(None,234,"VX",testTimestamp, testTimestamp, "Test commission","New",None,1)
 

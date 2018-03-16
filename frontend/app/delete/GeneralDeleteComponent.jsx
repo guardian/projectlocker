@@ -25,10 +25,15 @@ class GeneralDeleteComponent extends React.Component {
         this.cancelClicked = this.cancelClicked.bind(this);
     }
 
+    /* you can over-ride this in a subclass to do something once the main data has downloaded*/
+    postDownload(){
+
+    }
+
     /*download information about the thing we want to delete*/
     componentWillMount() {
         axios.get(this.endpoint + "/" + this.props.match.params.itemid).then((response)=>{
-            this.setState({loading: false, selectedItem: response.data.result})
+            this.setState({loading: false, selectedItem: response.data.result},()=>this.postDownload())
         }).catch((error)=>{
             console.error(error);
             this.setState({loading: false, error: error});

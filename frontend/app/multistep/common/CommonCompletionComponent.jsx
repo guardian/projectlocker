@@ -29,7 +29,7 @@ class CommonCompletionComponent extends React.Component {
 
         axios.request({method: "PUT", url: endpoint,data: this.requestContent()}).then(
             (response)=>{
-                this.setState({inProgress: false}, ()=>{
+                this.setState({inProgress: false, newId: response.data.id}, ()=>{
                     this.recordDidSave()
                         .then(()=>{
                             console.log("save succeeded");

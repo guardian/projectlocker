@@ -9,6 +9,8 @@ class SummaryComponent extends React.Component {
         opensWith: PropTypes.string.isRequired,
         version: PropTypes.string.isRequired,
         fileExtension: PropTypes.string.isRequired,
+        plutoType: PropTypes.string,
+        plutoSubtype: PropTypes.string,
         postrunActions: PropTypes.array.isRequired,
         selectedPostruns: PropTypes.array.isRequired
     };
@@ -35,6 +37,14 @@ class SummaryComponent extends React.Component {
             <tr>
                 <td>File extension</td>
                 <td id="projectTypeFileExtension">{this.props.fileExtension}</td>
+            </tr>
+            <tr>
+                <td>Pluto type identifier</td>
+                <td id="plutoType">{this.props.plutoType}</td>
+            </tr>
+            <tr>
+                <td>Pluto subtype identifier</td>
+                <td id="plutoSubtype">{this.props.plutoSubtype}</td>
             </tr>
             <tr>
                 <td>Postrun actions</td>
