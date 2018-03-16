@@ -22,13 +22,11 @@ class TestDoUpdate(unittest2.TestCase):
         doUpdate should update the provided xml tree attributes with the provided uuid
         :return:
         """
-
+        from scripts.update_adobe_uuid import doUpdate
         xmltree = ET.Element("myroot")
         ET.SubElement(xmltree,"ProjectThingy",attrib={'Myuuid': "nothing"})
 
-        with patch('uuid.uuid4', return_value="new_uuid"):
-            from scripts.update_adobe_uuid import doUpdate
-            result = doUpdate(xmltree,[{"xpath": "ProjectThingy", "attrib": "Myuuid"}])
+        result = doUpdate(xmltree,[{"xpath": "ProjectThingy", "attrib": "Myuuid"}],new_uuid="new_uuid")
 
         self.assertEqual(xmltree.find("ProjectThingy").attrib["Myuuid"], "new_uuid")
 
