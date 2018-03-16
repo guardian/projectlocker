@@ -218,11 +218,20 @@ class ProjectCreateHelperImpl @Inject() (playConfig: Configuration, dbConfigProv
         case Right(results)=>
           val msg = s"Successfully ran ${results.length} postrun actions for project $writtenPath"
           logger.info(s"Successfully ran ${results.length} postrun actions for project $writtenPath")
-          locateCacheValue(results.reverse,"created_asset_folder") match {
+          val reversedResults = results.reverse
+          locateCacheValue(reversedResults,"created_asset_folder") match {
             case Some(createdAssetFolder)=>
               sendAssetFolderMessageToSelf(createdAssetFolder, createdProjectEntry)
             case None=>
               logger.error("No asset folder was set, so I can't inform pluto about a new asset folder.")
+          }
+
+          locateCacheValue(reversedResults, "new_adobe_uuid") match {
+            case Some(newUuid)=>
+              logger.info(s"Updated adobe uuid to $newUuid, saving update to database")
+              createdProjectEntry.copy(adobe_uuid = Some(newUuid)).save
+            case None=>
+              logger.debug("No adobe uuid set, probably not an adobe project")
           }
 
           Right(s"Successfully ran ${results.length} postrun actions for project $writtenPath")

@@ -18,7 +18,8 @@ import scala.util.{Failure, Success, Try}
 import scala.concurrent.ExecutionContext.Implicits.global
 
 case class ProjectEntry (id: Option[Int], projectTypeId: Int, vidispineProjectId: Option[String],
-                         projectTitle: String, created:Timestamp, user: String, workingGroupId: Option[Int], commissionId: Option[Int]) {
+                         projectTitle: String, created:Timestamp, user: String, workingGroupId: Option[Int],
+                         commissionId: Option[Int], adobe_uuid: Option[String]) {
   def associatedFiles(implicit db:slick.jdbc.PostgresProfile#Backend#Database): Future[Seq[FileEntry]] = {
     db.run(
       TableQuery[FileAssociationRow].filter(_.projectEntry===this.id.get).result.asTry
@@ -84,7 +85,8 @@ case class ProjectEntry (id: Option[Int], projectTypeId: Int, vidispineProjectId
       "vidispineProjectId"->vidispineProjectId.getOrElse(""),
       "projectTitle"->projectTitle,
       "projectCreated"->created.toString,
-      "projectOwner"->user
+      "projectOwner"->user,
+      "projectAdobeUuid"->adobe_uuid.getOrElse("")
     )
   }
 }
@@ -101,9 +103,10 @@ class ProjectEntryRow(tag:Tag) extends Table[ProjectEntry](tag, "ProjectEntry") 
   def user=column[String]("s_user")
   def workingGroup=column[Option[Int]]("k_working_group")
   def commission=column[Option[Int]]("k_commission")
+  def adobe_uuid=column[Option[String]]("s_adobe_uuid")
 
   def projectTypeKey=foreignKey("fk_project_type",projectType,TableQuery[ProjectTypeRow])(_.id)
-  def * = (id.?, projectType, vidispineProjectId, projectTitle, created, user, workingGroup, commission) <> (ProjectEntry.tupled, ProjectEntry.unapply)
+  def * = (id.?, projectType, vidispineProjectId, projectTitle, created, user, workingGroup, commission, adobe_uuid) <> (ProjectEntry.tupled, ProjectEntry.unapply)
 }
 
 trait ProjectEntrySerializer extends TimestampSerialization {
@@ -116,7 +119,8 @@ trait ProjectEntrySerializer extends TimestampSerialization {
       (JsPath \ "created").write[Timestamp] and
       (JsPath \ "user").write[String] and
       (JsPath \ "workingGroupId").writeNullable[Int] and
-      (JsPath \ "commissionId").writeNullable[Int]
+      (JsPath \ "commissionId").writeNullable[Int] and
+      (JsPath \ "adobe_uuid").writeNullable[String]
     )(unlift(ProjectEntry.unapply))
 
   implicit val templateReads:Reads[ProjectEntry] = (
@@ -127,11 +131,12 @@ trait ProjectEntrySerializer extends TimestampSerialization {
       (JsPath \ "created").read[Timestamp] and
       (JsPath \ "user").read[String] and
       (JsPath \ "workingGroupId").readNullable[Int] and
-      (JsPath \ "commissionId").readNullable[Int]
+      (JsPath \ "commissionId").readNullable[Int] and
+      (JsPath \ "adobe_uuid").readNullable[String]
     )(ProjectEntry.apply _)
 }
 
-object ProjectEntry extends ((Option[Int], Int, Option[String], String, Timestamp, String, Option[Int], Option[Int])=>ProjectEntry) {
+object ProjectEntry extends ((Option[Int], Int, Option[String], String, Timestamp, String, Option[Int], Option[Int], Option[String])=>ProjectEntry) {
   def createFromFile(sourceFile: FileEntry, projectTemplate: ProjectTemplate, title:String, created:Option[LocalDateTime],
                      user:String, workingGroupId: Option[Int], commissionId: Option[Int])
                     (implicit db:slick.jdbc.PostgresProfile#Backend#Database):Future[Try[ProjectEntry]] = {
@@ -157,7 +162,7 @@ object ProjectEntry extends ((Option[Int], Int, Option[String], String, Timestam
     /* step one - create a new project entry */
     println(s"Passed time: $created")
     val entry = ProjectEntry(None, projectTypeId, None, title, dateTimeToTimestamp(created.getOrElse(LocalDateTime.now())),
-      user, workingGroupId, commissionId)
+      user, workingGroupId, commissionId, None)
     val savedEntry = entry.save
 
     /* step two - set up file association. Project entry must be saved, so this is done as a future map */
