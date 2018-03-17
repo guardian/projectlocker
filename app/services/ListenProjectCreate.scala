@@ -17,17 +17,8 @@ trait ListenProjectCreate extends NewProjectCreatedSerializer with JsonComms {
     val bodyContent:String = Json.toJson(msg).toString()
     logger.debug(s"Going to send json: $bodyContent to $notifyUrl")
 
-    Http().singleRequest(HttpRequest(method=HttpMethods.POST, uri = notifyUrl, headers = List(getPlutoAuth)).withEntity(bodyContent)).map(response=> {
-      if (response.status == StatusCode.int2StatusCode(200) || response.status == StatusCode.int2StatusCode(201)) {
-        logger.info("Pluto responded success")
-        Right(Unit)
-      } else if (response.status == StatusCode.int2StatusCode(500) || response.status == StatusCode.int2StatusCode(503)) {
-        logger.error("Unable to update pluto, server returned 500/503 error.")
-        Left(true) //should retrty
-      } else {
-        logger.error(s"Unable to update pluto, server returned ${response.status}. Not retrying.")
-        Left(false)
-      }
-    })
+    Http().singleRequest(HttpRequest(method=HttpMethods.POST, uri = notifyUrl, headers = List(getPlutoAuth))
+      .withEntity(bodyContent))
+      .map(handlePlutoResponse)
   }
 }
