@@ -38,39 +38,43 @@ class MessageProcessorActor @Inject()(configurationI: Configuration, actorSystem
 
   override def receive: Receive = {
     case msgAsObject: NewAssetFolder =>
+      val d = durationToPair(Duration(configuration.getOptional[String]("pluto.resend_delay").getOrElse("10 seconds")))
+      val delay = FiniteDuration(d._1,d._2)
       logger.info(s"Got new asset folder message: $msgAsObject")
       getPlutoProjectForAssetFolder(msgAsObject).map({
         case Left(errormessage) =>
           logger.error(s"Could not prepare asset folder message for ${msgAsObject.assetFolderPath} to be sent: $errormessage, pushing it to the back of the queue")
-          actorSystem.scheduler.scheduleOnce(1 second, self, msgAsObject)
+          actorSystem.scheduler.scheduleOnce(delay, self, msgAsObject)
         case Right(updatedMessage) =>
           logger.debug(s"Updated asset folder message to send: $updatedMessage")
           sendNewAssetFolderMessage(updatedMessage).map({
             case Right(_) =>
               logger.info(s"Updated pluto with new asset folder ${msgAsObject.assetFolderPath} for ${msgAsObject.plutoProjectId.get}")
             case Left(true) =>
-              logger.debug("requeueing message after 1s delay")
-              actorSystem.scheduler.scheduleOnce(1 second, self, msgAsObject)
+              logger.debug(s"requeueing message after $delay delay")
+              actorSystem.scheduler.scheduleOnce(delay, self, msgAsObject)
             case Left(false) =>
               logger.error("Not retrying any more.")
           })
       })
 
     case msgAsObject:NewProjectCreated =>
+        val d = durationToPair(Duration(configuration.getOptional[String]("pluto.resend_delay").getOrElse("10 seconds")))
+        val delay = FiniteDuration(d._1,d._2)
         logger.debug(s"Project created message to send: $msgAsObject")
         sendProjectCreatedMessage(msgAsObject).map({
           case Right(_) =>
             logger.info(s"Updated pluto with new project ${msgAsObject.projectEntry.projectTitle} (${msgAsObject.projectEntry.id})")
           case Left(true) =>
-            logger.debug("requeueing message after 1s delay")
-            actorSystem.scheduler.scheduleOnce(1 second, self, msgAsObject)
+            logger.debug("requeueing message after $delay delay")
+            actorSystem.scheduler.scheduleOnce(delay, self, msgAsObject)
           case Left(false) =>
             logger.error("Not retrying any more.")
         }).recoverWith({
           case err:Throwable=>
             logger.error("Could not set up communication with pluto:", err)
             logger.debug("requeueing message after 1s delay")
-            Future(actorSystem.scheduler.scheduleOnce(1 second, self, msgAsObject))
+            Future(actorSystem.scheduler.scheduleOnce(delay, self, msgAsObject))
         })
 
   }
