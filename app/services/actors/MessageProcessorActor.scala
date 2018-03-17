@@ -66,14 +66,14 @@ class MessageProcessorActor @Inject()(configurationI: Configuration, actorSystem
           case Right(_) =>
             logger.info(s"Updated pluto with new project ${msgAsObject.projectEntry.projectTitle} (${msgAsObject.projectEntry.id})")
           case Left(true) =>
-            logger.debug("requeueing message after $delay delay")
+            logger.debug(s"requeueing message after $delay delay")
             actorSystem.scheduler.scheduleOnce(delay, self, msgAsObject)
           case Left(false) =>
             logger.error("Not retrying any more.")
         }).recoverWith({
           case err:Throwable=>
             logger.error("Could not set up communication with pluto:", err)
-            logger.debug("requeueing message after 1s delay")
+            logger.debug(s"requeueing message after $delay delay")
             Future(actorSystem.scheduler.scheduleOnce(delay, self, msgAsObject))
         })
 

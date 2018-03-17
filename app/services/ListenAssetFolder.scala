@@ -3,11 +3,12 @@ package services
 import java.util.concurrent.TimeUnit
 
 import akka.http.scaladsl.Http
-import akka.http.scaladsl.model.{HttpMethods, HttpRequest, StatusCode}
+import akka.http.scaladsl.model._
 import models.ProjectEntry
 import models.messages.{NewAssetFolder, NewAssetFolderSerializer}
 import play.api.Configuration
 import play.api.libs.json.Json
+import play.api.mvc.Headers
 
 import scala.concurrent.{Await, ExecutionContext, Future}
 import scala.util.{Failure, Success}
@@ -47,7 +48,7 @@ trait ListenAssetFolder extends NewAssetFolderSerializer with JsonComms{
 
     Http()
       .singleRequest(HttpRequest(method=HttpMethods.POST, uri = notifyUrl, headers = List(getPlutoAuth))
-      .withEntity(bodyContent))
+      .withEntity(HttpEntity(ContentType(MediaTypes.`application/json`),bodyContent)))
       .map(handlePlutoResponse)
   }
 }

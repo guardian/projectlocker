@@ -1,15 +1,11 @@
 package services
 
-import java.util.concurrent.TimeUnit
-
 import akka.http.scaladsl.Http
-import akka.http.scaladsl.model.{HttpMethods, HttpRequest, StatusCode}
+import akka.http.scaladsl.model._
 import models.messages.{NewProjectCreated, NewProjectCreatedSerializer}
-import play.api.Configuration
 import play.api.libs.json.Json
 
 import scala.concurrent.{ExecutionContext, Future}
-import scala.concurrent.duration._
 
 trait ListenProjectCreate extends NewProjectCreatedSerializer with JsonComms {
   def sendProjectCreatedMessage(msg: NewProjectCreated)(implicit ec:ExecutionContext):Future[Either[Boolean,Unit]] = {
@@ -18,7 +14,7 @@ trait ListenProjectCreate extends NewProjectCreatedSerializer with JsonComms {
     logger.debug(s"Going to send json: $bodyContent to $notifyUrl")
 
     Http().singleRequest(HttpRequest(method=HttpMethods.POST, uri = notifyUrl, headers = List(getPlutoAuth))
-      .withEntity(bodyContent))
+      .withEntity(HttpEntity(ContentType(MediaTypes.`application/json`),bodyContent)))
       .map(handlePlutoResponse)
   }
 }
