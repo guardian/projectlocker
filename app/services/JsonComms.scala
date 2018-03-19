@@ -29,15 +29,26 @@ trait JsonComms {
       Right(Unit)
     } else if (response.status.intValue()>=500 && response.status.intValue()<=599) {
       logger.error("Unable to update pluto, server returned 50x error.")
-      val body = Await.result(bodyAsJsonFuture(response),5.seconds)
+      val body = Await.result(bodyAsJsonFuture(response), 5.seconds)
       body match {
-        case Left(unparsed)=>
+        case Left(unparsed) =>
           logger.warn("Could not parse server response, full response is shown as DEBUG message")
           logger.debug(unparsed)
-        case Right(parsed)=>
+        case Right(parsed) =>
           logger.info(parsed.toString())
       }
-      Left(true) //should retrty
+      Left(true) //should retry
+    } else if (response.status.intValue()>=400 && response.status.intValue() <=499){
+      logger.error("Unable to update pluto, server returned bad data (40x) error.")
+      val body = Await.result(bodyAsJsonFuture(response), 5.seconds)
+      body match {
+        case Left(unparsed) =>
+          logger.warn("Could not parse server response, full response is shown as DEBUG message")
+          logger.debug(unparsed)
+        case Right(parsed) =>
+          logger.info(parsed.toString())
+      }
+      Left(false) //should not retry
     } else {
       logger.error(s"Unable to update pluto, server returned ${response.status}. Not retrying.")
       response.entity.discardBytes()
