@@ -65,14 +65,22 @@ case class ProjectEntry (id: Option[Int], projectTypeId: Int, vidispineProjectId
     }
   }
 
-  def save(implicit db:slick.jdbc.PostgresProfile#Backend#Database):Future[Try[ProjectEntry]] = {
-    val insertQuery = TableQuery[ProjectEntryRow] returning TableQuery[ProjectEntryRow].map(_.id) into ((item,id)=>item.copy(id=Some(id)))
-    db.run(
-      (insertQuery+=this).asTry
-    ).map({
-      case Success(insertResult)=>Success(insertResult.asInstanceOf[ProjectEntry])  //maybe only intellij needs this?
-      case Failure(error)=>Failure(error)
-    })
+  def save(implicit db:slick.jdbc.PostgresProfile#Backend#Database):Future[Try[ProjectEntry]] = id match {
+    case None=>
+      val insertQuery = TableQuery[ProjectEntryRow] returning TableQuery[ProjectEntryRow].map(_.id) into ((item,id)=>item.copy(id=Some(id)))
+      db.run(
+        (insertQuery+=this).asTry
+      ).map({
+        case Success(insertResult)=>Success(insertResult)
+        case Failure(error)=>Failure(error)
+      })
+    case Some(realEntityId)=>
+      db.run(
+        TableQuery[ProjectEntryRow].filter(_.id===realEntityId).update(this).asTry
+      ).map({
+        case Success(rowsAffected)=>Success(this)
+        case Failure(error)=>Failure(error)
+      })
   }
 
   /**
