@@ -50,5 +50,10 @@ trait ListenAssetFolder extends NewAssetFolderSerializer with JsonComms{
       .singleRequest(HttpRequest(method=HttpMethods.POST, uri = notifyUrl, headers = List(getPlutoAuth))
       .withEntity(HttpEntity(ContentType(MediaTypes.`application/json`),bodyContent)))
       .map(handlePlutoResponse)
+      .map({
+        case Left(retry)=>Left(retry)
+        case Right(parsedResponse)=>
+          Right(logger.debug("."))
+      })
   }
 }

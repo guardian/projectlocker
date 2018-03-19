@@ -6,6 +6,7 @@ import akka.http.scaladsl.model.{HttpResponse, headers}
 import akka.stream.ActorMaterializer
 import akka.stream.scaladsl.Sink
 import akka.util.ByteString
+import models.ProjectEntry
 import play.api.{Configuration, Logger}
 import play.api.libs.json.{JsValue, Json}
 import slick.jdbc.PostgresProfile
@@ -22,14 +23,21 @@ trait JsonComms {
 
   protected def getPlutoAuth = headers.Authorization(BasicHttpCredentials(configuration.get[String]("pluto.username"),configuration.get[String]("pluto.password")))
 
-  protected def handlePlutoResponse(response:HttpResponse)(implicit ec:ExecutionContext):Either[Boolean,Unit] = {
+  protected def handlePlutoResponse(response:HttpResponse)(implicit ec:ExecutionContext):Either[Boolean,JsValue] = {
+    val body = Await.result(bodyAsJsonFuture(response), 5.seconds)
+
     if (response.status.intValue()>=200 && response.status.intValue() <= 299) {
-      response.entity.discardBytes()
-      logger.info("Pluto responded syccess")
-      Right(Unit)
+      logger.info("Pluto responded success")
+      body match {
+        case Left(unparsed)=>
+          logger.warn("Could not parse server response, full response is shown as DEBUG message")
+          logger.debug(unparsed)
+          Left(true)
+        case Right(parsed)=>Right(parsed)
+      }
+
     } else if (response.status.intValue()>=500 && response.status.intValue()<=599) {
       logger.error("Unable to update pluto, server returned 50x error.")
-      val body = Await.result(bodyAsJsonFuture(response), 5.seconds)
       body match {
         case Left(unparsed) =>
           logger.warn("Could not parse server response, full response is shown as DEBUG message")
@@ -40,7 +48,6 @@ trait JsonComms {
       Left(true) //should retry
     } else if (response.status.intValue()>=400 && response.status.intValue() <=499){
       logger.error("Unable to update pluto, server returned bad data (40x) error.")
-      val body = Await.result(bodyAsJsonFuture(response), 5.seconds)
       body match {
         case Left(unparsed) =>
           logger.warn("Could not parse server response, full response is shown as DEBUG message")
@@ -51,7 +58,6 @@ trait JsonComms {
       Left(false) //should not retry
     } else {
       logger.error(s"Unable to update pluto, server returned ${response.status}. Not retrying.")
-      response.entity.discardBytes()
       Left(false)
     }
   }
