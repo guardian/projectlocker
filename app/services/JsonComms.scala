@@ -62,7 +62,7 @@ trait JsonComms {
     }
   }
 
-  protected def bodyAsJsonFuture(response:HttpResponse)(implicit ec:ExecutionContext):Future[Either[String, JsValue]] = {
+  protected def bodyAsJsonFuture(response:HttpResponse)(implicit ec:ExecutionContext, materializer:ActorMaterializer):Future[Either[String, JsValue]] = {
     val sink = Sink.fold[String, ByteString]("")(_ + _.decodeString("UTF-8"))
 
     response.entity.dataBytes.runWith(sink)
