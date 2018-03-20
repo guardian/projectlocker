@@ -98,7 +98,7 @@ class MessageProcessorActor @Inject()(configurationI: Configuration, actorSystem
         case Some(vidispineId)=>
           sendNewUuidMessage(msgAsObject).map({
             case Right(parsedResponse)=>
-              logger.info(s"Successfully updated project $vidispineId to have uuid ${msgAsObject.newUuid}")
+              logger.info(s"Successfully updated project $vidispineId to have uuid ${msgAsObject.projectAdobeUuid}")
             case Left(true)=>
               logger.debug(s"Requeing message after $delay delay")
               actorSystem.scheduler.scheduleOnce(delay, self, msgAsObject)
