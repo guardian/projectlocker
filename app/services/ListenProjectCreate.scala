@@ -25,13 +25,18 @@ trait ListenProjectCreate extends NewProjectCreatedSerializer with JsonComms {
             val projectId = (parsedResponse \ "project_id").as[String]
             //get an updated copy of the project entry from the database, as it is possible that a user has updated it in between
             //the creation of the msg object and this getting called
-            ProjectEntry.entryForId(msg.projectEntry.id.get).map({
+            ProjectEntry.entryForId(msg.projectEntry.id.get).flatMap({
               case Success(updatedProjectEntry)=>
-                updatedProjectEntry.copy(vidispineProjectId = Some(projectId)).save
-                Right(logger.info(s"Updated project entry id ${msg.projectEntry.id} with vidispine id $projectId"))
+                updatedProjectEntry.copy(vidispineProjectId = Some(projectId)).save.map({
+                  case Success(newProjectEntry)=>
+                    Right(logger.info(s"Updated project entry id ${newProjectEntry.id} with vidispine id ${newProjectEntry.vidispineProjectId}"))
+                  case Failure(error)=>
+                    logger.error("Could not update record: ", error)
+                    Left(true)
+                })
               case Failure(error)=>
                 logger.error(s"Could not update database with vidispine id $projectId for entry id ${msg.projectEntry.id}", error)
-                Left(true)
+                Future(Left(true))
             })
           } catch {
             case ex: Throwable=>
