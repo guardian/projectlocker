@@ -316,14 +316,15 @@ class ProjectCreateHelperImpl @Inject() (@Named("message-processor-actor") messa
                   rq.user,rq.workingGroupId, rq.commissionId).flatMap({
                     case Success(createdProjectEntry)=>
                       logger.info(s"Project entry created as id ${createdProjectEntry.id}")
-                      sendCreateMessageToSelf(createdProjectEntry, rq.projectTemplate)
-                      doPostrunActions(writtenFile, createdProjectEntry, rq.projectTemplate) map {
-                        case Left(errorMessage)=>
-                          Failure(new PostrunActionError(errorMessage))
-                        case Right(successMessage)=>
-                          logger.info(successMessage)
-                          Success(createdProjectEntry)
-                      }
+                      sendCreateMessageToSelf(createdProjectEntry, rq.projectTemplate).flatMap(unit=>{
+                        doPostrunActions(writtenFile, createdProjectEntry, rq.projectTemplate) map {
+                          case Left(errorMessage)=>
+                            Failure(new PostrunActionError(errorMessage))
+                          case Right(successMessage)=>
+                            logger.info(successMessage)
+                            Success(createdProjectEntry)
+                        }
+                      })
                     case Failure(error)=>
                       logger.error("Could not create project file: ", error)
                       Future(Failure(error))
