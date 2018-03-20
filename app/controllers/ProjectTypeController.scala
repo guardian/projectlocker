@@ -8,14 +8,14 @@ import play.api.Configuration
 import play.api.cache.SyncCacheApi
 import play.api.db.slick.DatabaseConfigProvider
 import play.api.libs.json.{JsValue, Json}
-import play.api.mvc.Request
+import play.api.mvc.{Request, Result}
 import slick.jdbc.PostgresProfile
 import slick.lifted.TableQuery
 import slick.jdbc.PostgresProfile.api._
 
 import scala.util.{Failure, Success}
-
 import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.Future
 
 /**
   * Created by localhome on 17/01/2017.
@@ -66,4 +66,20 @@ class ProjectTypeController @Inject() (config: Configuration, dbConfigProvider: 
         InternalServerError(Json.obj("status"->"error","detail"->error.toString))
     })
   }}
+
+  def deletePostrunAssociations(projectTypeId:Int) = db.run(
+    TableQuery[PostrunAssociationRow].filter(_.projectType===projectTypeId).delete.asTry
+  )
+
+  override def deleteAction(requestedId: Int): Future[Result] = {
+    deletePostrunAssociations(requestedId).flatMap({
+      case Success(deletedRows)=>
+        logger.info(s"Deleted $deletedRows postrun associations for project type $requestedId")
+        super.deleteAction(requestedId)
+      case Failure(error)=>
+        logger.error(s"Could not delete postrun associations for project type $requestedId: ", error)
+        Future(handleConflictErrors(error,"project type",isInsert=false))
+    })
+
+  }
 }

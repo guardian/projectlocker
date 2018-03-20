@@ -80,6 +80,15 @@ class PlutoWorkingGroupRow(tag:Tag) extends Table[PlutoWorkingGroup](tag, "Pluto
   def * = (id.?, hide, name, uuid) <> (PlutoWorkingGroup.tupled, PlutoWorkingGroup.unapply)
 }
 
+object PlutoWorkingGroup extends ((Option[Int],Option[String], String, String)=>PlutoWorkingGroup) {
+  def entryForUuid(uuid:String)(implicit db: slick.jdbc.PostgresProfile#Backend#Database):Future[Option[PlutoWorkingGroup]] = db.run(
+    TableQuery[PlutoWorkingGroupRow].filter(_.uuid===uuid).result.asTry
+  ).map({
+    case Success(resultSeq)=>resultSeq.headOption
+    case Failure(error)=>throw error
+  })
+}
+
 trait PlutoWorkingGroupSerializer extends TimestampSerialization {
   implicit val workingGroupWrites:Writes[PlutoWorkingGroup] = (
     (JsPath \ "id").writeNullable[Int] and

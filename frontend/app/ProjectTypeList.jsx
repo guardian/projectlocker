@@ -17,6 +17,8 @@ class ProjectTypeList extends GeneralListComponent {
             GeneralListComponent.standardColumn("Opens with", "opensWith"),
             GeneralListComponent.standardColumn("Target version", "targetVersion"),
             GeneralListComponent.standardColumn("File extension", "fileExtension"),
+            GeneralListComponent.standardColumn("Pluto type", "plutoType"),
+            GeneralListComponent.standardColumn("Pluto subtype", "plutoSubtype"),
             this.actionIcons()
         ];
     }

@@ -7,7 +7,7 @@ import CommonCompletionComponent from '../common/CommonCompletionComponent.jsx';
 
 class ProjectTypeCompletionComponent extends CommonCompletionComponent {
     static propTypes = {
-        currentEntry: PropTypes.object.isRequired,
+        currentEntry: PropTypes.number.isRequired,
         postrunActions: PropTypes.array.isRequired,
         selectedPostruns: PropTypes.array.isRequired,
         originalPostruns: PropTypes.array.isRequired
@@ -18,6 +18,7 @@ class ProjectTypeCompletionComponent extends CommonCompletionComponent {
 
         this.state = {
             inProgress: false,
+            newId: null,
             error: null
         };
         this.endpoint = "/api/projecttype"; // override this to the api endpoint that you want to hit
@@ -39,9 +40,11 @@ class ProjectTypeCompletionComponent extends CommonCompletionComponent {
     }
 
     recordDidSave(){
+        const myId = this.props.currentEntry ? this.props.currentEntry : this.state.newId;
+
         //first add any postruns associations that need adding, then remove postrun associations that need removing.
-        return Promise.all(this.state.depsToAdd.map(depId=>axios.put("/api/postrun/" + depId + "/projecttype/" + this.props.currentEntry))).then(
-            Promise.all(this.state.depsToRemove.map(depId=>axios.delete("/api/postrun/" + depId + "/projecttype/" + this.props.currentEntry)))
+        return Promise.all(this.state.depsToAdd.map(depId=>axios.put("/api/postrun/" + depId + "/projecttype/" + myId))).then(
+            Promise.all(this.state.depsToRemove.map(depId=>axios.delete("/api/postrun/" + depId + "/projecttype/" + myId)))
         );
     }
 
@@ -51,7 +54,9 @@ class ProjectTypeCompletionComponent extends CommonCompletionComponent {
             name: this.props.projectType.name,
             opensWith: this.props.projectType.opensWith,
             targetVersion: this.props.projectType.version,
-            fileExtension: this.props.projectType.fileExtension
+            fileExtension: this.props.projectType.fileExtension,
+            plutoType: this.props.projectType.plutoType,
+            plutoSubtype: this.props.projectType.plutoSubtype
         }
     }
 
@@ -64,9 +69,15 @@ class ProjectTypeCompletionComponent extends CommonCompletionComponent {
                               opensWith={this.props.projectType.opensWith}
                               version={this.props.projectType.version}
                               fileExtension={this.props.projectType.fileExtension}
+                              plutoType={this.props.projectType.plutoType}
+                              plutoSubtype={this.props.projectType.plutoSubtype}
                               postrunActions={this.props.postrunActions}
                               selectedPostruns={this.props.selectedPostruns}
             />
+            <p className="information"><b>Note:</b> if you have set a Pluto type and/or subtype identifier, there can only be one instance of each
+                type and subtype combination in the system.  If a combination already exists, you will not be able to save this record and
+                will see a 409 error.  In this case, you'll need to open a fresh tab, find the existing records and remove the type/subtype
+                identifiers from them before retrying the save.</p>
             <ErrorViewComponent error={this.state.error}/>
             <span style={{float: "right"}}><button onClick={this.confirmClicked}>Confirm</button></span>
         </div>)

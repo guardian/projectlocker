@@ -18,7 +18,7 @@ logging.basicConfig(level=logging.ERROR)
 
 backups_path = postrun_settings.BACKUPS_PATH
 
-def doUpdate(xmltree,attrib_spec,new_uuid=None):
+def doUpdate(xmltree,attrib_spec,new_uuid):
     """
     Updates the element tree with the new UUID, in every place identified in attrib_spec
     :param xmltree: xml element tree to update
@@ -26,10 +26,7 @@ def doUpdate(xmltree,attrib_spec,new_uuid=None):
     :param new_uuid: uuid to replace with, or None. Defaults to None, in which case a new uuid is generated here
     :return: the updated xmltree
     """
-    if new_uuid is None:
-        new_uuid = str(uuid.uuid4())
-
-    print "New UUID is %s" % new_uuid
+    logger.info("New UUID is %s" % new_uuid)
 
     for ref in attrib_spec:
         setNodeAttrib(xmltree,ref['xpath'],ref['attrib'],new_uuid)
@@ -96,10 +93,14 @@ def postrun(projectFile=None,projectFileExtension=None,**kwargs):
     except Exception as e:
         logger.warning("Unable to get doctype: %s" % e.message)
 
+    new_uuid = str(uuid.uuid4())
+
     if projectFileExtension==".prproj":
-        doUpdate(xmltree,premiereAttribSpec)
+        doUpdate(xmltree,premiereAttribSpec, new_uuid)
     elif projectFileExtension==".plproj":
-        doUpdate(xmltree,preludeAttribSpec)
+        doUpdate(xmltree,preludeAttribSpec, new_uuid)
     else:
         raise ValueError("Expected a projectFileExtension of .prproj or .plproj, not '{0}'".format(projectFileExtension))
     save_updated_xml(xmltree,projectFile, doctype, is_compressed)
+
+    return {"new_adobe_uuid": new_uuid}

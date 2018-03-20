@@ -48,6 +48,15 @@ libraryDependencies += "org.python" % "jython" % "2.7.1b2"
 // upgrade jackson-databind to remove Deserialization of Untrusted Data vuln
 libraryDependencies += "com.fasterxml.jackson.core" % "jackson-databind" % "2.8.11.1"
 
+//messaging persistence and clustering
+libraryDependencies ++= Seq(
+  "com.typesafe.akka" %% "akka-persistence" % "2.5.11",
+  "com.typesafe.akka" %% "akka-cluster" % "2.5.11",
+  "com.typesafe.akka" %% "akka-cluster-metrics" % "2.5.11",
+  "com.typesafe.akka" %% "akka-cluster-tools" % "2.5.11",
+  "com.typesafe.akka" %% "akka-testkit" % "2.5.11" % Test
+)
+
 enablePlugins(UniversalPlugin)
 
 enablePlugins(LinuxPlugin)

@@ -1,6 +1,7 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import CommonMultistepComponent from '../common/CommonMultistepComponent.jsx';
+import TemplateSelector from "../../Selectors/TemplateSelector.jsx";
 
 class TemplateComponent extends CommonMultistepComponent {
     static propTypes = {
@@ -21,12 +22,9 @@ class TemplateComponent extends CommonMultistepComponent {
                 <tbody>
                 <tr>
                     <td>Project Template</td>
-                    <td><select id="project_template_selector" value={this.props.selectedTemplate}
-                                onChange={event=>this.props.selectionUpdated(event.target.value)}>
-                        {
-                            this.props.templatesList.map(tpl=><option key={tpl.id} value={tpl.id}>{tpl.name}</option>)
-                        }
-                    </select></td>
+                    <td><TemplateSelector selectedTemplate={this.props.selectedTemplate}
+                                          selectionUpdated={this.props.selectionUpdated}
+                                          templatesList={this.props.templatesList}/></td>
                 </tr>
                 </tbody>
             </table>

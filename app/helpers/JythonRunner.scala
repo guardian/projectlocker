@@ -4,9 +4,10 @@ import java.io.{ByteArrayOutputStream, File}
 import java.nio.file.{Path, Paths}
 import java.util.Properties
 
+import models.PostrunAction
 import org.python.core.{PyObject, PyString}
 import org.python.util.PythonInterpreter
-import play.api.Logger
+import play.api.{Configuration, Logger}
 
 import scala.util.{Failure, Success, Try}
 import scala.concurrent.{Await, Future}
@@ -36,6 +37,30 @@ object JythonRunner {
     val preprops: Properties = System.getProperties
 
     PythonInterpreter.initialize(preprops, props, new Array[String](0))
+  }
+
+  /**
+    * runs all available postrun actions through the interpreter, to make sure that they are compiled for when the user
+    * needs them
+    * @param db implicitly provided database object
+    * @return
+    */
+  def precompile(implicit db:slick.jdbc.PostgresProfile#Backend#Database, config:Configuration):Future[Seq[Try[String]]] = {
+    val interpreter = new PythonInterpreter()
+
+    PostrunAction.allEntries.map({
+      case Success(entries)=>
+        entries.map(entry=>{
+          try {
+            interpreter.execfile(entry.getScriptPath.toString)
+            Success(entry.runnable)
+          } catch {
+            case e:Throwable=>
+              Failure(e)
+          }
+        })
+      case Failure(error)=>Seq(Failure(error))
+    })
   }
 }
 

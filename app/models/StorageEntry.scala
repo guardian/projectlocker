@@ -81,4 +81,14 @@ object StorageEntryHelper {
         result.headOption
       case Failure(error)=>throw error
     })
+
+  def defaultProjectfileStorage(implicit db:slick.jdbc.PostgresProfile#Backend#Database):Future[Option[StorageEntry]] =
+    Defaults.entryFor("project_storage_id").flatMap({
+      case Success(maybeOption)=>
+        maybeOption match {
+          case Some(storageEntryId)=>StorageEntryHelper.entryFor(storageEntryId.toInt)
+          case None=>Future(None)
+        }
+      case Failure(error)=>throw error
+    })
 }

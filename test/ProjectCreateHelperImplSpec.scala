@@ -2,6 +2,7 @@ import java.io.IOError
 import java.sql.Timestamp
 import java.time.{Instant, LocalDateTime, ZonedDateTime}
 
+import akka.actor.ActorSystem
 import helpers._
 import models.{PostrunAction, _}
 
@@ -16,6 +17,7 @@ import play.api.inject.bind
 import play.api.inject.guice.GuiceApplicationBuilder
 import slick.jdbc.{JdbcBackend, JdbcProfile}
 import testHelpers.TestDatabase
+import akka.testkit.{ ImplicitSender, TestActors, TestKit }
 
 import scala.concurrent.duration._
 import scala.concurrent.{Await, Future}
@@ -33,6 +35,7 @@ class ProjectCreateHelperImplSpec extends Specification with Mockito {
   private val injector = application.injector
 
   private val dbConfigProvider = injector.instanceOf(classOf[DatabaseConfigProvider])
+  private val actorSystem = injector.instanceOf(classOf[ActorSystem])
   private implicit val db = dbConfigProvider.get[JdbcProfile].db
 
   private implicit val config:Configuration = Configuration.from(Map(
@@ -43,6 +46,7 @@ class ProjectCreateHelperImplSpec extends Specification with Mockito {
   "ProjectCreateHelper.create" should {
     "create a saved ProjectEntry in response to a valid request" in {
       val mockedStorageHelper = mock[StorageHelper]
+      val mockedActor = actorSystem.actorOf(TestActors.echoActorProps)
 
       //assume that the copyFile operation works, this is tested elsewhere
       mockedStorageHelper.copyFile(any[FileEntry],any[FileEntry])(any[JdbcBackend#DatabaseDef]) answers((paramArray,mock)=>{
@@ -50,7 +54,7 @@ class ProjectCreateHelperImplSpec extends Specification with Mockito {
         Future(Right(parameters(1).asInstanceOf[FileEntry]))
       })
 
-      val p = new ProjectCreateHelperImpl { override protected val storageHelper:StorageHelper=mockedStorageHelper }
+      val p = new ProjectCreateHelperImpl(mockedActor, config, dbConfigProvider) { override protected val storageHelper:StorageHelper=mockedStorageHelper }
 
       val request = ProjectRequest("testfile",1,"MyTestProjectFile", 3,"test-user",None,None).hydrate
 
@@ -62,11 +66,12 @@ class ProjectCreateHelperImplSpec extends Specification with Mockito {
       val response = p.create(fullRequest.get, Some(createTime))
       val createResult = Await.result(response, 10.seconds)
 
-      createResult must beSuccessfulTry(ProjectEntry(Some(5),2,None,"MyTestProjectFile",Timestamp.valueOf(createTime),"test-user",None,None))
+      createResult must beSuccessfulTry(ProjectEntry(Some(5),2,None,"MyTestProjectFile",Timestamp.valueOf(createTime),"test-user",None,None,None))
     }
 
     "refuse to overwrite an existing file that has data on it" in {
       val mockedStorageHelper = mock[StorageHelper]
+      val mockedActor = actorSystem.actorOf(TestActors.echoActorProps)
 
       //assume that the copyFile operation works, this is tested elsewhere
       mockedStorageHelper.copyFile(any[FileEntry],any[FileEntry])(any[JdbcBackend#DatabaseDef]) answers((paramArray,mock)=>{
@@ -74,7 +79,7 @@ class ProjectCreateHelperImplSpec extends Specification with Mockito {
         Future(Right(parameters(1).asInstanceOf[FileEntry]))
       })
 
-      val p = new ProjectCreateHelperImpl { override protected val storageHelper:StorageHelper=mockedStorageHelper }
+      val p = new ProjectCreateHelperImpl(mockedActor, config, dbConfigProvider) { override protected val storageHelper:StorageHelper=mockedStorageHelper }
 
       val request = ProjectRequest("/path/to/a/file.project",1,"MyTestProjectFile", 1,"test-user",None,None).hydrate
 
@@ -91,6 +96,7 @@ class ProjectCreateHelperImplSpec extends Specification with Mockito {
 
     "return an error in response to an invalid request" in {
       val mockedStorageHelper = mock[StorageHelper]
+      val mockedActor = actorSystem.actorOf(TestActors.echoActorProps)
 
       //assume that the copyFile operation works, this is tested elsewhere
       mockedStorageHelper.copyFile(any[FileEntry],any[FileEntry])(any[JdbcBackend#DatabaseDef]) answers((paramArray,mock)=>{
@@ -98,7 +104,7 @@ class ProjectCreateHelperImplSpec extends Specification with Mockito {
         Future(Right(parameters(1).asInstanceOf[FileEntry]))
       })
 
-      val p = new ProjectCreateHelperImpl { override protected val storageHelper:StorageHelper=mockedStorageHelper }
+      val p = new ProjectCreateHelperImpl(mockedActor, config, dbConfigProvider) { override protected val storageHelper:StorageHelper=mockedStorageHelper }
 
       val request = ProjectRequest("testfile",2,"MyTestProjectFile",1,"test-user",None,None).hydrate
 
@@ -116,13 +122,14 @@ class ProjectCreateHelperImplSpec extends Specification with Mockito {
     "call the run method of the postrun action entry and wait for result" in {
       val pretendProjectName = "/tmp/pretendproject"
       Seq("/bin/dd","if=/dev/urandom",s"of=$pretendProjectName","bs=1k","count=600").!
+      val mockedActor = actorSystem.actorOf(TestActors.echoActorProps)
 
-      val p = new ProjectCreateHelperImpl
+      val p = new ProjectCreateHelperImpl(mockedActor, config, dbConfigProvider)
       implicit val scriptTimeout = 5.seconds
       val testTimestamp = Timestamp.valueOf("2018-02-02 03:04:05")
       val testPostrunAction = PostrunAction(None,"args_test_4.py","Test script",None,"testuser",1,testTimestamp)
-      val testProjectEntry = ProjectEntry(None,1,None,"Test project title",testTimestamp, "testuser",None,None)
-      val testProjectType = ProjectType(None,"TestProject","TestProjectApp","1.0",None)
+      val testProjectEntry = ProjectEntry(None,1,None,"Test project title",testTimestamp, "testuser",None,None,None)
+      val testProjectType = ProjectType(None,"TestProject","TestProjectApp","1.0",None,None,None)
       val testWorkingGroup = PlutoWorkingGroup(None,None,"Test working group","230C365E-9F88-42BC-87AB-B88A3F0B8101")
       val testCommission = PlutoCommission(None,234,"VX",testTimestamp, testTimestamp, "Test commission","New",None,1)
 
@@ -145,14 +152,16 @@ class ProjectCreateHelperImplSpec extends Specification with Mockito {
 
   "PostrunCreateHelper.doPostrunActions" should {
     "execute all postrun actions for a project type" in {
-      val p = new ProjectCreateHelperImpl {
+      val mockedActor = actorSystem.actorOf(TestActors.echoActorProps)
+
+      val p = new ProjectCreateHelperImpl(mockedActor, config, dbConfigProvider) {
         override protected def syncExecScript(action: PostrunAction, projectFileName: String, entry: ProjectEntry, projectType: ProjectType, cache: PostrunDataCache, workingGroupMaybe: Option[PlutoWorkingGroup], commissionMaybe: Option[PlutoCommission])(implicit db: slick.jdbc.JdbcProfile#Backend#Database, config:play.api.Configuration, timeout: Duration) : Try[JythonOutput] =
           Success(JythonOutput("this worked","",cache,None))
       }
 
       val testTimestamp = Timestamp.valueOf("2018-02-02 03:04:05")
       val testFileEntry = Await.result(FileEntry.entryFor("/path/to/a/file.project",1),5.seconds).get.head
-      val testProjectEntry = ProjectEntry(None,1,None,"Test project title",testTimestamp, "testuser",None,None)
+      val testProjectEntry = ProjectEntry(None,1,None,"Test project title",testTimestamp, "testuser",None,None,None)
       val testProjectTemplate = Await.result(ProjectTemplate.entryFor(1),5.seconds).get
 
       val result = Await.result(p.doPostrunActions(testFileEntry,testProjectEntry,testProjectTemplate),5.seconds)
@@ -160,7 +169,9 @@ class ProjectCreateHelperImplSpec extends Specification with Mockito {
     }
 
     "indicate a failure if any postrun action failed" in {
-      val p = new ProjectCreateHelperImpl {
+      val mockedActor = actorSystem.actorOf(TestActors.echoActorProps)
+
+      val p = new ProjectCreateHelperImpl(mockedActor, config, dbConfigProvider) {
         override protected def syncExecScript(action: PostrunAction, projectFileName: String, entry: ProjectEntry, projectType: ProjectType, cache: PostrunDataCache, workingGroupMaybe: Option[PlutoWorkingGroup], commissionMaybe: Option[PlutoCommission])(implicit db: slick.jdbc.JdbcProfile#Backend#Database, config:play.api.Configuration, timeout: Duration) : Try[JythonOutput] =
           if (action.id.get == 1)
           //this is normally mapped into a failure by models.PostrunAction.run, and detailed debug output to the log there too.
@@ -171,7 +182,7 @@ class ProjectCreateHelperImplSpec extends Specification with Mockito {
 
       val testTimestamp = Timestamp.valueOf("2018-02-02 03:04:05")
       val testFileEntry = Await.result(FileEntry.entryFor("/path/to/a/file.project",1),5.seconds).get.head
-      val testProjectEntry = ProjectEntry(None,1,None,"Test project title",testTimestamp, "testuser",None,None)
+      val testProjectEntry = ProjectEntry(None,1,None,"Test project title",testTimestamp, "testuser",None,None,None)
       val testProjectTemplate = Await.result(ProjectTemplate.entryFor(1),5.seconds).get
 
       val result = Await.result(p.doPostrunActions(testFileEntry,testProjectEntry,testProjectTemplate),5.seconds)
@@ -181,6 +192,7 @@ class ProjectCreateHelperImplSpec extends Specification with Mockito {
 
   "ProjectCreateHelper.orderPostruns" should {
     "take an unordered set of postruns and dependency information and produce an ordered set of postruns" in {
+      val mockedActor = actorSystem.actorOf(TestActors.echoActorProps)
       val postrunSet = Seq(
         PostrunAction(Some(1),"first_test.py","First test depends on 5 and 6",None,"test",1,Timestamp.valueOf(LocalDateTime.now())),
           PostrunAction(Some(2),"second_test.py","Second test depends on 1",None,"test",1,Timestamp.valueOf(LocalDateTime.now())),
@@ -198,7 +210,7 @@ class ProjectCreateHelperImplSpec extends Specification with Mockito {
         4->Seq(3)
       )
 
-      val p = new ProjectCreateHelperImpl
+      val p = new ProjectCreateHelperImpl(mockedActor, config, dbConfigProvider)
       val result = p.orderPostruns(postrunSet, dependencyGraph)
       //keeping below line as it's handy for debugging!
       //result.foreach(action=>println(action.title))

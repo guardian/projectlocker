@@ -47,8 +47,8 @@ class DatabaseHelper @Inject()(configuration: Configuration, dbConfigProvider: D
         TableQuery[FileEntryRow] += FileEntry(None,"/path/to/secondtestfile",1,"tstuser",1,new Timestamp(123456789),new Timestamp(123456789),new Timestamp(123456789),hasContent = false,hasLink = false),
         //"""{"name": "Premiere test template 1","projectTypeId": 1,"filepath", "storageId": 1}"""
         //"{"name":,"opensWith":"AdobePremierePro.app","targetVersion":"14.0"}"
-        TableQuery[ProjectTypeRow] += ProjectType(None,"Premiere 2014 test","AdobePremierePro.app","14.0"),
-        TableQuery[ProjectTypeRow] += ProjectType(None,"Cubase 7.0 test","Cubase.app","7.0"),
+        TableQuery[ProjectTypeRow] += ProjectType(None,"Premiere 2014 test","AdobePremierePro.app","14.0", Some(".prproj"), None, None),
+        TableQuery[ProjectTypeRow] += ProjectType(None,"Cubase 7.0 test","Cubase.app","7.0", Some(".cpr"), None,None),
         TableQuery[ProjectTemplateRow] += ProjectTemplate(Some(1),"Premiere test template 1",1,1)
 
       ).asTry

@@ -126,6 +126,12 @@ object PostrunAction extends ((Option[Int],String,String,Option[String],String,I
     db.run(
       TableQuery[PostrunActionRow].filter(_.runnable===scriptName).result.asTry
     )
+
+  def allEntries(implicit db:slick.jdbc.PostgresProfile#Backend#Database):Future[Try[Seq[PostrunAction]]] =
+    db.run(
+      TableQuery[PostrunActionRow].result.asTry
+    )
+
 }
 
 class PostrunActionRow(tag:Tag) extends Table[PostrunAction](tag, "PostrunAction") {

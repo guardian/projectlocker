@@ -16,6 +16,8 @@ class ProjectTypeComponent extends MultistepComponentLoadsOnMount{
             opensWith: null,
             version: null,
             fileExtension: null,
+            plutoType: null,
+            plutoSubtype: null,
             loading: false,
             error: null
         }
@@ -28,7 +30,9 @@ class ProjectTypeComponent extends MultistepComponentLoadsOnMount{
             name: projectType.result.name,
             version: projectType.result.targetVersion,
             opensWith: projectType.result.opensWith,
-            fileExtension: projectType.result.fileExtension
+            fileExtension: projectType.result.fileExtension,
+            plutoType: projectType.result.plutoType,
+            plutoSubtype: projectType.result.plutoSubtype
         }, cb);
     }
 
@@ -60,6 +64,18 @@ class ProjectTypeComponent extends MultistepComponentLoadsOnMount{
                     <td>File extension for this file type</td>
                     <td><input id="extension" className="inputs" value={this.state.fileExtension}
                                onChange={event=>this.setState({fileExtension: event.target.value})}/></td>
+                </tr>
+                <tr>
+                    <td>Pluto type identifier, if applicable</td>
+                    <td><input id="pluto-type" className="inputs" value={this.state.plutoType}
+                            onChange={event=>this.setState({plutoType: event.target.value})}/></td>
+                    <td><a onClick={event=>this.setState({plutoType: null})}>clear</a></td>
+                </tr>
+                <tr>
+                    <td>Pluto subtype identifier, if applicable</td>
+                    <td><input id="pluto-subtype" className="inputs" value={this.state.plutoSubtype}
+                            onChange={event=>this.setState({plutoSubtype: event.target.value})}/></td>
+                    <td><a onClick={event=>this.setState({plutoSubtype: null})}>clear</a></td>
                 </tr>
                 </tbody>
             </table>

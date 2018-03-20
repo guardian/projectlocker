@@ -6,7 +6,7 @@ import java.sql.Timestamp
 import akka.actor.ActorSystem
 import com.google.inject.{Inject, Singleton}
 import play.api.{Configuration, Logger}
-import helpers.DirectoryScanner
+import helpers.{DirectoryScanner, JythonRunner}
 import models.PostrunAction
 import java.time.{Instant, ZonedDateTime}
 
@@ -22,6 +22,17 @@ class PostrunActionScanner @Inject() (dbConfigProvider: DatabaseConfigProvider, 
   import actorSystem.dispatcher
 
   implicit val db = dbConfigProvider.get[PostgresProfile].db
+  implicit val configImplicit = config
+
+  //call out to JythonRunner to ensure that scripts are precompiled when we start up.
+  JythonRunner.precompile.map(results=>{
+    results.foreach({
+      case Success(runnable)=>
+        logger.debug(s"Successfully precompiled $runnable")
+      case Failure(error)=>
+        logger.error("Could not precompile: ", error)
+    })
+  })
 
   protected def addIfNotExists(scriptFile: File) = {
     PostrunAction.entryForRunnable(scriptFile.getName) map {

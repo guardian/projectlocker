@@ -27,7 +27,7 @@ class ProjectTypeControllerSpec extends GenericControllerSpec {
   override val testCreateDocument: String =  """{"name":"My Wonderful Editor","opensWith":"MyWonderfulEditor.app","targetVersion":"3.6","fileExtension":".edd"}"""
   override val minimumNewRecordId = 4
   override val testDeleteId: Int = 3
-  override val testConflictId: Int = 1
+  override val testConflictId: Int = -1
 
   "ProjectTypeController.listPostrun" should {
     "return a list of the postrun ids associated with the project type" in {
@@ -42,7 +42,7 @@ class ProjectTypeControllerSpec extends GenericControllerSpec {
       val jsondata = Await.result(bodyAsJsonFuture(response), 5.seconds).as[JsValue]
 
       (jsondata \ "status").as[String] mustEqual "ok"
-      (jsondata \ "result").as[Array[Int]] mustEqual Array(1, 2)
+      (jsondata \ "result").as[Seq[Int]] mustEqual Seq(1, 2)
     }
   }
 }

@@ -29,7 +29,7 @@ class ProjectEntryController @Inject() (cc:ControllerComponents, config: Configu
                                         cacheImpl:SyncCacheApi)
   extends GenericDatabaseObjectControllerWithFilter[ProjectEntry,ProjectEntryFilterTerms]
     with ProjectEntrySerializer with ProjectEntryFilterTermsSerializer with ProjectRequestSerializer
-    with UpdateTitleRequestSerializer with FileEntrySerializer with Security
+    with ProjectRequestPlutoSerializer with UpdateTitleRequestSerializer with FileEntrySerializer with Security
 {
   override implicit val cache:SyncCacheApi = cacheImpl
 
@@ -234,6 +234,20 @@ class ProjectEntryController @Inject() (cc:ControllerComponents, config: Configu
 
   override def validateFilterParams(request: Request[JsValue]): JsResult[ProjectEntryFilterTerms] = request.body.validate[ProjectEntryFilterTerms]
 
+  def createFromFullRequest(rq:ProjectRequestFull)(implicit db: slick.jdbc.PostgresProfile#Backend#Database) = projectHelper.create(rq,None).map({
+    case Failure(error)=>
+      logger.error("Could not create new project", error)
+      error match {
+        case projectCreationError:ProjectCreationError=>
+          BadRequest(Json.obj("status"->"error","detail"->projectCreationError.getMessage))
+        case _=>
+          InternalServerError(Json.obj("status"->"error","detail"->error.toString))
+      }
+    case Success(projectEntry)=>
+      logger.error(s"Created new project: $projectEntry")
+      Ok(Json.obj("status"->"ok","detail"->"created project", "projectId"->projectEntry.id.get))
+  })
+
   override def create = IsAuthenticatedAsync(parse.json) {uid=>{ request =>
     implicit val db = dbConfig.db
 
@@ -246,21 +260,25 @@ class ProjectEntryController @Inject() (cc:ControllerComponents, config: Configu
           case None=>
             Future(BadRequest(Json.obj("status"->"error","detail"->"Invalid template or storage ID")))
           case Some(rq)=>
-            projectHelper.create(rq,None).map({
-              case Failure(error)=>
-                logger.error("Could not create new project", error)
-                error match {
-                  case projectCreationError:ProjectCreationError=>
-                    BadRequest(Json.obj("status"->"error","detail"->projectCreationError.getMessage))
-                  case _=>
-                    InternalServerError(Json.obj("status"->"error","detail"->error.toString))
-                }
-              case Success(projectEntry)=>
-                logger.error(s"Created new project: $projectEntry")
-                Ok(Json.obj("status"->"ok","detail"->"created project", "projectId"->projectEntry.id.get))
-            })
+            createFromFullRequest(rq)
         })
       })
+  }}
+
+  def createExternal = IsAuthenticatedAsync(parse.json) {uid=>{ request:Request[JsValue] =>
+    implicit val db = dbConfig.db
+
+    request.body.validate[ProjectRequestPluto].fold(
+      errors=>
+        Future(BadRequest(Json.obj("status"->"error","detail"->JsError.toJson(errors)))),
+      projectRequest=>
+        projectRequest.hydrate.flatMap({
+          case None=>
+            Future(BadRequest(Json.obj("status"->"error","detail"->"Invalid or missing data in request")))
+          case Some(rq)=>
+            createFromFullRequest(rq)
+        })
+    )
   }}
 
 }

@@ -179,6 +179,18 @@ object PlutoCommission extends ((Option[Int],Int,String,Timestamp,Timestamp,Stri
     })
   }
 
+  def entryForVsid(vsid:String)(implicit db:slick.jdbc.PostgresProfile#Backend#Database):Future[Option[PlutoCommission]] = {
+    val idparts = vsid.split("-")
+    if(idparts.length!=2) return Future(None)
+
+    db.run(
+      TableQuery[PlutoCommissionRow].filter(_.siteId===idparts.head).filter(_.collectionId===idparts(1).toInt).result.asTry
+    ).map({
+      case Success(resultSeq)=>resultSeq.headOption
+      case Failure(error)=>throw error
+    })
+  }
+
   //handle different explicit time format
   def timestampToDateTime(t: Timestamp): DateTime = new DateTime(t.getTime)
   def dateTimeToTimestamp(dt: DateTime): Timestamp = new Timestamp(dt.getMillis)

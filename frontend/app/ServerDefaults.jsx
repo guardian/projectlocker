@@ -2,6 +2,7 @@ import React from 'react';
 import axios from 'axios';
 import StorageSelector from './Selectors/StorageSelector.jsx';
 import ErrorViewComponent from "./multistep/common/ErrorViewComponent.jsx";
+import TemplateSelector from "./Selectors/TemplateSelector.jsx";
 
 class ServerDefaults extends React.Component {
     constructor(props){
@@ -10,15 +11,21 @@ class ServerDefaults extends React.Component {
         this.state = {
             currentValues: {},
             storageList: [],
+            templatesList: [],
             loading: false,
             error: null
         };
 
         this.keys = {
-            storage: "project_storage_id"
+            storage: "project_storage_id",
+            premiere: "Premiere",   //these are held in metadata elements on the pluto side, and it would be good to sync them too somehow
+            prelude: "Prelude",
+            aftereffects: "AfterEffects",
+            audition: "Audition",
+            cubase: "Cubase"
         };
 
-        this.updateDefaultStorage = this.updateDefaultStorage.bind(this);
+        this.updateDefaultSetting = this.updateDefaultSetting.bind(this);
 
     }
 
@@ -28,10 +35,11 @@ class ServerDefaults extends React.Component {
 
     refreshData(){
         this.setState({loading:true}, ()=>{
-            Promise.all([axios.get("/api/default"),axios.get("/api/storage")]).then(responses=>{
+            Promise.all([axios.get("/api/default"),axios.get("/api/storage"),axios.get("/api/template")]).then(responses=>{
                 this.setState({
                     loading: false,
                     error: null,
+                    templatesList: responses[2].data.result,
                     storageList: responses[1].data.result,
                     currentValues: responses[0].data.results.reduce((acc,entry)=>{
                         acc[entry.name]=entry.value;
@@ -42,8 +50,8 @@ class ServerDefaults extends React.Component {
         })
     }
 
-    updateDefaultStorage(newStorageId){
-        axios.put("/api/default/" + this.keys.storage, newStorageId, {headers: {'Content-Type': 'text/plain'}}).then(
+    updateDefaultSetting(newStorageId,keyname){
+        axios.put("/api/default/" + keyname, newStorageId, {headers: {'Content-Type': 'text/plain'}}).then(
             window.setTimeout(()=>this.refreshData(),250)
         );
     }
@@ -60,6 +68,18 @@ class ServerDefaults extends React.Component {
         }
     }
 
+    /* return the current default template, or first in the list, or zero if neither is present */
+    templatePref(keyname){
+        if(this.state.currentValues.hasOwnProperty(keyname)){
+            return this.state.currentValues[keyname];
+        } else {
+            if(this.state.templatesList.length>0)
+                return this.state.templatesList[0].id;
+            else
+                return 0;
+        }
+    }
+
     render(){
         return <div className="mainbody">
             <h3>Server defaults</h3>
@@ -69,9 +89,40 @@ class ServerDefaults extends React.Component {
                 <tr>
                     <td>Default storage for created projects</td>
                     <td><StorageSelector selectedStorage={this.storagePref()}
-                                         selectionUpdated={this.updateDefaultStorage}
+                                         selectionUpdated={value=>this.updateDefaultSetting(value, this.keys.storage)}
                                          storageList={this.state.storageList}/></td>
                 </tr>
+                <tr>
+                    <td>Project template to use for Pluto 'Premiere':</td>
+                    <td><TemplateSelector selectedTemplate={this.templatePref(this.keys.premiere)}
+                                          selectionUpdated={value=>this.updateDefaultSetting(value, this.keys.storage)}
+                                          templatesList={this.state.templatesList}/></td>
+                </tr>
+                <tr>
+                    <td>Project template to use for Pluto 'Cubase':</td>
+                    <td><TemplateSelector selectedTemplate={this.templatePref(this.keys.cubase)}
+                                          selectionUpdated={value=>this.updateDefaultSetting(value, this.keys.cubase)}
+                                          templatesList={this.state.templatesList}/></td>
+                </tr>
+                <tr>
+                    <td>Project template to use for Pluto 'Prelude':</td>
+                    <td><TemplateSelector selectedTemplate={this.templatePref(this.keys.prelude)}
+                                          selectionUpdated={value=>this.updateDefaultSetting(value, this.keys.prelude)}
+                                          templatesList={this.state.templatesList}/></td>
+                </tr>
+                <tr>
+                    <td>Project template to use for Pluto 'AfterEffects':</td>
+                    <td><TemplateSelector selectedTemplate={this.templatePref(this.keys.aftereffects)}
+                                          selectionUpdated={value=>this.updateDefaultSetting(value, this.keys.aftereffects)}
+                                          templatesList={this.state.templatesList}/></td>
+                </tr>
+                <tr>
+                    <td>Project template to use for Pluto 'Audition':</td>
+                    <td><TemplateSelector selectedTemplate={this.templatePref(this.keys.audition)}
+                                          selectionUpdated={value=>this.updateDefaultSetting(value, this.keys.audition)}
+                                          templatesList={this.state.templatesList}/></td>
+                </tr>
+
                 </tbody>
             </table>
         </div>
