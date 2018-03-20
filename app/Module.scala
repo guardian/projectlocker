@@ -15,5 +15,7 @@ class Module extends AbstractModule with AkkaGuiceSupport {
 
     //this makes the actor instance accessible via injection
     bindActor[MessageProcessorActor]("message-processor-actor")
+
+
   }
 }
