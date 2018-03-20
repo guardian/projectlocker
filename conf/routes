@@ -72,7 +72,8 @@ PUT     /api/pluto/commission/list         @controllers.PlutoCommissionControlle
 POST    /api/login                         @controllers.Application.authenticate
 POST    /api/logout                        @controllers.Application.logout
 GET     /api/isLoggedIn                    @controllers.Application.isLoggedIn
-POST    /api/system/init                   @controllers.System.init
+
+GET     /api/system/plutoconfig            @controllers.System.plutoconfig
 
 GET     /message/test                       @controllers.MessageTest.testprojectcreate
 

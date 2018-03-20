@@ -5,13 +5,21 @@ import ProjectTypeView from './EntryViews/ProjectTypeView.jsx';
 import ProjectEntryFilterComponent from './filter/ProjectEntryFilterComponent.jsx';
 import WorkingGroupEntryView from './EntryViews/WorkingGroupEntryView.jsx';
 import CommissionEntryView from './EntryViews/CommissionEntryView.jsx';
+import PropTypes from 'prop-types';
+import axios from 'axios';
 
 class ProjectEntryList extends GeneralListComponent {
+    static propTypes = {
+        location: PropTypes.object.isRequired
+    };
+
     constructor(props){
         super(props);
         this.endpoint = '/api/project';
         this.filterEndpoint = '/api/project/list';
-        
+        this.getPlutoLink = this.getPlutoLink.bind(this);
+        this.componentWillMount = this.componentWillMount.bind(this);
+
         this.columns = [
             {
                 header: "Id",
@@ -24,7 +32,7 @@ class ProjectEntryList extends GeneralListComponent {
             {
                 header: "Pluto project",
                 key: "vidispineId",
-                render: vsid=>vsid? <a target="_blank" href={this.props.plutoBaseUrl + "/" + vsid}>{vsid}</a> : <span className="value-not-present">(not set)</span>,
+                render: this.getPlutoLink,
                 headerProps: { className: 'dashboardheader'}
             },
             {
@@ -55,6 +63,27 @@ class ProjectEntryList extends GeneralListComponent {
                 render: projid=><a target="_blank" href={"pluto:openproject:" + projid}>Open project</a>
             }
         ];
+    }
+
+    componentWillMount(){
+        console.log("loading pluto config");
+        axios.get("/api/system/plutoconfig")
+            .then(response=>this.setState({plutoConfig: response.data}))
+            .catch(error=>console.error(error));
+    }
+    //
+    getPlutoLink(vsid){
+        console.log(this);
+        console.log(vsid);
+
+        if(!vsid) return <span className="value-not-present">(not set)</span>;
+
+        if(this.state.plutoConfig.hasOwnProperty("plutoServer")){
+            const baseUrl = this.state.plutoConfig.plutoServer + "/project/";
+            return <a target="_blank" href={baseUrl + vsid}>{vsid}</a>
+        } else {
+            return <b>{vsid}</b>
+        }
     }
 
     getFilterComponent(){

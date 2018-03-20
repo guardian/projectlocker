@@ -16,7 +16,8 @@ class GeneralListComponent extends React.Component {
                 match: "W_ENDSWITH"
             },
             currentPage: 0,
-            maximumItemsLoaded: false
+            maximumItemsLoaded: false,
+            plutoConfig: {}
         };
 
         this.pageSize = 20;
