@@ -119,7 +119,7 @@ class ProjectEntryRow(tag:Tag) extends Table[ProjectEntry](tag, "ProjectEntry") 
 
 trait ProjectEntrySerializer extends TimestampSerialization {
   /*https://www.playframework.com/documentation/2.5.x/ScalaJson*/
-  implicit val templateWrites:Writes[ProjectEntry] = (
+  implicit val projectEntryWrites:Writes[ProjectEntry] = (
     (JsPath \ "id").writeNullable[Int] and
       (JsPath \ "projectTypeId").write[Int] and
       (JsPath \ "vidispineId").writeNullable[String] and
@@ -131,7 +131,7 @@ trait ProjectEntrySerializer extends TimestampSerialization {
       (JsPath \ "adobe_uuid").writeNullable[String]
     )(unlift(ProjectEntry.unapply))
 
-  implicit val templateReads:Reads[ProjectEntry] = (
+  implicit val projectEntryReads:Reads[ProjectEntry] = (
     (JsPath \ "id").readNullable[Int] and
       (JsPath \ "projectTypeId").read[Int] and
       (JsPath \ "vidispineId").readNullable[String] and

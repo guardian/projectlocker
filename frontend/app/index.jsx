@@ -10,6 +10,8 @@ import FileEntryList from './FileEntryList.jsx';
 import ProjectEntryList from './ProjectEntryList.jsx';
 import ProjectTypeList from './ProjectTypeList.jsx';
 
+import FileDeleteComponent from './delete/FileDeleteComponent.jsx';
+
 import StorageMultistep from './multistep/StorageMultistep.jsx';
 import StorageDeleteComponent from './delete/StorageDeleteComponent.jsx';
 
@@ -111,6 +113,7 @@ class App extends React.Component {
                         <Route path="/template/:itemid/delete" component={ProjectTemplateDeleteComponent}/>
                         <Route path="/template/:itemid" component={ProjectTemplateMultistep}/>
                         <Route path="/template/" component={ProjectTemplateIndex}/>
+                        <Route path="/file/:itemid/delete" component={FileDeleteComponent}/>
                         <Route path="/file/:itemid" component={FileEntryList}/>
                         <Route path="/file/" component={FileEntryList}/>
                         <Route path="/type/:itemid/delete" component={TypeDeleteComponent}/>

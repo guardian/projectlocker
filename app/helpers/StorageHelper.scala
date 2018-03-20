@@ -57,6 +57,22 @@ class StorageHelper {
     }
   }
 
+  def deleteFile(targetFile: FileEntry)(implicit db:slick.jdbc.PostgresProfile#Backend#Database):Future[Boolean] = {
+    targetFile.storage.map({
+      case Some(storageEntry)=>
+        storageEntry.getStorageDriver match {
+          case Some(storageDriver)=>
+            storageDriver.deleteFileAtPath(targetFile.getFullPath.toString)
+          case None=>
+            logger.error(s"Can't delete file at ${targetFile.getFullPath} because storage $storageEntry has no storage driver")
+            false
+        }
+      case None=>
+        logger.error(s"Can't delete file at ${targetFile.getFullPath} because file record has no storage")
+        false
+    })
+  }
+
   /**
     * Copies from the file represented by sourceFile to the (non-existing) file represented by destFile.
     * Both should have been saved to the database before calling this method.  The files do not need to be on the same

@@ -3,6 +3,7 @@ package controllers
 import javax.inject.Inject
 
 import exceptions.{AlreadyExistsException, BadDataException}
+import helpers.StorageHelper
 import play.api.{Configuration, Logger}
 import play.api.db.slick.DatabaseConfigProvider
 import play.api.mvc._
@@ -13,6 +14,7 @@ import slick.jdbc.PostgresProfile.api._
 import scala.concurrent.ExecutionContext.Implicits.global
 import models._
 import play.api.cache.SyncCacheApi
+import play.mvc.Http.Response
 import slick.lifted.TableQuery
 
 import scala.concurrent.{CanAwait, Future}
@@ -21,11 +23,14 @@ import scala.util.{Failure, Success, Try}
 
 class Files @Inject() (configuration: Configuration, dbConfigProvider: DatabaseConfigProvider, cacheImpl:SyncCacheApi)
   extends GenericDatabaseObjectControllerWithFilter[FileEntry,FileEntryFilterTerms]
-    with FileEntrySerializer with FileEntryFilterTermsSerializer {
+    with FileEntrySerializer with FileEntryFilterTermsSerializer
+    with ProjectEntrySerializer with ProjectTemplateSerializer {
 
   implicit val cache:SyncCacheApi = cacheImpl
+  val storageHelper = new StorageHelper
 
   val dbConfig = dbConfigProvider.get[PostgresProfile]
+  implicit val db = dbConfig.db
 
   override def deleteid(requestedId: Int) = dbConfig.db.run(
     TableQuery[FileEntryRow].filter(_.id === requestedId).delete.asTry
@@ -116,6 +121,49 @@ class Files @Inject() (configuration: Configuration, dbConfigProvider: DatabaseC
       case None =>
         Future(BadRequest(Json.obj("status" -> "error", "detail" -> "No upload payload")))
     }
+  }}
+
+  def deleteFromDisk(requestedId:Int, targetFile:FileEntry, deleteReferenced: Boolean, isRetry:Boolean=false):Future[Result] = deleteid(requestedId).flatMap({
+    case Success(rowCount)=>
+      storageHelper.deleteFile(targetFile).flatMap({
+        case true =>
+          Future(Ok(Json.obj("status" -> "ok", "detail" -> "deleted file", "filepath" -> targetFile.filepath)))
+        case false =>
+          targetFile.getFullPath.map(fullpath=>{
+            logger.error(s"Could not delete on-disk file $fullpath")
+            InternalServerError(Json.obj("status" -> "error", "detail" -> "could not delete file on disk", "filepath" -> fullpath))
+          })
+      })
+    case Failure(error)=>Future(handleConflictErrorsAdvanced(error){
+        Conflict(Json.obj("status"->"error","detail"->"This file is still referenced by other things"))
+    })
+  })
+
+  def delete(requestedId: Int, deleteReferenced: Boolean) = IsAuthenticatedAsync {uid=>{ request =>
+    selectid(requestedId).flatMap({
+      case Success(rowSeq)=>
+        val targetFile = rowSeq.head
+        deleteFromDisk(requestedId, targetFile, deleteReferenced)
+      case Failure(error)=>
+        logger.error("Could not look up file id: ", error)
+        Future(InternalServerError(Json.obj("status"->"error", "detail"->"could not look up file id", "error"->error.toString)))
+    })
+  }}
+
+  def references(requestedId: Int) = IsAuthenticatedAsync {uid=>{request=>
+    Future.sequence(Seq(FileAssociation.projectsForFile(requestedId),ProjectTemplate.templatesForFileId(requestedId))).map(resultSeq=>{
+      val triedProjectsList = resultSeq.head.asInstanceOf[Try[Seq[ProjectEntry]]]
+      val triedTemplatesList = resultSeq(1).asInstanceOf[Try[Seq[ProjectTemplate]]]
+
+      if(triedProjectsList.isSuccess && triedTemplatesList.isSuccess)
+        Ok(Json.obj("status"->"ok","projects"->triedProjectsList.get, "templates"->triedTemplatesList.get))
+      else
+        InternalServerError(Json.obj("status"->"error",
+          "projectsError"->triedProjectsList.failed.getOrElse("").toString,
+          "templatesError"->triedTemplatesList.failed.getOrElse("").toString
+        ))
+    }
+    )
   }}
 }
 

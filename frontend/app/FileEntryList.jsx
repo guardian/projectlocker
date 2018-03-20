@@ -1,6 +1,7 @@
 import React from 'react';
 import GeneralListComponent from './GeneralListComponent.jsx';
 import FileEntryFilterComponent from './filter/FileEntryFilterComponent.jsx';
+import {Link} from 'react-router-dom';
 
 class FileEntryList extends GeneralListComponent {
     constructor(props){
@@ -22,7 +23,12 @@ class FileEntryList extends GeneralListComponent {
             GeneralListComponent.standardColumn("Version","version"),
             GeneralListComponent.dateTimeColumn("Create time","ctime"),
             GeneralListComponent.dateTimeColumn("Modification time","mtime"),
-            GeneralListComponent.dateTimeColumn("Access time","atime")
+            GeneralListComponent.dateTimeColumn("Access time","atime"),
+            {
+                header: "",
+                key: "id",
+                render: id=><Link to={"/file/" + id + "/delete"}><img className="smallicon" src="/assets/images/delete.png"/></Link>
+            }
         ];
     }
 
