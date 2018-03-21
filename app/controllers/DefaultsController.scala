@@ -78,7 +78,7 @@ class DefaultsController @Inject() (cc:ControllerComponents, configuration: Conf
     * @param key key to delete
     * @return 200 if the operation succeeded, 404 if the key was not found or 500 if there was an error
     */
-  def deleteForKey(key:String) = IsAuthenticatedAsync {uid=>{request=>
+  def deleteForKey(key:String) = IsAdminAsync {uid=>{request=>
     Defaults.entryFor(key).flatMap({
       case Success(maybeResult)=>
         maybeResult match {
@@ -97,7 +97,7 @@ class DefaultsController @Inject() (cc:ControllerComponents, configuration: Conf
     })
   }}
 
-  def list = IsAuthenticatedAsync {uid=>{request=>
+  def list = IsAdminAsync {uid=>{request=>
     Defaults.allEntries.map({
       case Success(results)=>Ok(Json.obj("status"->"ok","results"->results))
       case Failure(error)=>

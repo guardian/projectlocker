@@ -19,10 +19,10 @@ class System @Inject() (cc:ControllerComponents, configuration: Configuration, d
   extends AbstractController(cc) with Security {
 
   implicit val cache:SyncCacheApi = cacheImpl
+  implicit val config:Configuration = configuration
   private val dbConfig = dbConfigProvider.get[PostgresProfile]
 
   def plutoconfig = IsAuthenticated {uid=>{request=>
-
     Ok(Json.obj(
       "status"->"ok",
       "plutoServer"->configuration.getOptional[String]("pluto.server_url"),

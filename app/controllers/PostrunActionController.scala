@@ -81,7 +81,7 @@ class PostrunActionController  @Inject() (config: Configuration, dbConfigProvide
     }
   }}
 
-  def getSource(itemId:Int) = IsAuthenticatedAsync {uid=>{request=>
+  def getSource(itemId:Int) = IsAdminAsync {uid=>{request=>
     implicit val configImplicit=config
     selectid(itemId) map {
       case Failure(error)=>
@@ -111,7 +111,7 @@ class PostrunActionController  @Inject() (config: Configuration, dbConfigProvide
     TableQuery[PostrunDependencyRow].filter(_.sourceAction===postrunId).result.asTry
   )
 
-  def listDependencies(postrunId: Int) = IsAuthenticatedAsync {uid=>{request=>
+  def listDependencies(postrunId: Int) = IsAdminAsync {uid=>{request=>
     selectDependencies(postrunId).map({
       case Success(dependencyList)=>Ok(Json.obj("status"->"ok", "result"->dependencyList))
       case Failure(error)=>
@@ -120,14 +120,14 @@ class PostrunActionController  @Inject() (config: Configuration, dbConfigProvide
     })
   }}
 
-  def addDependency(sourceId:Int, dependsOn:Int) = IsAuthenticatedAsync {uid=>{request=>
+  def addDependency(sourceId:Int, dependsOn:Int) = IsAdminAsync {uid=>{request=>
     insertDependency(PostrunDependency(None,sourceId,dependsOn)).map({
       case Success(newRowId) => Ok(Json.obj("status" -> "ok", "detail" -> s"added dependency with id $newRowId"))
       case Failure(error) => handleConflictErrors(error,"postrun dependency", isInsert=true)
     })
   }}
 
-  def removeDependency(sourceId:Int, dependsOn:Int) = IsAuthenticatedAsync {uid=>{request=>
+  def removeDependency(sourceId:Int, dependsOn:Int) = IsAdminAsync {uid=>{request=>
     deleteDependency(PostrunDependency(None,sourceId,dependsOn)).map({
       case Success(newRowId) => Ok(Json.obj("status" -> "ok", "detail" -> s"deleted dependency"))
       case Failure(error) => handleConflictErrors(error,"postrun dependency", isInsert=false)

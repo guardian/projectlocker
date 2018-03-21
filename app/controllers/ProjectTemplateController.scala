@@ -67,7 +67,7 @@ class ProjectTemplateController @Inject() (config: Configuration, dbConfigProvid
     })
   }
 
-  override def delete(requestedId: Int) = Action.async { request =>
+  override def delete(requestedId: Int) = IsAdminAsync { uid=> { request =>
     implicit val db:slick.jdbc.PostgresProfile#Backend#Database=dbConfig.db
 
     if(requestedId<0)
@@ -107,5 +107,5 @@ class ProjectTemplateController @Inject() (config: Configuration, dbConfigProvid
 
       templateDeleteFuture
     }
-  }
+  }}
 }

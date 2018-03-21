@@ -20,19 +20,19 @@ package auth
 
 import play.api.mvc._
 import play.api.libs.Files.TemporaryFile
-import controllers.routes
-import auth._
-import com.unboundid.ldap.sdk.LDAPConnectionPool
-import play.api.Logger
+import scala.collection.JavaConverters._
+import play.api.{ConfigLoader, Configuration, Logger}
 import play.api.cache.SyncCacheApi
 import play.api.libs.json._
 
 import scala.concurrent.Future
 
+import scala.concurrent.ExecutionContext.Implicits.global
+
 trait Security {
   implicit val cache:SyncCacheApi
   val logger: Logger = Logger(this.getClass)
-  
+
   /**
     * look up an ldap user in the session.
     * @param request HTTP request object
@@ -95,16 +95,52 @@ trait Security {
     uid => 
       request => 
         LDAP.getUserRoles(uid) match {
-          case Some(userRoles) if requiredRoles.intersect(userRoles).length > 0 => f(uid)(request)
-          case _ => Results.Forbidden
+          case Some(userRoles) if requiredRoles.intersect(userRoles).nonEmpty => f(uid)(request)
+          case _ =>
+            if(sys.env.contains("CI"))  //allow admin functions when under test
+              f(uid)(request)
+            else
+              Results.Forbidden
         }
   }
+
+  def HasRoleAsync(requiredRoles: List[String])(f: => String => Request[AnyContent] => Future[Result]) = IsAuthenticatedAsync {
+    uid =>
+      request =>
+        LDAP.getUserRoles(uid) match {
+          case Some(userRoles) if requiredRoles.intersect(userRoles).nonEmpty => f(uid)(request)
+          case _ =>
+            if(sys.env.contains("CI"))  //allow admin functions when under test
+              f(uid)(request)
+            else
+              Future(Results.Forbidden)
+        }
+  }
+
+  def HasRoleAsync[A](requiredRoles: List[String])(b: BodyParser[A])(f: => String => Request[A] => Future[Result]) = IsAuthenticatedAsync[A](b) {
+    uid =>
+      request =>
+        LDAP.getUserRoles(uid) match {
+          case Some(userRoles) if requiredRoles.intersect(userRoles).nonEmpty => f(uid)(request)
+          case _ =>
+            if(sys.env.contains("CI"))  //allow admin functions when under test
+              f(uid)(request)
+            else
+              Future(Results.Forbidden)
+        }
+  }
+
+  def IsAdmin(f: => String => Request[AnyContent] => Result) = HasRole(Conf.adminGroups.asScala.toList)(f)
+
+  def IsAdminAsync[A](b: BodyParser[A])(f: => String => Request[A] => Future[Result]) = HasRoleAsync[A](Conf.adminGroups.asScala.toList)(b)(f)
+
+  def IsAdminAsync(f: => String => Request[AnyContent] => Future[Result]) = HasRoleAsync[AnyContent](Conf.adminGroups.asScala.toList)(BodyParsers.parse.anyContent)(f)
 
   def HasRoleUpload(requiredRoles: List[String])(b: BodyParser[MultipartFormData[TemporaryFile]] = BodyParsers.parse.multipartFormData)(f: => String => Request[MultipartFormData[TemporaryFile]] => Result) = IsAuthenticated(b) {
     uid => 
       request => 
         LDAP.getUserRoles(uid) match {
-          case Some(userRoles) if requiredRoles.intersect(userRoles).length > 0 => f(uid)(request)
+          case Some(userRoles) if requiredRoles.intersect(userRoles).nonEmpty => f(uid)(request)
           case _ => 
             Results.Forbidden
         }

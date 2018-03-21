@@ -44,4 +44,5 @@ object Conf {
   val sharedSecret = conf.getString("shared_secret")
   val serverAddresses = Array(ldapHost0,ldapHost1)
   val serverPorts = Array(ldapPort,ldapPort)
+  val adminGroups = conf.getStringList("ldap.admin-groups")
 }

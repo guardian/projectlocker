@@ -72,6 +72,14 @@ class Application @Inject() (cc:ControllerComponents, p:PlayBodyParsers, cacheIm
   }}
 
   /**
+    * Action that allows the frontend to test if the user is an admin
+    * @return If the user is not an admin, a 403 response. If the user is an admin, a 200 response
+    */
+  def checkIsAdmin = IsAdmin {uid=> {request=>
+    Ok(Json.obj("status"->"ok"))
+  }}
+
+  /**
     * Action to log out, by clearing the client's session cookie.
     * @return
     */

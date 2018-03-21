@@ -141,7 +141,7 @@ class Files @Inject() (configuration: Configuration, dbConfigProvider: DatabaseC
     })
   })
 
-  def delete(requestedId: Int, deleteReferenced: Boolean) = IsAuthenticatedAsync {uid=>{ request =>
+  def delete(requestedId: Int, deleteReferenced: Boolean) = IsAdminAsync {uid=>{ request =>
     selectid(requestedId).flatMap({
       case Success(rowSeq)=>
         rowSeq.headOption match {
@@ -157,7 +157,7 @@ class Files @Inject() (configuration: Configuration, dbConfigProvider: DatabaseC
     })
   }}
 
-  def references(requestedId: Int) = IsAuthenticatedAsync {uid=>{request=>
+  def references(requestedId: Int) = IsAdminAsync {uid=>{request=>
     Future.sequence(Seq(FileAssociation.projectsForFile(requestedId),ProjectTemplate.templatesForFileId(requestedId))).map(resultSeq=>{
       val triedProjectsList = resultSeq.head.asInstanceOf[Try[Seq[ProjectEntry]]]
       val triedTemplatesList = resultSeq(1).asInstanceOf[Try[Seq[ProjectTemplate]]]

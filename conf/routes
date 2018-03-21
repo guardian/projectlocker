@@ -76,8 +76,6 @@ GET     /api/isLoggedIn                    @controllers.Application.isLoggedIn
 
 GET     /api/system/plutoconfig            @controllers.System.plutoconfig
 
-GET     /message/test                       @controllers.MessageTest.testprojectcreate
-
 # Map static resources from the /public folder to the /assets URL path
 GET     /assets/*file               controllers.Assets.at(path="/public", file)
 GET     /*tail                      @controllers.Application.index(tail)
