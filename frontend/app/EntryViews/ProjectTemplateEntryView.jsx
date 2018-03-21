@@ -4,8 +4,22 @@ import ProjectTypeView from './ProjectTypeView.jsx';
 
 class ProjectTemplateEntryView extends GenericEntryView {
     static propTypes = {
-        entryId: PropTypes.number.isRequired
+        entryId: PropTypes.number.isRequired,
+        name: PropTypes.string,
+        projectTypeId: PropTypes.number
     };
+
+    componentWillMount(){
+        if(this.props.name && this.props.projectTypeId)
+            this.setState({
+                content: {
+                    name: this.props.name,
+                    projectTypeId: this.props.projectTypeId
+                }
+            });
+        else
+            super.componentWillMount();
+    }
 
     constructor(props){
         super(props);

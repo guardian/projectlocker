@@ -182,3 +182,15 @@ p.warning-text {
     width: 85%;
     overflow: hidden;
 }
+
+h4 {
+    margin-bottom: 0;
+    margin-top: 1em;
+    padding-bottom: 0;
+    font-size: 2.4rem;
+
+}
+ul.no-gap {
+    margin-top: 0;
+    padding-top: 0;
+}

@@ -99,6 +99,20 @@ trait GenericDatabaseObjectControllerWithFilter[M,F] extends InjectedController 
   }
 
   /**
+    * calls the callback block if the given error is a conflict error and return what it returns, or return an internalservererror
+    * if the given error is not a conflict error
+    * @param error
+    * @param callback
+    * @return
+    */
+  def handleConflictErrorsAdvanced(error:Throwable)(callback: =>Result):Result = {
+    val errorString = error.toString
+    if (errorString.contains("violates foreign key constraint") || errorString.contains("Referential integrity constraint violation")) {
+      callback
+    } else
+      InternalServerError(Json.obj("status" -> "error", "detail" -> error.toString))
+  }
+  /**
     * Endpoint implementation for list, requiring auth. Link this up in route config as a GET.
     * Internally calls your [[selectall()]] implementation.
     * @param startAt query parameter representing number of record to start at

@@ -10,12 +10,13 @@ class Module extends AbstractModule with AkkaGuiceSupport {
 
   override def configure(): Unit = {
     JythonRunner.initialise
-    bind(classOf[PostrunActionScanner]).asEagerSingleton()
-    bind(classOf[PlutoWGCommissionScanner]).asEagerSingleton()
 
+    if(!sys.env.contains("CI")) {
+      bind(classOf[PostrunActionScanner]).asEagerSingleton()
+      bind(classOf[PlutoWGCommissionScanner]).asEagerSingleton()
+    }
     //this makes the actor instance accessible via injection
     bindActor[MessageProcessorActor]("message-processor-actor")
-
 
   }
 }

@@ -6,7 +6,7 @@ import slick.jdbc.JdbcBackend
 import slick.lifted.TableQuery
 
 import scala.concurrent.Future
-import scala.util.{Failure, Success}
+import scala.util.{Failure, Success, Try}
 import scala.concurrent.ExecutionContext.Implicits.global
 
 trait ProjectTemplateSerializer {
@@ -72,4 +72,9 @@ object ProjectTemplate extends ((Option[Int],String,Int,Int)=>ProjectTemplate) {
         }
       case Failure(error)=>throw error
     })
+
+  def templatesForFileId(fileId:Int)(implicit db:slick.jdbc.PostgresProfile#Backend#Database):Future[Try[Seq[ProjectTemplate]]] =
+    db.run(
+      TableQuery[ProjectTemplateRow].filter(_.fileRef===fileId).result.asTry
+    )
 }

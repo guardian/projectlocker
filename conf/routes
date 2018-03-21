@@ -9,8 +9,9 @@ PUT     /api/file/list                     @controllers.Files.listFiltered(start
 PUT     /api/file                          @controllers.Files.create
 PUT     /api/file/:id/content              @controllers.Files.uploadContent(id: Int)
 GET     /api/file/:id                      @controllers.Files.getitem(id: Int)
+GET     /api/file/:id/associations         @controllers.Files.references(id: Int)
 PUT     /api/file/:id                      @controllers.Files.update(id: Int)
-DELETE  /api/file/:id                      @controllers.Files.delete(id: Int)
+DELETE  /api/file/:id                      @controllers.Files.delete(id: Int,deleteReferenced:Boolean ?=false)
 
 GET     /api/storage                       @controllers.StoragesController.list(startAt:Int ?=0,limit:Int ?=100)
 PUT     /api/storage                       @controllers.StoragesController.create
