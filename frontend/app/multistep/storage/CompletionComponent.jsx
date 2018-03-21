@@ -42,16 +42,13 @@ class StorageCompletionComponent extends CommonCompletionComponent {
 
     render() {
         const selectedStorage = this.props.strgTypes[this.props.selectedType];
-
-        const errorLabel = this.state.error ? <span className="error-text">{this.state.error.statusText}: {this.state.error.data.detail}</span> : "";
-
         return(<div>
             <h3>Set up storage</h3>
             <p className="information">We will set up a new storage definition with the information below.</p>
             <p className="information">Press "Confirm" to go ahead, or press Previous if you need to amend any details.</p>
             <SummaryComponent name={selectedStorage.name} loginDetails={this.props.loginDetails} subfolder={this.props.rootpath} clientpath={this.props.clientpath} />
             <ErrorViewComponent error={this.state.error}/>
-            <span style={{float: "right"}}>{errorLabel}<button onClick={this.confirmClicked}>Confirm</button></span>
+            <span style={{float: "right"}}><button onClick={this.confirmClicked}>Confirm</button></span>
         </div>)
     }
 }

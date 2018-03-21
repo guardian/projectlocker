@@ -88,7 +88,9 @@ trait GenericDatabaseObjectControllerWithFilter[M,F] extends InjectedController 
 
     logger.error(s"Could not $verb $thing:", error)
     val errorString = error.toString
-    if (errorString.contains("violates foreign key constraint") || errorString.contains("Referential integrity constraint violation")) {
+    if (errorString.contains("violates foreign key constraint") ||
+        errorString.contains("Referential integrity constraint violation") ||
+        errorString.contains("violates unique constraint")) {
       val errmsg = if (isInsert)
         s"This $thing either already exists or refers to objects which do not exist"
       else
@@ -170,7 +172,8 @@ trait GenericDatabaseObjectControllerWithFilter[M,F] extends InjectedController 
               case e:AlreadyExistsException=>
                 Conflict(Json.obj("status"->"error", "detail"->e.toString))
               case _=>
-                InternalServerError(Json.obj("status"->"error", "detail"->error.toString))
+                handleConflictErrors(error,"object",isInsert=true)
+                //InternalServerError(Json.obj("status"->"error", "detail"->error.toString))
             }
         }
         )
