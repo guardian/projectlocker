@@ -27,6 +27,9 @@ object MessageProcessorActor {
   }
 
   case class NewProjectCreatedEvent(rq: NewProjectCreated, eventId: UUID) extends MessageEvent
+  case class NewAdobeUuidEvent(rq: NewAdobeUuid, eventId: UUID) extends MessageEvent
+  case class NewAssetFolderEvent(rq: NewAssetFolder, eventId: UUID) extends MessageEvent
+
   case class EventHandled(eventId: UUID)
   case class RetryFromState()
 }
@@ -69,8 +72,8 @@ class MessageProcessorActor @Inject()(configurationI: Configuration, actorSystem
     */
   def confirmHandled(evtAsObject:  MessageEvent):Unit = {
     persist(EventHandled(evtAsObject.eventId)){ handledEventMarker=>
+      logger.debug(s"marked event ${evtAsObject.eventId} as handled")
       state = state.removed(evtAsObject)
-      saveSnapshot(state)
     }
   }
 
@@ -82,8 +85,10 @@ class MessageProcessorActor @Inject()(configurationI: Configuration, actorSystem
       logger.debug(s"receiveRecover got message handled: ${handledEvt.eventId}")
       state = state.removed(handledEvt.eventId)
     case RecoveryCompleted=>
-      logger.info("MessageProcessorActor completed journal recovery, starting automatic retries")
-      actorSystem.scheduler.schedule(FiniteDuration(30,"seconds"),FiniteDuration(30,"seconds"),self,RetryFromState())
+      val d = durationToPair(Duration(configuration.getOptional[String]("pluto.resend_delay").getOrElse("10 seconds")))
+      val delay = FiniteDuration(d._1,d._2)
+      logger.info(s"MessageProcessorActor completed journal recovery, starting automatic retries every $delay")
+      actorSystem.scheduler.schedule(delay, delay,self,RetryFromState())
     case SnapshotOffer(_, snapshot: MessageProcessorState)=>
       logger.debug("receiveRecover got snapshot offer")
       state=snapshot
@@ -101,23 +106,28 @@ class MessageProcessorActor @Inject()(configurationI: Configuration, actorSystem
       state.foreach{ self ! _._2 }
 
     case msgAsObject: NewAssetFolder =>
-      val d = durationToPair(Duration(configuration.getOptional[String]("pluto.resend_delay").getOrElse("10 seconds")))
-      val delay = FiniteDuration(d._1,d._2)
-      logger.info(s"Got new asset folder message: $msgAsObject")
-      getPlutoProjectForAssetFolder(msgAsObject).map({
+      persist(NewAssetFolderEvent(msgAsObject, UUID.randomUUID())) { event=>
+        updateState(event)
+        logger.debug("persisted new asset folder event to journal, now sending")
+        self ! event
+      }
+
+    case evtAsObject: NewAssetFolderEvent=>
+      logger.info(s"Got new asset folder message: ${evtAsObject.rq}")
+      getPlutoProjectForAssetFolder(evtAsObject.rq).map({
         case Left(errormessage) =>
-          logger.error(s"Could not prepare asset folder message for ${msgAsObject.assetFolderPath} to be sent: $errormessage, pushing it to the back of the queue")
-          actorSystem.scheduler.scheduleOnce(delay, self, msgAsObject)
+          logger.error(s"Could not prepare asset folder message for ${evtAsObject.rq.assetFolderPath} to be sent: $errormessage, pushing it to the back of the queue")
         case Right(updatedMessage) =>
           logger.debug(s"Updated asset folder message to send: $updatedMessage")
           sendNewAssetFolderMessage(updatedMessage).map({
             case Right(_) =>
-              logger.info(s"Updated pluto with new asset folder ${msgAsObject.assetFolderPath} for ${msgAsObject.plutoProjectId.get}")
+              logger.info(s"Updated pluto with new asset folder ${evtAsObject.rq.assetFolderPath} for ${evtAsObject.rq.plutoProjectId.get}")
+              confirmHandled(evtAsObject)
             case Left(true) =>
-              logger.debug(s"requeueing message after $delay delay")
-              actorSystem.scheduler.scheduleOnce(delay, self, msgAsObject)
+              logger.debug(s"requeueing message for retry after delay")
             case Left(false) =>
               logger.error("Not retrying any more.")
+              confirmHandled(evtAsObject)
           })
       })
 
@@ -150,31 +160,36 @@ class MessageProcessorActor @Inject()(configurationI: Configuration, actorSystem
       })
 
     case msgAsObject:NewAdobeUuid =>
-      val d = durationToPair(Duration(configuration.getOptional[String]("pluto.resend_delay").getOrElse("10 seconds")))
-      val delay = FiniteDuration(d._1,d._2)
-      logger.info("Informing pluto of updated adobe uuid")
-      logger.debug(s"Update uuid message to send: $msgAsObject")
-
-      msgAsObject.projectEntry.vidispineProjectId match {
-        case None=>
-          logger.warn(s"Can't update project ${msgAsObject.projectEntry.id} in Pluto without a vidispine ID. Retrying after delay")
-          ProjectEntry.entryForId(msgAsObject.projectEntry.id.get).map({
-            case Failure(error)=>
-              logger.error("Could not update project entry: ", error)
-              actorSystem.scheduler.scheduleOnce(delay, self, msgAsObject)
-            case Success(updatedEntry)=>
-              actorSystem.scheduler.scheduleOnce(delay, self, msgAsObject.copy(projectEntry = updatedEntry))
-          })
-        case Some(vidispineId)=>
-          sendNewUuidMessage(msgAsObject).map({
-            case Right(parsedResponse)=>
-              logger.info(s"Successfully updated project $vidispineId to have uuid ${msgAsObject.projectAdobeUuid}")
-            case Left(true)=>
-              logger.debug(s"Requeing message after $delay delay")
-              actorSystem.scheduler.scheduleOnce(delay, self, msgAsObject)
-            case Left(false)=>
-              logger.error("Not retrying any more.")
-          })
+      persist(NewAdobeUuidEvent(msgAsObject, UUID.randomUUID())) { event=>
+        updateState(event)
+        logger.debug("persisted new adove uuid event to journal, now sending")
+        self ! event
       }
+
+    case evtAsObject:NewAdobeUuidEvent =>
+      logger.info("Informing pluto of updated adobe uuid")
+      logger.debug(s"Update uuid message to send: ${evtAsObject.rq}")
+
+      //most probably, the message that we have been given does not include a vidispine uuid. so, we should look that up here.
+      ProjectEntry.entryForId(evtAsObject.rq.projectEntry.id.get).map({
+        case Failure(error) =>
+          logger.error("Could not update project entry (will keep retrying): ", error)
+        case Success(updatedEntry) =>
+          updatedEntry.vidispineProjectId match {
+            case Some(vidispineId) =>
+              sendNewUuidMessage(NewAdobeUuid(updatedEntry, evtAsObject.rq.projectAdobeUuid)).map({
+                case Right(parsedResponse) =>
+                  logger.info(s"Successfully updated project $vidispineId to have uuid ${evtAsObject.rq.projectAdobeUuid}")
+                  confirmHandled(evtAsObject)
+                case Left(true) =>
+                  logger.debug(s"Requeing message")
+                case Left(false) =>
+                  logger.error("Not retrying any more.")
+                  confirmHandled(evtAsObject)
+              })
+            case None =>
+              logger.warn(s"Can't update project ${updatedEntry.id} in Pluto without a vidispine ID. Retrying after delay")
+          }
+      })
   }
 }
