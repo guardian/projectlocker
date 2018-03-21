@@ -1,5 +1,7 @@
 package services.actors
 
+import java.util.UUID
+
 import com.google.inject.Inject
 import akka.actor.{Actor, ActorSystem, Props}
 import akka.cluster.pubsub.DistributedPubSub
@@ -21,9 +23,12 @@ object MessageProcessorActor {
 
   trait MessageEvent {
     val rq: QueuedMessage
+    val eventId: UUID
   }
 
-  case class NewProjectCreatedEvent(rq: NewProjectCreated) extends MessageEvent
+  case class NewProjectCreatedEvent(rq: NewProjectCreated, eventId: UUID) extends MessageEvent
+  case class EventHandled(eventId: UUID)
+  case class RetryFromState()
 }
 
 class MessageProcessorActor @Inject()(configurationI: Configuration, actorSystemI: ActorSystem, dbConfigProvider:DatabaseConfigProvider) extends PersistentActor
@@ -47,20 +52,29 @@ class MessageProcessorActor @Inject()(configurationI: Configuration, actorSystem
 
   val logger = Logger(getClass)
 
-  def updateState(event:QueuedMessage): Unit =
+  def updateState(event:MessageEvent): Unit =
     state = state.updated(event)
 
   override def receiveRecover:Receive = {
     case evt:MessageEvent =>
       logger.debug(s"receiveRecover got message event: $evt")
-      updateState(evt.rq)
-      self ! evt
+      updateState(evt)
+    case handledEvt:EventHandled =>
+      logger.debug(s"receiveRecover got message handled: ${handledEvt.eventId}")
+      state = state.removed(handledEvt.eventId)
+    case RecoveryCompleted=>
+      logger.info("MessageProcessorActor completed journal recovery, starting automatic retries")
+      actorSystem.scheduler.schedule(FiniteDuration(30,"seconds"),FiniteDuration(30,"seconds"),self,RetryFromState())
     case SnapshotOffer(_, snapshot: MessageProcessorState)=>
       logger.debug("receiveRecover got snapshot offer")
       state=snapshot
   }
 
   override def receiveCommand: Receive = {
+    case retry: RetryFromState=>  //retry all events in journal
+      logger.debug("initiating retry cycle")
+      state.foreach{ self ! _._2 }
+
     case msgAsObject: NewAssetFolder =>
       val d = durationToPair(Duration(configuration.getOptional[String]("pluto.resend_delay").getOrElse("10 seconds")))
       val delay = FiniteDuration(d._1,d._2)
@@ -83,7 +97,8 @@ class MessageProcessorActor @Inject()(configurationI: Configuration, actorSystem
       })
 
     case msgAsObject:NewProjectCreated =>
-      persist(NewProjectCreatedEvent(msgAsObject)) { event =>
+      persist(NewProjectCreatedEvent(msgAsObject, UUID.randomUUID())) { event =>
+        updateState(event)
         logger.debug("persisted new created event to journal, now sending")
         self ! event
       }
@@ -97,17 +112,18 @@ class MessageProcessorActor @Inject()(configurationI: Configuration, actorSystem
       sendProjectCreatedMessage(msgAsObject).map({
         case Right(_) =>
           logger.info(s"Updated pluto with new project ${msgAsObject.projectEntry.projectTitle} (${msgAsObject.projectEntry.id})")
-          state = state.removed(msgAsObject)
-          saveSnapshot(state)
+          persist(EventHandled(evtAsObject.eventId)){ handledEventMarker=>
+            state = state.removed(evtAsObject)
+            saveSnapshot(state)
+          }
         case Left(true) =>
-          logger.debug(s"requeueing message after $delay delay")
-          actorSystem.scheduler.scheduleOnce(delay, self, evtAsObject)
+          logger.debug(s"will retry from state ")
         case Left(false) =>
-          logger.error("retrying for test")
-          actorSystem.scheduler.scheduleOnce(delay, self, evtAsObject)
-//          logger.error("Not retrying any more.")
-//          state = state.removed(msgAsObject)
-//          saveSnapshot(state)
+          logger.error("Not retrying any more.")
+          persist(EventHandled(evtAsObject.eventId)){ handledEventMarker=>
+            state = state.removed(evtAsObject)
+            saveSnapshot(state)
+          }
       }).recoverWith({
         case err: Throwable =>
           logger.error("Could not set up communication with pluto:", err)
