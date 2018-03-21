@@ -4,8 +4,8 @@
 
 GET     /                                  @controllers.Application.index(path="/")
 
-GET     /api/file                          @controllers.Files.list(startAt:Int ?=0,limit:Int ?=100)
-PUT     /api/file/list                     @controllers.Files.listFiltered(startAt:Int ?=0,limit:Int ?=100)
+GET     /api/file                          @controllers.Files.list(startAt:Int ?=0,length:Int ?=100)
+PUT     /api/file/list                     @controllers.Files.listFiltered(startAt:Int ?=0,length:Int ?=100)
 PUT     /api/file                          @controllers.Files.create
 PUT     /api/file/:id/content              @controllers.Files.uploadContent(id: Int)
 GET     /api/file/:id                      @controllers.Files.getitem(id: Int)
@@ -13,22 +13,22 @@ GET     /api/file/:id/associations         @controllers.Files.references(id: Int
 PUT     /api/file/:id                      @controllers.Files.update(id: Int)
 DELETE  /api/file/:id                      @controllers.Files.delete(id: Int,deleteReferenced:Boolean ?=false)
 
-GET     /api/storage                       @controllers.StoragesController.list(startAt:Int ?=0,limit:Int ?=100)
+GET     /api/storage                       @controllers.StoragesController.list(startAt:Int ?=0,length:Int ?=100)
 PUT     /api/storage                       @controllers.StoragesController.create
 GET     /api/storage/knowntypes            @controllers.StoragesController.types
 GET     /api/storage/:id                   @controllers.StoragesController.getitem(id: Int)
 PUT     /api/storage/:id                   @controllers.StoragesController.update(id: Int)
 DELETE  /api/storage/:id                   @controllers.StoragesController.delete(id: Int)
 
-GET     /api/template                      @controllers.ProjectTemplateController.list(startAt:Int ?=0,limit:Int ?=100)
+GET     /api/template                      @controllers.ProjectTemplateController.list(startAt:Int ?=0,length:Int ?=100)
 PUT     /api/template                      @controllers.ProjectTemplateController.create
 GET     /api/template/:id                  @controllers.ProjectTemplateController.getitem(id: Int)
 PUT     /api/template/:id                  @controllers.ProjectTemplateController.update(id: Int)
 DELETE  /api/template/:id                  @controllers.ProjectTemplateController.delete(id: Int)
 
-GET     /api/project                        @controllers.ProjectEntryController.list(startAt:Int ?=0,limit:Int ?=100)
-GET     /api/project/list                   @controllers.ProjectEntryController.list(startAt:Int ?=0,limit:Int ?=100)
-PUT     /api/project/list                   @controllers.ProjectEntryController.listFiltered(startAt:Int ?=0,limit:Int ?=100)
+GET     /api/project                        @controllers.ProjectEntryController.list(startAt:Int ?=0,length:Int ?=100)
+GET     /api/project/list                   @controllers.ProjectEntryController.list(startAt:Int ?=0,length:Int ?=100)
+PUT     /api/project/list                   @controllers.ProjectEntryController.listFiltered(startAt:Int ?=0,length:Int ?=100)
 PUT     /api/project                        @controllers.ProjectEntryController.create
 PUT     /api/project/external/create        @controllers.ProjectEntryController.createExternal
 GET     /api/project/by-vsid/:vsid          @controllers.ProjectEntryController.getByVsid(vsid:String)
@@ -40,14 +40,14 @@ GET     /api/project/:id                   @controllers.ProjectEntryController.g
 #PUT     /api/project/:id                   @controllers.ProjectEntryController.update(id: Int)
 #DELETE  /api/project/:id                   @controllers.ProjectEntryController.delete(id: Int)
 
-GET     /api/projecttype                   @controllers.ProjectTypeController.list(startAt:Int ?=0,limit:Int ?=100)
+GET     /api/projecttype                   @controllers.ProjectTypeController.list(startAt:Int ?=0,length:Int ?=100)
 PUT     /api/projecttype                   @controllers.ProjectTypeController.create
 GET     /api/projecttype/:id               @controllers.ProjectTypeController.getitem(id: Int)
 GET     /api/projecttype/:id/postrun       @controllers.ProjectTypeController.listPostrun(id: Int)
 PUT     /api/projecttype/:id               @controllers.ProjectTypeController.update(id: Int)
 DELETE  /api/projecttype/:id               @controllers.ProjectTypeController.delete(id: Int)
 
-GET     /api/postrun                   @controllers.PostrunActionController.list(startAt:Int ?=0,limit:Int ?=100)
+GET     /api/postrun                   @controllers.PostrunActionController.list(startAt:Int ?=0,length:Int ?=100)
 PUT     /api/postrun                   @controllers.PostrunActionController.create
 GET     /api/postrun/:id               @controllers.PostrunActionController.getitem(id: Int)
 GET     /api/postrun/:id/source        @controllers.PostrunActionController.getSource(id:Int)
@@ -64,11 +64,11 @@ GET     /api/default/:key               @controllers.DefaultsController.getForKe
 PUT     /api/default/:key               @controllers.DefaultsController.putForKey(key:String)
 DELETE  /api/default/:key               @controllers.DefaultsController.deleteForKey(key:String)
 
-GET     /api/pluto/workinggroup            @controllers.PlutoWorkingGroupController.list(startAt:Int ?=0,limit:Int ?=100)
+GET     /api/pluto/workinggroup            @controllers.PlutoWorkingGroupController.list(startAt:Int ?=0,length:Int ?=100)
 GET     /api/pluto/workinggroup/:id        @controllers.PlutoWorkingGroupController.getitem(id:Int)
 
 GET     /api/pluto/commission/:id          @controllers.PlutoCommissionController.getitem(id:Int)
-PUT     /api/pluto/commission/list         @controllers.PlutoCommissionController.listFiltered(startAt:Int ?=0, limit:Int ?=100)
+PUT     /api/pluto/commission/list         @controllers.PlutoCommissionController.listFiltered(startAt:Int ?=0, length:Int ?=100)
 
 POST    /api/login                         @controllers.Application.authenticate
 POST    /api/logout                        @controllers.Application.logout

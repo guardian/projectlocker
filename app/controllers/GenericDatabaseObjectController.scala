@@ -120,7 +120,7 @@ trait GenericDatabaseObjectControllerWithFilter[M,F] extends InjectedController 
     * @return Future of a Play Response object containing json data
     */
   def list(startAt:Int, limit: Int) = IsAuthenticatedAsync {uid=>{request=>
-    selectall(startAt,limit).map({
+    selectall(startAt,limit-1).map({
       case Success(result)=>Ok(Json.obj("status"->"ok","result"->this.jstranslate(result)))
       case Failure(error)=>
         logger.error(error.toString)
@@ -142,7 +142,7 @@ trait GenericDatabaseObjectControllerWithFilter[M,F] extends InjectedController 
         Future(BadRequest(Json.obj("status"->"error","detail"->JsError.toJson(errors))))
       },
       filterTerms => {
-        this.selectFiltered(startAt, limit, filterTerms).map({
+        this.selectFiltered(startAt, limit-1, filterTerms).map({
           case Success(result)=>Ok(Json.obj("status" -> "ok","result"->this.jstranslate(result)))
           case Failure(error)=>
             logger.error(error.toString)

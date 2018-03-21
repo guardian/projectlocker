@@ -69,7 +69,7 @@ class GeneralListComponent extends React.Component {
             header: name,
             key: key,
             headerProps: {className: 'dashboardheader'},
-            render: value=><span className="datetime">{moment(value).format("ddd Do MMM, HH:MM")}</span>
+            render: value=><span className="datetime">{moment(value).format("ddd Do MMM, HH:mm")}</span>
         }
     }
 
