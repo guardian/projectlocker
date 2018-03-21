@@ -127,11 +127,13 @@ class Files @Inject() (configuration: Configuration, dbConfigProvider: DatabaseC
     case Success(rowCount)=>
       storageHelper.deleteFile(targetFile).flatMap({
         case true =>
-          Future(Ok(Json.obj("status" -> "ok", "detail" -> "deleted file", "filepath" -> targetFile.filepath)))
+          targetFile.getFullPath.map(fullpath=> {
+            Ok(Json.obj("status" -> "ok", "detail" -> "deleted", "filepath" -> fullpath, "id" -> requestedId))
+          })
         case false =>
           targetFile.getFullPath.map(fullpath=>{
             logger.error(s"Could not delete on-disk file $fullpath")
-            InternalServerError(Json.obj("status" -> "error", "detail" -> "could not delete file on disk", "filepath" -> fullpath))
+            InternalServerError(Json.obj("status" -> "error", "detail" -> "could not delete file on disk", "filepath" -> fullpath, "id"->requestedId))
           })
       })
     case Failure(error)=>Future(handleConflictErrorsAdvanced(error){
@@ -142,8 +144,13 @@ class Files @Inject() (configuration: Configuration, dbConfigProvider: DatabaseC
   def delete(requestedId: Int, deleteReferenced: Boolean) = IsAuthenticatedAsync {uid=>{ request =>
     selectid(requestedId).flatMap({
       case Success(rowSeq)=>
-        val targetFile = rowSeq.head
-        deleteFromDisk(requestedId, targetFile, deleteReferenced)
+        rowSeq.headOption match {
+          case Some(targetFile)=>
+            deleteFromDisk (requestedId, targetFile, deleteReferenced)
+          case None=>
+            logger.error("No file found")
+            Future(NotFound(Json.obj("status"->"error", "detail"->s"nothing found in database for $requestedId")))
+        }
       case Failure(error)=>
         logger.error("Could not look up file id: ", error)
         Future(InternalServerError(Json.obj("status"->"error", "detail"->"could not look up file id", "error"->error.toString)))

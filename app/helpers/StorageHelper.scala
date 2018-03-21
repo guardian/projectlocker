@@ -3,7 +3,7 @@ package helpers
 import java.io.{InputStream, OutputStream}
 
 import drivers.StorageDriver
-import models.FileEntry
+import models.{FileEntry, StorageEntry}
 import play.api.Logger
 
 import scala.concurrent.Future
@@ -58,18 +58,24 @@ class StorageHelper {
   }
 
   def deleteFile(targetFile: FileEntry)(implicit db:slick.jdbc.PostgresProfile#Backend#Database):Future[Boolean] = {
-    targetFile.storage.map({
-      case Some(storageEntry)=>
-        storageEntry.getStorageDriver match {
-          case Some(storageDriver)=>
-            storageDriver.deleteFileAtPath(targetFile.getFullPath.toString)
-          case None=>
-            logger.error(s"Can't delete file at ${targetFile.getFullPath} because storage $storageEntry has no storage driver")
-            false
-        }
-      case None=>
-        logger.error(s"Can't delete file at ${targetFile.getFullPath} because file record has no storage")
-        false
+    val futures = Future.sequence(Seq(targetFile.storage, targetFile.getFullPath))
+
+    futures.map(results=>{
+      val storageResult = results.head.asInstanceOf[Option[StorageEntry]]
+      val fullPath = results(1).asInstanceOf[String]
+      storageResult match {
+        case Some(storageEntry) =>
+          storageEntry.getStorageDriver match {
+            case Some(storageDriver) =>
+              storageDriver.deleteFileAtPath(fullPath)
+            case None =>
+              logger.error(s"Can't delete file at $fullPath because storage $storageEntry has no storage driver")
+              false
+          }
+        case None =>
+          logger.error(s"Can't delete file at $fullPath because file record has no storage")
+          false
+      }
     })
   }
 
