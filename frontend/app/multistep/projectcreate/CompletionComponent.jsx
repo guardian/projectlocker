@@ -31,12 +31,12 @@ class ProjectCompletionComponent extends React.Component {
     requestContent(){
         return {
             filename: this.props.projectFilename,
-            destinationStorageId: this.props.selectedStorage,
+            destinationStorageId: parseInt(this.props.selectedStorage),
             title: this.props.projectName,
-            projectTemplateId: this.props.selectedProjectTemplate,
+            projectTemplateId: parseInt(this.props.selectedProjectTemplate),
             user: "frontend",    //this should be deprecated as the backend ignores it
-            workingGroupId: this.props.selectedWorkingGroupId,
-            commissionId: this.props.selectedCommissionId
+            workingGroupId: this.props.selectedWorkingGroupId ? parseInt(this.props.selectedWorkingGroupId) : null,
+            commissionId: this.props.selectedCommissionId ? parseInt(this.props.selectedCommissionId ) : null
         };
     }
 

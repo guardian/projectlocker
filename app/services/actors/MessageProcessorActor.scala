@@ -4,7 +4,7 @@ import com.google.inject.Inject
 import akka.actor.{Actor, ActorSystem, Props}
 import akka.cluster.pubsub.DistributedPubSub
 import akka.stream.ActorMaterializer
-import models.messages.{NewAdobeUuid, NewAssetFolder, NewProjectCreated}
+import models.messages.{NewAdobeUuid, NewAssetFolder, NewProjectCreated, QueuedMessage}
 import play.api.{Configuration, Logger}
 import services.{ListenAssetFolder, ListenNewUuid, ListenProjectCreate}
 import akka.persistence._
@@ -19,10 +19,19 @@ import scala.util.{Failure, Success}
 object MessageProcessorActor {
   def props = Props[MessageProcessorActor]
 
+  trait MessageEvent {
+    val rq: QueuedMessage
+  }
+
+  case class NewProjectCreatedEvent(rq: NewProjectCreated) extends MessageEvent
 }
 
-class MessageProcessorActor @Inject()(configurationI: Configuration, actorSystemI: ActorSystem, dbConfigProvider:DatabaseConfigProvider) extends Actor
+class MessageProcessorActor @Inject()(configurationI: Configuration, actorSystemI: ActorSystem, dbConfigProvider:DatabaseConfigProvider) extends PersistentActor
   with ListenAssetFolder with ListenProjectCreate with ListenNewUuid {
+  override def persistenceId = "message-processor-actor"
+
+  var state = MessageProcessorState()
+
   import akka.cluster.pubsub.DistributedPubSubMediator.Put
   val mediator = DistributedPubSub(context.system).mediator
 
@@ -38,7 +47,20 @@ class MessageProcessorActor @Inject()(configurationI: Configuration, actorSystem
 
   val logger = Logger(getClass)
 
-  override def receive: Receive = {
+  def updateState(event:QueuedMessage): Unit =
+    state = state.updated(event)
+
+  override def receiveRecover:Receive = {
+    case evt:MessageEvent =>
+      logger.debug(s"receiveRecover got message event: $evt")
+      updateState(evt.rq)
+      self ! evt
+    case SnapshotOffer(_, snapshot: MessageProcessorState)=>
+      logger.debug("receiveRecover got snapshot offer")
+      state=snapshot
+  }
+
+  override def receiveCommand: Receive = {
     case msgAsObject: NewAssetFolder =>
       val d = durationToPair(Duration(configuration.getOptional[String]("pluto.resend_delay").getOrElse("10 seconds")))
       val delay = FiniteDuration(d._1,d._2)
@@ -61,23 +83,37 @@ class MessageProcessorActor @Inject()(configurationI: Configuration, actorSystem
       })
 
     case msgAsObject:NewProjectCreated =>
-        val d = durationToPair(Duration(configuration.getOptional[String]("pluto.resend_delay").getOrElse("10 seconds")))
-        val delay = FiniteDuration(d._1,d._2)
-        logger.debug(s"Project created message to send: $msgAsObject")
-        sendProjectCreatedMessage(msgAsObject).map({
-          case Right(_) =>
-            logger.info(s"Updated pluto with new project ${msgAsObject.projectEntry.projectTitle} (${msgAsObject.projectEntry.id})")
-          case Left(true) =>
-            logger.debug(s"requeueing message after $delay delay")
-            actorSystem.scheduler.scheduleOnce(delay, self, msgAsObject)
-          case Left(false) =>
-            logger.error("Not retrying any more.")
-        }).recoverWith({
-          case err:Throwable=>
-            logger.error("Could not set up communication with pluto:", err)
-            logger.debug(s"requeueing message after $delay delay")
-            Future(actorSystem.scheduler.scheduleOnce(delay, self, msgAsObject))
-        })
+      persist(NewProjectCreatedEvent(msgAsObject)) { event =>
+        logger.debug("persisted new created event to journal, now sending")
+        self ! event
+      }
+
+    case evtAsObject:NewProjectCreatedEvent =>
+      logger.debug("received new project created event")
+      val msgAsObject = evtAsObject.rq
+      val d = durationToPair(Duration(configuration.getOptional[String]("pluto.resend_delay").getOrElse("10 seconds")))
+      val delay = FiniteDuration(d._1, d._2)
+      logger.debug(s"Project created message to send: $msgAsObject")
+      sendProjectCreatedMessage(msgAsObject).map({
+        case Right(_) =>
+          logger.info(s"Updated pluto with new project ${msgAsObject.projectEntry.projectTitle} (${msgAsObject.projectEntry.id})")
+          state = state.removed(msgAsObject)
+          saveSnapshot(state)
+        case Left(true) =>
+          logger.debug(s"requeueing message after $delay delay")
+          actorSystem.scheduler.scheduleOnce(delay, self, evtAsObject)
+        case Left(false) =>
+          logger.error("retrying for test")
+          actorSystem.scheduler.scheduleOnce(delay, self, evtAsObject)
+//          logger.error("Not retrying any more.")
+//          state = state.removed(msgAsObject)
+//          saveSnapshot(state)
+      }).recoverWith({
+        case err: Throwable =>
+          logger.error("Could not set up communication with pluto:", err)
+          logger.debug(s"requeueing message after $delay delay")
+          Future(actorSystem.scheduler.scheduleOnce(delay, self, evtAsObject))
+      })
 
     case msgAsObject:NewAdobeUuid =>
       val d = durationToPair(Duration(configuration.getOptional[String]("pluto.resend_delay").getOrElse("10 seconds")))
