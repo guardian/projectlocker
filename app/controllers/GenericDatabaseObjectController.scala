@@ -173,7 +173,6 @@ trait GenericDatabaseObjectControllerWithFilter[M,F] extends InjectedController 
                 Conflict(Json.obj("status"->"error", "detail"->e.toString))
               case _=>
                 handleConflictErrors(error,"object",isInsert=true)
-                //InternalServerError(Json.obj("status"->"error", "detail"->error.toString))
             }
         }
         )
