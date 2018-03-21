@@ -3,9 +3,17 @@ import PropTypes from 'prop-types';
 
 class StorageSubfolderComponent extends React.Component {
     static propTypes = {
-        valueWasSet: PropTypes.func.isRequired
+        valueWasSet: PropTypes.func.isRequired,
+        rootpath: PropTypes.string.isRequired,
+        clientpath: PropTypes.string.isRequired
     };
 
+    componentWillMount(){
+        this.setState({
+            subfolder: this.props.rootpath,
+            clientpath: this.props.clientpath
+        })
+    }
     constructor(props){
         super(props);
 
@@ -31,11 +39,11 @@ class StorageSubfolderComponent extends React.Component {
                     <tbody>
                     <tr>
                         <td>Subfolder path</td>
-                        <td><input onChange={(event)=>this.setState({subfolder: event.target.value}, ()=>this.props.valueWasSet(this.state))}/></td>
+                        <td><input value={this.props.rootpath} onChange={(event)=>this.setState({subfolder: event.target.value}, ()=>this.props.valueWasSet(this.state))}/></td>
                     </tr>
                     <tr>
                         <td>Client mount point (if any)</td>
-                        <td><input onChange={(event)=>this.setState({clientpath: event.target.value}, ()=>this.props.valueWasSet(this.state))}/></td>
+                        <td><input value={this.props.clientpath} onChange={(event)=>this.setState({clientpath: event.target.value}, ()=>this.props.valueWasSet(this.state))}/></td>
                     </tr>
                     </tbody>
                 </table>
