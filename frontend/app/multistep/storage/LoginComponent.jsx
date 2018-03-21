@@ -1,6 +1,22 @@
 import React from 'react';
+import PropTypes from 'prop-types';
 
 class StorageLoginComponent extends React.Component {
+    static propTypes = {
+        strgTypes: PropTypes.array.isRequired,
+        valueWasSet: PropTypes.func.isRequired,
+        loginDetails: PropTypes.object.isRequired
+    };
+
+    componentWillMount(){
+        this.setState({
+            hostname: this.props.loginDetails.hostname,
+            port: this.props.loginDetails.port,
+            username: this.props.loginDetails.username,
+            password: this.props.loginDetails.password
+        })
+    }
+
     constructor(props){
         super(props);
 
@@ -13,7 +29,7 @@ class StorageLoginComponent extends React.Component {
     }
 
     componentDidUpdate(prevProps,prevState){
-        if(prevState!=this.state) this.props.valueWasSet(this.state);
+        if(prevState!==this.state) this.props.valueWasSet(this.state);
     }
 
     render() {
