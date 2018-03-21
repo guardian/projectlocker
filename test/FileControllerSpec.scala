@@ -147,7 +147,14 @@ class FileControllerSpec extends GenericControllerSpec with BeforeAll with After
 
       (responseBody \ "status").as[String] mustEqual "ok"
       //this would not be a sensible configuration in the real world, but it's good for testing.
-      (responseBody \ "projects").as[List[ProjectEntry]] mustEqual List(ProjectEntry(Some(2),1,Some("VX-1234"),"AnotherTestProject",Timestamp.valueOf("2016-12-11 12:21:11.021"),"you",None,None,None))
+      val projectList = (responseBody \ "projects").as[List[ProjectEntry]]
+      //we can't assert directly as the title value is changed by another test, which may run before or after us.
+      projectList.length mustEqual 1
+      projectList.head.id must beSome(2)
+      projectList.head.vidispineProjectId must beSome("VX-1234")
+      projectList.head.user mustEqual "you"
+      projectList.head.created mustEqual Timestamp.valueOf("2016-12-11 12:21:11.021")
+
       (responseBody \ "templates").as[List[ProjectTemplate]] mustEqual List(ProjectTemplate(Some(2),"Another wonderful test template",2,2), ProjectTemplate(Some(3),"Some random test template",2,2))
     }
   }
