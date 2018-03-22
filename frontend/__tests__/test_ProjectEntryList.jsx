@@ -14,7 +14,6 @@ describe("ProjectEntryList", ()=>{
 
         return moxios.wait(()=>{
             try{
-                console.log(moxios.requests);
                 const req = moxios.requests.mostRecent();
                 expect(req).toBeTruthy();
                 expect(req.config.url).toEqual("/api/system/plutoconfig");

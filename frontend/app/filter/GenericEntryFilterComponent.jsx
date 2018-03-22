@@ -97,7 +97,7 @@ class GenericEntryFilterComponent extends React.Component {
         const disabled = (!this.props.isAdmin) && filterEntry.disabledIfNotAdmin;
 
         if(filterEntry.valuesStateKey && this.state.hasOwnProperty(filterEntry.valuesStateKey)){
-            return <select disabled={disabled}
+            return <select disabled={disabled} id={filterEntry.key}
                            onChange={event=>this.entryUpdated(event, filterEntry.key)}
                            value={this.props.filterTerms[filterEntry.key]}>
                 {
