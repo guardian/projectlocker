@@ -88,6 +88,9 @@ packageArchitecture := "noarch"
 rpmLicense := Some("custom")
 
 maintainerScripts in Rpm := Map(
-  Post -> Seq("echo 'projectlocker   ALL = (root) NOPASSWD: /usr/share/projectlocker/postrun/scripts/mkdir_on_behalf_of.pl' > /etc/sudoers.d/projectlocker"),
+  Post -> Seq(
+    "bash -c 'echo Defaults:projectlocker !requiretty > /etc/sudoers.d/projectlocker'",
+    "bash -c \"echo 'projectlocker   ALL = (root) NOPASSWD: /usr/share/projectlocker/postrun/scripts/mkdir_on_behalf_of.pl' >> /etc/sudoers.d/projectlocker\""
+  ),
   Preun -> Seq("rm -f /etc/sudoers.d/projectlocker")
 )
