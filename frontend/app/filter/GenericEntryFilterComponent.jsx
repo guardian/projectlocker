@@ -8,7 +8,8 @@ class GenericEntryFilterComponent extends React.Component {
     static propTypes = {
         filterDidUpdate: PropTypes.func.isRequired, //this is called when the filter state should be updated. Passed a
                                                     //key-value object of the terms.
-        isAdmin: PropTypes.bool
+        isAdmin: PropTypes.bool,
+        filterTerms: PropTypes.object.isRequired
     };
 
     constructor(props){
@@ -73,7 +74,7 @@ class GenericEntryFilterComponent extends React.Component {
                 this.addFieldError(filterKey, wasError);
             } else {
                 this.removeFieldError(filterKey);
-                this.updateFilters(filterKey, newValue);
+                this.updateFilters(filterKey, spec[0].converter ? spec[0].converter(newValue) : newValue);
             }
         } else {
             this.updateFilters(filterKey,newValue);
@@ -101,20 +102,22 @@ class GenericEntryFilterComponent extends React.Component {
 
     controlFor(filterEntry){
         const disabled = (!this.props.isAdmin) && filterEntry.disabledIfNotAdmin;
-        console.log("isAdmin: " + this.props.isAdmin + " disabled: " + disabled);
 
         if(filterEntry.valuesStateKey && this.state.hasOwnProperty(filterEntry.valuesStateKey)){
-            return <select disabled={disabled} onChange={event=>this.entryUpdated(event, filterEntry.key)} defaultValue={this.state.filters[filterEntry.key]}>
+            return <select disabled={disabled}
+                           onChange={event=>this.entryUpdated(event, filterEntry.key)}
+                           value={this.props.filterTerms[filterEntry.key]}>
                 {
                     this.state[filterEntry.valuesStateKey].map(value=><option key={value} name={value}>{value}</option>)
                 }
             </select>
         } else {
-            return <input disabled={disabled} id={filterEntry.key} onChange={(event) => this.entryUpdated(event, filterEntry.key)}
-                   value={this.state.filters[filterEntry.key]}/>
+            return <input disabled={disabled} id={filterEntry.key}
+                          onChange={(event) => this.entryUpdated(event, filterEntry.key)}
+                          value={this.props.filterTerms[filterEntry.key]}/>
         }
     }
-    
+
     render(){
         return <div className="filter-list-block">
             <span className="filter-list-title">

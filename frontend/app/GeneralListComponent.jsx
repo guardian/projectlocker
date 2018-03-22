@@ -18,6 +18,7 @@ class GeneralListComponent extends React.Component {
             currentPage: 0,
             maximumItemsLoaded: false,
             plutoConfig: {},
+            uid: "",
             isAdmin: false
         };
 
@@ -51,14 +52,24 @@ class GeneralListComponent extends React.Component {
     }
 
     componentDidMount() {
-        this.loadDependencies().then(this.reload());
+        this.loadDependencies().then(()=>{
+            this.dependenciesDidLoad();
+            this.reload();
+        });
+    }
+
+    /**
+     * override this in a subclass to update state once dependencies have loaded
+     */
+    dependenciesDidLoad(){
+        console.log("bleahc")
     }
 
     loadDependencies(){
-        return new Promise((accept,reject)=>axios.get("/api/isAdmin")
+        return new Promise((accept,reject)=>axios.get("/api/isLoggedIn")
             .then(response=>{
                 if(response.data.status==="ok")
-                    this.setState({isAdmin: true}, ()=>accept());
+                    this.setState({isAdmin: response.data.isAdmin, uid: response.data.uid}, ()=>accept());
             })
             .catch(error=>{
                 if(this.props.error.response && this.props.error.response.status===403)

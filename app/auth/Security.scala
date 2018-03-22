@@ -126,7 +126,7 @@ trait Security {
         LDAP.getUserRoles(uid) match {
           case Some(userRoles) if requiredRoles.intersect(userRoles).nonEmpty => f(uid)(request)
           case _ =>
-            if(sys.env.contains("CI"))  //allow admin functions when under test
+            if(sys.env.contains("CI") || Conf.ldapProtocol=="none")  //allow admin functions when under test
               f(uid)(request)
             else
               Future(Results.Forbidden)
@@ -139,7 +139,7 @@ trait Security {
         LDAP.getUserRoles(uid) match {
           case Some(userRoles) if requiredRoles.intersect(userRoles).nonEmpty => f(uid)(request)
           case _ =>
-            if(sys.env.contains("CI"))  //allow admin functions when under test
+            if(sys.env.contains("CI") || Conf.ldapProtocol=="none")  //allow admin functions when under test
               f(uid)(request)
             else
               Future(Results.Forbidden)
