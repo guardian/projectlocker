@@ -95,9 +95,14 @@ def postrun(projectFile=None,projectFileExtension=None,**kwargs):
 
     new_uuid = str(uuid.uuid4())
 
-    if projectFileExtension==".prproj":
+    if projectFileExtension.startswith("."):
+        xtn = projectFileExtension
+    else:
+        xtn = "." + projectFileExtension
+
+    if xtn==".prproj":
         doUpdate(xmltree,premiereAttribSpec, new_uuid)
-    elif projectFileExtension==".plproj":
+    elif xtn==".plproj":
         doUpdate(xmltree,preludeAttribSpec, new_uuid)
     else:
         raise ValueError("Expected a projectFileExtension of .prproj or .plproj, not '{0}'".format(projectFileExtension))

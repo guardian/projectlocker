@@ -49,7 +49,7 @@ class TestRunHelperScript(unittest2.TestCase):
                 _run_helper_script("/path/to/my/asset_folder",None,False)
 
             mocked_popen.assert_called_once_with(expected_run_args, shell=True, stdout=PIPE, stderr=PIPE)
-            self.assertEqual(str(raised_excep.exception), expected_run_args)
+            self.assertTrue(expected_run_args in str(raised_excep.exception))
 
 
 class TestMakeSafeString(unittest2.TestCase):

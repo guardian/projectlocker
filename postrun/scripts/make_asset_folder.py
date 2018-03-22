@@ -76,7 +76,7 @@ def _run_helper_script(asset_folder_location,raven_client,fixmode=False):
         logger.error("Error calling {0}: {1}".format(args, str(e)))
         logger.error(stderr_text)
         logger.error(stdout_text)
-        raise FolderCreationFailed(args)
+        raise FolderCreationFailed("{0}: {1}\n{2}\n{3}".format(args,proc.returncode,stdout_text,stderr_text))
     logger.debug("Script output {0}\n{1}".format(stdout_text, stderr_text))
 
 
