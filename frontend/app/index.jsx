@@ -92,9 +92,9 @@ class App extends React.Component {
                 <li style={{display: this.state.isAdmin ? "inherit" : "none"}}><Link to="/storage/">Storages...</Link></li>
                 <li style={{display: this.state.isAdmin ? "inherit" : "none"}}><Link to="/type/">Project Types...</Link></li>
                 <li style={{display: this.state.isAdmin ? "inherit" : "none"}}><Link to="/template/">Project Templates...</Link></li>
-                <li><Link to="/project/">Projects...</Link></li>
+                <li><Link to={this.state.isAdmin ? "/project/" : "/project/?mine"}>Projects...</Link></li>
                 <li style={{display: this.state.isAdmin ? "inherit" : "none"}}><Link to="/postrun/">Postrun Actions...</Link></li>
-                <li><Link to="/file/">Files...</Link></li>
+                <li><Link to={this.state.isAdmin ? "/file/" : "/file/?mine"}>Files...</Link></li>
                 <li style={{display: this.state.isAdmin ? "inherit" : "none"}}><Link to="/defaults/">Server defaults...</Link></li>
             </ul>
         } else {

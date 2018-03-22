@@ -82,6 +82,10 @@ class ProjectEntryList extends GeneralListComponent {
         }
     }
 
+    dependenciesDidLoad(){
+        this.setState({filterTerms: this.props.location.search.includes("mine") ? {user: this.state.uid, match: "W_EXACT"} : {match: "W_CONTAINS"}})
+    }
+
     getFilterComponent(){
         return <ProjectEntryFilterComponent filterTerms={this.state.filterTerms} filterDidUpdate={this.filterDidUpdate}/>
     }
