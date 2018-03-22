@@ -4,8 +4,9 @@ import PropTypes from 'prop-types';
 
 class ProjectEntryFilterComponent extends GenericEntryFilterComponent {
     static propTypes = {
-        filterDidUpdate: PropTypes.func.isRequired //this is called when the filter state should be updated. Passed a
+        filterDidUpdate: PropTypes.func.isRequired, //this is called when the filter state should be updated. Passed a
         //key-value object of the terms.
+        filterTerms: PropTypes.object.isRequired
     };
 
     constructor(props){

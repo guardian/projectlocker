@@ -8,7 +8,7 @@ class FileEntryFilterComponent extends GenericEntryFilterComponent {
         filterDidUpdate: PropTypes.func.isRequired, //this is called when the filter state should be updated. Passed a
         //key-value object of the terms.
         isAdmin: PropTypes.bool,
-        initialFilters: PropTypes.object
+        filterTerms: PropTypes.object.isRequired
     };
 
     componentWillMount(){
@@ -43,7 +43,7 @@ class FileEntryFilterComponent extends GenericEntryFilterComponent {
                 key: "user",
                 label: "Owner",
                 valuesStateKey: "distinctOwners",
-                disabledIfNotAdmin: true,
+                disabledIfNotAdmin: false,
                 validator: (input)=>null
             }
         ];

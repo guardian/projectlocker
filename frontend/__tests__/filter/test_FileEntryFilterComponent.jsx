@@ -11,7 +11,7 @@ describe("FileEntryFilterComponent", ()=>{
     it("Should load in valid owners on mount", (done)=>{
         const updateCb = sinon.spy();
 
-        const rendered = shallow(<FileEntryFilterComponent filterDidUpdate={updateCb}/>);
+        const rendered = shallow(<FileEntryFilterComponent filterDidUpdate={updateCb} filterTerms={{}}/>);
 
         return moxios.wait(()=>{
             const request = moxios.requests.mostRecent();

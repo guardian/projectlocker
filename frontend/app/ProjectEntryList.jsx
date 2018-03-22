@@ -87,7 +87,7 @@ class ProjectEntryList extends GeneralListComponent {
     }
 
     getFilterComponent(){
-        return <ProjectEntryFilterComponent filterDidUpdate={this.filterDidUpdate}/>
+        return <ProjectEntryFilterComponent filterTerms={this.state.filterTerms} filterDidUpdate={this.filterDidUpdate}/>
     }
 
     newElementCallback(event) {

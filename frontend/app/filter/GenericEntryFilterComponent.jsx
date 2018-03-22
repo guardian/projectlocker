@@ -37,21 +37,20 @@ class GenericEntryFilterComponent extends React.Component {
         ];
 
         this.state = {
-            filters: {},
             fieldErrors: {},
             showFilters: false,
             matchType: "W_CONTAINS"
         };
 
         this.switchHidden = this.switchHidden.bind(this);
-        this.doUpdate = this.doUpdate.bind(this);
         this.doClear = this.doClear.bind(this);
     }
 
     updateFilters(filterKey, value,cb){
         let newFilters = {};
         newFilters[filterKey] = value;
-        this.setState({filters: Object.assign(this.state.filters, newFilters)}, cb);
+
+        this.props.filterDidUpdate(Object.assign(this.props.filterTerms,{match: this.state.matchType}, newFilters));
     }
 
     addFieldError(filterKey, errorDesc, cb){
@@ -86,14 +85,8 @@ class GenericEntryFilterComponent extends React.Component {
         this.setState({showFilters: !this.state.showFilters});
     }
 
-    doUpdate(){
-        this.props.filterDidUpdate(Object.assign(this.state.filters,{match: this.state.matchType}));
-    }
-
     doClear(){
-        this.setState({
-            filters: {},
-        }, ()=>this.doUpdate());
+        this.props.filterDidUpdate(Object.assign({},{match: this.state.matchType}));
     }
 
     showFilterError(fieldName){
@@ -140,7 +133,6 @@ class GenericEntryFilterComponent extends React.Component {
             <FilterTypeSelection showFilters={this.state.showFilters} type={this.state.matchType} selectionChanged={newValue=>this.setState({matchType: newValue})}/>
             <span className="filter-list-entry" style={{ display: this.state.showFilters ? "inline-block": "none", float: "right"}}>
                 <button onClick={this.doClear}>Clear</button>
-                <button onClick={this.doUpdate}>Refilter</button>
             </span>
         </div>
     }
