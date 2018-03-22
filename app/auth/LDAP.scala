@@ -79,7 +79,7 @@ object LDAP {
   }
 
   def getUserRoles (uid: String)(implicit cache:SyncCacheApi) : Option[List[String]] = {
-    //if(connectionPool.isFailure) return None
+    if(connectionPool.isFailure) return None
     val cacheKey = "userRoles." + uid
     logger.debug(s"cacheKey: $cacheKey")
     logger.debug(s"cache: $cache")
