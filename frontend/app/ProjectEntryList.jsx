@@ -66,16 +66,12 @@ class ProjectEntryList extends GeneralListComponent {
     }
 
     componentWillMount(){
-        console.log("loading pluto config");
         axios.get("/api/system/plutoconfig")
             .then(response=>this.setState({plutoConfig: response.data}))
             .catch(error=>console.error(error));
     }
     //
     getPlutoLink(vsid){
-        console.log(this);
-        console.log(vsid);
-
         if(!vsid) return <span className="value-not-present">(not set)</span>;
 
         if(this.state.plutoConfig.hasOwnProperty("plutoServer")){

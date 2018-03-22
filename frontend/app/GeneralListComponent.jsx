@@ -62,7 +62,7 @@ class GeneralListComponent extends React.Component {
      * override this in a subclass to update state once dependencies have loaded
      */
     dependenciesDidLoad(){
-        console.log("bleahc")
+
     }
 
     loadDependencies(){
