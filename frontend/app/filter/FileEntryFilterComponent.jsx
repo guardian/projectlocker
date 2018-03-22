@@ -1,12 +1,25 @@
 import GenericEntryFilterComponent from './GenericEntryFilterComponent.jsx';
 import {validateInt} from "../validators/NumericValidator.jsx";
 import PropTypes from 'prop-types';
+import axios from 'axios';
 
 class FileEntryFilterComponent extends GenericEntryFilterComponent {
     static propTypes = {
-        filterDidUpdate: PropTypes.func.isRequired //this is called when the filter state should be updated. Passed a
+        filterDidUpdate: PropTypes.func.isRequired, //this is called when the filter state should be updated. Passed a
         //key-value object of the terms.
+        isAdmin: PropTypes.bool
     };
+
+    componentWillMount(){
+        this.setState({distinctOwners: []},()=>
+            axios.get("/api/file/distinctowners")
+            .then(result=>this.setState({distinctOwners: result.data.result}))
+            .catch(error=>{
+                console.error(error);
+                this.setState({error: error});
+            })
+        );
+    }
 
     constructor(props){
         super(props);
@@ -28,6 +41,8 @@ class FileEntryFilterComponent extends GenericEntryFilterComponent {
             {
                 key: "user",
                 label: "Owner",
+                valuesStateKey: "distinctOwners",
+                disabledIfNotAdmin: true,
                 validator: (input)=>null
             }
         ];

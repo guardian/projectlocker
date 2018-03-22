@@ -17,7 +17,8 @@ class GeneralListComponent extends React.Component {
             },
             currentPage: 0,
             maximumItemsLoaded: false,
-            plutoConfig: {}
+            plutoConfig: {},
+            isAdmin: false
         };
 
         this.pageSize = 20;
@@ -50,7 +51,24 @@ class GeneralListComponent extends React.Component {
     }
 
     componentDidMount() {
-        this.reload();
+        this.loadDependencies().then(this.reload());
+    }
+
+    loadDependencies(){
+        return new Promise((accept,reject)=>axios.get("/api/isAdmin")
+            .then(response=>{
+                if(response.data.status==="ok")
+                    this.setState({isAdmin: true}, ()=>accept());
+            })
+            .catch(error=>{
+                if(this.props.error.response && this.props.error.response.status===403)
+                    this.setState({isAdmin: false}, ()=>accept());
+                else {
+                    console.error(error);
+                    this.setState({isAdmin: false, error: error}, ()=>reject());
+                }
+            })
+        );
     }
 
     /* this method supplies a column definition as a convenience for subclasses */
@@ -84,7 +102,7 @@ class GeneralListComponent extends React.Component {
         return {
             header: "",
             key: "id",
-            render: (id) => <span className="icons">
+            render: (id) => <span className="icons" style={{display: this.state.isAdmin ? "inherit" : "none"}}>
                     <Link to={"/" + componentName + "/" + id}><img className="smallicon" src="/assets/images/edit.png"/></Link>
                     <Link to={"/" + componentName + "/" + id + "/delete"}><img className="smallicon" src="/assets/images/delete.png"/></Link>
             </span>

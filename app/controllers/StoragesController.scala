@@ -62,7 +62,8 @@ class StoragesController @Inject()
 
   override def validate(request:Request[JsValue]) = request.body.validate[StorageEntry]
 
-  def types = Action {
+  def types = IsAuthenticated {uid=> {request=>
     Ok(Json.obj("status"->"ok","types"->this.knownTypes))
-  }
+  }}
+
 }

@@ -155,7 +155,7 @@ trait GenericDatabaseObjectControllerWithFilter[M,F] extends InjectedController 
     )
   }}
 
-  def create = IsAuthenticatedAsync(parse.json) {uid=>{request =>
+  def create = IsAdminAsync(parse.json) {uid=>{request =>
     this.validate(request).fold(
       errors => {
         logger.error(s"errors parsing content: $errors")
@@ -193,7 +193,7 @@ trait GenericDatabaseObjectControllerWithFilter[M,F] extends InjectedController 
     })
   }}
 
-  def update(id: Int) = IsAuthenticatedAsync(parse.json) { uid=>{request =>
+  def update(id: Int) = IsAdminAsync(parse.json) { uid=>{request =>
     this.validate(request).fold(
       errors=>Future(BadRequest(Json.obj("status"->"error","detail"->JsError.toJson(errors)))),
       validRecord=>
@@ -215,7 +215,7 @@ trait GenericDatabaseObjectControllerWithFilter[M,F] extends InjectedController 
     })
   }
 
-  def delete(requestedId: Int) = IsAuthenticatedAsync {uid=>{ request =>
+  def delete(requestedId: Int) = IsAdminAsync {uid=>{ request =>
     if(requestedId<0)
       Future(Conflict(Json.obj("status"->"error","detail"->"This is still referenced by sub-objects")))
     else

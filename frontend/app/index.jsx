@@ -42,7 +42,8 @@ class App extends React.Component {
 
         this.state = {
             isLoggedIn: false,
-            currentUsername: ""
+            currentUsername: "",
+            isAdmin: false
         };
 
         this.onLoggedIn = this.onLoggedIn.bind(this);
@@ -55,7 +56,8 @@ class App extends React.Component {
                 .then(response=>{ //200 response means we are logged in
                     this.setState({
                         isLoggedIn: true,
-                        currentUsername: response.data.uid
+                        currentUsername: response.data.uid,
+                        isAdmin: response.data.isAdmin
                     });
                 })
                 .catch(error=>{
@@ -71,9 +73,11 @@ class App extends React.Component {
         this.checkLogin();
     }
 
-    onLoggedIn(userid){
+    onLoggedIn(userid, isAdmin){
         console.log("Logged in as " + userid);
-        this.setState({currentUsername: userid, isLoggedIn: true})
+        console.log("Is an admin? " + isAdmin);
+
+        this.setState({currentUsername: userid, isAdmin: isAdmin, isLoggedIn: true})
     }
 
     onLoggedOut(){
@@ -84,13 +88,14 @@ class App extends React.Component {
     maybeLeftMenu(){
         if(this.state.isLoggedIn) {
             return <ul className="leftmenu">
-                <li><Link to="/storage/">Storages...</Link></li>
-                <li><Link to="/type/">Project Types...</Link></li>
-                <li><Link to="/template/">Project Templates...</Link></li>
+                <li><Link to="/">Home</Link></li>
+                <li style={{display: this.state.isAdmin ? "inherit" : "none"}}><Link to="/storage/">Storages...</Link></li>
+                <li style={{display: this.state.isAdmin ? "inherit" : "none"}}><Link to="/type/">Project Types...</Link></li>
+                <li style={{display: this.state.isAdmin ? "inherit" : "none"}}><Link to="/template/">Project Templates...</Link></li>
                 <li><Link to="/project/">Projects...</Link></li>
-                <li><Link to="/postrun/">Postrun Actions...</Link></li>
+                <li style={{display: this.state.isAdmin ? "inherit" : "none"}}><Link to="/postrun/">Postrun Actions...</Link></li>
                 <li><Link to="/file/">Files...</Link></li>
-                <li><Link to="/defaults/">Server defaults...</Link></li>
+                <li style={{display: this.state.isAdmin ? "inherit" : "none"}}><Link to="/defaults/">Server defaults...</Link></li>
             </ul>
         } else {
             return <ul className="leftmenu">
@@ -132,6 +137,7 @@ class App extends React.Component {
                             onLoggedIn={this.onLoggedIn}
                             currentUsername={this.state.currentUsername}
                             isLoggedIn={this.state.isLoggedIn}
+                            isAdmin={this.state.isAdmin}
                         />}/>
                     </Switch>
                 </div>

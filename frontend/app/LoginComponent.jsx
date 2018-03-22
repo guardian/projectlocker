@@ -55,7 +55,7 @@ class LoginComponent extends React.Component {
                         enteredUserName: "",
                         enteredPassword: ""
                     }, ()=>{
-                        this.props.onLoggedIn(response.data.uid)
+                        this.props.onLoggedIn(response.data.uid, response.data.isAdmin)
                     });
                 })
                 .catch(error=>{

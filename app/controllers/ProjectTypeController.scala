@@ -58,7 +58,7 @@ class ProjectTypeController @Inject() (config: Configuration, dbConfigProvider: 
 
   override def validate(request:Request[JsValue]) = request.body.validate[ProjectType]
 
-  def listPostrun(projectTypeId: Int) = IsAuthenticatedAsync {uid=>{request=>
+  def listPostrun(projectTypeId: Int) = IsAdminAsync {uid=>{request=>
     PostrunAssociation.entriesForProjectType(projectTypeId).map({
       case Success(result)=>Ok(Json.obj("status"->"ok","result"->result.map(_._2)))
       case Failure(error)=>

@@ -16,18 +16,22 @@
 
     <logger name="play" level="INFO" />
     <logger name="application" level="WARN" />
-    <logger name="services.PostrunActionScanner" level="INFO"/>
-    <logger name="helpers.ProjectCreateHelperImpl" level="DEBUG"/>
-    <logger name="services.actors.MessageProcessorActor" level="DEBUG"/>
-    <logger name="services.actors.ClusterListener" level="DEBUG"/>
-    <logger name="controllers.MessageTest" level="DEBUG"/>
-    <logger name="drivers.PathStorage" level="DEBUG"/>
-    <logger name="models.PlutoWorkingGroup" level="INFO"/>
+    <logger name="services.PostrunActionScanner" level="WARN"/>
+    <logger name="helpers.ProjectCreateHelperImpl" level="WARN"/>
+    <logger name="services.actors.MessageProcessorActor" level="WARN"/>
+    <logger name="services.actors.ClusterListener" level="WARN"/>
+    <logger name="controllers.MessageTest" level="WARN"/>
+    <logger name="drivers.PathStorage" level="WARN"/>
+    <logger name="models.PlutoWorkingGroup" level="WARN"/>
     <logger name="models.PlutoCommission" level="WARN"/>
-    <logger name="services.PlutoWGCommissionScanner" level="INFO"/>
-    <logger name="models.FileEntry" level="INFO" />
-    <logger name="controllers.Files" level="INFO" />
-    <logger name="StorageControllerSpec" level="INFO"/>
+    <logger name="services.PlutoWGCommissionScanner" level="WARN"/>
+    <logger name="models.FileEntry" level="WARN" />
+    <logger name="controllers.Files" level="WARN" />
+    <logger name="StorageControllerSpec" level="WARN"/>
+    <logger name="auth.Security" level="DEBUG"/>
+    <logger name="controllers.Application" level="DEBUG"/>
+    <logger name="controllers.System" level="DEBUG"/>
+    <logger name="auth.LDAP" level="DEBUG"/>
     <logger name="com.gargoylesoftware.htmlunit.javascript" level="OFF" />
 
     <root level="ERROR">
