@@ -54,6 +54,8 @@ libraryDependencies ++= Seq(
   "com.typesafe.akka" %% "akka-cluster" % "2.5.11",
   "com.typesafe.akka" %% "akka-cluster-metrics" % "2.5.11",
   "com.typesafe.akka" %% "akka-cluster-tools" % "2.5.11",
+  "org.iq80.leveldb"            % "leveldb"          % "0.7",
+  "org.fusesource.leveldbjni"   % "leveldbjni-all"   % "1.8",
   "com.typesafe.akka" %% "akka-testkit" % "2.5.11" % Test
 )
 
