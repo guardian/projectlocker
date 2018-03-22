@@ -9,11 +9,12 @@ import com.unboundid.ldap.sdk.LDAPConnectionPool
 import models.{LoginRequest, LoginRequestSerializer}
 import play.api.cache.SyncCacheApi
 import play.api.libs.json._
+import scala.collection.JavaConverters._
 
 import scala.util.{Failure, Success}
 
 @Singleton
-class Application @Inject() (cc:ControllerComponents, p:PlayBodyParsers, cacheImpl:SyncCacheApi)
+class Application @Inject() (cc:ControllerComponents, p:PlayBodyParsers, config:Configuration, cacheImpl:SyncCacheApi)
   extends AbstractController(cc) with Security with LoginRequestSerializer {
 
   implicit val cache:SyncCacheApi = cacheImpl
@@ -35,6 +36,9 @@ class Application @Inject() (cc:ControllerComponents, p:PlayBodyParsers, cacheIm
     *         If an error occurs, a 500 response with a basic error message directing the user to go to the logs
     */
   def authenticate = Action(p.json) { request=>
+    val adminRoles = config.getStringList("ldap.admin-groups").map(_.asScala).getOrElse(List("Administrator"))
+
+    logger.info(s"Admin roles are: $adminRoles")
     LDAP.connectionPool.fold(
       errors=> {
         logger.error("LDAP not configured properly", errors)
@@ -49,7 +53,7 @@ class Application @Inject() (cc:ControllerComponents, p:PlayBodyParsers, cacheIm
           loginRequest => {
             User.authenticate(loginRequest.username, loginRequest.password) match {
               case Success(Some(user)) =>
-                Ok(Json.obj("status" -> "ok", "detail" -> "Logged in", "uid" -> user.uid)).withSession("uid" -> user.uid)
+                Ok(Json.obj("status" -> "ok", "detail" -> "Logged in", "uid" -> user.uid, "isAdmin"->checkRole(user.uid, adminRoles))).withSession("uid" -> user.uid)
               case Success(None) =>
                 logger.warn(s"Failed login from ${loginRequest.username} with password ${loginRequest.password} from host ${request.host}")
                 Forbidden(Json.obj("status" -> "error", "detail" -> "forbidden"))

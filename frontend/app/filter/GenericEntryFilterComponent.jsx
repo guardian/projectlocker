@@ -6,8 +6,9 @@ import FilterTypeSelection from './FilterTypeSelection.jsx';
 
 class GenericEntryFilterComponent extends React.Component {
     static propTypes = {
-        filterDidUpdate: PropTypes.func.isRequired //this is called when the filter state should be updated. Passed a
+        filterDidUpdate: PropTypes.func.isRequired, //this is called when the filter state should be updated. Passed a
                                                     //key-value object of the terms.
+        isAdmin: PropTypes.bool
     };
 
     constructor(props){
@@ -98,6 +99,22 @@ class GenericEntryFilterComponent extends React.Component {
         return <span>{this.state.fieldErrors[fieldName] ? this.state.fieldErrors[fieldName] : ""}</span>
     }
 
+    controlFor(filterEntry){
+        const disabled = (!this.props.isAdmin) && filterEntry.disabledIfNotAdmin;
+        console.log("isAdmin: " + this.props.isAdmin + " disabled: " + disabled);
+
+        if(filterEntry.valuesStateKey && this.state.hasOwnProperty(filterEntry.valuesStateKey)){
+            return <select disabled={disabled} onChange={event=>this.entryUpdated(event, filterEntry.key)} defaultValue={this.state.filters[filterEntry.key]}>
+                {
+                    this.state[filterEntry.valuesStateKey].map(value=><option key={value} name={value}>{value}</option>)
+                }
+            </select>
+        } else {
+            return <input disabled={disabled} id={filterEntry.key} onChange={(event) => this.entryUpdated(event, filterEntry.key)}
+                   value={this.state.filters[filterEntry.key]}/>
+        }
+    }
+    
     render(){
         return <div className="filter-list-block">
             <span className="filter-list-title">
@@ -110,7 +127,7 @@ class GenericEntryFilterComponent extends React.Component {
                 <span className="filter-list-entry" style={{ display: this.state.showFilters ? "inline-block" : "none" }}  key={filterEntry.key}>
                    <label className="filter-entry-label" htmlFor={filterEntry.key}>{filterEntry.label}</label>
                     <div className="filter-entry-input">
-                        <input id={filterEntry.key} onChange={(event)=>this.entryUpdated(event, filterEntry.key)} value={this.state.filters[filterEntry.key]}/>
+                        {this.controlFor(filterEntry)}
                         {this.state.fieldErrors[filterEntry.key] ? <i className="fa fa-exclamation" style={{color: "red", marginLeft: "0.5em"}}/> : <i className="fa fa-check" style={{color: "green", marginLeft: "0.5em"}}/>}
                         <br style={{marginTop: "5px" }}/>
                         {this.state.fieldErrors[filterEntry.key] ? <span className="filter-entry-error">{this.state.fieldErrors[filterEntry.key]}</span> : <span/>}

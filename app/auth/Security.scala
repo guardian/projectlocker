@@ -91,6 +91,22 @@ trait Security {
     Security.Authenticated(username, onUnauthorized) { uid => Action(b)(request => f(uid)(request)) }
   }
 
+  /**
+    * check whether the provided uid has the requested roles
+    * @param uid username to check
+    * @param requiredRoles roles to check
+    * @return boolean
+    */
+  def checkRole(uid:String, requiredRoles: Seq[String]): Boolean = {
+    LDAP.getUserRoles(uid) match {
+      case Some(userRoles)=>
+        logger.info(s"Checking user roles $userRoles against $requiredRoles")
+        requiredRoles.intersect(userRoles).nonEmpty
+      case _=>
+        false
+    }
+  }
+
   def HasRole(requiredRoles: List[String])(f: => String => Request[AnyContent] => Result) = IsAuthenticated {
     uid => 
       request => 

@@ -172,5 +172,20 @@ class Files @Inject() (configuration: Configuration, dbConfigProvider: DatabaseC
     }
     )
   }}
+
+  def getDistinctOwnersList:Future[Try[Seq[String]]] = {
+    //work around distinctOn bug - https://github.com/slick/slick/issues/1712
+    db.run(sql"""select distinct(s_user) from "FileEntry"""".as[String].asTry)
+  }
+
+  def distinctOwners = IsAuthenticatedAsync {uid=>{request=>
+    getDistinctOwnersList.map({
+      case Success(ownerList)=>
+        Ok(Json.obj("status"->"ok","result"->ownerList))
+      case Failure(error)=>
+        logger.error("Could not look up distinct file owners: ", error)
+        InternalServerError(Json.obj("status"->"error","detail"->error.toString))
+    })
+  }}
 }
 

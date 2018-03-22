@@ -33,7 +33,7 @@ class FileEntryList extends GeneralListComponent {
     }
 
     getFilterComponent(){
-        return <FileEntryFilterComponent filterDidUpdate={this.filterDidUpdate}/>
+        return <FileEntryFilterComponent filterDidUpdate={this.filterDidUpdate} isAdmin={this.state.isAdmin}/>
     }
 }
 

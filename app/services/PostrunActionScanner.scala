@@ -38,7 +38,7 @@ class PostrunActionScanner @Inject() (dbConfigProvider: DatabaseConfigProvider, 
     PostrunAction.entryForRunnable(scriptFile.getName) map {
       case Success(results)=>
         if(results.isEmpty){
-          logger.info(s"Adding newly found script ${scriptFile.getAbsolutePath} to database")
+          logger.info(s"Adding newly found postrun script ${scriptFile.getAbsolutePath} to database")
           val newRecord = PostrunAction(None,scriptFile.getName,scriptFile.getName,None,"system",1,new Timestamp(ZonedDateTime.now().toEpochSecond*1000))
           newRecord.save map {
             case Failure(error)=>
@@ -55,7 +55,7 @@ class PostrunActionScanner @Inject() (dbConfigProvider: DatabaseConfigProvider, 
   }
 
   val cancellable = actorSystem.scheduler.schedule(1 second,60 seconds) {
-    logger.info("Rescanning postrun actions")
+    logger.debug("Rescanning postrun actions")
 
     val scriptsDir = config.get[String]("postrun.scriptsPath")
     DirectoryScanner.scanAll(scriptsDir).map({

@@ -7,6 +7,7 @@ GET     /                                  @controllers.Application.index(path="
 GET     /api/file                          @controllers.Files.list(startAt:Int ?=0,length:Int ?=100)
 PUT     /api/file/list                     @controllers.Files.listFiltered(startAt:Int ?=0,length:Int ?=100)
 PUT     /api/file                          @controllers.Files.create
+GET     /api/file/distinctowners           @controllers.Files.distinctOwners
 PUT     /api/file/:id/content              @controllers.Files.uploadContent(id: Int)
 GET     /api/file/:id                      @controllers.Files.getitem(id: Int)
 GET     /api/file/:id/associations         @controllers.Files.references(id: Int)
@@ -73,6 +74,7 @@ PUT     /api/pluto/commission/list         @controllers.PlutoCommissionControlle
 POST    /api/login                         @controllers.Application.authenticate
 POST    /api/logout                        @controllers.Application.logout
 GET     /api/isLoggedIn                    @controllers.Application.isLoggedIn
+GET     /api/isAdmin                       @controllers.Application.checkIsAdmin
 
 GET     /api/system/plutoconfig            @controllers.System.plutoconfig
 
