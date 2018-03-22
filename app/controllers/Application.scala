@@ -72,7 +72,8 @@ class Application @Inject() (cc:ControllerComponents, p:PlayBodyParsers, config:
     *         If the session is valid, a 200 response with the currently logged in userid in a json object
     */
   def isLoggedIn = IsAuthenticated { uid=> { request=>
-    Ok(Json.obj("status"->"ok","uid"->uid))
+    val adminRoles = config.getStringList("ldap.admin-groups").map(_.asScala).getOrElse(List("Administrator"))
+    Ok(Json.obj("status"->"ok","uid"->uid, "isAdmin"->checkRole(uid, adminRoles)))
   }}
 
   /**

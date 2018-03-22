@@ -56,7 +56,8 @@ class App extends React.Component {
                 .then(response=>{ //200 response means we are logged in
                     this.setState({
                         isLoggedIn: true,
-                        currentUsername: response.data.uid
+                        currentUsername: response.data.uid,
+                        isAdmin: response.data.isAdmin
                     });
                 })
                 .catch(error=>{
