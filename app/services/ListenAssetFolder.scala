@@ -26,7 +26,8 @@ trait ListenAssetFolder extends NewAssetFolderSerializer with JsonComms{
   def getPlutoProjectForAssetFolder(msg: NewAssetFolder)(implicit ec:ExecutionContext, db: slick.jdbc.JdbcBackend#DatabaseDef):Future[Either[String, NewAssetFolder]] = msg.plutoProjectId match {
     case None=> //we still need to get hold of the project reference
       ProjectEntry.entryForId(msg.projectLockerProjectId.get).map({
-        case Success(projectEntry:ProjectEntry)=>NewAssetFolder.forCreatedProject(msg.assetFolderPath, projectEntry)
+        case Success(projectEntry:ProjectEntry)=>
+          NewAssetFolder.forCreatedProject(msg.assetFolderPath, projectEntry)
         case Failure(error)=>
           logger.error(s"Could not look up project entry for ${msg.projectLockerProjectId.get}: ", error)
           Left(error.toString)

@@ -84,7 +84,7 @@ pathsanitizer = re.compile(r'[^\w\d\-]+')
 
 
 def make_safe_string(str):
-    sanitized=pathsanitizer.sub("_", str).lower()
+    sanitized=pathsanitizer.sub("_", str)
     if sanitized.endswith("_"):
         return sanitized[:-1]
     else:
