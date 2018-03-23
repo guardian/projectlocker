@@ -32,7 +32,7 @@ describe("LoginComponent", ()=>{
         expect(dlg.find('h2.inline-dialog-title').text()).toEqual("Login");
         expect(dlg.find('input').length).toEqual(0);
         /* the odd spacing is because the actual content contains markup which uses margins to space out */
-        expect(dlg.find('p.inline-dialog-content').text()).toEqual("You are currently logged in asGumby");
+        expect(dlg.find('p.inline-dialog-content').at(0).text()).toEqual("You are currently logged in asGumby");
         expect(dlg.find('button').text()).toEqual("Log out");
     });
 

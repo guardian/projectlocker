@@ -8,6 +8,7 @@ import slick.jdbc.PostgresProfile.api._
 case class ProjectEntryFilterTerms(title:Option[String],
                                    vidispineProjectId:Option[String],
                                    filename:Option[String],
+                                   user:Option[String],
                                    wildcard:FilterTypeWildcard.Value)
 extends GeneralFilterEntryTerms[ProjectEntryRow, ProjectEntry] {
 
@@ -29,6 +30,7 @@ extends GeneralFilterEntryTerms[ProjectEntryRow, ProjectEntry] {
 
     if(title.isDefined) action = action.filter(_.projectTitle like makeWildcard(title.get))
     if(vidispineProjectId.isDefined) action = action.filter(_.vidispineProjectId like makeWildcard(vidispineProjectId.get))
+    if(user.isDefined) action = action.filter(_.user like makeWildcard(user.get))
     action
   }
 }
@@ -40,6 +42,7 @@ trait ProjectEntryFilterTermsSerializer {
     (JsPath \ "title").readNullable[String] and
       (JsPath \ "vidispineId").readNullable[String] and
       (JsPath \ "filename").readNullable[String] and
+      (JsPath \ "user").readNullable[String] and
       (JsPath \ "match").read[FilterTypeWildcard.Value]
   )(ProjectEntryFilterTerms.apply _)
 }

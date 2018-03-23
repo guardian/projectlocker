@@ -66,16 +66,12 @@ class ProjectEntryList extends GeneralListComponent {
     }
 
     componentWillMount(){
-        console.log("loading pluto config");
         axios.get("/api/system/plutoconfig")
             .then(response=>this.setState({plutoConfig: response.data}))
             .catch(error=>console.error(error));
     }
     //
     getPlutoLink(vsid){
-        console.log(this);
-        console.log(vsid);
-
         if(!vsid) return <span className="value-not-present">(not set)</span>;
 
         if(this.state.plutoConfig.hasOwnProperty("plutoServer")){
@@ -86,8 +82,12 @@ class ProjectEntryList extends GeneralListComponent {
         }
     }
 
+    dependenciesDidLoad(){
+        this.setState({filterTerms: this.props.location.search.includes("mine") ? {user: this.state.uid, match: "W_EXACT"} : {match: "W_CONTAINS"}})
+    }
+
     getFilterComponent(){
-        return <ProjectEntryFilterComponent filterDidUpdate={this.filterDidUpdate}/>
+        return <ProjectEntryFilterComponent filterTerms={this.state.filterTerms} filterDidUpdate={this.filterDidUpdate}/>
     }
 
     newElementCallback(event) {

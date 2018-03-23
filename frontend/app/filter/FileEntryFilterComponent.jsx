@@ -7,18 +7,19 @@ class FileEntryFilterComponent extends GenericEntryFilterComponent {
     static propTypes = {
         filterDidUpdate: PropTypes.func.isRequired, //this is called when the filter state should be updated. Passed a
         //key-value object of the terms.
-        isAdmin: PropTypes.bool
+        isAdmin: PropTypes.bool,
+        filterTerms: PropTypes.object.isRequired
     };
 
     componentWillMount(){
-        this.setState({distinctOwners: []},()=>
+        this.setState({distinctOwners: []},()=> {
             axios.get("/api/file/distinctowners")
-            .then(result=>this.setState({distinctOwners: result.data.result}))
-            .catch(error=>{
-                console.error(error);
-                this.setState({error: error});
-            })
-        );
+                .then(result => this.setState({distinctOwners: result.data.result}))
+                .catch(error => {
+                    console.error(error);
+                    this.setState({error: error});
+                });
+        });
     }
 
     constructor(props){
@@ -35,14 +36,14 @@ class FileEntryFilterComponent extends GenericEntryFilterComponent {
             {
                 key: "storageId",
                 label: "Storage ID",
-                //validator: (input)=>vsidValidator.test(input) ? null : "This must be in the form of XX-nnnnn"
-                validator: validateInt
+                validator: validateInt,
+                converter: value=>parseInt(value)
             },
             {
                 key: "user",
                 label: "Owner",
                 valuesStateKey: "distinctOwners",
-                disabledIfNotAdmin: true,
+                disabledIfNotAdmin: false,
                 validator: (input)=>null
             }
         ];

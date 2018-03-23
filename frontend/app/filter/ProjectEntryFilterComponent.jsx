@@ -1,12 +1,25 @@
 import GenericEntryFilterComponent from './GenericEntryFilterComponent.jsx';
 import {validateVsid} from "../validators/VsidValidator.jsx";
 import PropTypes from 'prop-types';
+import axios from 'axios';
 
 class ProjectEntryFilterComponent extends GenericEntryFilterComponent {
     static propTypes = {
-        filterDidUpdate: PropTypes.func.isRequired //this is called when the filter state should be updated. Passed a
+        filterDidUpdate: PropTypes.func.isRequired, //this is called when the filter state should be updated. Passed a
         //key-value object of the terms.
+        filterTerms: PropTypes.object.isRequired
     };
+
+    componentWillMount(){
+        this.setState({distinctOwners: []},()=> {
+            axios.get("/api/project/distinctowners")
+                .then(result => this.setState({distinctOwners: result.data.result}))
+                .catch(error => {
+                    console.error(error);
+                    this.setState({error: error});
+                });
+        });
+    }
 
     constructor(props){
         super(props);
@@ -28,6 +41,11 @@ class ProjectEntryFilterComponent extends GenericEntryFilterComponent {
                 key: "filename",
                 label: "Project file name",
                 validator: (input)=>null
+            },
+            {
+                key: "user",
+                label: "Owner",
+                valuesStateKey: "distinctOwners"
             }
         ];
     }

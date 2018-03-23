@@ -32,8 +32,14 @@ class FileEntryList extends GeneralListComponent {
         ];
     }
 
+    dependenciesDidLoad(){
+        this.setState({filterTerms: this.props.location.search.includes("mine") ? {user: this.state.uid, match: "W_EXACT"} : {match: "W_CONTAINS"}})
+    }
+
     getFilterComponent(){
-        return <FileEntryFilterComponent filterDidUpdate={this.filterDidUpdate} isAdmin={this.state.isAdmin}/>
+        return <FileEntryFilterComponent filterDidUpdate={this.filterDidUpdate}
+                                         filterTerms={this.state.filterTerms}
+                                         isAdmin={this.state.isAdmin}/>
     }
 }
 

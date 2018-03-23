@@ -30,6 +30,8 @@ DELETE  /api/template/:id                  @controllers.ProjectTemplateControlle
 GET     /api/project                        @controllers.ProjectEntryController.list(startAt:Int ?=0,length:Int ?=100)
 GET     /api/project/list                   @controllers.ProjectEntryController.list(startAt:Int ?=0,length:Int ?=100)
 PUT     /api/project/list                   @controllers.ProjectEntryController.listFiltered(startAt:Int ?=0,length:Int ?=100)
+GET     /api/project/distinctowners         @controllers.ProjectEntryController.distinctOwners
+
 PUT     /api/project                        @controllers.ProjectEntryController.create
 PUT     /api/project/external/create        @controllers.ProjectEntryController.createExternal
 GET     /api/project/by-vsid/:vsid          @controllers.ProjectEntryController.getByVsid(vsid:String)
