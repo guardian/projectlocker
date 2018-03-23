@@ -77,7 +77,9 @@ class App extends React.Component {
         console.log("Logged in as " + userid);
         console.log("Is an admin? " + isAdmin);
 
-        this.setState({currentUsername: userid, isAdmin: isAdmin, isLoggedIn: true})
+        this.setState({currentUsername: userid, isAdmin: isAdmin, isLoggedIn: true}, ()=>{
+            if(!isAdmin) window.location.href="/project/?mine";
+        })
     }
 
     onLoggedOut(){
