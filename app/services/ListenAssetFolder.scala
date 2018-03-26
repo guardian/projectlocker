@@ -42,7 +42,7 @@ trait ListenAssetFolder extends NewAssetFolderSerializer with JsonComms{
     * @return a Future, containing either a Left indicating that the sending failed with a Boolean indicating whether to retry,
     *         or a Right with the Unit value indicating that the sending succeeded
     */
-  def sendNewAssetFolderMessage(msg: NewAssetFolder)(implicit ec:ExecutionContext):Future[Either[Boolean, Unit]] = {
+  def sendNewAssetFolderMessage(msg: NewAssetFolder)(implicit ec:ExecutionContext):Future[Either[Boolean, String]] = {
     val notifyUrl =  s"${configuration.get[String]("pluto.server_url")}/gnm_asset_folder/api/notify"
     val bodyContent:String = Json.toJson(msg).toString()
     logger.debug(s"Going to send json: $bodyContent to $notifyUrl")
@@ -54,7 +54,7 @@ trait ListenAssetFolder extends NewAssetFolderSerializer with JsonComms{
       .map({
         case Left(retry)=>Left(retry)
         case Right(parsedResponse)=>
-          Right(logger.debug("."))
+          Right(s"Asset folder saved with record ID ${parsedResponse \ "record_id"}")
       })
   }
 }

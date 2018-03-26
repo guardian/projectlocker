@@ -120,8 +120,9 @@ class MessageProcessorActor @Inject()(configurationI: Configuration, actorSystem
         case Right(updatedMessage) =>
           logger.debug(s"Updated asset folder message to send: $updatedMessage")
           sendNewAssetFolderMessage(updatedMessage).map({
-            case Right(_) =>
-              logger.info(s"Updated pluto with new asset folder ${evtAsObject.rq.assetFolderPath} for ${evtAsObject.rq.plutoProjectId.get}")
+            case Right(msgString) =>
+              logger.info(msgString)
+              logger.info(s"Updated pluto with new asset folder ${updatedMessage.assetFolderPath} for ${updatedMessage.plutoProjectId}")
               confirmHandled(evtAsObject)
             case Left(true) =>
               logger.debug(s"requeueing message for retry after delay")
