@@ -122,7 +122,7 @@ class MessageProcessorActor @Inject()(configurationI: Configuration, actorSystem
           sendNewAssetFolderMessage(updatedMessage).map({
             case Right(msgString) =>
               logger.info(msgString)
-              logger.info(s"Updated pluto with new asset folder ${evtAsObject.rq.assetFolderPath} for ${evtAsObject.rq.plutoProjectId.get}")
+              logger.info(s"Updated pluto with new asset folder ${updatedMessage.assetFolderPath} for ${updatedMessage.plutoProjectId}")
               confirmHandled(evtAsObject)
             case Left(true) =>
               logger.debug(s"requeueing message for retry after delay")
