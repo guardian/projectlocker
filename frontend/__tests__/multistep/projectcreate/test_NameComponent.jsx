@@ -11,7 +11,7 @@ describe("NameComponent", ()=>{
                                                 selectionUpdated={updatedCb}/>);
 
         const result = rendered.instance().makeAutoFilename("My prøject with funny characters!!!");
-        expect(result).toEqual("my_pr_ject_with_funny_characters_");
+        expect(result).toMatch(/\d{8}_my_pr_ject_with_funny_characters_/);
     });
 
     it("should call selectionUpdated when the user types into the project name box", ()=>{
@@ -22,7 +22,10 @@ describe("NameComponent", ()=>{
 
         const projectNameInput = rendered.find('#projectNameInput');
         projectNameInput.simulate("change",{target: {value: "new project"}});
-        expect(updatedCb.calledWith({projectName: "new project", fileName: "new_project", autoNameFile: true})).toBeTruthy();
+        expect(updatedCb.calledOnce).toBeTruthy();
+        expect(updatedCb.args[0][0]['projectName']).toEqual("new project");
+        expect(updatedCb.args[0][0]['autoNameFile']).toBeTruthy();
+        expect(updatedCb.args[0][0]['fileName']).toMatch(/\d{8}_new_project/);
     });
 
     it("should call selectionUpdated when the user types into the file name box", ()=>{

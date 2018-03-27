@@ -1,6 +1,7 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import CommonMultistepComponent from '../common/CommonMultistepComponent.jsx';
+import moment from 'moment';
 
 class NameComponent extends CommonMultistepComponent {
     static propTypes = {
@@ -30,7 +31,7 @@ class NameComponent extends CommonMultistepComponent {
 
     makeAutoFilename(title){
         const sanitizer = /[^\w\d_]+/g;
-        return title.replace(sanitizer, "_").toLowerCase();
+        return moment().format("YYYYMMDD") + "_" + title.replace(sanitizer, "_").toLowerCase();
     }
 
     projectNameChanged(event){
