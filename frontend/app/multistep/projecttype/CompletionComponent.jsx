@@ -50,14 +50,16 @@ class ProjectTypeCompletionComponent extends CommonCompletionComponent {
 
     requestContent(){
         /* returns an object of keys/values to send to the server for saving */
-        return {
+        let result = {
             name: this.props.projectType.name,
             opensWith: this.props.projectType.opensWith,
             targetVersion: this.props.projectType.version,
-            fileExtension: this.props.projectType.fileExtension,
-            plutoType: this.props.projectType.plutoType,
-            plutoSubtype: this.props.projectType.plutoSubtype
-        }
+            fileExtension: this.props.projectType.fileExtension
+        };
+        if(this.props.projectType.plutoType) result.plutoType = this.props.projectType.plutoType;
+        if(this.props.projectType.plutoSubtype) result.plutoSubtype = this.props.projectType.plutoSubtype;
+
+        return result;
     }
 
     render() {
