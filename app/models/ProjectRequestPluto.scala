@@ -46,6 +46,7 @@ trait ProjectRequestPlutoSerializer {
   implicit val projectRequestPlutoReads:Reads[ProjectRequestPluto] = (
     (JsPath \ "filename").read[String] and
       (JsPath \ "title").read[String] and
+      //FIXME: REPLACE PROJECTTYPENAME WITH UUID
       (JsPath \ "plutoProjectTypeName").read[String] and
       (JsPath \ "user").read[String] and
       (JsPath \ "workingGroupUuid").read[String] and

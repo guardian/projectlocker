@@ -62,7 +62,7 @@ trait Security {
   }
 
   //if this returns something, then we are logged in
-  private def username(request:RequestHeader) = request.headers.get("Authorization") match {
+  private def username(request:RequestHeader) = request.headers.get("X-Hmac-Authorization") match {
     case Some(auth)=>
       logger.debug("got Auth header, doing hmac auth")
       hmacUsername(request,auth)
