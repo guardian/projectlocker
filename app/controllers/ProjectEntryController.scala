@@ -212,14 +212,14 @@ class ProjectEntryController @Inject() (cc:ControllerComponents, config: Configu
   }}
 
   override def selectall(startAt:Int, limit:Int) = dbConfig.db.run(
-    TableQuery[ProjectEntryRow].drop(startAt).take(limit).result.asTry //simple select *
+    TableQuery[ProjectEntryRow].sortBy(_.created.desc).drop(startAt).take(limit).result.asTry //simple select *
   )
 
   override def selectFiltered(startAt: Int, limit: Int, terms: ProjectEntryFilterTerms): Future[Try[Seq[ProjectEntry]]] = {
     dbConfig.db.run(
       terms.addFilterTerms {
         TableQuery[ProjectEntryRow]
-      }.drop(startAt).take(limit).result.asTry
+      }.sortBy(_.created.desc).drop(startAt).take(limit).result.asTry
     )
   }
 
