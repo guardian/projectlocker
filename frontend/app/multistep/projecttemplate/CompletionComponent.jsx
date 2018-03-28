@@ -41,12 +41,13 @@ class TemplateCompletionComponent extends React.Component {
 
     requestContent(){
         /* returns an object of keys/values to send to the server for saving */
-        return {
+        let rtn = {
             name: this.props.name,
             projectTypeId: this.props.projectType,
-            plutoSubtype: this.props.plutoSubtype,
             fileRef: this.props.fileId
-        }
+        };
+        if(this.props.plutoSubtype!=="" && this.props.plutoSubtype!==null)  rtn['plutoSubtype'] = this.props.plutoSubtype;
+        return rtn;
     }
 
     render() {

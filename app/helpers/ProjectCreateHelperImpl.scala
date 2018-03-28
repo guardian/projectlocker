@@ -262,7 +262,7 @@ class ProjectCreateHelperImpl @Inject() (@Named("message-processor-actor") messa
       val maybeCommission = results(1).asInstanceOf[Option[PlutoCommission]]
 
       if(maybeCommission.isDefined){
-        projectType.forPluto.onComplete({
+        projectType.forPluto(projectTemplate).onComplete({
           case Success(projectTypeForPluto)=>
             messageProcessor ! NewProjectCreated(createdProjectEntry,
               projectTypeForPluto,
