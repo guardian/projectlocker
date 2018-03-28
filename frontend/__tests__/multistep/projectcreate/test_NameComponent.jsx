@@ -11,7 +11,7 @@ describe("NameComponent", ()=>{
                                                 selectionUpdated={updatedCb}/>);
 
         const result = rendered.instance().makeAutoFilename("My prøject with funny characters!!!");
-        expect(result).toMatch(/\d{8}_my_pr_ject_with_funny_characters_/);
+        expect(result).toMatch(/\d{8}_my_pr_ject_with_funny_characters/);   //filename part is limited to 32 chars
     });
 
     it("should call selectionUpdated when the user types into the project name box", ()=>{

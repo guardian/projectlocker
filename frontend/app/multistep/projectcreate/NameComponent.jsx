@@ -31,7 +31,7 @@ class NameComponent extends CommonMultistepComponent {
 
     makeAutoFilename(title){
         const sanitizer = /[^\w\d_]+/g;
-        return moment().format("YYYYMMDD") + "_" + title.replace(sanitizer, "_").toLowerCase();
+        return moment().format("YYYYMMDD") + "_" + title.substring(0,32).replace(sanitizer, "_").toLowerCase();
     }
 
     projectNameChanged(event){
