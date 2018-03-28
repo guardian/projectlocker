@@ -13,7 +13,7 @@ class PlutoSubtypeEntryView extends GenericEntryView {
     }
 
     render(){
-        if(this.state.content==={}) return <span className="value-not-present">(none)</span>;
+        if(this.state.content==={} || this.props.entryId==undefined) return <span className="value-not-present">(none)</span>;
 
         return this.state.content ?
             <span>{this.state.content.name} ({this.state.content.uuid})</span> :

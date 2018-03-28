@@ -155,7 +155,7 @@ class FileControllerSpec extends GenericControllerSpec with BeforeAll with After
       projectList.head.user mustEqual "you"
       projectList.head.created mustEqual Timestamp.valueOf("2016-12-11 12:21:11.021")
 
-      (responseBody \ "templates").as[List[ProjectTemplate]].contains(ProjectTemplate(Some(3),"Some random test template",2,2)) must beTrue
+      (responseBody \ "templates").as[List[ProjectTemplate]].contains(ProjectTemplate(Some(3),"Some random test template",2,2, None)) must beTrue
     }
   }
 }
