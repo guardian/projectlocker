@@ -1,12 +1,16 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import CommonMultistepComponent from '../common/CommonMultistepComponent.jsx';
+import PlutoProjectTypeSelector from '../../Selectors/PlutoProjectTypeSelector.jsx';
 
 class TypeSelectorComponent extends CommonMultistepComponent {
     static propTypes = {
         projectTypes: PropTypes.array.isRequired,
+        plutoTypesList: PropTypes.array.isRequired,
+        selectedPlutoSubtype: PropTypes.number.isRequired,
         selectedType: PropTypes.number.isRequired,
-        templateName: PropTypes.string.isRequired
+        templateName: PropTypes.string.isRequired,
+        valueWasSet: PropTypes.func.isRequired
     };
 
     constructor(props){
@@ -14,7 +18,8 @@ class TypeSelectorComponent extends CommonMultistepComponent {
 
         this.state = {
             selectedType: props.selectedType,
-            name: ""
+            name: props.templateName,
+            selectedPlutoSubtype: props.selectedPlutoSubtype
         };
 
         this.selectorValueChanged = this.selectorValueChanged.bind(this);
@@ -22,7 +27,9 @@ class TypeSelectorComponent extends CommonMultistepComponent {
 
     componentWillMount(){
         this.setState({
-
+            selectedType: this.props.selectedType,
+            name: this.props.templateName,
+            selectedPlutoSubtype: this.props.selectedPlutoSubtype
         })
     }
 
@@ -34,6 +41,21 @@ class TypeSelectorComponent extends CommonMultistepComponent {
         this.setState({name: this.props.templateName, selectedType: parseInt(event.target.value)}, ()=>
             this.updateParent()
         );
+    }
+
+    projectTypeForId(projectTypeId){
+        for(let n=0;n<this.props.projectTypes.length;++n){
+            if(this.props.projectTypes[n].id===projectTypeId) return this.props.projectTypes[n];
+        }
+        return null;
+    }
+
+    getPlutoSubtypeForPlType(){
+        const type = this.projectTypeForId(this.props.selectedType);
+        console.log(type);
+        if(!type) return "";
+
+        return type.hasOwnProperty('plutoType') ? type.plutoType : null
     }
 
     render() {
@@ -48,7 +70,14 @@ class TypeSelectorComponent extends CommonMultistepComponent {
                     this.props.projectTypes.map((projectInfo, index)=><option key={index} value={projectInfo.id}>{projectInfo.name}</option>)
                     }
                 </select>
-            <label htmlFor="projectNameSelector">Project name:</label>
+                <label htmlFor="pluto_subtype_selector">Pluto subtype, if applicable:</label>
+                <PlutoProjectTypeSelector id="pluto_subtype_selector"
+                                          plutoProjectTypesList={this.props.plutoTypesList}
+                                          selectionUpdated={newValue=>this.setState({selectedPlutoSubtype: newValue}, ()=>this.updateParent())}
+                                          selectedType={this.props.selectedPlutoSubtype}
+                                          onlyShowSubtypes={true}
+                                          subTypesFor={this.getPlutoSubtypeForPlType()}/>
+            <label htmlFor="projectNameSelector">Template name:</label>
                     <input type="text" id="projectNameSelector" value={this.props.templateName}
                            onChange={(event)=>this.setState({name: event.target.value, selectedType: this.props.selectedType}, ()=>this.updateParent())}/>
             </div>

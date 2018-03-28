@@ -13,7 +13,9 @@ class ProjectTemplateMultistep extends CommonMultistepComponent
         this.state = {
             template: null,
             projectTypes: [],
+            plutoProjectTypesList: [],
             selectedType: null,
+            selectedPlutoSubtype: "",
             currentEntry: null,
             error: null,
             fileId: null,
@@ -26,21 +28,25 @@ class ProjectTemplateMultistep extends CommonMultistepComponent
         if(this.props.match && this.props.match.params && this.props.match.params.itemid && this.props.match.params.itemid!=="new"){
             this.setState({currentEntry: this.props.match.params.itemid})
         }
-        axios.get("/api/projecttype").then((response)=>{
-            const firstType = response.data.result[0] ? response.data.result[0].id : null;
 
-            this.setState({projectTypes: response.data.result, selectedType: firstType});
-        }).catch((error)=>{
-            console.error(error);
-            this.setState({error: error})
-        });
+        Promise.all([axios.get("/api/projecttype"), axios.get("/api/storage"), axios.get("/api/plutoprojecttypeid")])
+            .then(responses=>{
+                const projectTypeResposne = responses[0];
+                const storageResponse = responses[1];
+                const plutoTypeResponse = responses[2];
 
-        /*update storage type list*/
-        axios.get("/api/storage").then(response=>{
-            this.setState({storages: response.data.result});
-        }).catch(error=>{
-            this.setState({error: error});
-        });
+            const firstType = projectTypeResposne.data.result[0] ? projectTypeResposne.data.result[0].id : null;
+
+            this.setState({projectTypes: projectTypeResposne.data.result,
+                selectedType: firstType,
+                storages: storageResponse.data.result,
+                plutoProjectTypesList: plutoTypeResponse.data.result
+            });
+
+            }).catch(error=>{
+                console.error(error);
+                this.setState({error: error});
+            });
     }
 
     render() {
@@ -50,7 +56,9 @@ class ProjectTemplateMultistep extends CommonMultistepComponent
                 component: <TypeSelectorComponent projectTypes={this.state.projectTypes}
                                                   selectedType={this.state.selectedType}
                                                   templateName={this.state.name}
-                                                  valueWasSet={(nameAndType)=>this.setState({selectedType: nameAndType.selectedType, name: nameAndType.name})}/>
+                                                  plutoTypesList={this.state.plutoProjectTypesList}
+                                                  selectedPlutoSubtype={this.state.selectedPlutoSubtype}
+                                                  valueWasSet={(nameAndType)=>this.setState({selectedType: nameAndType.selectedType, name: nameAndType.name, selectedPlutoSubtype: nameAndType.selectedPlutoSubtype})}/>
             },
             {
                 name: 'Upload template',
@@ -58,7 +66,12 @@ class ProjectTemplateMultistep extends CommonMultistepComponent
             },
             {
                 name: 'Confirm',
-                component: <TemplateCompletionComponent currentEntry={this.state.currentEntry} fileId={this.state.selectedFileId} name={this.state.name} projectType={this.state.selectedType}/>
+                component: <TemplateCompletionComponent currentEntry={this.state.currentEntry}
+                                                        fileId={this.state.selectedFileId}
+                                                        name={this.state.name}
+                                                        projectType={this.state.selectedType}
+                                                        plutoSubtype={this.state.selectedPlutoSubtype}
+                />
             }
         ];
         return(<Multistep showNavigation={true} steps={steps}/>);

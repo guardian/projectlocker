@@ -82,17 +82,6 @@ class ProjectTypeComponent extends MultistepComponentLoadsOnMount{
                                                   selectedType={this.state.plutoType}/></td>
                     <td><a onClick={event=>this.setState({plutoType: ""})}>clear</a></td>
                 </tr>
-                <tr>
-                    <td>Pluto subtype identifier, if applicable</td>
-                    <td><PlutoProjectTypeSelector id="pluto-subtype"
-                                                  plutoProjectTypesList={this.state.knownPlutoTypes}
-                                                  selectionUpdated={newValue=>this.setState({plutoSubtype: newValue})}
-                                                  selectedType={this.state.plutoSubType}
-                                                  subTypesFor={this.state.plutoType}
-                                                  onlyShowSubtypes={true}
-                    /></td>
-                    <td><a onClick={event=>this.setState({plutoSubtype: ""})}>clear</a></td>
-                </tr>
                 </tbody>
             </table>
         </div>
