@@ -262,11 +262,16 @@ class ProjectCreateHelperImpl @Inject() (@Named("message-processor-actor") messa
       val maybeCommission = results(1).asInstanceOf[Option[PlutoCommission]]
 
       if(maybeCommission.isDefined){
-        messageProcessor ! NewProjectCreated(createdProjectEntry,
-          projectType,
-          maybeCommission.get,
-          ZonedDateTime.now().toEpochSecond
-        )
+        projectType.forPluto.onComplete({
+          case Success(projectTypeForPluto)=>
+            messageProcessor ! NewProjectCreated(createdProjectEntry,
+              projectTypeForPluto,
+              maybeCommission.get,
+              ZonedDateTime.now().toEpochSecond
+            )
+          case Failure(error)=>
+            logger.error(s"Can't sync project ${createdProjectEntry.projectTitle} to pluto: ", error)
+        })
       } else {
         logger.error(s"Can't sync project ${createdProjectEntry.projectTitle} (${createdProjectEntry.id}) to Pluto - missing commission")
       }

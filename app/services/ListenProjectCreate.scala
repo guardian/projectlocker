@@ -13,6 +13,8 @@ trait ListenProjectCreate extends NewProjectCreatedSerializer with JsonComms {
   def sendProjectCreatedMessage(msg: NewProjectCreated)(implicit ec:ExecutionContext, db: slick.jdbc.JdbcBackend#DatabaseDef):Future[Either[Boolean,Unit]] = {
     val notifyUrl =  s"${configuration.get[String]("pluto.server_url")}/project/api/external/notifycreated/"
     val bodyContent:String = Json.toJson(msg).toString()
+    //hmmm, need to map the integer keys that we have for plutoType and plutoSubtype to UUIDs here.
+
     logger.debug(s"Going to send json: $bodyContent to $notifyUrl")
 
     Http().singleRequest(HttpRequest(method=HttpMethods.POST, uri = notifyUrl, headers = List(getPlutoAuth))

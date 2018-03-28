@@ -29,7 +29,23 @@ trait ProjectTypeSerializer {
       (JsPath \ "plutoType").readNullable[Int] and
       (JsPath \ "plutoSubtype").readNullable[Int]
     )(ProjectType.apply _)
+
+  implicit val forPlutoWrites:Writes[ProjectTypeForPluto] = (
+    (JsPath \ "id").writeNullable[Int] and
+      (JsPath \ "name").write[String] and
+      (JsPath \ "plutoType").writeNullable[String] and
+      (JsPath \ "plutoSubtype").writeNullable[String]
+  )(unlift(ProjectTypeForPluto.unapply))
+
+  implicit val forPlutoRead:Reads[ProjectTypeForPluto] = (
+    (JsPath \ "id").readNullable[Int] and
+      (JsPath \ "name").read[String] and
+      (JsPath \ "plutoType").readNullable[String] and
+      (JsPath \ "plutoSubtype").readNullable[String]
+    )(ProjectTypeForPluto.apply _)
 }
+
+case class ProjectTypeForPluto(id: Option[Int], name: String, plutoType:Option[String], plutoSubtype:Option[String])
 
 case class ProjectType(id: Option[Int],name:String, opensWith: String, targetVersion: String, fileExtension:Option[String]=None, plutoType:Option[Int], plutoSubtype:Option[Int]) {
   /**
@@ -56,6 +72,42 @@ case class ProjectType(id: Option[Int],name:String, opensWith: String, targetVer
     "projectTargetVersion"->targetVersion,
     "projectFileExtension"->fileExtension.getOrElse("")
   )
+
+  def getPlutoType(implicit db: slick.jdbc.PostgresProfile#Backend#Database):Future[Option[PlutoProjectType]] = plutoType match {
+    case Some(typeId)=>
+      db.run(
+        TableQuery[PlutoProjectTypeRow].filter(_.id===typeId).result.asTry
+      ).map({
+        case Success(resultSeq)=>resultSeq.headOption
+        case Failure(error)=>throw error
+      })
+    case None=>
+      Future(None)
+  }
+
+  def getPlutoSubType(implicit db: slick.jdbc.PostgresProfile#Backend#Database):Future[Option[PlutoProjectType]] = plutoSubtype match {
+    case Some(typeId)=>
+      db.run(
+        TableQuery[PlutoProjectTypeRow].filter(_.id===typeId).result.asTry
+      ).map({
+        case Success(resultSeq)=>resultSeq.headOption
+        case Failure(error)=>throw error
+      })
+    case None=>
+      Future(None)
+  }
+
+  /**
+    * returns a [[ProjectTypeForPluto]] instance, which contains the UUIDs of the relevant groups
+    * @param db implicitly passed database object
+    * @return
+    */
+  def forPluto(implicit db: slick.jdbc.PostgresProfile#Backend#Database):Future[ProjectTypeForPluto] = Future.sequence(Seq(getPlutoType,getPlutoSubType)).map(results=>{
+    val maybePlutoType = results.head
+    val maybePlutoSubtype = results(1)
+
+    ProjectTypeForPluto(id,name,maybePlutoType.map(_.uuid),maybePlutoSubtype.map(_.uuid))
+  })
 }
 
 class ProjectTypeRow(tag: Tag) extends Table[ProjectType](tag, "ProjectType") {
