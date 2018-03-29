@@ -273,9 +273,9 @@ class ProjectEntryController @Inject() (cc:ControllerComponents, config: Configu
         Future(BadRequest(Json.obj("status"->"error","detail"->JsError.toJson(errors)))),
       projectRequest=>
         projectRequest.hydrate.flatMap({
-          case None=>
-            Future(BadRequest(Json.obj("status"->"error","detail"->"Invalid or missing data in request")))
-          case Some(rq)=>
+          case Left(errorList)=>
+            Future(BadRequest(Json.obj("status"->"error","detail"->errorList)))
+          case Right(rq)=>
             createFromFullRequest(rq)
         })
     )

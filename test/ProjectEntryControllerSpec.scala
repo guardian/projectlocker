@@ -74,6 +74,35 @@ class ProjectEntryControllerSpec extends Specification with Mockito with Project
     }
   }
 
+  "ProjectEntryController.createFromPluto" should {
+    "validate request and show errors if any data does not line up" in {
+      val testCreateDocument =
+        """{"commissionVSID": "VX-1447",
+          |"filename":"VX-1747",
+          |"plutoProjectTypeName": "330b4d84-ef24-41e2-b093-0d15829afa64",
+          |"title": "projectlocker test 4",
+          |"user": "andy_gallagher",
+          |"workingGroupUuid": "1b97c363-fba0-4771-9cb5-9bd65aaed306"}
+        """.stripMargin
+
+      val fakeProjectEntry = ProjectEntry(Some(999),1,None,"MyTestProjectEntry",Timestamp.valueOf(LocalDateTime.now()),"test-user",None,None,None)
+      mockedProjectHelper.create(any[ProjectRequestFull],org.mockito.Matchers.eq(None))(org.mockito.Matchers.eq(db),org.mockito.Matchers.any[play.api.Configuration]) answers((arglist,mock)=>Future(Success(fakeProjectEntry)))
+      val response = route(application, FakeRequest(
+        method="PUT",
+        uri="/api/project/external/create",
+        headers=FakeHeaders(Seq(("Content-Type", "application/json"))),
+        body=testCreateDocument).withSession("uid"->"testuser")).get
+
+      val jsondata = Await.result(bodyAsJsonFuture(response), 5.seconds).as[JsValue]
+      println(jsondata.toString)
+      status(response) must equalTo(BAD_REQUEST)
+
+
+      (jsondata \ "status").as[String] must equalTo("error")
+      (jsondata \ "detail").as[Seq[String]] must equalTo(Seq("No default project file storage has been set","No default project template has been set for 330b4d84-ef24-41e2-b093-0d15829afa64","No working group could be found for 1b97c363-fba0-4771-9cb5-9bd65aaed306","No commission could be found for VX-1447"))
+    }
+  }
+
   "ProjectEntryController.getByVsid" should {
     "return a ProjectEntry instance based on vidispine ID" in {
       val response = route(application,

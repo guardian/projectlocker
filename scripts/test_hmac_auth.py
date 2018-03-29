@@ -34,7 +34,7 @@ def sign_request(original_headers, method, path, content_body, shared_secret):
     hmaccer = hmac.new(shared_secret, string_to_sign, hashlib.sha384)
     result = base64.b64encode(hmaccer.digest())
     print "debug: final digest is {0}".format(result)
-    new_headers['Authorization'] = "testscript:{0}".format(result)
+    new_headers['X-Hmac-Authorization'] = "testscript:{0}".format(result)
     return new_headers
 
 #START MAIN
