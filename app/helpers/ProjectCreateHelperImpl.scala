@@ -320,7 +320,7 @@ class ProjectCreateHelperImpl @Inject() (@Named("message-processor-actor") messa
                   rq.user,rq.workingGroupId, rq.commissionId).flatMap({
                     case Success(createdProjectEntry)=>
                       logger.info(s"Project entry created as id ${createdProjectEntry.id}")
-                      sendCreateMessageToSelf(createdProjectEntry, rq.projectTemplate)
+                      if(rq.shouldNotify) sendCreateMessageToSelf(createdProjectEntry, rq.projectTemplate)
                       doPostrunActions(writtenFile, createdProjectEntry, rq.projectTemplate) map {
                         case Left(errorMessage)=>
                           Failure(new PostrunActionError(errorMessage))

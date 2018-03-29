@@ -68,7 +68,8 @@ case class ProjectRequestPluto(filename:String,title:String, plutoProjectTypeNam
           successfulResults(1).asInstanceOf[ProjectTemplate],
           user,
           successfulResults(2).asInstanceOf[PlutoWorkingGroup].id,
-          successfulResults(3).asInstanceOf[PlutoCommission].id))
+          successfulResults(3).asInstanceOf[PlutoCommission].id,
+          shouldNotify = false))
       } else {
         Left(resultSeq.collect({case Left(error)=>error}))
       }
