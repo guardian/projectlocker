@@ -9,8 +9,9 @@ import com.unboundid.ldap.sdk.LDAPConnectionPool
 import models.{LoginRequest, LoginRequestSerializer}
 import play.api.cache.SyncCacheApi
 import play.api.libs.json._
-import scala.collection.JavaConverters._
 
+import scala.collection.JavaConverters._
+import scala.concurrent.Future
 import scala.util.{Failure, Success}
 
 @Singleton
@@ -26,6 +27,11 @@ class Application @Inject() (cc:ControllerComponents, p:PlayBodyParsers, config:
     */
   def index(path:String) = Action {
     Ok(views.html.index())
+  }
+
+  def timeoutTest(delay: Int) = Action {
+    Thread.sleep(delay*1000)
+    Ok(Json.obj("status"->"ok","delay"->(delay*1000)))
   }
 
   /**

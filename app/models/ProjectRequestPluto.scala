@@ -15,7 +15,7 @@ import scala.util.{Failure, Success}
   * this model represents a request from Pluto to create a project
   * @param filename filename to create with
   * @param title title of the project
-  * @param plutoProjectTypeName pluto project type. This must correspond to a defaults key, which identifies the template to use
+  * @param plutoProjectTypeName pluto project type uuid. This must correspond to an instance of [[PlutoProjectType]] which identifes the template to use
   * @param user user that initiated the operation
   * @param workingGroupUuid uuid of the working group that this project will belong to
   * @param commissionVSID vidispine/pluto ID of the commission that this project will belong to

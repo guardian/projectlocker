@@ -20,6 +20,8 @@ concurrentRestrictions in Global := Seq(
   Tags.limitAll(1)
 )
 
+PlayKeys.devSettings := Seq("play.akka.dev-mode.akka.http.server.request-timeout"->"120 seconds")
+
 parallelExecution in Test := false
 
 unmanagedResourceDirectories in Test <+=  baseDirectory ( _ /"target/web/public/test" )
