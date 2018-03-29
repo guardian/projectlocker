@@ -29,10 +29,7 @@ case class ProjectRequestPluto(filename:String,title:String, plutoProjectTypeNam
       case Some(storageEntry)=>Right(storageEntry)
       case None=>Left("No default project file storage has been set")
     })
-    val projectTemplateFuture = ProjectTemplate.defaultEntryFor(plutoProjectTypeName).map({
-      case Some(projectTemplate)=>Right(projectTemplate)
-      case None=>Left(s"No default project template has been set for $plutoProjectTypeName")
-    })
+    val projectTemplateFuture = ProjectTemplate.defaultEntryFor(plutoProjectTypeName)
     val workingGroupFuture = PlutoWorkingGroup.entryForUuid(workingGroupUuid).map({
       case Some(workingGroup)=>Right(workingGroup)
       case None=>Left(s"No working group could be found for $workingGroupUuid")

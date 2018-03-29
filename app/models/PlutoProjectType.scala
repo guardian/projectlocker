@@ -78,6 +78,13 @@ object PlutoProjectType extends ((Option[Int], String, String, Option[Int], Opti
       case Success(resultSeq)=>resultSeq.headOption
       case Failure(error)=>throw error
     })
+
+  def entryForUuid(uuid:String)(implicit db: slick.jdbc.PostgresProfile#Backend#Database):Future[Option[PlutoProjectType]] = entryForUuid(UUID.fromString(uuid))
+
+  def entryForUuid(uuid: UUID)(implicit db: slick.jdbc.PostgresProfile#Backend#Database):Future[Option[PlutoProjectType]] =
+    db.run(
+      TableQuery[PlutoProjectTypeRow].filter(_.uuid===uuid.toString).result
+    ).map(_.headOption)
 }
 
 class PlutoProjectTypeRow(tag:Tag) extends Table[PlutoProjectType](tag, "PlutoProjectType") {
