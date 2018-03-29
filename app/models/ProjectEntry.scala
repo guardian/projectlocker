@@ -146,9 +146,9 @@ trait ProjectEntrySerializer extends TimestampSerialization {
 
 object ProjectEntry extends ((Option[Int], Int, Option[String], String, Timestamp, String, Option[Int], Option[Int], Option[String])=>ProjectEntry) {
   def createFromFile(sourceFile: FileEntry, projectTemplate: ProjectTemplate, title:String, created:Option[LocalDateTime],
-                     user:String, workingGroupId: Option[Int], commissionId: Option[Int])
+                     user:String, workingGroupId: Option[Int], commissionId: Option[Int], existingVidispineId: Option[String])
                     (implicit db:slick.jdbc.PostgresProfile#Backend#Database):Future[Try[ProjectEntry]] = {
-    createFromFile(sourceFile, projectTemplate.projectTypeId, title, created, user, workingGroupId, commissionId)
+    createFromFile(sourceFile, projectTemplate.projectTypeId, title, created, user, workingGroupId, commissionId, existingVidispineId)
   }
 
   def entryForId(requestedId: Int)(implicit db:slick.jdbc.PostgresProfile#Backend#Database):Future[Try[ProjectEntry]] = {
@@ -164,12 +164,11 @@ object ProjectEntry extends ((Option[Int], Int, Option[String], String, Timestam
   private def dateTimeToTimestamp(from: LocalDateTime) = Timestamp.valueOf(from)
 
   def createFromFile(sourceFile: FileEntry, projectTypeId: Int, title:String, created:Option[LocalDateTime],
-                     user:String, workingGroupId: Option[Int], commissionId: Option[Int])
+                     user:String, workingGroupId: Option[Int], commissionId: Option[Int], existingVidispineId: Option[String])
                     (implicit db:slick.jdbc.PostgresProfile#Backend#Database):Future[Try[ProjectEntry]] = {
 
     /* step one - create a new project entry */
-    println(s"Passed time: $created")
-    val entry = ProjectEntry(None, projectTypeId, None, title, dateTimeToTimestamp(created.getOrElse(LocalDateTime.now())),
+    val entry = ProjectEntry(None, projectTypeId, existingVidispineId, title, dateTimeToTimestamp(created.getOrElse(LocalDateTime.now())),
       user, workingGroupId, commissionId, None)
     val savedEntry = entry.save
 

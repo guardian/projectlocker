@@ -79,10 +79,11 @@ class ProjectEntryControllerSpec extends Specification with Mockito with Project
       val testCreateDocument =
         """{"commissionVSID": "VX-1447",
           |"filename":"VX-1747",
-          |"plutoProjectTypeName": "330b4d84-ef24-41e2-b093-0d15829afa64",
+          |"plutoProjectTypeUuid": "330b4d84-ef24-41e2-b093-0d15829afa64",
           |"title": "projectlocker test 4",
           |"user": "andy_gallagher",
-          |"workingGroupUuid": "1b97c363-fba0-4771-9cb5-9bd65aaed306"}
+          |"workingGroupUuid": "1b97c363-fba0-4771-9cb5-9bd65aaed306",
+          |"vidispineId":"VX-1747"}
         """.stripMargin
 
       val fakeProjectEntry = ProjectEntry(Some(999),1,None,"MyTestProjectEntry",Timestamp.valueOf(LocalDateTime.now()),"test-user",None,None,None)

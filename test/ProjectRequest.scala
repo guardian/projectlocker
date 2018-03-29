@@ -28,7 +28,7 @@ class ProjectRequest extends Specification {
 
       val result:Option[ProjectRequestFull] = Await.result(pr.hydrate,10.seconds)
 
-      result must beSome(ProjectRequestFull("testfile",testStorage.get,"MyTestProject", testTemplate.get,"testuser",None,None, shouldNotify=true))
+      result must beSome(ProjectRequestFull("testfile",testStorage.get,"MyTestProject", testTemplate.get,"testuser",None,None, existingVidispineId = None, shouldNotify=true))
     }
 
     "return None if provided storage ID is invalid" in {

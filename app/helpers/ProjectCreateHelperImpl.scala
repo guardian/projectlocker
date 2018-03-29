@@ -317,7 +317,7 @@ class ProjectCreateHelperImpl @Inject() (@Named("message-processor-actor") messa
               case Right(writtenFile)=>
                 logger.info(s"Creating new project entry from $writtenFile")
                 ProjectEntry.createFromFile(writtenFile, rq.projectTemplate, rq.title, createTime,
-                  rq.user,rq.workingGroupId, rq.commissionId).flatMap({
+                  rq.user,rq.workingGroupId, rq.commissionId, rq.existingVidispineId).flatMap({
                     case Success(createdProjectEntry)=>
                       logger.info(s"Project entry created as id ${createdProjectEntry.id}")
                       if(rq.shouldNotify) sendCreateMessageToSelf(createdProjectEntry, rq.projectTemplate)

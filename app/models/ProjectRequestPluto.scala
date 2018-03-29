@@ -21,7 +21,7 @@ import scala.util.{Failure, Success}
   * @param commissionVSID vidispine/pluto ID of the commission that this project will belong to
   */
 case class ProjectRequestPluto(filename:String,title:String, plutoProjectTypeName:String,
-                          user:String, workingGroupUuid: String, commissionVSID: String) {
+                          user:String, workingGroupUuid: String, commissionVSID: String, vidispineId: String) {
   private val logger = Logger(getClass)
   /* looks up the ids of destination storage and project template, and returns a new object with references to them or None */
   def hydrate(implicit db:slick.jdbc.PostgresProfile#Backend#Database):Future[Either[Seq[String],ProjectRequestFull]] = {
@@ -69,6 +69,7 @@ case class ProjectRequestPluto(filename:String,title:String, plutoProjectTypeNam
           user,
           successfulResults(2).asInstanceOf[PlutoWorkingGroup].id,
           successfulResults(3).asInstanceOf[PlutoCommission].id,
+          existingVidispineId = Some(vidispineId),
           shouldNotify = false))
       } else {
         Left(resultSeq.collect({case Left(error)=>error}))
@@ -81,10 +82,10 @@ trait ProjectRequestPlutoSerializer {
   implicit val projectRequestPlutoReads:Reads[ProjectRequestPluto] = (
     (JsPath \ "filename").read[String] and
       (JsPath \ "title").read[String] and
-      //FIXME: REPLACE PROJECTTYPENAME WITH UUID
-      (JsPath \ "plutoProjectTypeName").read[String] and
+      (JsPath \ "plutoProjectTypeUuid").read[String] and
       (JsPath \ "user").read[String] and
       (JsPath \ "workingGroupUuid").read[String] and
-      (JsPath \ "commissionVSID").read[String]
+      (JsPath \ "commissionVSID").read[String] and
+      (JsPath \ "vidispineId").read[String]
     )(ProjectRequestPluto.apply _)
 }

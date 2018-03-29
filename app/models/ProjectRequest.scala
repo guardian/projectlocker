@@ -20,14 +20,15 @@ case class ProjectRequest(filename:String,destinationStorageId:Int,title:String,
           successfulResults.head.asInstanceOf[StorageEntry],
           this.title,
           successfulResults(1).asInstanceOf[ProjectTemplate],
-          user, workingGroupId, commissionId, shouldNotify = true))
+          user, workingGroupId, commissionId, existingVidispineId = None, shouldNotify = true))
       } else None
     })
   }
 }
 
 case class ProjectRequestFull(filename:String,destinationStorage:StorageEntry,title:String,projectTemplate:ProjectTemplate,
-                              user:String, workingGroupId: Option[Int], commissionId:Option[Int], shouldNotify: Boolean) {
+                              user:String, workingGroupId: Option[Int], commissionId:Option[Int], existingVidispineId: Option[String],
+                              shouldNotify: Boolean) {
 
 }
 
