@@ -16,8 +16,7 @@ trait ProjectTypeSerializer {
       (JsPath \ "opensWith").write[String] and
       (JsPath \ "targetVersion").write[String] and
       (JsPath \ "fileExtension").writeNullable[String] and
-      (JsPath \ "plutoType").writeNullable[String] and
-      (JsPath \ "plutoSubtype").writeNullable[String]
+      (JsPath \ "plutoType").writeNullable[Int]
     )(unlift(ProjectType.unapply))
 
   implicit val typeReads:Reads[ProjectType] = (
@@ -26,12 +25,27 @@ trait ProjectTypeSerializer {
       (JsPath \ "opensWith").read[String] and
       (JsPath \ "targetVersion").read[String] and
       (JsPath \ "fileExtension").readNullable[String] and
+      (JsPath \ "plutoType").readNullable[Int]
+    )(ProjectType.apply _)
+
+  implicit val forPlutoWrites:Writes[ProjectTypeForPluto] = (
+    (JsPath \ "id").writeNullable[Int] and
+      (JsPath \ "name").write[String] and
+      (JsPath \ "plutoType").writeNullable[String] and
+      (JsPath \ "plutoSubtype").writeNullable[String]
+  )(unlift(ProjectTypeForPluto.unapply))
+
+  implicit val forPlutoRead:Reads[ProjectTypeForPluto] = (
+    (JsPath \ "id").readNullable[Int] and
+      (JsPath \ "name").read[String] and
       (JsPath \ "plutoType").readNullable[String] and
       (JsPath \ "plutoSubtype").readNullable[String]
-    )(ProjectType.apply _)
+    )(ProjectTypeForPluto.apply _)
 }
 
-case class ProjectType(id: Option[Int],name:String, opensWith: String, targetVersion: String, fileExtension:Option[String]=None, plutoType:Option[String], plutoSubtype:Option[String]) {
+case class ProjectTypeForPluto(id: Option[Int], name: String, plutoType:Option[String], plutoSubtype:Option[String])
+
+case class ProjectType(id: Option[Int],name:String, opensWith: String, targetVersion: String, fileExtension:Option[String]=None, plutoType:Option[Int]) {
   /**
     * Get a list of the postrun actions assocaited with this project type.
     * @param db implicitly provided database object
@@ -56,6 +70,33 @@ case class ProjectType(id: Option[Int],name:String, opensWith: String, targetVer
     "projectTargetVersion"->targetVersion,
     "projectFileExtension"->fileExtension.getOrElse("")
   )
+
+  def getPlutoType(implicit db: slick.jdbc.PostgresProfile#Backend#Database):Future[Option[PlutoProjectType]] = plutoType match {
+    case Some(typeId)=>
+      db.run(
+        TableQuery[PlutoProjectTypeRow].filter(_.id===typeId).result.asTry
+      ).map({
+        case Success(resultSeq)=>resultSeq.headOption
+        case Failure(error)=>throw error
+      })
+    case None=>
+      Future(None)
+  }
+
+
+  /**
+    * returns a [[ProjectTypeForPluto]] instance, which contains the UUIDs of the relevant groups
+    * @param projectTemplate [[ProjectTemplate]] object to get the subtype from
+    * @param db implicitly passed database object
+    * @return
+    */
+  def forPluto(projectTemplate:ProjectTemplate)(implicit db: slick.jdbc.PostgresProfile#Backend#Database):Future[ProjectTypeForPluto] =
+    Future.sequence(Seq(getPlutoType,projectTemplate.plutoSubtype)).map(results=>{
+      val maybePlutoType = results.head
+      val maybePlutoSubtype = results(1)
+
+      ProjectTypeForPluto(id,name,maybePlutoType.map(_.uuid),maybePlutoSubtype.map(_.uuid))
+    })
 }
 
 class ProjectTypeRow(tag: Tag) extends Table[ProjectType](tag, "ProjectType") {
@@ -64,13 +105,12 @@ class ProjectTypeRow(tag: Tag) extends Table[ProjectType](tag, "ProjectType") {
   def opensWith=column[String]("s_opens_with")
   def targetVersion=column[String]("s_target_version")
   def fileExtension=column[Option[String]]("s_file_extension")
-  def plutoType = column[Option[String]]("s_pluto_type")
-  def plutoSubtype = column[Option[String]]("s_pluto_subtype")
+  def plutoType = column[Option[Int]]("k_pluto_type")
 
-  def * = (id.?, name, opensWith, targetVersion, fileExtension, plutoType, plutoSubtype) <> (ProjectType.tupled, ProjectType.unapply)
+  def * = (id.?, name, opensWith, targetVersion, fileExtension, plutoType) <> (ProjectType.tupled, ProjectType.unapply)
 }
 
-object ProjectType extends ((Option[Int],String,String,String,Option[String], Option[String], Option[String])=>ProjectType) {
+object ProjectType extends ((Option[Int],String,String,String,Option[String], Option[Int])=>ProjectType) {
   def entryFor(entryId: Int)(implicit db:slick.jdbc.PostgresProfile#Backend#Database):Future[Try[ProjectType]] = {
     db.run(
       TableQuery[ProjectTypeRow].filter(_.id===entryId).result.asTry

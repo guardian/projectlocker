@@ -1,5 +1,6 @@
 import React from 'react';
 import GeneralListComponent from './GeneralListComponent.jsx';
+import PlutoSubtypeEntryView from './EntryViews/PlutoSubtypeEntryView.jsx';
 
 class ProjectTypeList extends GeneralListComponent {
     constructor(props){
@@ -17,8 +18,12 @@ class ProjectTypeList extends GeneralListComponent {
             GeneralListComponent.standardColumn("Opens with", "opensWith"),
             GeneralListComponent.standardColumn("Target version", "targetVersion"),
             GeneralListComponent.standardColumn("File extension", "fileExtension"),
-            GeneralListComponent.standardColumn("Pluto type", "plutoType"),
-            GeneralListComponent.standardColumn("Pluto subtype", "plutoSubtype"),
+            {
+                header: "Pluto type",
+                key: "plutoType",
+                headerProps: {className: 'dashboardheader'},
+                render: subtyperef=><PlutoSubtypeEntryView entryId={subtyperef}/>
+            },
             this.actionIcons()
         ];
     }

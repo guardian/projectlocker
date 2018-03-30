@@ -11,11 +11,10 @@ import slick.jdbc.PostgresProfile
 
 import scala.util.{Failure, Success}
 import scala.concurrent.ExecutionContext.Implicits.global
-import helpers.DatabaseHelper
 import play.api.cache.SyncCacheApi
 
 class System @Inject() (cc:ControllerComponents, configuration: Configuration, dbConfigProvider: DatabaseConfigProvider,
-                        databaseHelper:DatabaseHelper,cacheImpl:SyncCacheApi)
+                        cacheImpl:SyncCacheApi)
   extends AbstractController(cc) with Security {
 
   implicit val cache:SyncCacheApi = cacheImpl

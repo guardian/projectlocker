@@ -50,6 +50,9 @@ GET     /api/projecttype/:id/postrun       @controllers.ProjectTypeController.li
 PUT     /api/projecttype/:id               @controllers.ProjectTypeController.update(id: Int)
 DELETE  /api/projecttype/:id               @controllers.ProjectTypeController.delete(id: Int)
 
+GET     /api/plutoprojecttypeid            @controllers.PlutoProjectTypeController.list(startAt: Int ?=0, length:Int ?=100)
+GET     /api/plutoprojecttypeid/:id        @controllers.PlutoProjectTypeController.getitem(id: Int)
+
 GET     /api/postrun                   @controllers.PostrunActionController.list(startAt:Int ?=0,length:Int ?=100)
 PUT     /api/postrun                   @controllers.PostrunActionController.create
 GET     /api/postrun/:id               @controllers.PostrunActionController.getitem(id: Int)

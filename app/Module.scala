@@ -3,7 +3,7 @@ import helpers.JythonRunner
 import play.api.Logger
 import play.api.libs.concurrent.AkkaGuiceSupport
 import services.actors.MessageProcessorActor
-import services.{PlutoWGCommissionScanner, PostrunActionScanner, TestModeWarning}
+import services.{PlutoProjectTypeScanner, PlutoWGCommissionScanner, PostrunActionScanner, TestModeWarning}
 
 class Module extends AbstractModule with AkkaGuiceSupport {
   private val logger = Logger(getClass)
@@ -16,6 +16,7 @@ class Module extends AbstractModule with AkkaGuiceSupport {
     if(!sys.env.contains("CI")) {
       bind(classOf[PostrunActionScanner]).asEagerSingleton()
       bind(classOf[PlutoWGCommissionScanner]).asEagerSingleton()
+      bind(classOf[PlutoProjectTypeScanner]).asEagerSingleton()
     }
     //this makes the actor instance accessible via injection
     bindActor[MessageProcessorActor]("message-processor-actor")

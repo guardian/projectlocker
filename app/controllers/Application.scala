@@ -73,7 +73,12 @@ class Application @Inject() (cc:ControllerComponents, p:PlayBodyParsers, config:
     */
   def isLoggedIn = IsAuthenticated { uid=> { request=>
     val adminRoles = config.getStringList("ldap.admin-groups").map(_.asScala).getOrElse(List("Administrator"))
-    Ok(Json.obj("status"->"ok","uid"->uid, "isAdmin"->checkRole(uid, adminRoles)))
+    val isAdmin = config.get[String]("ldap.ldapProtocol") match {
+      case "none"=>true
+      case _=>checkRole(uid, adminRoles)
+    }
+
+    Ok(Json.obj("status"->"ok","uid"->uid, "isAdmin"->isAdmin))
   }}
 
   /**

@@ -1,4 +1,3 @@
-import helpers.DatabaseHelper
 import org.specs2.mutable._
 import org.specs2.runner._
 import org.junit.runner._
@@ -33,8 +32,6 @@ class ApplicationSpec extends Specification with MockedCacheApi {
     .injector()
 
   def inject[T : ClassTag]: T = injector.instanceOf[T]
-
-  protected val databaseHelper:DatabaseHelper = inject[DatabaseHelper]
 
   "Application" should {
     "render the index page" in  {

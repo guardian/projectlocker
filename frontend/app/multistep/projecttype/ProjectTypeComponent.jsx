@@ -1,6 +1,8 @@
 import CommonMultistepComponent from '../common/CommonMultistepComponent.jsx';
 import MultistepComponentLoadsOnMount from '../common/LoadsOnMount.jsx';
 import ErrorViewComponent from '../common/ErrorViewComponent.jsx';
+import PlutoProjectTypeSelector from '../../Selectors/PlutoProjectTypeSelector.jsx';
+import axios from 'axios';
 
 class ProjectTypeComponent extends MultistepComponentLoadsOnMount{
     /* CommonMultistepComponent includes an implementation of ComponentDidUpdate which
@@ -12,15 +14,22 @@ class ProjectTypeComponent extends MultistepComponentLoadsOnMount{
         this.endpoint = "/api/projecttype";
 
         this.state = {
-            name: null,
-            opensWith: null,
-            version: null,
-            fileExtension: null,
-            plutoType: null,
-            plutoSubtype: null,
+            name: "",
+            opensWith: "",
+            version: "",
+            fileExtension: "",
+            plutoType: "",
+            plutoSubtype: "",
             loading: false,
-            error: null
+            error: null,
+            knownPlutoTypes: []
         }
+    }
+
+    componentWillMount(){
+        axios.get("/api/plutoprojecttypeid").then(result=>{
+            this.setState({knownPlutoTypes: result.data.result}, ()=>super.componentWillMount())
+        }).catch(error=>console.error(error));
     }
 
     receivedExistingObject(projectType, cb){
@@ -67,15 +76,11 @@ class ProjectTypeComponent extends MultistepComponentLoadsOnMount{
                 </tr>
                 <tr>
                     <td>Pluto type identifier, if applicable</td>
-                    <td><input id="pluto-type" className="inputs" value={this.state.plutoType}
-                            onChange={event=>this.setState({plutoType: event.target.value})}/></td>
-                    <td><a onClick={event=>this.setState({plutoType: null})}>clear</a></td>
-                </tr>
-                <tr>
-                    <td>Pluto subtype identifier, if applicable</td>
-                    <td><input id="pluto-subtype" className="inputs" value={this.state.plutoSubtype}
-                            onChange={event=>this.setState({plutoSubtype: event.target.value})}/></td>
-                    <td><a onClick={event=>this.setState({plutoSubtype: null})}>clear</a></td>
+                    <td><PlutoProjectTypeSelector id="pluto-type"
+                                                  plutoProjectTypesList={this.state.knownPlutoTypes}
+                                                  selectionUpdated={newValue=>this.setState({plutoType: newValue})}
+                                                  selectedType={this.state.plutoType}/></td>
+                    <td><a onClick={event=>this.setState({plutoType: ""})}>clear</a></td>
                 </tr>
                 </tbody>
             </table>
