@@ -118,11 +118,17 @@ class ProjectEntryControllerSpec extends Specification with Mockito with Project
         uri="/api/project/external/create",
         headers=FakeHeaders(Seq(("Content-Type", "application/json"))),
         body=testCreateDocument).withSession("uid"->"testuser")).get
-//      val jsondata = Await.result(bodyAsJsonFuture(response), 5.seconds).as[JsValue]
-//      println(jsondata.toString)
+      val jsondata = Await.result(bodyAsJsonFuture(response), 5.seconds).as[JsValue]
+      println(jsondata.toString)
 
-      status(response) must equalTo(303)
-
+      status(response) must equalTo(CONFLICT)
+      (jsondata \ "status").as[String] mustEqual "projects already exist"
+      val resultList = (jsondata \ "result").as[List[ProjectEntry]]
+      resultList.length mustEqual 2
+      resultList.head.vidispineProjectId must beSome("VX-2345")
+      resultList.head.projectTitle mustEqual "ThatTestProject"
+      resultList.head.id must beSome(3)
+      resultList(1).id must beSome(4)
     }
   }
 

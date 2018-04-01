@@ -265,7 +265,7 @@ class ProjectEntryController @Inject() (cc:ControllerComponents, config: Configu
       })
   }}
 
-  def createExternal = IsAuthenticatedAsync(parse.json) {uid=>{ request:Request[JsValue] =>
+  def createExternal(force:Boolean) = IsAuthenticatedAsync(parse.json) {uid=>{ request:Request[JsValue] =>
     implicit val db = dbConfig.db
 
     request.body.validate[ProjectRequestPluto].fold(
@@ -281,7 +281,12 @@ class ProjectEntryController @Inject() (cc:ControllerComponents, config: Configu
                 case Success(matchingProjects)=>
                   logger.info(s"Got matching projects: $matchingProjects")
                   if(matchingProjects.nonEmpty){
-                    Future(Redirect(s"/api/project/${matchingProjects.head.id.get}",SEE_OTHER))
+                    if(!force)
+                      Future(Conflict(Json.obj("status"->"projects already exist","result"->matchingProjects)))
+                    else {
+                      logger.info("Conflicting projects potentially exist, but continuing anyway as force=true")
+                      createFromFullRequest(rq)
+                    }
                   } else {
                     logger.info(s"No matching projects for ${rq.existingVidispineId.get}")
                     createFromFullRequest(rq)

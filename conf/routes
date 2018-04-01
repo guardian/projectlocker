@@ -35,7 +35,7 @@ PUT     /api/project/list                   @controllers.ProjectEntryController.
 GET     /api/project/distinctowners         @controllers.ProjectEntryController.distinctOwners
 
 PUT     /api/project                        @controllers.ProjectEntryController.create
-PUT     /api/project/external/create        @controllers.ProjectEntryController.createExternal
+PUT     /api/project/external/create        @controllers.ProjectEntryController.createExternal(force:Boolean ?=false)
 GET     /api/project/by-vsid/:vsid          @controllers.ProjectEntryController.getByVsid(vsid:String)
 GET     /api/project/:id/files              @controllers.ProjectEntryController.filesList(id:Int)
 PUT     /api/project/:id/title              @controllers.ProjectEntryController.updateTitle(id: Int)
