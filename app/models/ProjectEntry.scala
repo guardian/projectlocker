@@ -157,6 +157,42 @@ object ProjectEntry extends ((Option[Int], Int, Option[String], String, Timestam
     ).map(_.map(_.head))
   }
 
+  def lookupByVidispineId(vsid: String)(implicit db:slick.jdbc.PostgresProfile#Backend#Database):Future[Try[Seq[ProjectEntry]]] =
+    db.run(
+      TableQuery[ProjectEntryRow].filter(_.vidispineProjectId===vsid).result.asTry
+    )
+
+  /**
+    * method to aid recovery if projectlocker has created something but pluto has no record of it. If all parameters match,
+    * something is returned
+    * @param plutoTypeUuid
+    */
+  def lookupByPlutoInfo(plutoTypeUuid:String, projectTitle:String, workingGroupUuid:String, commissionId:Int)(implicit db:slick.jdbc.PostgresProfile#Backend#Database):Future[Try[Option[ProjectEntry]]] = {
+    val plutoInfoFutures = Future.sequence(Seq(PlutoProjectType.entryForUuid(plutoTypeUuid), PlutoWorkingGroup.entryForUuid(workingGroupUuid)))
+
+    plutoInfoFutures.flatMap(resultSeq=>{
+      val maybePlutoProjectType = resultSeq.head.asInstanceOf[Option[PlutoProjectType]]
+      val maybePlutoWorkingGroup = resultSeq(1).asInstanceOf[Option[PlutoWorkingGroup]]
+
+      if(maybePlutoProjectType.isDefined && maybePlutoWorkingGroup.isDefined) {
+        db.run(
+          TableQuery[ProjectEntryRow]
+            .filter(_.workingGroup===maybePlutoWorkingGroup.get.id.get)
+            .filter(_.projectType===maybePlutoWorkingGroup.get.id.get)
+            .filter(_.projectTitle===projectTitle)
+            .filter(_.commission===commissionId).result.asTry
+        ).map({
+          case Success(result)=>Success(result.headOption)
+          case Failure(error)=>Failure(error)
+        })
+      } else {
+        Future(Failure(new RuntimeException("Either plutoProjectType or plutoWorkingGroup not found")))
+      }
+    }).recover({
+      case err:Throwable=>Failure(err)
+    })
+  }
+
   protected def insertFileAssociation(projectEntryId:Int, sourceFileId:Int)(implicit db:slick.jdbc.PostgresProfile#Backend#Database) = db.run(
     (TableQuery[FileAssociationRow]+=(projectEntryId,sourceFileId)).asTry
   )

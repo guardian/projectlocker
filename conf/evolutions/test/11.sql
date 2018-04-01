@@ -9,10 +9,14 @@ INSERT INTO "FileEntry" (id, S_FILEPATH, K_STORAGE_ID, S_USER, I_VERSION, T_CTIM
 INSERT INTO "FileEntry" (id, S_FILEPATH, K_STORAGE_ID, S_USER, I_VERSION, T_CTIME, T_MTIME, T_ATIME, B_HAS_CONTENT) VALUES (4, '/tmp/testprojectfile', 1, 'you', 1, '2016-12-11 12:21:11.021', '2016-12-11 12:21:11.021', '2016-12-11 12:21:11.021', false);
 INSERT INTO "FileEntry" (id, S_FILEPATH, K_STORAGE_ID, S_USER, I_VERSION, T_CTIME, T_MTIME, T_ATIME, B_HAS_CONTENT) VALUES (5, '/path/to/thattestproject', 1, 'you', 1, '2016-12-11 12:21:11.021', '2016-12-11 12:21:11.021', '2016-12-11 12:21:11.021', true);
 
-INSERT INTO "ProjectType" (id, S_NAME, S_OPENS_WITH, S_TARGET_VERSION, S_FILE_EXTENSION) VALUES (1, 'Premiere 2014 test', 'AdobePremierePro.app', '14.0', '.prproj');
+INSERT INTO "PlutoProjectType" (id, S_NAME, U_UUID) VALUES (1, 'Premiere test', '330b4d84-ef24-41e2-b093-0d15829afa64');
+
+INSERT INTO "ProjectType" (id, S_NAME, S_OPENS_WITH, S_TARGET_VERSION, S_FILE_EXTENSION, K_PLUTO_TYPE) VALUES (1, 'Premiere 2014 test', 'AdobePremierePro.app', '14.0', '.prproj', 1);
 INSERT INTO "ProjectType" (id, S_NAME, S_OPENS_WITH, S_TARGET_VERSION, S_FILE_EXTENSION) VALUES (2, 'Prelude 2014 test', 'AdobePrelude.app', '14.0', '.plproj');
 INSERT INTO "ProjectType" (id, S_NAME, S_OPENS_WITH, S_TARGET_VERSION, S_FILE_EXTENSION) VALUES (3, 'Cubase test', 'Cubase.app', '6.0', '.cpr');
 INSERT INTO "ProjectType" (id, S_NAME, S_OPENS_WITH, S_TARGET_VERSION, S_FILE_EXTENSION) VALUES (4, 'Aftereffects test', 'AdobeAfterEffects.app', '6.0', '.aep');
+
+
 
 INSERT INTO "ProjectEntry" (id, K_PROJECT_TYPE, S_TITLE, T_CREATED,S_USER) VALUES (1, 1, 'InitialTestProject', '2016-12-11 12:21:11.021', 'me');
 INSERT INTO "ProjectEntry" (id, K_PROJECT_TYPE, S_TITLE, S_VIDISPINE_ID,T_CREATED,S_USER) VALUES (2, 1, 'AnotherTestProject', 'VX-1234', '2016-12-11 12:21:11.021', 'you');
@@ -25,6 +29,8 @@ INSERT INTO "ProjectFileAssociation" (id, K_PROJECT_ENTRY, K_FILE_ENTRY) VALUES 
 INSERT INTO "ProjectTemplate" (id, S_NAME, K_PROJECT_TYPE, K_FILE_REF) VALUES (1, 'Premiere test template 1', 1, 1);
 INSERT INTO "ProjectTemplate" (id, S_NAME, K_PROJECT_TYPE, K_FILE_REF) VALUES (2, 'Another wonderful test template', 2, 2);
 INSERT INTO "ProjectTemplate" (id, S_NAME, K_PROJECT_TYPE, K_FILE_REF) VALUES (3, 'Some random test template', 2, 2);
+
+UPDATE "PlutoProjectType" SET K_DEFAULT_TEMPLATE=1 WHERE id=1;
 
 INSERT INTO "PostrunAction" (id, S_RUNNABLE, S_TITLE, S_OWNER, I_VERSION, T_CTIME) VALUES (1, 'FirstTestScript.py', 'First test postrun', 'system',1, '2018-01-01T12:13:24.000');
 INSERT INTO "PostrunAction" (id, S_RUNNABLE, S_TITLE, S_OWNER, I_VERSION, T_CTIME) VALUES (2, 'SecondTestScript.py', 'Second test postrun', 'system',1, '2018-01-01T14:15:31.000');
@@ -42,7 +48,7 @@ INSERT INTO "PostrunDependency" (id,K_SOURCE, K_DEPENDSON) VALUES (2, 1, 6);
 INSERT INTO "PostrunDependency" (id,K_SOURCE, K_DEPENDSON) VALUES (3, 4, 5);
 INSERT INTO "PostrunDependency" (id,K_SOURCE, K_DEPENDSON) VALUES (4, 2, 1);
 
-INSERT INTO "PlutoWorkingGroup" (id, S_HIDE, S_NAME, U_UUID) VALUES (1, NULL, 'Multimedia Social', '13CCF63C-F248-41C1-8EAA-138D0758E9AB');
+INSERT INTO "PlutoWorkingGroup" (id, S_HIDE, S_NAME, U_UUID) VALUES (1, NULL, 'Multimedia Social', '1b97c363-fba0-4771-9cb5-9bd65aaed306');
 INSERT INTO "PlutoWorkingGroup" (id, S_HIDE, S_NAME, U_UUID) VALUES (2, 'hidden', 'Multimedia Anti-Social', 'DA60602E-55C1-4F2A-8EDD-2737BEB4916E');
 
 INSERT INTO "PlutoCommission" (id, I_COLLECTION_ID, S_SITE_ID, T_CREATED, T_UPDATED, S_TITLE, S_STATUS, S_DESCRIPTION, K_WORKING_GROUP) VALUES (1, 1234, 'VX', '2018-01-01T12:13:24.000', '2018-01-01T12:13:24.000', 'My test commission', 'New', 'some very long description goes here', 1);
@@ -53,6 +59,7 @@ INSERT INTO "PlutoCommission" (id, I_COLLECTION_ID, S_SITE_ID, T_CREATED, T_UPDA
 INSERT INTO DEFAULTS (id, S_NAME, S_VALUE) VALUES (1, 'lunch', 'sandwich');
 INSERT INTO DEFAULTS (id, S_NAME, S_VALUE) VALUES (2, 'breakfast', 'toast');
 INSERT INTO DEFAULTS (id, S_NAME, S_VALUE) VALUES (3, 'dessert', 'nothing');
+INSERT INTO DEFAULTS (id, S_NAME, S_VALUE) VALUES (4, 'project_storage_id', 1);
 
 ------------------------
 SELECT pg_catalog.setval('"Defaults_id_seq"', 4, true);

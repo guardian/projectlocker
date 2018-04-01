@@ -276,7 +276,23 @@ class ProjectEntryController @Inject() (cc:ControllerComponents, config: Configu
           case Left(errorList)=>
             Future(BadRequest(Json.obj("status"->"error","detail"->errorList)))
           case Right(rq)=>
-            createFromFullRequest(rq)
+            if(rq.existingVidispineId.isDefined){
+              ProjectEntry.lookupByVidispineId(rq.existingVidispineId.get).flatMap({
+                case Success(matchingProjects)=>
+                  logger.info(s"Got matching projects: $matchingProjects")
+                  if(matchingProjects.nonEmpty){
+                    Future(Redirect(s"/api/project/${matchingProjects.head.id.get}",SEE_OTHER))
+                  } else {
+                    logger.info(s"No matching projects for ${rq.existingVidispineId.get}")
+                    createFromFullRequest(rq)
+                  }
+                case Failure(error)=>
+                  logger.error("Unable to look up vidispine ID: ", error)
+                  Future(InternalServerError(Json.obj("status"->"error","detail"->error.toString)))
+              })
+            } else {
+              createFromFullRequest(rq)
+            }
         })
     )
   }}

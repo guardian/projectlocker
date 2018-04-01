@@ -65,7 +65,7 @@ enablePlugins(UniversalPlugin)
 
 enablePlugins(LinuxPlugin)
 
-enablePlugins(RpmPlugin, JavaServerAppPackaging, SystemdPlugin)
+enablePlugins(RpmPlugin, JavaServerAppPackaging, SystemdPlugin, DockerPlugin)
 
 //Generic Linux package build configuration
 mappings in Universal ++= directory("postrun/")
