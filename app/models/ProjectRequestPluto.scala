@@ -8,9 +8,6 @@ import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.util.{Failure, Success}
 
-//need to pick up default storage
-//need to map the right project template id - how? maybe have a defaults option for each pluto project type?
-
 /**
   * this model represents a request from Pluto to create a project
   * @param filename filename to create with
