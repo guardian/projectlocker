@@ -103,7 +103,7 @@ class ProjectEntryControllerSpec extends Specification with Mockito with Project
       (jsondata \ "detail").as[Seq[String]] must equalTo(Seq("No record could be found for the pluto project type 330b4d84-ef24-4102-b093-0d15829afa64","No working group could be found for 1b97c363-fba0-4771-90b5-9bd65aaed306","No commission could be found for VX-1447"))
     }
 
-    "return a redirect to an existing project id if a project with the same vsid exists already" in {
+    "return a Conflict containing all matching projects and their likely pluto types if a project with the same vsid exists already" in {
       val testCreateDocument =
         """{"commissionVSID": "VX-4567",
           |"filename":"VX-2345",
@@ -119,7 +119,6 @@ class ProjectEntryControllerSpec extends Specification with Mockito with Project
         headers=FakeHeaders(Seq(("Content-Type", "application/json"))),
         body=testCreateDocument).withSession("uid"->"testuser")).get
       val jsondata = Await.result(bodyAsJsonFuture(response), 5.seconds).as[JsValue]
-      println(jsondata.toString)
 
       status(response) must equalTo(CONFLICT)
       (jsondata \ "detail").as[String] mustEqual "projects already exist"
