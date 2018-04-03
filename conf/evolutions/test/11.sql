@@ -10,12 +10,12 @@ INSERT INTO "FileEntry" (id, S_FILEPATH, K_STORAGE_ID, S_USER, I_VERSION, T_CTIM
 INSERT INTO "FileEntry" (id, S_FILEPATH, K_STORAGE_ID, S_USER, I_VERSION, T_CTIME, T_MTIME, T_ATIME, B_HAS_CONTENT) VALUES (5, '/path/to/thattestproject', 1, 'you', 1, '2016-12-11 12:21:11.021', '2016-12-11 12:21:11.021', '2016-12-11 12:21:11.021', true);
 
 INSERT INTO "PlutoProjectType" (id, S_NAME, U_UUID) VALUES (1, 'Premiere test', '330b4d84-ef24-41e2-b093-0d15829afa64');
+INSERT INTO "PlutoProjectType" (id, S_NAME, U_UUID, K_PARENT) VALUES (2, 'Subtype test', '0145d384-f9ae-42af-9b2e-48adca11a7e4', 1);
 
 INSERT INTO "ProjectType" (id, S_NAME, S_OPENS_WITH, S_TARGET_VERSION, S_FILE_EXTENSION, K_PLUTO_TYPE) VALUES (1, 'Premiere 2014 test', 'AdobePremierePro.app', '14.0', '.prproj', 1);
 INSERT INTO "ProjectType" (id, S_NAME, S_OPENS_WITH, S_TARGET_VERSION, S_FILE_EXTENSION) VALUES (2, 'Prelude 2014 test', 'AdobePrelude.app', '14.0', '.plproj');
-INSERT INTO "ProjectType" (id, S_NAME, S_OPENS_WITH, S_TARGET_VERSION, S_FILE_EXTENSION) VALUES (3, 'Cubase test', 'Cubase.app', '6.0', '.cpr');
+INSERT INTO "ProjectType" (id, S_NAME, S_OPENS_WITH, S_TARGET_VERSION, S_FILE_EXTENSION, K_PLUTO_TYPE) VALUES (3, 'Cubase test', 'Cubase.app', '6.0', '.cpr',2);
 INSERT INTO "ProjectType" (id, S_NAME, S_OPENS_WITH, S_TARGET_VERSION, S_FILE_EXTENSION) VALUES (4, 'Aftereffects test', 'AdobeAfterEffects.app', '6.0', '.aep');
-
 
 
 INSERT INTO "ProjectEntry" (id, K_PROJECT_TYPE, S_TITLE, T_CREATED,S_USER) VALUES (1, 1, 'InitialTestProject', '2016-12-11 12:21:11.021', 'me');
@@ -31,6 +31,7 @@ INSERT INTO "ProjectTemplate" (id, S_NAME, K_PROJECT_TYPE, K_FILE_REF) VALUES (2
 INSERT INTO "ProjectTemplate" (id, S_NAME, K_PROJECT_TYPE, K_FILE_REF) VALUES (3, 'Some random test template', 2, 2);
 
 UPDATE "PlutoProjectType" SET K_DEFAULT_TEMPLATE=1 WHERE id=1;
+UPDATE "PlutoProjectType" SET K_DEFAULT_TEMPLATE=3 WHERE id=2;
 
 INSERT INTO "PostrunAction" (id, S_RUNNABLE, S_TITLE, S_OWNER, I_VERSION, T_CTIME) VALUES (1, 'FirstTestScript.py', 'First test postrun', 'system',1, '2018-01-01T12:13:24.000');
 INSERT INTO "PostrunAction" (id, S_RUNNABLE, S_TITLE, S_OWNER, I_VERSION, T_CTIME) VALUES (2, 'SecondTestScript.py', 'Second test postrun', 'system',1, '2018-01-01T14:15:31.000');

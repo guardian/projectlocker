@@ -86,7 +86,7 @@ object ProjectTemplate extends ((Option[Int],String,Int,Int,Option[Int])=>Projec
             Future(Left(s"Project type entry ${plutoProjectType.name} (${plutoProjectType.uuid} has no default project template set"))
         }
       case None=>
-        Future(Left(s"No record could befound for the pluto project type $plutoProjectTypeUuid"))
+        Future(Left(s"No record could be found for the pluto project type $plutoProjectTypeUuid"))
     })
 
   def templatesForFileId(fileId:Int)(implicit db:slick.jdbc.PostgresProfile#Backend#Database):Future[Try[Seq[ProjectTemplate]]] =
