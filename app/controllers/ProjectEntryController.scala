@@ -12,6 +12,7 @@ import play.api.{Configuration, Logger}
 import play.api.db.slick.DatabaseConfigProvider
 import play.api.libs.json.{JsError, JsResult, JsValue, Json}
 import play.api.mvc._
+import play.mvc.Http.Response
 import slick.jdbc.PostgresProfile
 import slick.lifted.TableQuery
 import slick.jdbc.PostgresProfile.api._
@@ -29,7 +30,8 @@ class ProjectEntryController @Inject() (cc:ControllerComponents, config: Configu
                                         cacheImpl:SyncCacheApi)
   extends GenericDatabaseObjectControllerWithFilter[ProjectEntry,ProjectEntryFilterTerms]
     with ProjectEntrySerializer with ProjectEntryFilterTermsSerializer with ProjectRequestSerializer
-    with ProjectRequestPlutoSerializer with UpdateTitleRequestSerializer with FileEntrySerializer with Security
+    with ProjectRequestPlutoSerializer with UpdateTitleRequestSerializer with FileEntrySerializer
+    with PlutoConflictReplySerializer with Security
 {
   override implicit val cache:SyncCacheApi = cacheImpl
 
@@ -265,6 +267,23 @@ class ProjectEntryController @Inject() (cc:ControllerComponents, config: Configu
       })
   }}
 
+  def handleMatchingProjects(rq:ProjectRequestFull, matchingProjects:Seq[ProjectEntry], force: Boolean):Future[Result] = {
+    implicit val db = dbConfig.db
+    logger.info(s"Got matching projects: $matchingProjects")
+    if (matchingProjects.nonEmpty) {
+      if (!force) {
+        Future.sequence(matchingProjects.map(proj => PlutoConflictReply.getForProject(proj)))
+          .map(plutoMatch => Conflict(Json.obj("status" -> "conflict","detail"->"projects already exist", "result" -> plutoMatch)))
+      } else {
+        logger.info("Conflicting projects potentially exist, but continuing anyway as force=true")
+        createFromFullRequest(rq)
+      }
+    } else {
+      logger.info("No matching projects, creating")
+      createFromFullRequest(rq)
+    }
+  }
+
   def createExternal(force:Boolean) = IsAuthenticatedAsync(parse.json) {uid=>{ request:Request[JsValue] =>
     implicit val db = dbConfig.db
 
@@ -279,18 +298,7 @@ class ProjectEntryController @Inject() (cc:ControllerComponents, config: Configu
             if(rq.existingVidispineId.isDefined){
               ProjectEntry.lookupByVidispineId(rq.existingVidispineId.get).flatMap({
                 case Success(matchingProjects)=>
-                  logger.info(s"Got matching projects: $matchingProjects")
-                  if(matchingProjects.nonEmpty){
-                    if(!force)
-                      Future(Conflict(Json.obj("status"->"projects already exist","result"->matchingProjects)))
-                    else {
-                      logger.info("Conflicting projects potentially exist, but continuing anyway as force=true")
-                      createFromFullRequest(rq)
-                    }
-                  } else {
-                    logger.info(s"No matching projects for ${rq.existingVidispineId.get}")
-                    createFromFullRequest(rq)
-                  }
+                  handleMatchingProjects(rq, matchingProjects, force)
                 case Failure(error)=>
                   logger.error("Unable to look up vidispine ID: ", error)
                   Future(InternalServerError(Json.obj("status"->"error","detail"->error.toString)))

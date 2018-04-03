@@ -8,8 +8,6 @@ import java.time.LocalDateTime
 import org.joda.time.DateTime
 import org.joda.time.DateTimeZone.UTC
 import play.api.libs.functional.syntax._
-import play.api.libs.json.Reads.jodaDateReads
-import play.api.libs.json.Writes.jodaDateWrites
 import play.api.libs.json._
 import slick.jdbc.JdbcBackend
 

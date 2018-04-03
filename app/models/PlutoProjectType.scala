@@ -85,6 +85,11 @@ object PlutoProjectType extends ((Option[Int], String, String, Option[Int], Opti
     db.run(
       TableQuery[PlutoProjectTypeRow].filter(_.uuid===uuid.toString).result
     ).map(_.headOption)
+
+  def entryForProjectLockerType(plt:Int)(implicit db: slick.jdbc.PostgresProfile#Backend#Database):Future[Seq[PlutoProjectType]] =
+    db.run(
+      TableQuery[PlutoProjectTypeRow].filter(_.defaultProjectTemplate===plt).result
+    )
 }
 
 class PlutoProjectTypeRow(tag:Tag) extends Table[PlutoProjectType](tag, "PlutoProjectType") {

@@ -4,7 +4,7 @@ import java.time.LocalDateTime
 import akka.actor.ActorSystem
 import akka.stream.ActorMaterializer
 import helpers.{ProjectCreateHelper, ProjectCreateHelperImpl}
-import models.{ProjectEntry, ProjectEntrySerializer, ProjectRequestFull}
+import models._
 import org.specs2.mutable.Specification
 import org.specs2.mock.Mockito
 import play.api.db.slick.DatabaseConfigProvider
@@ -21,7 +21,7 @@ import scala.concurrent.{Await, Future}
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.util.Success
 
-class ProjectEntryControllerSpec extends Specification with Mockito with ProjectEntrySerializer {
+class ProjectEntryControllerSpec extends Specification with Mockito with ProjectEntrySerializer with PlutoConflictReplySerializer {
   sequential
   val mockedProjectHelper = mock[ProjectCreateHelperImpl]
 
@@ -122,13 +122,17 @@ class ProjectEntryControllerSpec extends Specification with Mockito with Project
       println(jsondata.toString)
 
       status(response) must equalTo(CONFLICT)
-      (jsondata \ "status").as[String] mustEqual "projects already exist"
-      val resultList = (jsondata \ "result").as[List[ProjectEntry]]
+      (jsondata \ "detail").as[String] mustEqual "projects already exist"
+      val resultList = (jsondata \ "result").as[List[PlutoConflictReply]]
       resultList.length mustEqual 2
-      resultList.head.vidispineProjectId must beSome("VX-2345")
-      resultList.head.projectTitle mustEqual "ThatTestProject"
-      resultList.head.id must beSome(3)
-      resultList(1).id must beSome(4)
+      resultList.head.project.vidispineProjectId must beSome("VX-2345")
+      resultList.head.project.projectTitle mustEqual "ThatTestProject"
+      resultList.head.project.id must beSome(3)
+      resultList.head.possiblePlutoTypes.length mustEqual 1
+      //test data does not have a working group set up
+      resultList.head.possiblePlutoTypes.head.uuid mustEqual "330b4d84-ef24-41e2-b093-0d15829afa64"
+      resultList(1).project.id must beSome(4)
+      resultList(1).possiblePlutoTypes.length mustEqual 1
     }
   }
 
