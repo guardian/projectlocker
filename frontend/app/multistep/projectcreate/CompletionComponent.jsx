@@ -4,6 +4,7 @@ import PropTypes from 'prop-types';
 
 import SummaryComponent from './SummaryComponent.jsx';
 import ErrorViewComponent from '../common/ErrorViewComponent.jsx';
+import LongProcessComponent from './LongProcessComponent.jsx';
 
 class ProjectCompletionComponent extends React.Component {
     static propTypes = {
@@ -57,13 +58,13 @@ class ProjectCompletionComponent extends React.Component {
 
     getWarnings(){
         let list=[];
-        if(this.props.selectedWorkingGroupId==null || this.props.selectedWorkingGroupId===0)
+        if(this.props.selectedWorkingGroupId===null || this.props.selectedWorkingGroupId===0)
             list.push("If you don't select a working group, asset folder creation will fail");
-        if(this.props.selectedCommissionId==null || this.props.selectedCommissionId===0)
+        if(this.props.selectedCommissionId===null || this.props.selectedCommissionId===0)
             list.push("If you don't select a commission, asset folder creation will fail");
-        if(this.props.selectedProjectTemplate==null)
+        if(this.props.selectedProjectTemplate===null)
             list.push("You can't create a project without a project template");
-        if(this.props.projectFilename==null || this.props.projectFilename==="")
+        if(this.props.projectFilename===null || this.props.projectFilename==="")
             list.push("You can't create a project without a filename");
         return list;
     }
@@ -82,7 +83,13 @@ class ProjectCompletionComponent extends React.Component {
 
             {this.getWarnings().map(warning=><p className="error-text">{warning}</p>)}
             <ErrorViewComponent error={this.state.error}/>
-            <span style={{float: "right"}}><button onClick={this.confirmClicked}>Confirm</button></span>
+            <LongProcessComponent inProgress={this.state.inProgress} expectedDuration={30} operationName="Project creation"/>
+            <span style={{float: "right"}}>
+                <button onClick={this.confirmClicked}
+                        disabled={this.state.inProgress}
+                        style={{color: this.state.inProgress ? "lightgrey" : "black"}}
+                >Confirm</button>
+            </span>
         </div>)
     }
 }
