@@ -73,14 +73,20 @@ object ProjectTemplate extends ((Option[Int],String,Int,Int,Option[Int])=>Projec
       case Failure(error)=>throw error
     })
 
-  def defaultEntryFor(plutoProjectType:String)(implicit db:slick.jdbc.PostgresProfile#Backend#Database):Future[Option[ProjectTemplate]] =
-    Defaults.entryFor(plutoProjectType).flatMap({
-      case Success(maybeEntry)=>
-        maybeEntry match {
-          case Some(defaultEntry)=>ProjectTemplate.entryFor(defaultEntry.toInt)
-          case None=>Future(None)
+  def defaultEntryFor(plutoProjectTypeUuid:String)(implicit db:slick.jdbc.PostgresProfile#Backend#Database):Future[Either[String, ProjectTemplate]] =
+    PlutoProjectType.entryForUuid(plutoProjectTypeUuid).flatMap({
+      case Some(plutoProjectType)=>
+        plutoProjectType.defaultProjectTemplate match {
+          case Some(defaultProjectTemplate)=>
+            ProjectTemplate.entryFor (defaultProjectTemplate).map({
+              case Some(projectTemplate)=>Right(projectTemplate)
+              case None=>Left(s"The default project template for ${plutoProjectType.name} (${plutoProjectType.uuid}) did not exist")
+            })
+          case None=>
+            Future(Left(s"Project type entry ${plutoProjectType.name} (${plutoProjectType.uuid} has no default project template set"))
         }
-      case Failure(error)=>throw error
+      case None=>
+        Future(Left(s"No record could be found for the pluto project type $plutoProjectTypeUuid"))
     })
 
   def templatesForFileId(fileId:Int)(implicit db:slick.jdbc.PostgresProfile#Backend#Database):Future[Try[Seq[ProjectTemplate]]] =

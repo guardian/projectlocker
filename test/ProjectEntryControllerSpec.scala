@@ -4,7 +4,7 @@ import java.time.LocalDateTime
 import akka.actor.ActorSystem
 import akka.stream.ActorMaterializer
 import helpers.{ProjectCreateHelper, ProjectCreateHelperImpl}
-import models.{ProjectEntry, ProjectEntrySerializer, ProjectRequestFull}
+import models._
 import org.specs2.mutable.Specification
 import org.specs2.mock.Mockito
 import play.api.db.slick.DatabaseConfigProvider
@@ -21,7 +21,7 @@ import scala.concurrent.{Await, Future}
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.util.Success
 
-class ProjectEntryControllerSpec extends Specification with Mockito with ProjectEntrySerializer {
+class ProjectEntryControllerSpec extends Specification with Mockito with ProjectEntrySerializer with PlutoConflictReplySerializer {
   sequential
   val mockedProjectHelper = mock[ProjectCreateHelperImpl]
 
@@ -71,6 +71,67 @@ class ProjectEntryControllerSpec extends Specification with Mockito with Project
       (jsondata \ "status").as[String] must equalTo("ok")
       (jsondata \ "projectId").as[Int] must equalTo(999)
       (jsondata \ "detail").as[String] must equalTo("created project")
+    }
+  }
+
+  "ProjectEntryController.createFromPluto" should {
+    "validate request and show errors if any data does not line up" in {
+      val testCreateDocument =
+        """{"commissionVSID": "VX-1447",
+          |"filename":"VX-1747",
+          |"plutoProjectTypeUuid": "330b4d84-ef24-4102-b093-0d15829afa64",
+          |"title": "projectlocker test 4",
+          |"user": "andy_gallagher",
+          |"workingGroupUuid": "1b97c363-fba0-4771-90b5-9bd65aaed306",
+          |"vidispineId":"VX-1747"}
+        """.stripMargin
+
+      val fakeProjectEntry = ProjectEntry(Some(999),1,None,"MyTestProjectEntry",Timestamp.valueOf(LocalDateTime.now()),"test-user",None,None,None)
+      mockedProjectHelper.create(any[ProjectRequestFull],org.mockito.Matchers.eq(None))(org.mockito.Matchers.eq(db),org.mockito.Matchers.any[play.api.Configuration]) answers((arglist,mock)=>Future(Success(fakeProjectEntry)))
+      val response = route(application, FakeRequest(
+        method="PUT",
+        uri="/api/project/external/create",
+        headers=FakeHeaders(Seq(("Content-Type", "application/json"))),
+        body=testCreateDocument).withSession("uid"->"testuser")).get
+
+      val jsondata = Await.result(bodyAsJsonFuture(response), 5.seconds).as[JsValue]
+      println(jsondata.toString)
+      status(response) must equalTo(BAD_REQUEST)
+
+
+      (jsondata \ "status").as[String] must equalTo("error")
+      (jsondata \ "detail").as[Seq[String]] must equalTo(Seq("No record could be found for the pluto project type 330b4d84-ef24-4102-b093-0d15829afa64","No working group could be found for 1b97c363-fba0-4771-90b5-9bd65aaed306","No commission could be found for VX-1447"))
+    }
+
+    "return a Conflict containing all matching projects and their likely pluto types if a project with the same vsid exists already" in {
+      val testCreateDocument =
+        """{"commissionVSID": "VX-4567",
+          |"filename":"VX-2345",
+          |"plutoProjectTypeUuid": "330b4d84-ef24-41e2-b093-0d15829afa64",
+          |"title": "projectlocker test 4",
+          |"user": "andy_gallagher",
+          |"workingGroupUuid": "1b97c363-fba0-4771-9cb5-9bd65aaed306",
+          |"vidispineId":"VX-2345"}
+        """.stripMargin
+      val response = route(application, FakeRequest(
+        method="PUT",
+        uri="/api/project/external/create",
+        headers=FakeHeaders(Seq(("Content-Type", "application/json"))),
+        body=testCreateDocument).withSession("uid"->"testuser")).get
+      val jsondata = Await.result(bodyAsJsonFuture(response), 5.seconds).as[JsValue]
+
+      status(response) must equalTo(CONFLICT)
+      (jsondata \ "detail").as[String] mustEqual "projects already exist"
+      val resultList = (jsondata \ "result").as[List[PlutoConflictReply]]
+      resultList.length mustEqual 2
+      resultList.head.project.vidispineProjectId must beSome("VX-2345")
+      resultList.head.project.projectTitle mustEqual "ThatTestProject"
+      resultList.head.project.id must beSome(3)
+      resultList.head.possiblePlutoTypes.length mustEqual 1
+      //test data does not have a working group set up
+      resultList.head.possiblePlutoTypes.head.uuid mustEqual "330b4d84-ef24-41e2-b093-0d15829afa64"
+      resultList(1).project.id must beSome(4)
+      resultList(1).possiblePlutoTypes.length mustEqual 1
     }
   }
 

@@ -12,6 +12,7 @@ import play.api.{Configuration, Logger}
 import play.api.db.slick.DatabaseConfigProvider
 import play.api.libs.json.{JsError, JsResult, JsValue, Json}
 import play.api.mvc._
+import play.mvc.Http.Response
 import slick.jdbc.PostgresProfile
 import slick.lifted.TableQuery
 import slick.jdbc.PostgresProfile.api._
@@ -29,7 +30,8 @@ class ProjectEntryController @Inject() (cc:ControllerComponents, config: Configu
                                         cacheImpl:SyncCacheApi)
   extends GenericDatabaseObjectControllerWithFilter[ProjectEntry,ProjectEntryFilterTerms]
     with ProjectEntrySerializer with ProjectEntryFilterTermsSerializer with ProjectRequestSerializer
-    with ProjectRequestPlutoSerializer with UpdateTitleRequestSerializer with FileEntrySerializer with Security
+    with ProjectRequestPlutoSerializer with UpdateTitleRequestSerializer with FileEntrySerializer
+    with PlutoConflictReplySerializer with Security
 {
   override implicit val cache:SyncCacheApi = cacheImpl
 
@@ -212,14 +214,14 @@ class ProjectEntryController @Inject() (cc:ControllerComponents, config: Configu
   }}
 
   override def selectall(startAt:Int, limit:Int) = dbConfig.db.run(
-    TableQuery[ProjectEntryRow].drop(startAt).take(limit).result.asTry //simple select *
+    TableQuery[ProjectEntryRow].sortBy(_.created.desc).drop(startAt).take(limit).result.asTry //simple select *
   )
 
   override def selectFiltered(startAt: Int, limit: Int, terms: ProjectEntryFilterTerms): Future[Try[Seq[ProjectEntry]]] = {
     dbConfig.db.run(
       terms.addFilterTerms {
         TableQuery[ProjectEntryRow]
-      }.drop(startAt).take(limit).result.asTry
+      }.sortBy(_.created.desc).drop(startAt).take(limit).result.asTry
     )
   }
 
@@ -265,7 +267,24 @@ class ProjectEntryController @Inject() (cc:ControllerComponents, config: Configu
       })
   }}
 
-  def createExternal = IsAuthenticatedAsync(parse.json) {uid=>{ request:Request[JsValue] =>
+  def handleMatchingProjects(rq:ProjectRequestFull, matchingProjects:Seq[ProjectEntry], force: Boolean):Future[Result] = {
+    implicit val db = dbConfig.db
+    logger.info(s"Got matching projects: $matchingProjects")
+    if (matchingProjects.nonEmpty) {
+      if (!force) {
+        Future.sequence(matchingProjects.map(proj => PlutoConflictReply.getForProject(proj)))
+          .map(plutoMatch => Conflict(Json.obj("status" -> "conflict","detail"->"projects already exist", "result" -> plutoMatch)))
+      } else {
+        logger.info("Conflicting projects potentially exist, but continuing anyway as force=true")
+        createFromFullRequest(rq)
+      }
+    } else {
+      logger.info("No matching projects, creating")
+      createFromFullRequest(rq)
+    }
+  }
+
+  def createExternal(force:Boolean) = IsAuthenticatedAsync(parse.json) {uid=>{ request:Request[JsValue] =>
     implicit val db = dbConfig.db
 
     request.body.validate[ProjectRequestPluto].fold(
@@ -273,10 +292,20 @@ class ProjectEntryController @Inject() (cc:ControllerComponents, config: Configu
         Future(BadRequest(Json.obj("status"->"error","detail"->JsError.toJson(errors)))),
       projectRequest=>
         projectRequest.hydrate.flatMap({
-          case None=>
-            Future(BadRequest(Json.obj("status"->"error","detail"->"Invalid or missing data in request")))
-          case Some(rq)=>
-            createFromFullRequest(rq)
+          case Left(errorList)=>
+            Future(BadRequest(Json.obj("status"->"error","detail"->errorList)))
+          case Right(rq)=>
+            if(rq.existingVidispineId.isDefined){
+              ProjectEntry.lookupByVidispineId(rq.existingVidispineId.get).flatMap({
+                case Success(matchingProjects)=>
+                  handleMatchingProjects(rq, matchingProjects, force)
+                case Failure(error)=>
+                  logger.error("Unable to look up vidispine ID: ", error)
+                  Future(InternalServerError(Json.obj("status"->"error","detail"->error.toString)))
+              })
+            } else {
+              createFromFullRequest(rq)
+            }
         })
     )
   }}

@@ -4,6 +4,8 @@
 
 GET     /                                  @controllers.Application.index(path="/")
 
+GET     /timeouttest                       @controllers.Application.timeoutTest(delay:Int ?=5)
+
 GET     /api/file                          @controllers.Files.list(startAt:Int ?=0,length:Int ?=100)
 PUT     /api/file/list                     @controllers.Files.listFiltered(startAt:Int ?=0,length:Int ?=100)
 PUT     /api/file                          @controllers.Files.create
@@ -33,7 +35,7 @@ PUT     /api/project/list                   @controllers.ProjectEntryController.
 GET     /api/project/distinctowners         @controllers.ProjectEntryController.distinctOwners
 
 PUT     /api/project                        @controllers.ProjectEntryController.create
-PUT     /api/project/external/create        @controllers.ProjectEntryController.createExternal
+PUT     /api/project/external/create        @controllers.ProjectEntryController.createExternal(force:Boolean ?=false)
 GET     /api/project/by-vsid/:vsid          @controllers.ProjectEntryController.getByVsid(vsid:String)
 GET     /api/project/:id/files              @controllers.ProjectEntryController.filesList(id:Int)
 PUT     /api/project/:id/title              @controllers.ProjectEntryController.updateTitle(id: Int)
@@ -52,6 +54,7 @@ DELETE  /api/projecttype/:id               @controllers.ProjectTypeController.de
 
 GET     /api/plutoprojecttypeid            @controllers.PlutoProjectTypeController.list(startAt: Int ?=0, length:Int ?=100)
 GET     /api/plutoprojecttypeid/:id        @controllers.PlutoProjectTypeController.getitem(id: Int)
+PUT     /api/plutoprojecttypeid/:id/default-template/:templateId @controllers.PlutoProjectTypeController.setDefaultProjectTemplate(id:Int, templateId:Int)
 
 GET     /api/postrun                   @controllers.PostrunActionController.list(startAt:Int ?=0,length:Int ?=100)
 PUT     /api/postrun                   @controllers.PostrunActionController.create

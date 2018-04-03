@@ -141,6 +141,7 @@ class DefaultsControllerSpec extends Specification with MockedCacheApi with Defa
       val resultList = (result \ "results").as[Seq[Defaults]]
       resultList mustEqual Seq(
         Defaults(Some(1),"lunch","sandwich"),
+        Defaults(Some(4),"project_storage_id","1"),
         Defaults(Some(5),"dinner","meatballs"),
         Defaults(Some(2),"breakfast","scrambled eggs")
       )

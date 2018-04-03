@@ -20,19 +20,20 @@
     <logger name="helpers.ProjectCreateHelperImpl" level="WARN"/>
     <logger name="services.actors.ClusterListener" level="WARN"/>
     <logger name="controllers.MessageTest" level="WARN"/>
+    <logger name="models.ProjectRequestPluto" level="DEBUG"/>
     <logger name="drivers.PathStorage" level="WARN"/>
     <logger name="models.PlutoWorkingGroup" level="WARN"/>
     <logger name="models.PlutoCommission" level="WARN"/>
     <logger name="services.PlutoWGCommissionScanner" level="WARN"/>
     <logger name="controllers.Files" level="WARN" />
     <logger name="StorageControllerSpec" level="WARN"/>
-    <logger name="auth.Security" level="DEBUG"/>
+    <logger name="auth.Security" level="WARN"/>
     <logger name="controllers.Application" level="INFO"/>
     <logger name="controllers.System" level="INFO"/>
     <logger name="auth.LDAP" level="INFO"/>
     <logger name="services.actors.MessageProcessorActor" level="WARN"/>
     <logger name="services.actors.MessageProcessorState" level="WARN"/>
-    <logger name="services.PlutoProjectTypeScanner" level="DEBUG"/>
+    <logger name="services.PlutoProjectTypeScanner" level="WARN"/>
     <logger name="models.FileEntry" level="WARN" />
     <logger name="controllers.Files" level="WARN" />
     <logger name="com.gargoylesoftware.htmlunit.javascript" level="OFF" />

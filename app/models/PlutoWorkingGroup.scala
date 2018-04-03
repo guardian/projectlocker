@@ -87,6 +87,10 @@ object PlutoWorkingGroup extends ((Option[Int],Option[String], String, String)=>
     case Success(resultSeq)=>resultSeq.headOption
     case Failure(error)=>throw error
   })
+
+  def entryForId(id:Int)(implicit db: slick.jdbc.PostgresProfile#Backend#Database):Future[Option[PlutoWorkingGroup]] = db.run(
+    TableQuery[PlutoWorkingGroupRow].filter(_.id===id).result
+  ).map(resultSeq=>resultSeq.headOption)
 }
 
 trait PlutoWorkingGroupSerializer extends TimestampSerialization {

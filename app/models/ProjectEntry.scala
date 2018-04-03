@@ -8,8 +8,6 @@ import java.time.LocalDateTime
 import org.joda.time.DateTime
 import org.joda.time.DateTimeZone.UTC
 import play.api.libs.functional.syntax._
-import play.api.libs.json.Reads.jodaDateReads
-import play.api.libs.json.Writes.jodaDateWrites
 import play.api.libs.json._
 import slick.jdbc.JdbcBackend
 
@@ -146,15 +144,51 @@ trait ProjectEntrySerializer extends TimestampSerialization {
 
 object ProjectEntry extends ((Option[Int], Int, Option[String], String, Timestamp, String, Option[Int], Option[Int], Option[String])=>ProjectEntry) {
   def createFromFile(sourceFile: FileEntry, projectTemplate: ProjectTemplate, title:String, created:Option[LocalDateTime],
-                     user:String, workingGroupId: Option[Int], commissionId: Option[Int])
+                     user:String, workingGroupId: Option[Int], commissionId: Option[Int], existingVidispineId: Option[String])
                     (implicit db:slick.jdbc.PostgresProfile#Backend#Database):Future[Try[ProjectEntry]] = {
-    createFromFile(sourceFile, projectTemplate.projectTypeId, title, created, user, workingGroupId, commissionId)
+    createFromFile(sourceFile, projectTemplate.projectTypeId, title, created, user, workingGroupId, commissionId, existingVidispineId)
   }
 
   def entryForId(requestedId: Int)(implicit db:slick.jdbc.PostgresProfile#Backend#Database):Future[Try[ProjectEntry]] = {
     db.run(
       TableQuery[ProjectEntryRow].filter(_.id===requestedId).result.asTry
     ).map(_.map(_.head))
+  }
+
+  def lookupByVidispineId(vsid: String)(implicit db:slick.jdbc.PostgresProfile#Backend#Database):Future[Try[Seq[ProjectEntry]]] =
+    db.run(
+      TableQuery[ProjectEntryRow].filter(_.vidispineProjectId===vsid).result.asTry
+    )
+
+  /**
+    * method to aid recovery if projectlocker has created something but pluto has no record of it. If all parameters match,
+    * something is returned
+    * @param plutoTypeUuid
+    */
+  def lookupByPlutoInfo(plutoTypeUuid:String, projectTitle:String, workingGroupUuid:String, commissionId:Int)(implicit db:slick.jdbc.PostgresProfile#Backend#Database):Future[Try[Option[ProjectEntry]]] = {
+    val plutoInfoFutures = Future.sequence(Seq(PlutoProjectType.entryForUuid(plutoTypeUuid), PlutoWorkingGroup.entryForUuid(workingGroupUuid)))
+
+    plutoInfoFutures.flatMap(resultSeq=>{
+      val maybePlutoProjectType = resultSeq.head.asInstanceOf[Option[PlutoProjectType]]
+      val maybePlutoWorkingGroup = resultSeq(1).asInstanceOf[Option[PlutoWorkingGroup]]
+
+      if(maybePlutoProjectType.isDefined && maybePlutoWorkingGroup.isDefined) {
+        db.run(
+          TableQuery[ProjectEntryRow]
+            .filter(_.workingGroup===maybePlutoWorkingGroup.get.id.get)
+            .filter(_.projectType===maybePlutoWorkingGroup.get.id.get)
+            .filter(_.projectTitle===projectTitle)
+            .filter(_.commission===commissionId).result.asTry
+        ).map({
+          case Success(result)=>Success(result.headOption)
+          case Failure(error)=>Failure(error)
+        })
+      } else {
+        Future(Failure(new RuntimeException("Either plutoProjectType or plutoWorkingGroup not found")))
+      }
+    }).recover({
+      case err:Throwable=>Failure(err)
+    })
   }
 
   protected def insertFileAssociation(projectEntryId:Int, sourceFileId:Int)(implicit db:slick.jdbc.PostgresProfile#Backend#Database) = db.run(
@@ -164,12 +198,11 @@ object ProjectEntry extends ((Option[Int], Int, Option[String], String, Timestam
   private def dateTimeToTimestamp(from: LocalDateTime) = Timestamp.valueOf(from)
 
   def createFromFile(sourceFile: FileEntry, projectTypeId: Int, title:String, created:Option[LocalDateTime],
-                     user:String, workingGroupId: Option[Int], commissionId: Option[Int])
+                     user:String, workingGroupId: Option[Int], commissionId: Option[Int], existingVidispineId: Option[String])
                     (implicit db:slick.jdbc.PostgresProfile#Backend#Database):Future[Try[ProjectEntry]] = {
 
     /* step one - create a new project entry */
-    println(s"Passed time: $created")
-    val entry = ProjectEntry(None, projectTypeId, None, title, dateTimeToTimestamp(created.getOrElse(LocalDateTime.now())),
+    val entry = ProjectEntry(None, projectTypeId, existingVidispineId, title, dateTimeToTimestamp(created.getOrElse(LocalDateTime.now())),
       user, workingGroupId, commissionId, None)
     val savedEntry = entry.save
 

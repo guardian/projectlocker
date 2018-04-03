@@ -12,6 +12,7 @@ class ServerDefaults extends React.Component {
             currentValues: {},
             storageList: [],
             templatesList: [],
+            plutoProjectTypes: [],
             loading: false,
             error: null
         };
@@ -35,7 +36,7 @@ class ServerDefaults extends React.Component {
 
     refreshData(){
         this.setState({loading:true}, ()=>{
-            Promise.all([axios.get("/api/default"),axios.get("/api/storage"),axios.get("/api/template")]).then(responses=>{
+            Promise.all([axios.get("/api/default"),axios.get("/api/storage"),axios.get("/api/template"),axios.get("/api/plutoprojecttypeid")]).then(responses=>{
                 this.setState({
                     loading: false,
                     error: null,
@@ -44,7 +45,8 @@ class ServerDefaults extends React.Component {
                     currentValues: responses[0].data.results.reduce((acc,entry)=>{
                         acc[entry.name]=entry.value;
                         return acc;
-                    }, {})
+                    }, {}),
+                    plutoProjectTypes: responses[3].data.result
                 })
             }).catch(error=>this.setState({loading: false, error: error}))
         })
@@ -53,6 +55,12 @@ class ServerDefaults extends React.Component {
     updateDefaultSetting(newStorageId,keyname){
         axios.put("/api/default/" + keyname, newStorageId, {headers: {'Content-Type': 'text/plain'}}).then(
             window.setTimeout(()=>this.refreshData(),250)
+        );
+    }
+
+    updateProjectTemplateSetting(newValue, plutoProjectTypeEntryId){
+        axios.put("/api/plutoprojecttypeid/" + plutoProjectTypeEntryId + "/default-template/" + newValue).then(
+            window.setTimeout(()=>this.refreshData(), 250)
         );
     }
 
@@ -81,6 +89,12 @@ class ServerDefaults extends React.Component {
     }
 
     render(){
+        const plutoProjectTypeList = Object.assign([], this.state.plutoProjectTypes).sort((a,b)=>{
+            if(a.name < b.name) return -1;
+            if(a.name > b.name) return 1;
+            return 0;
+        });
+
         return <div className="mainbody">
             <h3>Server defaults</h3>
             <ErrorViewComponent error={this.state.error}/>
@@ -92,37 +106,15 @@ class ServerDefaults extends React.Component {
                                          selectionUpdated={value=>this.updateDefaultSetting(value, this.keys.storage)}
                                          storageList={this.state.storageList}/></td>
                 </tr>
-                <tr>
-                    <td>Project template to use for Pluto 'Premiere':</td>
-                    <td><TemplateSelector selectedTemplate={this.templatePref(this.keys.premiere)}
-                                          selectionUpdated={value=>this.updateDefaultSetting(value, this.keys.storage)}
-                                          templatesList={this.state.templatesList}/></td>
-                </tr>
-                <tr>
-                    <td>Project template to use for Pluto 'Cubase':</td>
-                    <td><TemplateSelector selectedTemplate={this.templatePref(this.keys.cubase)}
-                                          selectionUpdated={value=>this.updateDefaultSetting(value, this.keys.cubase)}
-                                          templatesList={this.state.templatesList}/></td>
-                </tr>
-                <tr>
-                    <td>Project template to use for Pluto 'Prelude':</td>
-                    <td><TemplateSelector selectedTemplate={this.templatePref(this.keys.prelude)}
-                                          selectionUpdated={value=>this.updateDefaultSetting(value, this.keys.prelude)}
-                                          templatesList={this.state.templatesList}/></td>
-                </tr>
-                <tr>
-                    <td>Project template to use for Pluto 'AfterEffects':</td>
-                    <td><TemplateSelector selectedTemplate={this.templatePref(this.keys.aftereffects)}
-                                          selectionUpdated={value=>this.updateDefaultSetting(value, this.keys.aftereffects)}
-                                          templatesList={this.state.templatesList}/></td>
-                </tr>
-                <tr>
-                    <td>Project template to use for Pluto 'Audition':</td>
-                    <td><TemplateSelector selectedTemplate={this.templatePref(this.keys.audition)}
-                                          selectionUpdated={value=>this.updateDefaultSetting(value, this.keys.audition)}
-                                          templatesList={this.state.templatesList}/></td>
-                </tr>
-
+                {
+                    plutoProjectTypeList.map(projectTypeEntry=><tr>
+                        <td>Project template to use for Pluto '{projectTypeEntry.name}':</td>
+                        <td><TemplateSelector selectedTemplate={projectTypeEntry["defaultProjectType"]}
+                                              selectionUpdated={value=>this.updateProjectTemplateSetting(value, projectTypeEntry.id)}
+                                              templatesList={this.state.templatesList}
+                        /></td>
+                    </tr>)
+                }
                 </tbody>
             </table>
         </div>

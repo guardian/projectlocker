@@ -17,13 +17,13 @@ import scala.concurrent.ExecutionContext.Implicits.global
 case class IncomingProjectSubtype(name:String, uuid:String, parent_name:String) {
   def toPlutoProjectType(implicit db: slick.jdbc.PostgresProfile#Backend#Database):Future[Option[PlutoProjectType]] = {
     PlutoProjectType.entryForName(parent_name).map({
-      case Some(parentEntry)=> Some(PlutoProjectType(None, name, uuid, parentEntry.id))
+      case Some(parentEntry)=> Some(PlutoProjectType(None, name, uuid, parentEntry.id, None))
       case None=>None
     })
   }
 }
 
-case class PlutoProjectType(id: Option[Int], name: String, uuid: String, parent:Option[Int]) {
+case class PlutoProjectType(id: Option[Int], name: String, uuid: String, parent:Option[Int], defaultProjectTemplate:Option[Int]) {
   val logger = Logger(getClass)
   /**
     *  writes this model into the database, inserting if id is None and returning a fresh object with id set. If an id
@@ -70,7 +70,7 @@ case class PlutoProjectType(id: Option[Int], name: String, uuid: String, parent:
   }
 }
 
-object PlutoProjectType extends ((Option[Int], String, String, Option[Int])=>PlutoProjectType) {
+object PlutoProjectType extends ((Option[Int], String, String, Option[Int], Option[Int])=>PlutoProjectType) {
   def entryForName(name:String)(implicit db: slick.jdbc.PostgresProfile#Backend#Database):Future[Option[PlutoProjectType]] =
     db.run(
       TableQuery[PlutoProjectTypeRow].filter(_.name===name).result.asTry
@@ -78,14 +78,28 @@ object PlutoProjectType extends ((Option[Int], String, String, Option[Int])=>Plu
       case Success(resultSeq)=>resultSeq.headOption
       case Failure(error)=>throw error
     })
+
+  def entryForUuid(uuid:String)(implicit db: slick.jdbc.PostgresProfile#Backend#Database):Future[Option[PlutoProjectType]] = entryForUuid(UUID.fromString(uuid))
+
+  def entryForUuid(uuid: UUID)(implicit db: slick.jdbc.PostgresProfile#Backend#Database):Future[Option[PlutoProjectType]] =
+    db.run(
+      TableQuery[PlutoProjectTypeRow].filter(_.uuid===uuid.toString).result
+    ).map(_.headOption)
+
+  def entryForProjectLockerType(plt:Int)(implicit db: slick.jdbc.PostgresProfile#Backend#Database):Future[Seq[PlutoProjectType]] =
+    db.run(
+      TableQuery[PlutoProjectTypeRow].filter(_.defaultProjectTemplate===plt).result
+    )
 }
 
 class PlutoProjectTypeRow(tag:Tag) extends Table[PlutoProjectType](tag, "PlutoProjectType") {
   def id = column[Int]("id",O.PrimaryKey, O.AutoInc)
   def name = column[String]("s_name")
   def uuid = column[String]("u_uuid")
-  def parent = column[Option[Int]]("k_parent")
-  def * = (id.?, name, uuid, parent) <> (PlutoProjectType.tupled, PlutoProjectType.unapply)
+  def parent = column[Int]("k_parent")
+  def defaultProjectTemplate = column[Int]("k_default_template")
+
+  def * = (id.?, name, uuid, parent.?, defaultProjectTemplate.?) <> (PlutoProjectType.tupled, PlutoProjectType.unapply)
 }
 
 trait PlutoProjectTypeSerializer {
@@ -93,14 +107,16 @@ trait PlutoProjectTypeSerializer {
     (JsPath \ "id").readNullable[Int] and
     (JsPath \ "name").read[String] and
       (JsPath \ "uuid").read[String] and
-      (JsPath \ "parent").readNullable[Int]
+      (JsPath \ "parent").readNullable[Int] and
+      (JsPath \ "defaultProjectTemplate").readNullable[Int]
   )(PlutoProjectType.apply _)
 
   implicit val plutoProjectTypeWrites:Writes[PlutoProjectType] = (
     (JsPath \ "id").writeNullable[Int] and
       (JsPath \ "name").write[String] and
       (JsPath \ "uuid").write[String] and
-      (JsPath \ "parent").writeNullable[Int]
+      (JsPath \ "parent").writeNullable[Int] and
+      (JsPath \ "defaultProjectType").writeNullable[Int]
     )(unlift(PlutoProjectType.unapply))
 
   implicit val plutoProjectSubtypeReads:Reads[IncomingProjectSubtype] = (
