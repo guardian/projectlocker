@@ -13,12 +13,12 @@ object PlutoConflictReply {
     val futuresList = Seq(
       Some(PlutoProjectType.entryForProjectLockerType(projectEntry.projectTypeId)),
       projectEntry.workingGroupId.map(wgId=>PlutoWorkingGroup.entryForId(wgId))
-    ).collect({
+    ).collect({ //filter out None values and flatten Some so we can call Future.sequence on it
       case Some(x)=>x
     })
 
     Future.sequence(futuresList).map(resultSeq=>{
-      val maybeWorkingGroup = if(resultSeq.length>1) Some(resultSeq(1).asInstanceOf[PlutoWorkingGroup]) else None
+      val maybeWorkingGroup = if(resultSeq.length>1) resultSeq(1).asInstanceOf[Option[PlutoWorkingGroup]] else None
       new PlutoConflictReply(projectEntry,maybeWorkingGroup,resultSeq.head.asInstanceOf[Seq[PlutoProjectType]])
     })
   }
