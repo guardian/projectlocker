@@ -33,7 +33,7 @@ object HMAC {
     * @return Option containing the hmac digest, or None if any headers were missing
     */
   def calculateHmac(request: RequestHeader, sharedSecret: String):Option[String] = try {
-    val string_to_sign = s"${request.headers.get("Date").get}\n${request.headers.get("Content-Length").getOrElse("0")}\n${request.headers.get("X-Sha384-Checksum").get}\n${request.method}\n${request.path}"
+    val string_to_sign = s"${request.headers.get("Date").get}\n${request.headers.get("Content-Length").getOrElse("0")}\n${request.headers.get("X-Sha384-Checksum").get}\n${request.method}\n${request.uri}"
     logger.debug(s"Incoming request, string to sign: $string_to_sign")
     val hmac = generateHMAC(sharedSecret, string_to_sign)
     logger.debug(s"HMAC generated: $hmac")
