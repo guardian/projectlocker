@@ -9,9 +9,17 @@ import play.api.libs.json._
 case class PlutoConflictReply (project: ProjectEntry, plutoWorkingGroup: Option[PlutoWorkingGroup], possiblePlutoTypes: Seq[PlutoProjectType])
 
 object PlutoConflictReply {
+  protected def plutoTypesForProjectlockerType(projectLockerTypeId: Int)(implicit db:slick.jdbc.PostgresProfile#Backend#Database):Future[Seq[PlutoProjectType]] = {
+    ProjectTemplate.templatesForTypeId(projectLockerTypeId).flatMap({
+      case Success(projectTemplates)=>
+        Future.sequence(projectTemplates.map(template=>PlutoProjectType.entryForProjectLockerTemplate(template.id.get)))
+      case Failure(err)=>throw err
+    }).map(_.flatten)
+  }
+
   def getForProject(projectEntry: ProjectEntry)(implicit db:slick.jdbc.PostgresProfile#Backend#Database):Future[PlutoConflictReply] = {
     val futuresList = Seq(
-      Some(PlutoProjectType.entryForProjectLockerType(projectEntry.projectTypeId)),
+      Some(plutoTypesForProjectlockerType(projectEntry.projectTypeId)),
       projectEntry.workingGroupId.map(wgId=>PlutoWorkingGroup.entryForId(wgId))
     ).collect({ //filter out None values and flatten Some so we can call Future.sequence on it
       case Some(x)=>x

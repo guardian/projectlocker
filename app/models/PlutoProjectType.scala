@@ -86,9 +86,9 @@ object PlutoProjectType extends ((Option[Int], String, String, Option[Int], Opti
       TableQuery[PlutoProjectTypeRow].filter(_.uuid===uuid.toString).result
     ).map(_.headOption)
 
-  def entryForProjectLockerType(plt:Int)(implicit db: slick.jdbc.PostgresProfile#Backend#Database):Future[Seq[PlutoProjectType]] =
+  def entryForProjectLockerTemplate(templateId:Int)(implicit db: slick.jdbc.PostgresProfile#Backend#Database):Future[Seq[PlutoProjectType]] =
     db.run(
-      TableQuery[PlutoProjectTypeRow].filter(_.defaultProjectTemplate===plt).result
+      TableQuery[PlutoProjectTypeRow].filter(_.defaultProjectTemplate===templateId).result
     )
 }
 

@@ -93,4 +93,9 @@ object ProjectTemplate extends ((Option[Int],String,Int,Int,Option[Int])=>Projec
     db.run(
       TableQuery[ProjectTemplateRow].filter(_.fileRef===fileId).result.asTry
     )
+
+  def templatesForTypeId(typeID:Int)(implicit db:slick.jdbc.PostgresProfile#Backend#Database):Future[Try[Seq[ProjectTemplate]]] =
+    db.run(
+      TableQuery[ProjectTemplateRow].filter(_.projectType===typeID).result.asTry
+    )
 }
