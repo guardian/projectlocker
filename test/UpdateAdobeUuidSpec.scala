@@ -4,6 +4,7 @@ import helpers.PostrunDataCache
 import models.{ProjectEntry, ProjectType}
 import org.apache.commons.io.FileUtils
 import org.specs2.mutable.Specification
+import play.api.Logger
 import play.api.db.slick.DatabaseConfigProvider
 import play.api.inject.bind
 import play.api.inject.guice.GuiceApplicationBuilder
@@ -21,6 +22,7 @@ class UpdateAdobeUuidSpec extends Specification {
     .overrides(bind[DatabaseConfigProvider].to[TestDatabase.testDbProvider])
     .build
 
+  private val logger = Logger(getClass)
   private val injector = application.injector
 
   protected val dbConfigProvider = injector.instanceOf(classOf[DatabaseConfigProvider])
@@ -42,6 +44,9 @@ class UpdateAdobeUuidSpec extends Specification {
 
       val result = Await.result(s.postrun("/tmp/test_update_uuid.prproj",pe,pt,dataCache,None,None),10 seconds)
       result must beSuccessfulTry
+      val updateDataCache = result.get
+      logger.info(s"Updated adobe uuid is ${updateDataCache.get("new_adobe_uuid")}")
+      updateDataCache.get("new_adobe_uuid") must beSome
     }
   }
 }

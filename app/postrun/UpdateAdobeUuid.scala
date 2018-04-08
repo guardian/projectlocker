@@ -62,7 +62,8 @@ class UpdateAdobeUuid extends PojoPostrun with AdobeXml {
         logger.info(s"New adobe UUID is $newUuid")
         val updatedXml = new RuleTransformer(new UpdateUuidLocations(newUuid)).transform(xmlData).head
         putXmlToGzippedFile(projectFileName,Elem.apply(updatedXml.prefix, updatedXml.label, updatedXml.attributes, updatedXml.scope, false, updatedXml.child :_*))
-        Success(dataCache)
+        val updatedDataCache = dataCache ++ Map("new_adobe_uuid"->newUuid.toString)
+        Success(updatedDataCache)
     })
   }
 }
