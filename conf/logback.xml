@@ -14,6 +14,13 @@
         </encoder>
     </appender>
 
+    <!-- Configure the Sentry appender, overriding the logging threshold to the WARN level -->
+    <!--<appender name="Sentry" class="io.sentry.logback.SentryAppender">
+        <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
+            <level>ERROR</level>
+        </filter>
+    </appender>-->
+
     <logger name="play" level="INFO" />
     <logger name="application" level="WARN" />
     <logger name="services.PostrunActionScanner" level="WARN"/>
@@ -42,6 +49,7 @@
 
     <root level="ERROR">
         <appender-ref ref="STDOUT" />
+        <!-- <appender-ref ref="Sentry" />
     </root>
 
 </configuration>
