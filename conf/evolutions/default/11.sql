@@ -20,6 +20,7 @@ ALTER SEQUENCE "ProjectMetadata_id_seq" OWNED BY "ProjectMetadata".id;
 ALTER TABLE ONLY "ProjectMetadata" ALTER COLUMN id SET DEFAULT nextval('"ProjectMetadata_id_seq"'::regclass);
 ALTER TABLE public."ProjectMetadata_id_seq" OWNER TO projectlocker;
 
+
 # --!Downs
 DROP TABLE "ProjectMetadata";
 ALTER TABLE "ProjectEntry" ADD COLUMN S_ADOBE_UUID CHARACTER VARYING NULL;

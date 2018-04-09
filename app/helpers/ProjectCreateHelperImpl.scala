@@ -228,12 +228,12 @@ class ProjectCreateHelperImpl @Inject() (@Named("message-processor-actor") messa
           locateCacheValue(reversedResults, "new_adobe_uuid") match {
             case Some(newUuid)=>
               logger.info(s"Updated adobe uuid to $newUuid, saving update to database and informing pluto")
-              createdProjectEntry.copy(adobe_uuid = Some(newUuid)).save
               messageProcessor ! NewAdobeUuid(createdProjectEntry,newUuid)
             case None=>
               logger.debug("No adobe uuid set, probably not an adobe project")
           }
 
+          //FIXME: need to put in database dump here
           Right(s"Successfully ran ${results.length} postrun actions for project $writtenPath")
       }
     }).recoverWith({
