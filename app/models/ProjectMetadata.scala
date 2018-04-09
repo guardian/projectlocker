@@ -122,7 +122,6 @@ object ProjectMetadata extends ((Option[Int], Int, String, Option[String])=>Proj
       case Success(savedEntry)=>Future(savedEntry)
     })
 
-    //val objectsToSet = data.map(kvTuple=>new ProjectMetadata(None, projectRef, kvTuple._1, Some(kvTuple._2)))
     val objectsToSet = Future.sequence(data.map(kvTuple=>ProjectMetadata.getOrCreate(projectRef,kvTuple._1)))
     val splitResultsFuture = objectsToSet.map(_.partition(_.isSuccess))
 
@@ -131,25 +130,17 @@ object ProjectMetadata extends ((Option[Int], Int, String, Option[String])=>Proj
         val resultSeq = resultTuple._2.foldLeft("")((acc, failedTry)=>acc + failedTry.failed.get.toString).mkString("; ")
         Future(Failure(new RuntimeException(resultSeq)) ) //fixme: define a custom exception to hold the sequence instead
       } else {
-        Future.sequence(resultTuple._1.map(successfulTry=>tryInsertWithRecovery(successfulTry.get)))
-          .map(iterable=>Success(iterable.count(x=>true)))
-          .recover({ case ex:Throwable=>Failure(ex) })
+//        Future.sequence(resultTuple._1.map(successfulTry=>tryInsertWithRecovery(successfulTry.get)))
+//          .map(iterable=>Success(iterable.count(x=>true)))
+//          .recover({ case ex:Throwable=>Failure(ex) })
+        val actionsList = resultTuple._1.map(successfulTry=>TableQuery[ProjectMetadataRow].insertOrUpdate(successfulTry.get))
+        db.run(DBIO.sequence(actionsList).transactionally.asTry)
+          .map({
+            case Success(countList)=>Success(countList.sum)
+            case Failure(err)=>Failure(err)
+          })
       }
     })
-//    val objectsToSet:Seq[ProjectEntry] = for {
-//      kvTuple <- data
-//      getCreateFuture <- ProjectMetadata.getOrCreate(projectRef, kvTuple._1)
-//      newEntry <- getCreateFuture
-//    } yield newEntry.copy(value = Some(kvTuple._2))
-
-
-    //logger.info(s"objectsToSet: $objectsToSet")
-
-//    Future.sequence(objectsToSet.map(mdEntry=>tryInsertWithRecovery(mdEntry)))
-//        .map(projectMetaList=>Success(projectMetaList.count(x=>true)))
-//      .recover({
-//      case e:Throwable=>Failure(e)
-//    })
   }
 }
 
