@@ -20,7 +20,7 @@
     <logger name="helpers.ProjectCreateHelperImpl" level="WARN"/>
     <logger name="services.actors.ClusterListener" level="WARN"/>
     <logger name="controllers.MessageTest" level="WARN"/>
-    <logger name="models.ProjectRequestPluto" level="DEBUG"/>
+    <logger name="models.ProjectRequestPluto" level="WARN"/>
     <logger name="drivers.PathStorage" level="WARN"/>
     <logger name="models.PlutoWorkingGroup" level="WARN"/>
     <logger name="models.PlutoCommission" level="WARN"/>
@@ -36,8 +36,8 @@
     <logger name="services.PlutoProjectTypeScanner" level="WARN"/>
     <logger name="models.FileEntry" level="WARN" />
     <logger name="controllers.Files" level="WARN" />
-    <logger name="postrun.UpdateAdobeUuid" level="DEBUG"/>
-    <logger name="UpdateAdobeUuidSpec" level="DEBUG"/>
+    <logger name="postrun.UpdateAdobeUuid" level="INFO"/>
+    <logger name="UpdateAdobeUuidSpec" level="INFO"/>
     <logger name="com.gargoylesoftware.htmlunit.javascript" level="OFF" />
 
     <root level="ERROR">
