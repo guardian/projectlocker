@@ -49,7 +49,7 @@
 
     <root level="ERROR">
         <appender-ref ref="STDOUT" />
-        <!-- <appender-ref ref="Sentry" />
+        <!-- <appender-ref ref="Sentry" />-->
     </root>
 
 </configuration>
