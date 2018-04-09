@@ -102,4 +102,24 @@ class Application @Inject() (cc:ControllerComponents, p:PlayBodyParsers, config:
   def logout = Action { request=>
     Ok(Json.obj("status"->"ok","detail"->"Logged out")).withNewSession
   }
+
+  /**
+    * test raise an exception
+    */
+  def testexception = Action { request=>
+    throw new RuntimeException("This is a test exception")
+  }
+
+  /**
+    * test raise an exception that is caught and logged
+    */
+  def testcaughtexception = Action { request=>
+    try{
+      throw new RuntimeException("This is a test exception that was caught")
+    } catch {
+      case e:Throwable=>
+        logger.error("Testcaughtexception", e)
+        Ok(Json.obj("status"->"ok","detail"->"test exception was caught"))
+    }
+  }
 }
