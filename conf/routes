@@ -7,6 +7,7 @@ GET     /                                  @controllers.Application.index(path="
 GET     /timeouttest                       @controllers.Application.timeoutTest(delay:Int ?=5)
 GET     /testexception                     @controllers.Application.testexception
 GET     /testcaught                        @controllers.Application.testcaughtexception
+GET     /system/publicdsn                  @controllers.Application.getPublicDsn
 
 GET     /api/file                          @controllers.Files.list(startAt:Int ?=0,length:Int ?=100)
 PUT     /api/file/list                     @controllers.Files.listFiltered(startAt:Int ?=0,length:Int ?=100)

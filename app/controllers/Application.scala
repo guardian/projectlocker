@@ -1,5 +1,7 @@
 package controllers
 
+import java.io.FileInputStream
+import java.util.Properties
 import javax.inject.{Inject, Singleton}
 
 import play.api._
@@ -120,6 +122,22 @@ class Application @Inject() (cc:ControllerComponents, p:PlayBodyParsers, config:
       case e:Throwable=>
         logger.error("Testcaughtexception", e)
         Ok(Json.obj("status"->"ok","detail"->"test exception was caught"))
+    }
+  }
+
+  def getPublicDsn = Action { request=>
+    try {
+      val prop = new Properties()
+      prop.load(getClass.getClassLoader.getResourceAsStream("sentry.properties"))
+      val dsnString = prop.getProperty("public-dsn")
+      if(dsnString==null)
+        NotFound(Json.obj("status"->"error","detail"->"property public-dsn was not set"))
+      else
+        Ok(Json.obj("status"->"ok","publicDsn"->dsnString))
+    } catch {
+      case e:Throwable=>
+        logger.error("Could not get publicDsn property: ", e)
+        InternalServerError(Json.obj("status"->"error","detail"->e.toString))
     }
   }
 }
