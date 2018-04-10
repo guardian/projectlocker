@@ -44,8 +44,8 @@
     <logger name="models.FileEntry" level="WARN" />
     <logger name="controllers.Files" level="WARN" />
     <logger name="postrun.UpdateAdobeUuid" level="INFO"/>
-    <logger name="models.ProjectMetadata" level="DEBUG"/>
-    <logger name="UpdateAdobeUuidSpec" level="INFO"/>
+    <logger name="models.ProjectMetadata" level="WARN"/>
+    <logger name="UpdateAdobeUuidSpec" level="WARN"/>
     <logger name="com.gargoylesoftware.htmlunit.javascript" level="OFF" />
 
     <root level="ERROR">

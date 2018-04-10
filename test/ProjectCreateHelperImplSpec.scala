@@ -161,7 +161,7 @@ class ProjectCreateHelperImplSpec extends Specification with Mockito {
 
       val testTimestamp = Timestamp.valueOf("2018-02-02 03:04:05")
       val testFileEntry = Await.result(FileEntry.entryFor("/path/to/a/file.project",1),5.seconds).get.head
-      val testProjectEntry = ProjectEntry(None,1,None,"Test project title",testTimestamp, "testuser",None,None)
+      val testProjectEntry = ProjectEntry(Some(3),1,None,"Test project title",testTimestamp, "testuser",None,None)
       val testProjectTemplate = Await.result(ProjectTemplate.entryFor(1),5.seconds).get
 
       val result = Await.result(p.doPostrunActions(testFileEntry,testProjectEntry,testProjectTemplate),5.seconds)

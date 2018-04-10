@@ -183,6 +183,7 @@ class ProjectCreateHelperImpl @Inject() (@Named("message-processor-actor") messa
     */
   def doPostrunActions(fileEntry: FileEntry, createdProjectEntry: ProjectEntry, template: ProjectTemplate)
                       (implicit db: slick.jdbc.PostgresProfile#Backend#Database, config:play.api.Configuration):Future[Either[String,String]]= {
+    logger.info(s"start: createdProjectEntry: $createdProjectEntry")
     //kick off all of the async operations that we need to be completed before we can start executing postruns
     val futureSequence = Future.sequence(Seq(
       template.projectType,
@@ -200,20 +201,23 @@ class ProjectCreateHelperImpl @Inject() (@Named("message-processor-actor") messa
       val workingGroupMaybe = completedFutures(3).asInstanceOf[Option[PlutoWorkingGroup]]
       val commissionMaybe = completedFutures(4).asInstanceOf[Option[PlutoCommission]]
 
+      logger.info(s"flatMap: createdProjectEntry: $createdProjectEntry")
+
       val actionResults:Future[Seq[Try[JythonOutput]]] = projectType.postrunActions.map({
         case Failure(error)=>Seq(Failure(error))
         case Success(actionsList)=>
+          logger.info(s"actionsList: createdProjectEntry: $createdProjectEntry")
           val sortedActions = orderPostruns(actionsList, postrunDependencyGraph)
           runNextAction(sortedActions, Seq(), PostrunDataCache(), writtenPath, createdProjectEntry, projectType, workingGroupMaybe, commissionMaybe)
       })
 
       val actionSuccess = actionResults.map(collectFailures _)
-      actionSuccess map {
+      actionSuccess flatMap {
         case Left(errorSeq)=>
           val msg = s"${errorSeq.length} postrun actions failed for project $writtenPath, see log for details"
           logger.error(msg)
           errorSeq.foreach(err=>logger.error(s"\tMethod failed with:", err))
-          Left(msg)
+          Future(Left(msg))
         case Right(results)=>
           val msg = s"Successfully ran ${results.length} postrun actions for project $writtenPath"
           logger.info(s"Successfully ran ${results.length} postrun actions for project $writtenPath")
@@ -233,12 +237,27 @@ class ProjectCreateHelperImpl @Inject() (@Named("message-processor-actor") messa
               logger.debug("No adobe uuid set, probably not an adobe project")
           }
 
-          //FIXME: need to put in database dump here
-          Right(s"Successfully ran ${results.length} postrun actions for project $writtenPath")
+          reversedResults.headOption match {
+            case Some(finalResult)=>
+              if(createdProjectEntry.id.isEmpty) throw new RuntimeException("Created project without id?")
+              val mdSetFuture = ProjectMetadata.setBulk(createdProjectEntry.id.get,finalResult.newDataCache.asScala)
+              mdSetFuture.map({
+                case Success(count)=>
+                  logger.info(s"Set $count metadata fields for project ID ${createdProjectEntry.id}")
+                  Right(s"Successfully ran ${results.length} postrun actions for project $writtenPath")
+                case Failure(err)=>
+                  logger.error("Could not set metadata for project", err)
+                  Left(err.toString)
+              })
+            case None=>
+              logger.warn(s"No postruns ran for ${createdProjectEntry.projectTitle} (${createdProjectEntry.id.get} so no metadata")
+              Future(Right(s"Successfully ran ${results.length} postrun actions for project $writtenPath"))
+          }
+
       }
     }).recoverWith({
       case error:Throwable=>
-        logger.error("Could not prepare for postruns", error)
+        logger.error("Could not do postruns", error)
         Future(Left(error.toString))
     })
   }

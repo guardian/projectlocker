@@ -88,22 +88,6 @@ object ProjectMetadata extends ((Option[Int], Int, String, Option[String])=>Proj
     * @param db implicitly provided database object
     * @return a Future, containing an Int indicating the number of insert/updates. The future will fail if there is a database error
     */
-  def setBulkOld(projectRef:Int, data:Map[String,String])(implicit db:slick.jdbc.PostgresProfile#Backend#Database):Future[Try[Int]] = {
-    val objectsToSet = data.map(kvTuple=>new ProjectMetadata(None, projectRef, kvTuple._1, Some(kvTuple._2)))
-    val upsertCommands = objectsToSet.map(mdEntry=>TableQuery[ProjectMetadataRow].insertOrUpdate(mdEntry))
-    db.run(DBIO.sequence(upsertCommands).transactionally.asTry).map({
-      case Success(resultSequence)=>Success(resultSequence.sum)
-      case Failure(err)=>Failure(err)
-    })
-  }
-
-  /**
-    * Set (by upsert) entries in bulk
-    * @param projectRef project ID to set entries for
-    * @param data a Map[String,String] containing keys and values to set
-    * @param db implicitly provided database object
-    * @return a Future, containing an Int indicating the number of insert/updates. The future will fail if there is a database error
-    */
   def setBulk(projectRef:Int, data:Map[String,String])(implicit db:slick.jdbc.PostgresProfile#Backend#Database):Future[Try[Int]] = {
     def tryInsertWithRecovery(mdEntry:ProjectMetadata,onRetry:Boolean=false):Future[ProjectMetadata] = mdEntry.save.flatMap({
       case Failure(err)=>
@@ -130,15 +114,9 @@ object ProjectMetadata extends ((Option[Int], Int, String, Option[String])=>Proj
         val resultSeq = resultTuple._2.foldLeft("")((acc, failedTry)=>acc + failedTry.failed.get.toString).mkString("; ")
         Future(Failure(new RuntimeException(resultSeq)) ) //fixme: define a custom exception to hold the sequence instead
       } else {
-//        Future.sequence(resultTuple._1.map(successfulTry=>tryInsertWithRecovery(successfulTry.get)))
-//          .map(iterable=>Success(iterable.count(x=>true)))
-//          .recover({ case ex:Throwable=>Failure(ex) })
-        val actionsList = resultTuple._1.map(successfulTry=>TableQuery[ProjectMetadataRow].insertOrUpdate(successfulTry.get))
-        db.run(DBIO.sequence(actionsList).transactionally.asTry)
-          .map({
-            case Success(countList)=>Success(countList.sum)
-            case Failure(err)=>Failure(err)
-          })
+        Future.sequence(resultTuple._1.map(successfulTry=>tryInsertWithRecovery(successfulTry.get)))
+          .map(iterable=>Success(iterable.count(x=>true)))
+          .recover({ case ex:Throwable=>Failure(ex) })
       }
     })
   }

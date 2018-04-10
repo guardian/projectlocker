@@ -62,7 +62,11 @@ INSERT INTO DEFAULTS (id, S_NAME, S_VALUE) VALUES (2, 'breakfast', 'toast');
 INSERT INTO DEFAULTS (id, S_NAME, S_VALUE) VALUES (3, 'dessert', 'nothing');
 INSERT INTO DEFAULTS (id, S_NAME, S_VALUE) VALUES (4, 'project_storage_id', 1);
 
+INSERT INTO "ProjectMetadata" (id, K_PROJECT_ENTRY, S_KEY, S_VALUE) VALUES (1, 2, 'first_key', 'first value');
+INSERT INTO "ProjectMetadata" (id, K_PROJECT_ENTRY, S_KEY, S_VALUE) VALUES (2, 2, 'second_key', 'second value');
+
 ------------------------
+SELECT pg_catalog.setval('"ProjectMetadata_id_seq"', 3, true);
 SELECT pg_catalog.setval('"Defaults_id_seq"', 4, true);
 SELECT pg_catalog.setval('"PlutoCommission_id_seq"', 5, true);
 SELECT pg_catalog.setval('"PlutoWorkingGroup_id_seq"', 3, true);
