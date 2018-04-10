@@ -49,14 +49,14 @@ object ProjectMetadata extends ((Option[Int], Int, String, Option[String])=>Proj
       TableQuery[ProjectMetadataRow].filter(_.projectRef===projectRef).filter(_.key===key).result
     ).map(_.headOption)
 
-  def getOrCreate(projectRef:Int, key:String, autoSave:Boolean=false)(implicit db:slick.jdbc.PostgresProfile#Backend#Database):Future[Try[ProjectMetadata]] =
+  def getOrCreate(projectRef:Int, key:String, newValue:Option[String], autoSave:Boolean=false)(implicit db:slick.jdbc.PostgresProfile#Backend#Database):Future[Try[ProjectMetadata]] =
     db.run(
       //unique constraint on the table ensures that there can only be zero or one responses
       TableQuery[ProjectMetadataRow].filter(_.projectRef===projectRef).filter(_.key===key).result
     ).map(_.headOption).flatMap({
-      case Some(entry)=>Future(Success(entry))
+      case Some(entry)=>Future(Success(entry.copy(value=newValue)))
       case None=>
-        val newEntry = ProjectMetadata(None, projectRef, key, None)
+        val newEntry = ProjectMetadata(None, projectRef, key, newValue)
         if(autoSave){
           newEntry.save
         } else {
@@ -95,19 +95,25 @@ object ProjectMetadata extends ((Option[Int], Int, String, Option[String])=>Proj
         if (errorString.contains("violates foreign key constraint") ||
           errorString.contains("Referential integrity constraint violation") ||
           errorString.contains("violates unique constraint")) {
-          ProjectMetadata.deleteFor(mdEntry.projectRef, mdEntry.key)
-          if (onRetry)
-            throw err
-          else
-            tryInsertWithRecovery(mdEntry, onRetry = true)
+          ProjectMetadata.deleteFor(mdEntry.projectRef, mdEntry.key).flatMap({
+            case Failure(err)=>
+              logger.error("Could not delete old metadata value", err)
+              throw err
+            case Success(rows)=>
+              if (onRetry)
+                throw err
+              else
+                tryInsertWithRecovery(mdEntry, onRetry = true)
+          })
+
         } else {
           throw err
         }
       case Success(savedEntry)=>Future(savedEntry)
     })
 
-    val objectsToSet = Future.sequence(data.map(kvTuple=>ProjectMetadata.getOrCreate(projectRef,kvTuple._1)))
-    val splitResultsFuture = objectsToSet.map(_.partition(_.isSuccess))
+    val createdObjects = Future.sequence(data.map(kvTuple=>ProjectMetadata.getOrCreate(projectRef,kvTuple._1,Some(kvTuple._2))))
+    val splitResultsFuture = createdObjects.map(_.partition(_.isSuccess))
 
     splitResultsFuture.flatMap(resultTuple=>{
       if(resultTuple._2.count(x=>true)>0){

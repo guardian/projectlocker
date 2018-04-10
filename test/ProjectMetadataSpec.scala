@@ -15,6 +15,7 @@ import scala.concurrent.duration._
 import scala.concurrent.ExecutionContext.Implicits.global
 
 class ProjectMetadataSpec extends Specification {
+  sequential
   protected val application = new GuiceApplicationBuilder()
     .overrides(bind[DatabaseConfigProvider].to[TestDatabase.testDbProvider])
     .build
@@ -30,6 +31,12 @@ class ProjectMetadataSpec extends Specification {
       val result = Await.result(ProjectMetadata.setBulk(4,Map("key"->"value","key_two"->"value_two")),10 seconds)
 
       result must beSuccessfulTry(2)
+
+      val getResult = Await.result(ProjectMetadata.entryFor(4,"key"), 10 seconds)
+      getResult must beSome
+      getResult.get.key mustEqual "key"
+      getResult.get.projectRef mustEqual 4
+      getResult.get.value mustEqual Some("value")
     }
 
     "not fail when updating keys" in {
