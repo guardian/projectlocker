@@ -14,13 +14,20 @@
         </encoder>
     </appender>
 
+    <!-- Configure the Sentry appender, overriding the logging threshold to the WARN level -->
+    <!--<appender name="Sentry" class="io.sentry.logback.SentryAppender">
+        <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
+            <level>ERROR</level>
+        </filter>
+    </appender>-->
+
     <logger name="play" level="INFO" />
     <logger name="application" level="WARN" />
     <logger name="services.PostrunActionScanner" level="WARN"/>
     <logger name="helpers.ProjectCreateHelperImpl" level="WARN"/>
     <logger name="services.actors.ClusterListener" level="WARN"/>
     <logger name="controllers.MessageTest" level="WARN"/>
-    <logger name="models.ProjectRequestPluto" level="DEBUG"/>
+    <logger name="models.ProjectRequestPluto" level="WARN"/>
     <logger name="drivers.PathStorage" level="WARN"/>
     <logger name="models.PlutoWorkingGroup" level="WARN"/>
     <logger name="models.PlutoCommission" level="WARN"/>
@@ -36,10 +43,13 @@
     <logger name="services.PlutoProjectTypeScanner" level="WARN"/>
     <logger name="models.FileEntry" level="WARN" />
     <logger name="controllers.Files" level="WARN" />
+    <logger name="postrun.UpdateAdobeUuid" level="INFO"/>
+    <logger name="UpdateAdobeUuidSpec" level="INFO"/>
     <logger name="com.gargoylesoftware.htmlunit.javascript" level="OFF" />
 
     <root level="ERROR">
         <appender-ref ref="STDOUT" />
+        <!-- <appender-ref ref="Sentry" />-->
     </root>
 
 </configuration>

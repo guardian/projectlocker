@@ -114,23 +114,27 @@ class MessageProcessorActor @Inject()(configurationI: Configuration, actorSystem
 
     case evtAsObject: NewAssetFolderEvent=>
       logger.info(s"Got new asset folder message: ${evtAsObject.rq}")
-      getPlutoProjectForAssetFolder(evtAsObject.rq).map({
-        case Left(errormessage) =>
-          logger.error(s"Could not prepare asset folder message for ${evtAsObject.rq.assetFolderPath} to be sent: $errormessage, pushing it to the back of the queue")
-        case Right(updatedMessage) =>
-          logger.debug(s"Updated asset folder message to send: $updatedMessage")
-          sendNewAssetFolderMessage(updatedMessage).map({
-            case Right(msgString) =>
-              logger.info(msgString)
-              logger.info(s"Updated pluto with new asset folder ${updatedMessage.assetFolderPath} for ${updatedMessage.plutoProjectId}")
-              confirmHandled(evtAsObject)
-            case Left(true) =>
-              logger.debug(s"requeueing message for retry after delay")
-            case Left(false) =>
-              logger.error("Not retrying any more.")
-              confirmHandled(evtAsObject)
+      configuration.getOptional[String]("pluto.sync_enabled") match {
+        case Some("no") => logger.warn("Not sending asset folder message to pluto as sync_enabled is set to 'no'")
+        case _ =>
+          getPlutoProjectForAssetFolder(evtAsObject.rq).map({
+            case Left(errormessage) =>
+              logger.error(s"Could not prepare asset folder message for ${evtAsObject.rq.assetFolderPath} to be sent: $errormessage, pushing it to the back of the queue")
+            case Right(updatedMessage) =>
+              logger.debug(s"Updated asset folder message to send: $updatedMessage")
+              sendNewAssetFolderMessage(updatedMessage).map({
+                case Right(msgString) =>
+                  logger.info(msgString)
+                  logger.info(s"Updated pluto with new asset folder ${updatedMessage.assetFolderPath} for ${updatedMessage.plutoProjectId}")
+                  confirmHandled(evtAsObject)
+                case Left(true) =>
+                  logger.debug(s"requeueing message for retry after delay")
+                case Left(false) =>
+                  logger.error("Not retrying any more.")
+                  confirmHandled(evtAsObject)
+              })
           })
-      })
+      }
 
     case msgAsObject:NewProjectCreated =>
       persist(NewProjectCreatedEvent(msgAsObject, UUID.randomUUID())) { event =>
@@ -142,23 +146,25 @@ class MessageProcessorActor @Inject()(configurationI: Configuration, actorSystem
     case evtAsObject:NewProjectCreatedEvent =>
       logger.debug("received new project created event")
       val msgAsObject = evtAsObject.rq
-      val d = durationToPair(Duration(configuration.getOptional[String]("pluto.resend_delay").getOrElse("10 seconds")))
-      val delay = FiniteDuration(d._1, d._2)
-      logger.debug(s"Project created message to send: $msgAsObject")
-      sendProjectCreatedMessage(msgAsObject).map({
-        case Right(_) =>
-          logger.info(s"Updated pluto with new project ${msgAsObject.projectEntry.projectTitle} (${msgAsObject.projectEntry.id})")
-          confirmHandled(evtAsObject)
-        case Left(true) =>
-          logger.debug(s"will retry from state ")
-        case Left(false) =>
-          logger.error("Not retrying any more.")
-          confirmHandled(evtAsObject)
-      }).recoverWith({
-        case err: Throwable =>
-          logger.error("Could not set up communication with pluto:", err)
-          Future(logger.debug(s"message will be requeued after $delay delay"))
-      })
+      configuration.getOptional[String]("pluto.sync_enabled") match {
+        case Some("no") => logger.warn("Not sending asset folder message to pluto as sync_enabled is set to 'no'")
+        case _ =>
+          logger.debug(s"Project created message to send: $msgAsObject")
+          sendProjectCreatedMessage(msgAsObject).map({
+            case Right(_) =>
+              logger.info(s"Updated pluto with new project ${msgAsObject.projectEntry.projectTitle} (${msgAsObject.projectEntry.id})")
+              confirmHandled(evtAsObject)
+            case Left(true) =>
+              logger.debug(s"will retry from state ")
+            case Left(false) =>
+              logger.error("Not retrying any more.")
+              confirmHandled(evtAsObject)
+          }).recoverWith({
+            case err: Throwable =>
+              logger.error("Could not set up communication with pluto:", err)
+              Future(logger.debug(s"message will be requeued"))
+          })
+      }
 
     case msgAsObject:NewAdobeUuid =>
       persist(NewAdobeUuidEvent(msgAsObject, UUID.randomUUID())) { event=>
@@ -172,25 +178,29 @@ class MessageProcessorActor @Inject()(configurationI: Configuration, actorSystem
       logger.debug(s"Update uuid message to send: ${evtAsObject.rq}")
 
       //most probably, the message that we have been given does not include a vidispine uuid. so, we should look that up here.
-      ProjectEntry.entryForId(evtAsObject.rq.projectEntry.id.get).map({
-        case Failure(error) =>
-          logger.error("Could not update project entry (will keep retrying): ", error)
-        case Success(updatedEntry) =>
-          updatedEntry.vidispineProjectId match {
-            case Some(vidispineId) =>
-              sendNewUuidMessage(NewAdobeUuid(updatedEntry, evtAsObject.rq.projectAdobeUuid)).map({
-                case Right(parsedResponse) =>
-                  logger.info(s"Successfully updated project $vidispineId to have uuid ${evtAsObject.rq.projectAdobeUuid}")
-                  confirmHandled(evtAsObject)
-                case Left(true) =>
-                  logger.debug(s"Requeing message")
-                case Left(false) =>
-                  logger.error("Not retrying any more.")
-                  confirmHandled(evtAsObject)
-              })
-            case None =>
-              logger.warn(s"Can't update project ${updatedEntry.id} in Pluto without a vidispine ID. Retrying after delay")
-          }
-      })
+      configuration.getOptional[String]("pluto.sync_enabled") match {
+        case Some("no") => logger.warn("Not sending asset folder message to pluto as sync_enabled is set to 'no'")
+        case _ =>
+          ProjectEntry.entryForId(evtAsObject.rq.projectEntry.id.get).map({
+            case Failure(error) =>
+              logger.error("Could not update project entry (will keep retrying): ", error)
+            case Success(updatedEntry) =>
+              updatedEntry.vidispineProjectId match {
+                case Some(vidispineId) =>
+                  sendNewUuidMessage(NewAdobeUuid(updatedEntry, evtAsObject.rq.projectAdobeUuid)).map({
+                    case Right(parsedResponse) =>
+                      logger.info(s"Successfully updated project $vidispineId to have uuid ${evtAsObject.rq.projectAdobeUuid}")
+                      confirmHandled(evtAsObject)
+                    case Left(true) =>
+                      logger.debug(s"Requeing message")
+                    case Left(false) =>
+                      logger.error("Not retrying any more.")
+                      confirmHandled(evtAsObject)
+                  })
+                case None =>
+                  logger.warn(s"Can't update project ${updatedEntry.id} in Pluto without a vidispine ID. Retrying after delay")
+              }
+          })
+      }
   }
 }

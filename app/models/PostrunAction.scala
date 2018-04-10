@@ -9,6 +9,7 @@ import org.apache.commons.io.{FileUtils, FilenameUtils}
 import play.api.{Configuration, Logger}
 import play.api.libs.json.{JsPath, Reads, Writes}
 import play.api.libs.functional.syntax._
+import postrun.PojoPostrun
 import slick.lifted.{TableQuery, Tag}
 import slick.jdbc.PostgresProfile.api._
 
@@ -70,6 +71,79 @@ case class PostrunAction (id:Option[Int],runnable:String, title:String, descript
     * returns the on-disk path for the executable script
     */
   def getScriptPath(implicit config:Configuration) = Paths.get(config.get[String]("postrun.scriptsPath"), this.runnable)
+
+  /**
+    * Runs the provided python script as a postrun
+    * @param projectFileName
+    * @param projectEntry
+    * @param projectType
+    * @param dataCache
+    * @param workingGroupMaybe
+    * @param commissionMaybe
+    * @param config
+    * @return
+    */
+  protected def runJython(projectFileName:String,projectEntry:ProjectEntry,projectType:ProjectType,dataCache:PostrunDataCache,
+                          workingGroupMaybe: Option[PlutoWorkingGroup], commissionMaybe: Option[PlutoCommission])
+                         (implicit config:Configuration):Future[Try[JythonOutput]] = {
+    val runner = new JythonRunner
+    val inputPath = getScriptPath
+    val scriptArgs = Map(
+      "projectFile" -> projectFileName
+    ) ++ projectEntry.asStringMap ++ projectType.asStringMap ++ commissionMaybe.map(_.asStringMap).getOrElse(Map()) ++ workingGroupMaybe.map(_.asStringMap).getOrElse(Map())
+
+    runner.runScriptAsync(inputPath.toString, scriptArgs, dataCache) map {
+      case Success(scriptOutput) =>
+        logger.debug("Script started successfully")
+        scriptOutput.raisedError match {
+          case Some(error)=>
+            logger.error("Postrun script could not complete due to a Python exception: ")
+            logger.error("Postrun standard out:" + scriptOutput.stdOutContents)
+            logger.error("Postrun standard err:" + scriptOutput.stdErrContents)
+            Failure(error)
+          case None=>
+            Success(scriptOutput)
+        }
+      case Failure(error)=>Failure(error)
+    }
+  }
+
+  /**
+    * Runs the provided java class as a postrun
+    * @param projectFileName
+    * @param projectEntry
+    * @param projectType
+    * @param dataCache
+    * @param workingGroupMaybe
+    * @param commissionMaybe
+    * @param config
+    * @return
+    */
+  protected def runPojo(projectFileName:String,projectEntry:ProjectEntry,projectType:ProjectType,dataCache:PostrunDataCache,
+                        workingGroupMaybe: Option[PlutoWorkingGroup], commissionMaybe: Option[PlutoCommission])
+                       (implicit config:Configuration):Future[Try[JythonOutput]] = {
+    val className: String = runnable.substring(5) //strip off "java:" prefix
+    logger.debug(s"Initiating java based postrun $className...")
+    try {
+      val postrunClass = Class.forName(className).newInstance().asInstanceOf[PojoPostrun]
+
+      postrunClass.postrun(projectFileName, projectEntry, projectType, dataCache, workingGroupMaybe, commissionMaybe).map({
+        case Success(newDataCache) => Success(JythonOutput("", "", newDataCache, raisedError = None))
+        case Failure(error) => Success(JythonOutput("", "", dataCache, raisedError = Some(error)))
+      }).recoverWith({
+        case ex: Throwable => Future(Failure(ex))
+      })
+    } catch {
+      //return a failure if we couldn't initialise the classs
+      case ex:Throwable=>Future(Failure(ex))
+    }
+  }
+
+  /**
+    * returns true of this postrun is a java object (Plain Old Java Object => POJO) or False if it's python
+    */
+  def isPojo:Boolean = runnable.startsWith("java:")
+
   /**
     * asynchronously executes this postrun action on a newly created project
     * @param projectFileName - filename of the newly created project
@@ -81,32 +155,22 @@ case class PostrunAction (id:Option[Int],runnable:String, title:String, descript
   def run(projectFileName:String,projectEntry:ProjectEntry,projectType:ProjectType,dataCache:PostrunDataCache,
           workingGroupMaybe: Option[PlutoWorkingGroup], commissionMaybe: Option[PlutoCommission])
          (implicit config:Configuration):Future[Try[JythonOutput]] = {
-    val inputPath = this.getScriptPath
 
-    val runner = new JythonRunner
     backupProjectFile(projectFileName) flatMap {
       case Failure(error) =>
         logger.error(s"Unable to back up project file $projectFileName:", error)
         Future(Failure(error))
       case Success(backupPath) =>
         logger.info(s"Backed up project file from $projectFileName to ${backupPath.toString}")
-        logger.debug(s"Going to try to run script at path $inputPath...")
-        val scriptArgs = Map(
-          "projectFile" -> projectFileName
-        ) ++ projectEntry.asStringMap ++ projectType.asStringMap ++ commissionMaybe.map(_.asStringMap).getOrElse(Map()) ++ workingGroupMaybe.map(_.asStringMap).getOrElse(Map())
+        logger.debug(s"Going to try to run script at path $getScriptPath...")
 
-        runner.runScriptAsync(inputPath.toString, scriptArgs, dataCache) map {
-          case Success(scriptOutput) =>
-            logger.debug("Script started successfully")
-            scriptOutput.raisedError match {
-              case Some(error)=>
-                logger.error("Postrun script could not complete due to a Python exception: ")
-                logger.error("Postrun standard out:" + scriptOutput.stdOutContents)
-                logger.error("Postrun standard err:" + scriptOutput.stdErrContents)
-                Failure(error)
-              case None=>
-                Success(scriptOutput)
-            }
+        val resultFuture = if(isPojo){
+          runPojo(projectFileName, projectEntry, projectType, dataCache, workingGroupMaybe, commissionMaybe)
+        } else {
+          runJython(projectFileName, projectEntry, projectType, dataCache, workingGroupMaybe, commissionMaybe)
+        }
+
+        resultFuture.map({
           case Failure(error) =>
             logger.error("Unable to start postrun script: ", error)
             restoreBackupFile(backupPath, projectFileName) match {
@@ -116,7 +180,8 @@ case class PostrunAction (id:Option[Int],runnable:String, title:String, descript
               case Success(unitval)=>
                 Failure(error)
             }
-        }
+          case Success(result)=>Success(result)
+        })
     }
   }
 }

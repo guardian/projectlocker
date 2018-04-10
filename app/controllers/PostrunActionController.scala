@@ -88,13 +88,17 @@ class PostrunActionController  @Inject() (config: Configuration, dbConfigProvide
         logger.error("Could not load postrun source",error)
         InternalServerError(Json.obj("status"->"error","detail"->error.toString))
       case Success(rows)=>
-        val scriptpath = rows.head.getScriptPath.toAbsolutePath
-        try {
-          Ok(Source.fromFile(scriptpath.toString).mkString).withHeaders("Content-Type" -> "text/x-python")
-        } catch {
-          case e:Throwable=>
-            logger.error("Could not read postrun source code", e)
-            InternalServerError(Json.obj("status"->"error","detail"->e.toString))
+        if(rows.head.runnable.startsWith("java:")){
+          Ok("### Java code is not showable at the moment").withHeaders("Content-Type" -> "text/x-python")
+        } else {
+          val scriptpath = rows.head.getScriptPath.toAbsolutePath
+          try {
+            Ok(Source.fromFile(scriptpath.toString).mkString).withHeaders("Content-Type" -> "text/x-python")
+          } catch {
+            case e: Throwable =>
+              logger.error("Could not read postrun source code", e)
+              InternalServerError(Json.obj("status" -> "error", "detail" -> e.toString))
+          }
         }
     }
   }}

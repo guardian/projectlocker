@@ -61,6 +61,10 @@ libraryDependencies ++= Seq(
   "com.typesafe.akka" %% "akka-testkit" % "2.5.11" % Test
 )
 
+//Sentry
+libraryDependencies += "io.sentry" % "sentry-logback" % "1.7.2"
+
+
 enablePlugins(UniversalPlugin)
 
 enablePlugins(LinuxPlugin)

@@ -36,6 +36,9 @@ import axios from 'axios';
 
 window.React = require('react');
 
+import Raven from 'raven-js';
+
+
 class App extends React.Component {
     constructor(props){
         super(props);
@@ -48,6 +51,14 @@ class App extends React.Component {
 
         this.onLoggedIn = this.onLoggedIn.bind(this);
         this.onLoggedOut = this.onLoggedOut.bind(this);
+        axios.get("/system/publicdsn").then(response=> {
+            Raven
+                .config(response.data.publicDsn)
+                .install();
+            console.log("Sentry initialised for " + response.data.publicDsn);
+        }).catch(error => {
+            console.error("Could not intialise sentry", error);
+        });
     }
 
     checkLogin(){
