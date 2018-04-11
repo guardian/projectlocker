@@ -183,7 +183,6 @@ class ProjectCreateHelperImpl @Inject() (@Named("message-processor-actor") messa
     */
   def doPostrunActions(fileEntry: FileEntry, createdProjectEntry: ProjectEntry, template: ProjectTemplate)
                       (implicit db: slick.jdbc.PostgresProfile#Backend#Database, config:play.api.Configuration):Future[Either[String,String]]= {
-    logger.info(s"start: createdProjectEntry: $createdProjectEntry")
     //kick off all of the async operations that we need to be completed before we can start executing postruns
     val futureSequence = Future.sequence(Seq(
       template.projectType,
@@ -200,8 +199,6 @@ class ProjectCreateHelperImpl @Inject() (@Named("message-processor-actor") messa
       val postrunDependencyGraph = completedFutures(2).asInstanceOf[Map[Int, Seq[Int]]]
       val workingGroupMaybe = completedFutures(3).asInstanceOf[Option[PlutoWorkingGroup]]
       val commissionMaybe = completedFutures(4).asInstanceOf[Option[PlutoCommission]]
-
-      logger.info(s"flatMap: createdProjectEntry: $createdProjectEntry")
 
       val actionResults:Future[Seq[Try[JythonOutput]]] = projectType.postrunActions.map({
         case Failure(error)=>Seq(Failure(error))
