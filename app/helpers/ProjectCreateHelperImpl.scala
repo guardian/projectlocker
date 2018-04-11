@@ -203,17 +203,18 @@ class ProjectCreateHelperImpl @Inject() (@Named("message-processor-actor") messa
       val actionResults:Future[Seq[Try[JythonOutput]]] = projectType.postrunActions.map({
         case Failure(error)=>Seq(Failure(error))
         case Success(actionsList)=>
+          logger.info(s"actionsList: createdProjectEntry: $createdProjectEntry")
           val sortedActions = orderPostruns(actionsList, postrunDependencyGraph)
           runNextAction(sortedActions, Seq(), PostrunDataCache(), writtenPath, createdProjectEntry, projectType, workingGroupMaybe, commissionMaybe)
       })
 
       val actionSuccess = actionResults.map(collectFailures _)
-      actionSuccess map {
+      actionSuccess flatMap {
         case Left(errorSeq)=>
           val msg = s"${errorSeq.length} postrun actions failed for project $writtenPath, see log for details"
           logger.error(msg)
           errorSeq.foreach(err=>logger.error(s"\tMethod failed with:", err))
-          Left(msg)
+          Future(Left(msg))
         case Right(results)=>
           val msg = s"Successfully ran ${results.length} postrun actions for project $writtenPath"
           logger.info(s"Successfully ran ${results.length} postrun actions for project $writtenPath")
@@ -228,17 +229,32 @@ class ProjectCreateHelperImpl @Inject() (@Named("message-processor-actor") messa
           locateCacheValue(reversedResults, "new_adobe_uuid") match {
             case Some(newUuid)=>
               logger.info(s"Updated adobe uuid to $newUuid, saving update to database and informing pluto")
-              createdProjectEntry.copy(adobe_uuid = Some(newUuid)).save
               messageProcessor ! NewAdobeUuid(createdProjectEntry,newUuid)
             case None=>
               logger.debug("No adobe uuid set, probably not an adobe project")
           }
 
-          Right(s"Successfully ran ${results.length} postrun actions for project $writtenPath")
+          reversedResults.headOption match {
+            case Some(finalResult)=>
+              if(createdProjectEntry.id.isEmpty) throw new RuntimeException("Created project without id?")
+              val mdSetFuture = ProjectMetadata.setBulk(createdProjectEntry.id.get,finalResult.newDataCache.asScala)
+              mdSetFuture.map({
+                case Success(count)=>
+                  logger.info(s"Set $count metadata fields for project ID ${createdProjectEntry.id}")
+                  Right(s"Successfully ran ${results.length} postrun actions for project $writtenPath")
+                case Failure(err)=>
+                  logger.error("Could not set metadata for project", err)
+                  Left(err.toString)
+              })
+            case None=>
+              logger.warn(s"No postruns ran for ${createdProjectEntry.projectTitle} (${createdProjectEntry.id.get} so no metadata")
+              Future(Right(s"Successfully ran ${results.length} postrun actions for project $writtenPath"))
+          }
+
       }
     }).recoverWith({
       case error:Throwable=>
-        logger.error("Could not prepare for postruns", error)
+        logger.error("Could not do postruns", error)
         Future(Left(error.toString))
     })
   }

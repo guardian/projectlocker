@@ -42,6 +42,7 @@ if [ "$?" != "0" ]; then
 fi
 
 psql ${TEST_DB_NAME} << EOF
+drop table "ProjectMetadata" cascade;
 drop table "PlutoWorkingGroup" cascade;
 drop table "PlutoProjectType" cascade;
 drop table DEFAULTS cascade;

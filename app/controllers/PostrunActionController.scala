@@ -2,6 +2,7 @@ package controllers
 
 import javax.inject.{Inject, Singleton}
 
+import akka.http.scaladsl.Http
 import auth.Security
 import exceptions.AlreadyExistsException
 import models._
@@ -89,11 +90,11 @@ class PostrunActionController  @Inject() (config: Configuration, dbConfigProvide
         InternalServerError(Json.obj("status"->"error","detail"->error.toString))
       case Success(rows)=>
         if(rows.head.runnable.startsWith("java:")){
-          Ok("### Java code is not showable at the moment").withHeaders("Content-Type" -> "text/x-python")
+          Ok("### Java code is not showable at the moment").as("text/x-python")
         } else {
           val scriptpath = rows.head.getScriptPath.toAbsolutePath
           try {
-            Ok(Source.fromFile(scriptpath.toString).mkString).withHeaders("Content-Type" -> "text/x-python")
+            Ok(Source.fromFile(scriptpath.toString).mkString).as("text/x-python")
           } catch {
             case e: Throwable =>
               logger.error("Could not read postrun source code", e)
