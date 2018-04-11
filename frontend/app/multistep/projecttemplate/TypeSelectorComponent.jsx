@@ -10,7 +10,8 @@ class TypeSelectorComponent extends CommonMultistepComponent {
         selectedPlutoSubtype: PropTypes.number.isRequired,
         selectedType: PropTypes.number.isRequired,
         templateName: PropTypes.string.isRequired,
-        valueWasSet: PropTypes.func.isRequired
+        valueWasSet: PropTypes.func.isRequired,
+        loadingComplete: PropTypes.boolean
     };
 
     constructor(props){
@@ -25,17 +26,18 @@ class TypeSelectorComponent extends CommonMultistepComponent {
         this.selectorValueChanged = this.selectorValueChanged.bind(this);
     }
 
-    componentWillMount(){
-        this.setState({
-            selectedType: this.props.selectedType,
-            name: this.props.templateName,
-            selectedPlutoSubtype: this.props.selectedPlutoSubtype
-        })
+    componentDidUpdate(prevProps,prevState){
+        if(prevState.loadingComplete===false && this.state.loadingComplete===true){
+            this.setState({
+                selectedType: this.props.selectedType,
+                name: this.props.templateName,
+                selectedPlutoSubtype: this.props.selectedPlutoSubtype
+            });
+        } else {
+            super.componentDidUpdate(prevProps,prevState);
+        }
     }
 
-    updateParent(){
-        this.props.valueWasSet(this.state);
-    }
 
     selectorValueChanged(event){
         this.setState({name: this.props.templateName, selectedType: parseInt(event.target.value)}, ()=>
@@ -73,13 +75,13 @@ class TypeSelectorComponent extends CommonMultistepComponent {
                 <label htmlFor="pluto_subtype_selector">Pluto subtype, if applicable:</label>
                 <PlutoProjectTypeSelector id="pluto_subtype_selector"
                                           plutoProjectTypesList={this.props.plutoTypesList}
-                                          selectionUpdated={newValue=>this.setState({selectedPlutoSubtype: newValue}, ()=>this.updateParent())}
+                                          selectionUpdated={newValue=>this.setState({selectedPlutoSubtype: newValue})}
                                           selectedType={this.props.selectedPlutoSubtype}
                                           onlyShowSubtypes={true}
                                           subTypesFor={this.getPlutoSubtypeForPlType()}/>
-            <label htmlFor="projectNameSelector">Template name:</label>
-                    <input type="text" id="projectNameSelector" value={this.props.templateName}
-                           onChange={(event)=>this.setState({name: event.target.value, selectedType: this.props.selectedType}, ()=>this.updateParent())}/>
+                <label htmlFor="projectNameSelector">Template name:</label>
+                <input type="text" id="projectNameSelector" value={this.props.templateName}
+                           onChange={(event)=>this.setState({name: event.target.value})}/>
             </div>
         )
 
