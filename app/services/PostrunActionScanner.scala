@@ -6,7 +6,7 @@ import java.sql.Timestamp
 import akka.actor.ActorSystem
 import com.google.inject.{Inject, Singleton}
 import play.api.{Configuration, Logger}
-import helpers.{DirectoryScanner, JythonRunner}
+import helpers.{DirectoryScanner, JythonRunner, PrecompileException}
 import models.PostrunAction
 import java.time.{Instant, ZonedDateTime}
 
@@ -29,9 +29,16 @@ class PostrunActionScanner @Inject() (dbConfigProvider: DatabaseConfigProvider, 
     results.foreach({
       case Success(runnable)=>
         logger.debug(s"Successfully precompiled $runnable")
-      case Failure(error)=>
-        logger.error("Could not precompile: ", error)
+      case Failure(error)=>error match {
+        case e:PrecompileException=>
+          logger.error(s"Could not precompile ${e.toString}", error)
+        case _=>
+          logger.error("Could not precompile: ", error)
+      }
     })
+  }).recover({
+    case e:Throwable=>
+      logger.error("Precompiler could not recover, this should not happen", e)
   })
 
   protected def addIfNotExists(scriptFile: File) = {

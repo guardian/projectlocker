@@ -27,7 +27,7 @@ class TypeSelectorComponent extends CommonMultistepComponent {
     }
 
     componentDidUpdate(prevProps,prevState){
-        if(prevState.loadingComplete===false && this.state.loadingComplete===true){
+        if(prevProps.loadingComplete===false && this.props.loadingComplete===true){
             this.setState({
                 selectedType: this.props.selectedType,
                 name: this.props.templateName,
