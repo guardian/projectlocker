@@ -26,8 +26,11 @@ import Conf._
 import play.api.Logger
 import play.api.cache.SyncCacheApi
 
+import scala.concurrent.Future
 import scala.concurrent.duration._
 import scala.util.{Failure, Success, Try}
+
+import scala.concurrent.ExecutionContext.Implicits.global
 
 object LDAP {
   private val logger = Logger(getClass)
@@ -76,6 +79,19 @@ object LDAP {
       getDN(searchEntries)
     }    
     userDN
+  }
+
+  /**
+    * Returns false if the connection pool has either failed or there are no available connections
+     * @return
+    */
+  def hasConnectionPool:Future[Try[Unit]] = Future {
+    connectionPool
+      .map(_.getCurrentAvailableConnections>0)
+      .getOrElse(false) match {
+      case true=>Success(())
+      case false=>Failure(new RuntimeException("No LDAP pool connections available"))
+    }
   }
 
   def getUserRoles (uid: String)(implicit cache:SyncCacheApi) : Option[List[String]] = {

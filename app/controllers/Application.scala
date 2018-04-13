@@ -8,16 +8,18 @@ import play.api._
 import play.api.mvc._
 import auth.{LDAP, Security, User}
 import com.unboundid.ldap.sdk.LDAPConnectionPool
+import helpers.DatabaseHelper
 import models.{LoginRequest, LoginRequestSerializer}
 import play.api.cache.SyncCacheApi
 import play.api.libs.json._
 
 import scala.collection.JavaConverters._
 import scala.concurrent.Future
-import scala.util.{Failure, Success}
+import scala.util.{Failure, Success, Try}
+import scala.concurrent.ExecutionContext.Implicits.global
 
 @Singleton
-class Application @Inject() (cc:ControllerComponents, p:PlayBodyParsers, config:Configuration, cacheImpl:SyncCacheApi)
+class Application @Inject() (cc:ControllerComponents, p:PlayBodyParsers, config:Configuration, cacheImpl:SyncCacheApi, dbHelper:DatabaseHelper)
   extends AbstractController(cc) with Security with LoginRequestSerializer {
 
   implicit val cache:SyncCacheApi = cacheImpl
@@ -139,5 +141,37 @@ class Application @Inject() (cc:ControllerComponents, p:PlayBodyParsers, config:
         logger.error("Could not get publicDsn property: ", e)
         InternalServerError(Json.obj("status"->"error","detail"->e.toString))
     }
+  }
+
+  def makeHealthcheckBody(statusString:String, ldapCheck: Try[Unit], dbCheck:Try[Unit]) = {
+    val ldapString = ldapCheck match {
+      case Success(x)=>"ok"
+      case Failure(err)=>err.toString
+    }
+    val dbString = dbCheck match {
+      case Success(x)=>"ok"
+      case Failure(err)=>err.toString
+    }
+
+    Json.obj(
+      "status"->statusString,
+      "ldap"->ldapString,
+      "database"->dbString
+    )
+  }
+
+  def healthcheck = Action.async { request=>
+    val checkFutures = Future.sequence(Seq(LDAP.hasConnectionPool,dbHelper.healthcheck))
+
+    checkFutures.map(resultSeq=>{
+      val ldapCheck = resultSeq.head
+      val dbCheck = resultSeq(1)
+
+      if(ldapCheck.isFailure || dbCheck.isFailure){
+        InternalServerError(makeHealthcheckBody("error",ldapCheck,dbCheck))
+      } else{
+        Ok(makeHealthcheckBody("ok",ldapCheck,dbCheck))
+      }
+    })
   }
 }
