@@ -180,7 +180,9 @@ jobs:
       #need to set SBT_OPTS here as we refer to the buitin env vars to set the tag, build number, etc.  Otherwise they are not interpolated.
       - run: echo exit | SBT_OPTS="-Dfile.encoding=UTF8 -Xms512M -Xmx3072M -Xss1M -XX:+CMSClassUnloadingEnabled -XX:+UseCompressedOops -Dbuild.tag=\"$CIRCLE_TAG\" -Dbuild.number=$CIRCLE_BUILD_NUM -Dbuild.vcs.number=$CIRCLE_SHA1" sbt rpm:packageBin
       - run: bash -c 'for x in `ls target/rpm/RPMS/noarch/projectlocker*.rpm`; do bash ./upload_to_s3.sh "$x"; done'
-
+      #deploy built docker image (pulled from original circel.yml)
+      - run: echo "noreply@circleci.com" | docker login -u ${DOCKER_USER} -p ${DOCKER_PASSWORD}
+      - run: sbt docker:publish
 workflows:
   version: 2
   build_and_test:
