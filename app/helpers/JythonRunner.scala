@@ -5,7 +5,7 @@ import java.nio.file.{Path, Paths}
 import java.util.Properties
 
 import models.PostrunAction
-import org.python.core.{PyObject, PyString}
+import org.python.core.{PyException, PyObject, PyString}
 import org.python.util.PythonInterpreter
 import play.api.{Configuration, Logger}
 
@@ -13,6 +13,15 @@ import scala.util.{Failure, Success, Try}
 import scala.concurrent.{Await, Future}
 import scala.concurrent.duration._
 import scala.concurrent.ExecutionContext.Implicits.global
+
+class PrecompileException(scriptPath: String, pythonException: PyException) extends RuntimeException {
+  def getScriptPath:String = scriptPath
+  override def toString: String = s"$scriptPath: ${pythonException.value.toString}"
+  def pythonStacktrace:Option[String] = pythonException.traceback match {
+    case null=>None
+    case _=>Some(pythonException.traceback.toString)
+  }
+}
 
 /**
   * this case class represents the result of the invokation of a script in Jython
@@ -55,6 +64,8 @@ object JythonRunner {
             interpreter.execfile(entry.getScriptPath.toString)
             Success(entry.runnable)
           } catch {
+            case e: PyException=>
+              Failure(new PrecompileException(entry.runnable, e))
             case e:Throwable=>
               Failure(e)
           }

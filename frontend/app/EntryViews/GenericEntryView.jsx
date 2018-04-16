@@ -4,7 +4,8 @@ import PropTypes from 'prop-types';
 
 class GenericEntryView extends React.Component {
     static propTypes = {
-        entryId: PropTypes.number.isRequired
+        entryId: PropTypes.number.isRequired,
+        hide: PropTypes.boolean
     };
 
     constructor(props){
@@ -36,8 +37,9 @@ class GenericEntryView extends React.Component {
     }
 
     render(){
+        if(this.props.hide) return <span/>;
         if(this.state.content)
-            return <span>{this.state.content.name}</span>
+            return <span>{this.state.content.name}</span>;
         else
             return <span><i>(none)</i></span>
     }

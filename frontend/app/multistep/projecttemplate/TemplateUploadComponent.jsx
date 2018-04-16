@@ -4,11 +4,13 @@ import axios from 'axios';
 import CommonMultistepComponent from '../common/CommonMultistepComponent.jsx';
 import ErrorViewComponent from '../common/ErrorViewComponent.jsx';
 import UploadingThrobber from '../common/UploadingThrobber.jsx';
+import FileEntryView from '../../EntryViews/FileEntryView.jsx';
 
 class TemplateUploadComponent extends CommonMultistepComponent {
     static propTypes = {
         storages: PropTypes.array.isRequired,
-        valueWasSet: PropTypes.func.isRequired
+        valueWasSet: PropTypes.func.isRequired,
+        existingFileId: PropTypes.number
     };
 
     constructor(props) {
@@ -22,10 +24,19 @@ class TemplateUploadComponent extends CommonMultistepComponent {
             hasFiles: false,
             selectedStorage: firstStorage,
             fileId: null,
-            uploading: false
+            uploading: false,
+            useExisting: true
         };
 
         this.fileChange = this.fileChange.bind(this);
+    }
+
+    componentDidUpdate() {
+        //override the super-class implementation as we don't want it here
+    }
+
+    componentWillMount(){
+        if(this.props.existingFileId===null) this.setState({useExisting: false});
     }
 
     doUpload(file){
@@ -98,7 +109,18 @@ class TemplateUploadComponent extends CommonMultistepComponent {
         return <div>
             <h3>Template upload</h3>
             <p className="information">Please upload the file that you want to serve as a template</p>
-            <table>
+            <input type="radio" name="uploadOrUseExisting"
+                   id="useExisting" checked={this.state.useExisting} disabled={this.props.existingFileId===null}
+                   onChange={event=>this.setState({useExisting: !this.state.useExisting})}/>
+                    <span style={{marginLeft: "1em"}}>Use existing template file:
+                        <FileEntryView entryId={this.props.existingFileId} hide={!this.props.existingFileId}/>
+                    </span><br/>
+            <input type="radio" name="uploadOrUseExisting"
+                   id="uploadNew" checked={!this.state.useExisting}
+                   onChange={event=>this.setState({useExisting: !this.state.useExisting})}/>
+            <span style={{marginLeft: "1em"}}>Upload new file</span>
+
+            <table style={{display: this.state.useExisting ? "none" : "inherit"}}>
                 <tbody>
                 <tr>
                     <td>Storage</td><td><select onChange={(event)=>this.setState({selectedStorage: event.target.value})}>
