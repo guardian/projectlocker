@@ -66,4 +66,28 @@ class PlutoProjectTypeController @Inject()(dbConfigProvider:DatabaseConfigProvid
         Future(InternalServerError(Json.obj("status"->"error","detail"->error.toString)))
     })
   }}
+
+  def removeDefaultProjectTemplate(requestedId: Int) = IsAdminAsync {uid=> {request=>
+    selectid(requestedId).flatMap({
+      case Success(projectTypes)=>
+        projectTypes.headOption match {
+          case Some(projectType) =>
+            val updatedProjectType = projectType.copy(defaultProjectTemplate = None)
+            db.run(
+              TableQuery[PlutoProjectTypeRow].filter(_.id === requestedId).update(updatedProjectType).asTry
+            ).map({
+              case Success(updatedRows) =>
+                Ok(Json.obj("status" -> "ok", "detail" -> s"updated $updatedRows records"))
+              case Failure(error) =>
+                logger.error("Could not update pluto project type record: ", error)
+                InternalServerError(Json.obj("status" -> "error", "detail" -> error.toString))
+            })
+          case None =>
+            Future(NotFound(Json.obj("status" -> "notfound", "detail" -> s"pluto project type $requestedId not found")))
+        }
+      case Failure(error)=>
+        logger.error("Could not look up pluto project type record: ", error)
+        Future(InternalServerError(Json.obj("status"->"error","detail"->error.toString)))
+    })
+  }}
 }
