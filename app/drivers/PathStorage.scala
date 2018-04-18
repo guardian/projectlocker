@@ -22,6 +22,7 @@ class PathStorage(override val storageRef:StorageEntry) extends StorageDriver{
     new File(path)
   }
 
+  override def pathExists(path: String): Boolean = fileForPath(path).exists()
 
   override def writeDataToPath(path: String, dataStream: FileInputStream): Try[Unit] = Try {
     val finalPath = storageRef.rootpath match {
