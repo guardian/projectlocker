@@ -13,9 +13,17 @@ import play.api.Logger
 import slick.lifted.TableQuery
 
 import scala.concurrent.Future
-import scala.util.{Failure, Success}
+import scala.util.{Failure, Success, Try}
+
+object StorageStatus extends Enumeration {
+  val ONLINE,OFFLINE,DISAPPEARED,MISCONFIGURED,UNKNOWN=Value
+}
+
 
 trait StorageSerializer {
+  implicit val storageStatusWrites:Writes[StorageStatus.Value] = Writes.enumNameWrites
+  implicit val storageStatusReads:Reads[StorageStatus.Value] = Reads.enumNameReads(StorageStatus)
+
   /*https://www.playframework.com/documentation/2.5.x/ScalaJson*/
   implicit val storageWrites:Writes[StorageEntry] = (
     (JsPath \ "id").writeNullable[Int] and
@@ -25,7 +33,8 @@ trait StorageSerializer {
       (JsPath \ "user").writeNullable[String] and
       (JsPath \ "password").writeNullable[String] and
       (JsPath \ "host").writeNullable[String] and
-      (JsPath \ "port").writeNullable[Int]
+      (JsPath \ "port").writeNullable[Int] and
+      (JsPath \ "status").writeNullable[StorageStatus.Value]
     )(unlift(StorageEntry.unapply))
 
   implicit val storageReads:Reads[StorageEntry] = (
@@ -36,12 +45,14 @@ trait StorageSerializer {
       (JsPath \ "user").readNullable[String] and
       (JsPath \ "password").readNullable[String] and
       (JsPath \ "host").readNullable[String] and
-      (JsPath \ "port").readNullable[Int]
+      (JsPath \ "port").readNullable[Int] and
+      (JsPath \ "status").readNullable[StorageStatus.Value]
     )(StorageEntry.apply _)
 }
 
+
 case class StorageEntry(id: Option[Int], rootpath: Option[String], clientpath: Option[String], storageType: String,
-                        user:Option[String], password:Option[String], host:Option[String], port:Option[Int]) {
+                        user:Option[String], password:Option[String], host:Option[String], port:Option[Int], status:Option[StorageStatus.Value]) {
   val logger: Logger = Logger(this.getClass)
 
   def getStorageDriver:Option[StorageDriver] = {
@@ -56,9 +67,29 @@ case class StorageEntry(id: Option[Int], rootpath: Option[String], clientpath: O
   def repr:String = {
     s"$storageType (${rootpath.getOrElse("no root path")}) ${host.getOrElse("(no host)")}"
   }
+
+  def save(implicit db:slick.jdbc.PostgresProfile#Backend#Database):Future[Try[StorageEntry]] = id match {
+    case None=>
+      val insertQuery = TableQuery[StorageEntryRow] returning TableQuery[StorageEntryRow].map(_.id) into ((item,id)=>item.copy(id=Some(id)))
+      db.run(
+        (insertQuery+=this).asTry
+      )
+    case Some(realEntityId)=>
+      db.run(
+        TableQuery[StorageEntryRow].filter(_.id===realEntityId).update(this).asTry
+      ).map({
+        case Success(rowsAffected)=>Success(this)
+        case Failure(error)=>Failure(error)
+      })
+  }
 }
 
 class StorageEntryRow(tag:Tag) extends Table[StorageEntry](tag, "StorageEntry") {
+  implicit val storageStatusMapper = MappedColumnType.base[StorageStatus.Value,String](
+    e=>e.toString(),
+    s=>StorageStatus.withName(s)
+  )
+
   def id = column[Int]("id",O.PrimaryKey, O.AutoInc)
   def rootpath = column[Option[String]]("s_root_path")
   def clientpath = column[Option[String]]("s_client_path")
@@ -67,8 +98,9 @@ class StorageEntryRow(tag:Tag) extends Table[StorageEntry](tag, "StorageEntry") 
   def password = column[Option[String]]("s_password")
   def host = column[Option[String]]("s_host")
   def port = column[Option[Int]]("i_port")
+  def status = column[Option[StorageStatus.Value]]("e_status")
 
-  def * = (id.?,rootpath,clientpath,storageType,user,password,host,port) <> (StorageEntry.tupled, StorageEntry.unapply)
+  def * = (id.?,rootpath,clientpath,storageType,user,password,host,port,status) <> (StorageEntry.tupled, StorageEntry.unapply)
 }
 
 
@@ -91,4 +123,10 @@ object StorageEntryHelper {
         }
       case Failure(error)=>throw error
     })
+
+  def allStorages(implicit db:slick.jdbc.PostgresProfile#Backend#Database):Future[Try[Seq[StorageEntry]]] = {
+    db.run(
+      TableQuery[StorageEntryRow].result.asTry
+    )
+  }
 }

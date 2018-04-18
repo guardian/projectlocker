@@ -46,6 +46,7 @@
     <logger name="postrun.UpdateAdobeUuid" level="INFO"/>
     <logger name="models.ProjectMetadata" level="WARN"/>
     <logger name="UpdateAdobeUuidSpec" level="WARN"/>
+    <logger name="services.StorageScanner" level="DEBUG"/>
     <logger name="com.gargoylesoftware.htmlunit.javascript" level="OFF" />
 
     <root level="ERROR">
