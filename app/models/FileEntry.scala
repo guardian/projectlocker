@@ -169,7 +169,7 @@ case class FileEntry(id: Option[Int], filepath: String, storageId: Int, user:Str
         storage.getStorageDriver match {
           case Some(storageDriver) =>
             try {
-              val outputPath = Paths.get(storage.rootpath.getOrElse(""), this.filepath)
+              val outputPath = Paths.get(this.filepath)
               logger.info(s"Writing to $outputPath with $storageDriver")
               val response = this.writeContent(buffer, outputPath, storageDriver)
               this.updateFileHasContent

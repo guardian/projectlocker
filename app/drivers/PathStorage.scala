@@ -41,7 +41,12 @@ class PathStorage(override val storageRef:StorageEntry) extends StorageDriver{
   }
 
   def writeDataToPath(path:String, data:Array[Byte]):Try[Unit] = Try {
-    val f = this.fileForPath(path)
+    val finalPath = storageRef.rootpath match {
+      case Some(rootpath)=>Paths.get(rootpath,path)
+      case None=>Paths.get(path)
+    }
+
+    val f = this.fileForPath(finalPath.toString)
     logger.info(s"Writing data to ${f.getAbsolutePath}")
     val st = new FileOutputStream(f)
 
