@@ -37,6 +37,7 @@ class PathStorage(override val storageRef:StorageEntry) extends StorageDriver{
     st.getChannel.transferFrom(dataStream.getChannel, 0, Long.MaxValue)
 
     st.close()
+    logger.info(s"Finished writing to ${f.getAbsolutePath}")
   }
 
   def writeDataToPath(path:String, data:Array[Byte]):Try[Unit] = Try {
@@ -46,6 +47,7 @@ class PathStorage(override val storageRef:StorageEntry) extends StorageDriver{
 
     st.write(data)
     st.close()
+    logger.info(s"Finished writing to ${f.getAbsolutePath}")
   }
 
   override def deleteFileAtPath(path: String): Boolean = {
