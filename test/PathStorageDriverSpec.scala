@@ -5,7 +5,7 @@ import org.specs2.mutable._
 import org.specs2.runner._
 import org.junit.runner._
 import drivers.PathStorage
-import models.StorageEntry
+import models.{StorageEntry, StorageStatus}
 
 import scala.io.Source
 import sys.process._
@@ -13,7 +13,7 @@ import sys.process._
 @RunWith(classOf[JUnitRunner])
 class PathStorageDriverSpec extends Specification with org.specs2.mock.Mockito {
   sequential
-  private val mock_storage = StorageEntry(None,None,None,"Local",None,None,None,None)
+  private val mock_storage = StorageEntry(None,None,None,"Local",None,None,None,None,Some(StorageStatus.ONLINE))
 
   "PathStorageDriver" should {
     "return a File object for a path" in {

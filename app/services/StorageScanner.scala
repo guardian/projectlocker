@@ -28,9 +28,12 @@ class StorageScanner @Inject() (dbConfigProvider:DatabaseConfigProvider, config:
               logger.debug(s"Storage ${entry.storageType} ${entry.rootpath} is online")
               if(entry.status.getOrElse(StorageStatus.UNKNOWN)!=StorageStatus.ONLINE) entry.copy(status=Some(StorageStatus.ONLINE)).save
             } else {
-              logger.debug(s"Storage ${entry.storageType} ${entry.rootpath} refers to a path that does not exist")
+              logger.warn(s"Storage ${entry.storageType} ${entry.rootpath} refers to a path that does not exist")
               if(entry.status.getOrElse(StorageStatus.UNKNOWN)!=StorageStatus.DISAPPEARED) entry.copy(status=Some(StorageStatus.DISAPPEARED)).save
             }
+          case None=>
+            logger.warn(s"Storage ${entry.storageType} ${entry.rootpath} has no storage driver configured")
+            if(entry.status.getOrElse(StorageStatus.UNKNOWN)!=StorageStatus.MISCONFIGURED) entry.copy(status=Some(StorageStatus.MISCONFIGURED)).save
         }
       case None=>
         logger.debug(s"Storage ${entry.storageType} ${entry.rootpath} has no root path set")

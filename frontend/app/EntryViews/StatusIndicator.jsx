@@ -44,8 +44,16 @@ class StatusIndicator extends React.Component {
         }
     }
 
-    render(){
+    iconMarkup(){
         return <span className={"fa fa-"+this.iconClassName()} style={{color: this.iconColour()}} alt={this.props.status}/>
+    }
+
+    render(){
+        if(this.props.showLabel){
+            return <span>{this.iconMarkup()}<span className="storage-status">{this.props.status}</span></span>
+        } else {
+            return this.iconMarkup();
+        }
     }
 }
 
