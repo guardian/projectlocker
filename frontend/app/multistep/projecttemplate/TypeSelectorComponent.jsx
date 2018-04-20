@@ -76,7 +76,7 @@ class TypeSelectorComponent extends CommonMultistepComponent {
                 <PlutoProjectTypeSelector id="pluto_subtype_selector"
                                           plutoProjectTypesList={this.props.plutoTypesList}
                                           selectionUpdated={newValue=>this.setState({selectedPlutoSubtype: newValue})}
-                                          selectedType={this.props.selectedPlutoSubtype}
+                                          selectedType={this.state.selectedPlutoSubtype}
                                           onlyShowSubtypes={true}
                                           subTypesFor={this.getPlutoSubtypeForPlType()}/>
                 <label htmlFor="projectNameSelector">Template name:</label>

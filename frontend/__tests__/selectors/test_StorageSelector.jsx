@@ -12,7 +12,7 @@ describe("StorageSelector", ()=>{
             {id:2, storageType: "Local", rootpath: "/path2"},
 
         ];
-        const rendered = shallow(<StorageSelector selectedStorage={1} selectionUpdated={updateCb} storageList={storages}/>);
+        const rendered = shallow(<StorageSelector enabled={true} selectedStorage={1} selectionUpdated={updateCb} storageList={storages}/>);
 
         const options = rendered.find('option');
         expect(options.length).toEqual(2);
@@ -30,7 +30,7 @@ describe("StorageSelector", ()=>{
             {id:2, storageType: "Local", rootpath: "/path2"},
 
         ];
-        const rendered = shallow(<StorageSelector selectedStorage={1} selectionUpdated={updateCb} storageList={storages}/>);
+        const rendered = shallow(<StorageSelector enabled={true} selectedStorage={1} selectionUpdated={updateCb} storageList={storages}/>);
 
         rendered.find('select').simulate('change', {target: {value: "2"}});
         assert(updateCb.calledWith(2));

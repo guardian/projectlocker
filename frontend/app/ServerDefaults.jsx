@@ -18,12 +18,7 @@ class ServerDefaults extends React.Component {
         };
 
         this.keys = {
-            storage: "project_storage_id",
-            premiere: "Premiere",   //these are held in metadata elements on the pluto side, and it would be good to sync them too somehow
-            prelude: "Prelude",
-            aftereffects: "AfterEffects",
-            audition: "Audition",
-            cubase: "Cubase"
+            storage: "project_storage_id"
         };
 
         this.updateDefaultSetting = this.updateDefaultSetting.bind(this);
@@ -59,9 +54,15 @@ class ServerDefaults extends React.Component {
     }
 
     updateProjectTemplateSetting(newValue, plutoProjectTypeEntryId){
-        axios.put("/api/plutoprojecttypeid/" + plutoProjectTypeEntryId + "/default-template/" + newValue).then(
-            window.setTimeout(()=>this.refreshData(), 250)
-        );
+        if(newValue==="-1"){
+            axios.delete("/api/plutoprojecttypeid/" + plutoProjectTypeEntryId + "/default-template").then(
+                window.setTimeout(() => this.refreshData(), 450)
+            );
+        } else {
+            axios.put("/api/plutoprojecttypeid/" + plutoProjectTypeEntryId + "/default-template/" + newValue).then(
+                window.setTimeout(() => this.refreshData(), 450)
+            );
+        }
     }
 
     /* return the current default storage, or first in the list, or zero if neither is present */
@@ -102,14 +103,16 @@ class ServerDefaults extends React.Component {
                 <tbody>
                 <tr>
                     <td>Default storage for created projects</td>
-                    <td><StorageSelector selectedStorage={this.storagePref()}
+                    <td><StorageSelector enabled={true}
+                                         selectedStorage={this.storagePref()}
                                          selectionUpdated={value=>this.updateDefaultSetting(value, this.keys.storage)}
                                          storageList={this.state.storageList}/></td>
                 </tr>
                 {
                     plutoProjectTypeList.map(projectTypeEntry=><tr>
                         <td>Project template to use for Pluto '{projectTypeEntry.name}':</td>
-                        <td><TemplateSelector selectedTemplate={projectTypeEntry["defaultProjectType"]}
+                        <td><TemplateSelector allowNull={true}
+                                              selectedTemplate={projectTypeEntry["defaultProjectType"]}
                                               selectionUpdated={value=>this.updateProjectTemplateSetting(value, projectTypeEntry.id)}
                                               templatesList={this.state.templatesList}
                         /></td>

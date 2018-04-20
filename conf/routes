@@ -59,6 +59,7 @@ DELETE  /api/projecttype/:id               @controllers.ProjectTypeController.de
 GET     /api/plutoprojecttypeid            @controllers.PlutoProjectTypeController.list(startAt: Int ?=0, length:Int ?=100)
 GET     /api/plutoprojecttypeid/:id        @controllers.PlutoProjectTypeController.getitem(id: Int)
 PUT     /api/plutoprojecttypeid/:id/default-template/:templateId @controllers.PlutoProjectTypeController.setDefaultProjectTemplate(id:Int, templateId:Int)
+DELETE  /api/plutoprojecttypeid/:id/default-template @controllers.PlutoProjectTypeController.removeDefaultProjectTemplate(id:Int)
 
 GET     /api/postrun                   @controllers.PostrunActionController.list(startAt:Int ?=0,length:Int ?=100)
 PUT     /api/postrun                   @controllers.PostrunActionController.create

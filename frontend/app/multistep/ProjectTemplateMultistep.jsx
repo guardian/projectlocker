@@ -39,16 +39,18 @@ class ProjectTemplateMultistep extends CommonMultistepComponent
 
         Promise.all(promiseList)
             .then(responses=>{
-                const projectTypeResposne = responses[0];
+                const projectTypeResponse = responses[0];
                 const storageResponse = responses[1];
                 const plutoTypeResponse = responses[2];
 
-                const firstType = projectTypeResposne.data.result[0] ? projectTypeResposne.data.result[0].id : null;
+                const firstType = projectTypeResponse.data.result[0] ? projectTypeResponse.data.result[0].id : null;
+
                 const baseData = {
-                    projectTypes: projectTypeResposne.data.result,
+                    projectTypes: projectTypeResponse.data.result,
                     selectedType: firstType,
                     storages: storageResponse.data.result,
-                    plutoProjectTypesList: plutoTypeResponse.data.result
+                    plutoProjectTypesList: plutoTypeResponse.data.result,
+                    loadingComplete: true
                 };
 
                 if(this.state.currentEntry){
