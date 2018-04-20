@@ -1,6 +1,7 @@
 import React from 'react';
 import SortableTable from 'react-sortable-table';
 import GeneralListComponent from './GeneralListComponent.jsx';
+import StatusIndicator from "./EntryViews/StatusIndicator.jsx";
 
 class StorageListComponent extends GeneralListComponent {
     constructor(props){
@@ -14,10 +15,16 @@ class StorageListComponent extends GeneralListComponent {
                 dataProps: { className: 'align-right'},
                 headerProps: { className: 'dashboardheader'}
             },
-            GeneralListComponent.standardColumn("Type","type"),
+            {
+                header: "Status",
+                key: "status",
+                dataProps: { className: 'align-right'},
+                headerProps: {className: 'dashboardheader'},
+                render: (status)=><StatusIndicator status={status}/>
+            },
+            GeneralListComponent.standardColumn("Type","storageType"),
             GeneralListComponent.standardColumn("Root path","rootpath"),
             GeneralListComponent.standardColumn("Client-facing path (if any)","clientpath"),
-            GeneralListComponent.standardColumn("Storage type","storageType"),
             GeneralListComponent.standardColumn("Username","user"),
             {
                 header: "Password",

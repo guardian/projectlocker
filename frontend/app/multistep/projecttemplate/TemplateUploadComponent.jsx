@@ -5,6 +5,7 @@ import CommonMultistepComponent from '../common/CommonMultistepComponent.jsx';
 import ErrorViewComponent from '../common/ErrorViewComponent.jsx';
 import UploadingThrobber from '../common/UploadingThrobber.jsx';
 import FileEntryView from '../../EntryViews/FileEntryView.jsx';
+import StorageSelector from "../../Selectors/StorageSelector.jsx";
 
 class TemplateUploadComponent extends CommonMultistepComponent {
     static propTypes = {
@@ -122,11 +123,20 @@ class TemplateUploadComponent extends CommonMultistepComponent {
 
             <table style={{display: this.state.useExisting ? "none" : "inherit"}}>
                 <tbody>
+                {/*<tr>*/}
+                    {/*<td>Storage</td><td><select onChange={(event)=>this.setState({selectedStorage: event.target.value})}>*/}
+                    {/*{*/}
+                        {/*this.props.storages.map((strg,index)=><option key={index} value={strg.id}>{this.labelForStorage(strg)}</option>)*/}
+                    {/*}</select></td>*/}
+                {/*</tr>*/}
                 <tr>
-                    <td>Storage</td><td><select onChange={(event)=>this.setState({selectedStorage: event.target.value})}>
-                    {
-                        this.props.storages.map((strg,index)=><option key={index} value={strg.id}>{this.labelForStorage(strg)}</option>)
-                    }</select></td>
+                    <td>Storage</td>
+                    <td><StorageSelector selectedStorage={this.state.selectedStorage}
+                                         selectionUpdated={newValue=>this.setState({selectedStorage: newValue})}
+                                         storageList={this.props.storages}
+                                         showLabel={true}
+                                         enabled={true}/>
+                    </td>
                 </tr>
                 <tr>
                     <td>File to upload</td>

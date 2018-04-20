@@ -56,4 +56,11 @@ trait StorageDriver {
     * @return [[Map]] of [[Symbol]] -> [[String]] containing metadata about the given file.
     */
   def getMetadata(path:String):Map[Symbol,String]
+
+  /**
+    * Does the given path exist on this storage?
+    * @param path
+    * @return
+    */
+  def pathExists(path:String):Boolean
 }

@@ -66,4 +66,20 @@ class StoragesController @Inject()
     Ok(Json.obj("status"->"ok","types"->this.knownTypes))
   }}
 
+  override def shouldCreateEntry(newEntry: StorageEntry): Either[String, Boolean] = {
+    newEntry.rootpath match {
+      case Some(rootpath) =>
+        newEntry.getStorageDriver match {
+          case Some(storageDriver) =>
+            if(storageDriver.pathExists(rootpath))
+              Right(true)
+            else
+              Left(s"Path $rootpath does not exist")
+          case None=>
+            Left(s"No storage driver defined for storage type ${newEntry.storageType}")
+        }
+      case None=>
+        Left("No root path was set for the storage")
+    }
+  }
 }

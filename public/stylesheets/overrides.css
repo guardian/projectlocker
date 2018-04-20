@@ -194,3 +194,10 @@ ul.no-gap {
     margin-top: 0;
     padding-top: 0;
 }
+
+.storage-status {
+    font-size: 0.8em;
+    font-style: italic;
+    color: gray;
+    margin-left: 0.4em;
+}

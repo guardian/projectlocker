@@ -2,6 +2,7 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import CommonMultistepComponent from '../common/CommonMultistepComponent.jsx';
 import StorageSelector from '../../Selectors/StorageSelector.jsx';
+import axios from 'axios';
 
 class DestinationStorageComponent extends CommonMultistepComponent {
     static propTypes = {
@@ -55,12 +56,9 @@ class DestinationStorageComponent extends CommonMultistepComponent {
                                          selectionUpdated={this.props.selectionUpdated}
                                          storageList={this.props.storageList}/></td>
                 </tr>
-                <tr style={{display: this.state.isAdmin ? "none": "inherit"}}>
-                    <td></td>
-                    <td><i>Non-admin users cannot change the storage location of projects</i></td>
-                </tr>
                 </tbody>
             </table>
+            <p style={{display: this.state.isAdmin ? "none": "inherit"}}><i>Non-admin users cannot change the storage location of projects</i></p>
         </div>
     }
 }

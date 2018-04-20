@@ -134,13 +134,12 @@ case class FileEntry(id: Option[Int], filepath: String, storageId: Int, user:Str
       case Some(bytes) => //the buffer is held in memory
         logger.debug("uploadContent: writing memory buffer")
         storageDriver.writeDataToPath(outputPath.toString, bytes.toArray)
-        Success(Unit)
       case None => //the buffer is on-disk
         logger.debug("uploadContent: writing disk buffer")
         val fileInputStream = new FileInputStream(buffer.asFile)
-        storageDriver.writeDataToPath(outputPath.toString, fileInputStream)
+        val result=storageDriver.writeDataToPath(outputPath.toString, fileInputStream)
         fileInputStream.close()
-        Success(Unit)
+        result
     }
 
   /**
@@ -170,8 +169,8 @@ case class FileEntry(id: Option[Int], filepath: String, storageId: Int, user:Str
         storage.getStorageDriver match {
           case Some(storageDriver) =>
             try {
-              val outputPath = Paths.get(storage.rootpath.getOrElse(""), this.filepath)
-              logger.info(s"Writing to ${outputPath} with $storageDriver")
+              val outputPath = Paths.get(this.filepath)
+              logger.info(s"Writing to $outputPath with $storageDriver")
               val response = this.writeContent(buffer, outputPath, storageDriver)
               this.updateFileHasContent
               response

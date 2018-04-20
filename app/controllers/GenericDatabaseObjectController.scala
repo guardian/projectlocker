@@ -155,6 +155,14 @@ trait GenericDatabaseObjectControllerWithFilter[M,F] extends InjectedController 
     )
   }}
 
+  /**
+    * Override this method in the subclass to prevent certain entries from being created
+    * @param newEntry - entry that the client wants to create
+    * @return Either[String,Boolean] indicating whether to proceed or not. If Right then the operation is carried out, if Left then the string
+    *         is used as the error responde detail
+    */
+  def shouldCreateEntry(newEntry:M):Either[String,Boolean] = Right(true)
+
   def create = IsAdminAsync(parse.json) {uid=>{request =>
     this.validate(request).fold(
       errors => {
@@ -162,20 +170,24 @@ trait GenericDatabaseObjectControllerWithFilter[M,F] extends InjectedController 
         Future(BadRequest(Json.obj("status"->"error","detail"->JsError.toJson(errors))))
       },
       newEntry => {
-        this.insert(newEntry,uid).map({
-          case Success(result)=>Ok(Json.obj("status" -> "ok", "detail" -> "added", "id" -> result.asInstanceOf[Int]))
-          case Failure(error)=>
-            logger.error(error.toString)
-            error match {
-              case e:BadDataException=>
-                Conflict(Json.obj("status"->"error", "detail"->e.toString))
-              case e:AlreadyExistsException=>
-                Conflict(Json.obj("status"->"error", "detail"->e.toString))
-              case _=>
-                handleConflictErrors(error,"object",isInsert=true)
-            }
+        shouldCreateEntry(newEntry) match {
+          case Right(_)=>
+            this.insert(newEntry, uid).map({
+              case Success(result) => Ok(Json.obj("status" -> "ok", "detail" -> "added", "id" -> result.asInstanceOf[Int]))
+              case Failure(error) =>
+                logger.error(error.toString)
+                error match {
+                  case e: BadDataException =>
+                    Conflict(Json.obj("status" -> "error", "detail" -> e.toString))
+                  case e: AlreadyExistsException =>
+                    Conflict(Json.obj("status" -> "error", "detail" -> e.toString))
+                  case _ =>
+                    handleConflictErrors(error, "object", isInsert = true)
+                }
+            })
+          case Left(errDetail)=>
+            Future(Conflict(Json.obj("status"->"error", "detail"->errDetail)))
         }
-        )
       }
     )
   }}
