@@ -146,8 +146,12 @@ class JythonRunner {
         case Success(returnedObject) =>
           val updatedDataCache = dataCache ++ returnedObject
           logger.debug(s"Updated data cache: ${updatedDataCache.asPython.toString}")
+          outStream.flush()
+          errStream.flush()
           Success(JythonOutput(outStream.toString, errStream.toString, updatedDataCache, None))
         case Failure(error) =>
+          outStream.flush()
+          errStream.flush()
           Success(JythonOutput(outStream.toString, errStream.toString, dataCache, Some(error)))
       }
 
