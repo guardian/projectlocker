@@ -21,11 +21,11 @@ class PlutoWorkingGroupController @Inject() (dbConfigProvider:DatabaseConfigProv
   implicit val cache:SyncCacheApi = cacheImpl
 
   override def selectall(startAt: Int, limit: Int): Future[Try[Seq[PlutoWorkingGroup]]] = db.run(
-    TableQuery[PlutoWorkingGroupRow].result.asTry
+    TableQuery[PlutoWorkingGroupRow].sortBy(_.name.asc.nullsLast).result.asTry
   )
 
   override def selectid(requestedId: Int): Future[Try[Seq[PlutoWorkingGroup]]] = db.run(
-    TableQuery[PlutoWorkingGroupRow].filter(_.id===requestedId).result.asTry
+    TableQuery[PlutoWorkingGroupRow].filter(_.id===requestedId).sortBy(_.name.asc.nullsLast).result.asTry
   )
 
   override def insert(entry: PlutoWorkingGroup, uid: String): Future[Try[Int]] = throw new RuntimeException("This is not supported")
