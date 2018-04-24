@@ -149,11 +149,20 @@ class JythonRunner {
           errStream.flush()
           Success(JythonOutput(outStream.toString, errStream.toString, updatedDataCache, None))
         case Failure(error) =>
+          error match {
+            case e:PyException=>
+              logger.error(e.traceback.dumpStack())
+              logger.error(e.value.toString)
+          }
           outStream.flush()
           errStream.flush()
           Success(JythonOutput(outStream.toString, errStream.toString, dataCache, Some(error)))
       }
     } catch {
+      case err:PyException=>
+        logger.error(s"Could not start postrun script: ${err.value.toString}")
+        logger.error(err.traceback.dumpStack())
+        Failure(err)
       case err:Throwable=>
         logger.error("Could not start postrun script: ", err)
         Failure(err)
