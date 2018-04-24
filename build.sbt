@@ -83,6 +83,8 @@ rpmVendor := "Andy Gallagher <andy.gallagher@theguardian.com>"
 
 rpmUrl := Some("https://github/fredex42/projectlocker")
 
+rpmRequirements := Seq("libxml2", "gzip")
+
 serverLoading in Universal := Some(ServerLoader.Systemd)
 
 packageName in Rpm := "projectlocker"
