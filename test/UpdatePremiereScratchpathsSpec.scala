@@ -44,4 +44,24 @@ class UpdatePremiereScratchpathsSpec extends Specification {
       result must beSuccessfulTry
     }
   }
+
+  "UpdatePremiereScratchpaths.pathForClient" should {
+    "replace a path starting with /srv to one starting with /Volumes" in {
+      val s = new UpdatePremiereScratchpaths
+      val result = s.pathForClient("/srv/test/path")
+      result mustEqual "/Volumes/test/path"
+    }
+
+    "not replace a path just containing /srv" in {
+      val s = new UpdatePremiereScratchpaths
+      val result = s.pathForClient("/test/srv/path")
+      result mustEqual "/test/srv/path"
+    }
+
+    "leave a path that does not contain /srv" in {
+      val s = new UpdatePremiereScratchpaths
+      val result = s.pathForClient("/a/test/path")
+      result mustEqual "/a/test/path"
+    }
+  }
 }

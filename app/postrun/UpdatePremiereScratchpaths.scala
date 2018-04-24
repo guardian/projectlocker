@@ -23,9 +23,11 @@ class UpdatePremiereScratchpaths extends PojoPostrun with AdobeXml {
     }
   }
 
+  def pathForClient(serverPath: String):String = serverPath.replaceFirst("^/srv","/Volumes")
+
   def postrun(projectFileName:String,projectEntry:ProjectEntry,projectType:ProjectType,dataCache:PostrunDataCache,
               workingGroupMaybe: Option[PlutoWorkingGroup], commissionMaybe: Option[PlutoCommission]):Future[Try[PostrunDataCache]] = {
-    val maybeNewPath = dataCache.get("created_asset_folder")
+    val maybeNewPath = dataCache.get("created_asset_folder").map(f=>pathForClient(f))
     if(maybeNewPath.isEmpty) return Future(Failure(new RuntimeException("no value for created_asset_folder")))
 
     getXmlFromGzippedFile(projectFileName).map({
