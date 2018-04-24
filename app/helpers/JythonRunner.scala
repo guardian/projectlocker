@@ -137,7 +137,6 @@ class JythonRunner {
     logger.debug(s"updatedPythonifiedNames = ${updatedPythonifiedNames.toString}")
 
     try {
-
       interpreter.execfile(scriptName)
       val func = interpreter.get("postrun")
 
@@ -154,8 +153,6 @@ class JythonRunner {
           errStream.flush()
           Success(JythonOutput(outStream.toString, errStream.toString, dataCache, Some(error)))
       }
-
-
     } catch {
       case err:Throwable=>
         logger.error("Could not start postrun script: ", err)
