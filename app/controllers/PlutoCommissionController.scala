@@ -23,7 +23,7 @@ class PlutoCommissionController @Inject()(dbConfigProvider:DatabaseConfigProvide
     implicit val cache:SyncCacheApi = cacheImpl
 
     override def selectall(startAt: Int, limit: Int): Future[Try[Seq[PlutoCommission]]] = db.run(
-      TableQuery[PlutoCommissionRow].drop(startAt).take(limit).sortBy(_.updated.desc).result.asTry
+      TableQuery[PlutoCommissionRow].drop(startAt).take(limit).sortBy(_.title.asc).result.asTry
     )
 
     override def selectid(requestedId: Int): Future[Try[Seq[PlutoCommission]]] = db.run(
@@ -33,7 +33,7 @@ class PlutoCommissionController @Inject()(dbConfigProvider:DatabaseConfigProvide
     override def selectFiltered(startAt: Int, limit: Int, terms: PlutoCommissionFilterTerms): Future[Try[Seq[PlutoCommission]]] = db.run(
         terms.addFilterTerms {
             TableQuery[PlutoCommissionRow]
-        }.drop(startAt).take(limit).sortBy(_.title.desc.nullsLast).result.asTry
+        }.drop(startAt).take(limit).sortBy(_.title.asc.nullsLast).result.asTry
     )
 
     override def insert(entry: PlutoCommission, uid: String): Future[Try[Int]] = throw new RuntimeException("This is not supported")
