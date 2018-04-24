@@ -1,3 +1,2 @@
 Defaults:projectlocker !requiretty
 projectlocker   ALL = (root) NOPASSWD: /usr/share/projectlocker/postrun/scripts/mkdir_on_behalf_of.pl
-projectlocker   ALL = (root) NOPASSWD: /usr/share/projectlocker/postrun/scripts/fix_project_permission.pl
