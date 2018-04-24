@@ -50,7 +50,7 @@ class PlutoLinkageComponent extends CommonMultistepComponent {
                                id="only-show-production"
                                 style={{marginLeft: "1em"}}
                         />
-                        <label htmlFor="only-show-production">Only show commissions "In production"</label>
+                        <label htmlFor="only-show-production" style={{display: "inline", marginLeft: "0.4em"}}>Only show commissions "In production"</label>
                     </td>
                 </tr>
                 </tbody>
