@@ -7,7 +7,7 @@ from pprint import pformat, pprint
 import os.path
 import re
 
-logging.basicConfig(level=logging.ERROR)
+logging.basicConfig(level=logging.INFO)
 
 logger = logging.getLogger("make_asset_folder")
 logger.level = logging.DEBUG
