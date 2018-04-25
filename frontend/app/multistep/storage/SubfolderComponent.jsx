@@ -14,6 +14,7 @@ class StorageSubfolderComponent extends React.Component {
             clientpath: this.props.clientpath
         })
     }
+
     constructor(props){
         super(props);
 
@@ -39,11 +40,11 @@ class StorageSubfolderComponent extends React.Component {
                     <tbody>
                     <tr>
                         <td>Subfolder path</td>
-                        <td><input value={this.props.rootpath} onChange={(event)=>this.setState({subfolder: event.target.value}, ()=>this.props.valueWasSet(this.state))}/></td>
+                        <td><input value={this.state.subfolder} onChange={(event)=>this.setState({subfolder: event.target.value}, ()=>this.props.valueWasSet(this.state))}/></td>
                     </tr>
                     <tr>
                         <td>Client mount point (if any)</td>
-                        <td><input value={this.props.clientpath} onChange={(event)=>this.setState({clientpath: event.target.value}, ()=>this.props.valueWasSet(this.state))}/></td>
+                        <td><input value={this.state.clientpath} onChange={(event)=>this.setState({clientpath: event.target.value}, ()=>this.props.valueWasSet(this.state))}/></td>
                     </tr>
                     </tbody>
                 </table>
