@@ -12,16 +12,7 @@ import scala.concurrent.ExecutionContext.Implicits._
 import scala.concurrent.duration._
 import scala.util.{Failure, Success}
 
-trait CreationRunnerMethods {
-  import GenericCreationActor._
-
-  implicit val timeout:akka.util.Timeout = 30.seconds
-  protected val logger:Logger
-
-
-}
-
-class ProjectCreationActor extends GenericCreationActor with CreationRunnerMethods {
+class ProjectCreationActor extends GenericCreationActor {
   override val persistenceId = "project-creation-actor"
 
   import GenericCreationActor._
