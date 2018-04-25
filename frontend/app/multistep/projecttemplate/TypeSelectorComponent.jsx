@@ -80,7 +80,7 @@ class TypeSelectorComponent extends CommonMultistepComponent {
                                           onlyShowSubtypes={true}
                                           subTypesFor={this.getPlutoSubtypeForPlType()}/>
                 <label htmlFor="projectNameSelector">Template name:</label>
-                <input type="text" id="projectNameSelector" value={this.props.templateName}
+                <input type="text" id="projectNameSelector" value={this.state.name}
                            onChange={(event)=>this.setState({name: event.target.value})}/>
             </div>
         )
