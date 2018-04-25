@@ -48,8 +48,10 @@
     <logger name="UpdateAdobeUuidSpec" level="WARN"/>
     <logger name="services.StorageScanner" level="DEBUG"/>
     <logger name="com.gargoylesoftware.htmlunit.javascript" level="OFF" />
+    <logger name="MockProjectCreationActor" level="DEBUG"/>
+    <logger name="services.actors.ProjectCreationActor" level="DEBUG"/>
 
-    <root level="ERROR">
+    <root level="INFO">
         <appender-ref ref="STDOUT" />
         <!-- <appender-ref ref="Sentry" />-->
     </root>

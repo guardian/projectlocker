@@ -2,12 +2,15 @@ package services.actors.creation
 
 import java.sql.Timestamp
 import java.time.LocalDateTime
+import javax.inject.Inject
 
 import akka.actor.Props
 import drivers.StorageDriver
 import akka.pattern.ask
 import exceptions.ProjectCreationError
 import models.{FileEntry, ProjectRequestFull, ProjectType}
+import play.api.db.slick.DatabaseConfigProvider
+import slick.jdbc.JdbcProfile
 
 import scala.concurrent.Future
 import scala.util.{Failure, Success, Try}
@@ -16,10 +19,13 @@ object CreateFileEntry {
 
 }
 
-class CreateFileEntry extends GenericCreationActor {
+import scala.concurrent.ExecutionContext.Implicits.global
+
+class CreateFileEntry @Inject() (dbConfigProvider:DatabaseConfigProvider) extends GenericCreationActor {
   override val persistenceId = "create-file-entry"
 
   import GenericCreationActor._
+  implicit val db = dbConfigProvider.get[JdbcProfile].db
 
   /**
     * Combines the provided filename with a (possibly) provided extension
@@ -70,20 +76,14 @@ class CreateFileEntry extends GenericCreationActor {
 
   override def receiveCommand: Receive = {
     case entryRequest:NewProjectRequest=>
-//      val sdActor = context.actorOf(Props(GetStorageDriver.getClass))
-//      val storageDriverFuture = (sdActor ? entryRequest).map(_.asInstanceOf[StorageDriver])
-//      storageDriverFuture.map(storageDriver=>{
-//
-//      })
       val originalSender = sender()
       val recordTimestamp = Timestamp.valueOf(entryRequest.createTime.getOrElse(LocalDateTime.now()))
       getDestFileFor(entryRequest.rq, recordTimestamp).map({
         case Success(fileEntry)=>
-          val copyActor = context.actorOf(Props(CopyFileActor.getClass))
-          originalSender ! (copyActor ? entryRequest)
+          originalSender ! Right(StepSucceded)
         case Failure(error)=>
           logger.error("Could not create destination file record", error)
-          originalSender ! StepFailed(error)
+          originalSender ! Left(StepFailed(error))
       })
     case _=>
       super.receiveCommand
