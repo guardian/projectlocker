@@ -22,9 +22,14 @@ concurrentRestrictions in Global := Seq(
 
 PlayKeys.devSettings := Seq("play.akka.dev-mode.akka.http.server.request-timeout"->"120 seconds")
 
-parallelExecution in Test := false
+//parallelExecution in Test := false
 
-unmanagedResourceDirectories in Test <+=  baseDirectory ( _ /"target/web/public/test" )
+//Test / testOptions := Seq(Tests.Filter(s => s=="AMasterSpec"))
+Test / fork := true
+Test / parallelExecution := false
+
+
+unmanagedResourceDirectories in Test +=  (baseDirectory ( _ /"target/web/public/test" )).value
 
 resolvers += "scalaz-bintray" at "https://dl.bintray.com/scalaz/releases"
 

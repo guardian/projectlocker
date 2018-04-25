@@ -5,6 +5,7 @@ import akka.actor.ActorSystem
 import akka.stream.ActorMaterializer
 import helpers.{ProjectCreateHelper, ProjectCreateHelperImpl}
 import models._
+import org.specs2.matcher.ThrownExpectations
 import org.specs2.mutable.Specification
 import org.specs2.mock.Mockito
 import play.api.db.slick.DatabaseConfigProvider
@@ -21,7 +22,7 @@ import scala.concurrent.{Await, Future}
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.util.Success
 
-class ProjectEntryControllerSpec extends Specification with Mockito with ProjectEntrySerializer with PlutoConflictReplySerializer {
+class ProjectEntryControllerSpec extends Specification with ThrownExpectations with Mockito with ProjectEntrySerializer with PlutoConflictReplySerializer {
   sequential
   val mockedProjectHelper = mock[ProjectCreateHelperImpl]
 

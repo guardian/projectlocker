@@ -51,7 +51,7 @@
     <logger name="MockProjectCreationActor" level="DEBUG"/>
     <logger name="services.actors.ProjectCreationActor" level="DEBUG"/>
 
-    <root level="INFO">
+    <root level="ERROR">
         <appender-ref ref="STDOUT" />
         <!-- <appender-ref ref="Sentry" />-->
     </root>

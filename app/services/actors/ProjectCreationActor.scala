@@ -16,6 +16,7 @@ class ProjectCreationActor extends GenericCreationActor {
   override val persistenceId = "project-creation-actor"
 
   import GenericCreationActor._
+  implicit val timeout:akka.util.Timeout = 30.seconds
 
   /**
     * Runs the next actor in the given sequence recursively by sending it [[NewProjectRequest]].

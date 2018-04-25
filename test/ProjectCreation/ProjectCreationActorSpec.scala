@@ -9,7 +9,7 @@ import play.api.inject.bind
 import play.api.inject.guice.GuiceApplicationBuilder
 import slick.jdbc.JdbcProfile
 import testHelpers.TestDatabase
-import services.actors.{CreationRunnerMethods, ProjectCreationActor}
+import services.actors.ProjectCreationActor
 import services.actors.creation.GenericCreationActor.{NewProjectRequest, ProjectCreateSucceeded, StepSucceded}
 import akka.pattern.ask
 import akka.testkit
@@ -41,18 +41,6 @@ class ProjectCreationActorSpec extends Specification {
       val probe2 = TestProbe()
       val probe3 = TestProbe()
 
-//      val autoPilotReply = new testkit.TestActor.AutoPilot {
-//        override def run(sender: ActorRef, msg: Any): TestActor.AutoPilot = {
-//          logger.info(s"Got message $msg from $sender")
-//          sender ! StepSucceded()
-//          TestActor.KeepRunning
-//        }
-//      }
-
-//      probe1.setAutoPilot(autoPilotReply)
-//      probe2.setAutoPilot(autoPilotReply)
-//      probe3.setAutoPilot(autoPilotReply)
-
       val actorSeq = Seq(probe1.ref,probe2.ref,probe3.ref)
       val ac = system.actorOf(Props(new ProjectCreationActor {
         override val creationActorChain: Seq[ActorRef] = Seq(probe1.ref, probe2.ref, probe3.ref)
@@ -64,17 +52,17 @@ class ProjectCreationActorSpec extends Specification {
 
       val resultFuture = ac ? NewProjectRequest(rq.get, None)
 
-      probe1.expectMsg(5.seconds, NewProjectRequest(rq.get, None))
+      probe1.expectMsg(30.seconds, NewProjectRequest(rq.get, None))
       logger.info(probe1.lastSender.toString)
       probe1.reply(StepSucceded())
-      probe2.expectMsg(5.seconds, NewProjectRequest(rq.get, None))
+      probe2.expectMsg(30.seconds, NewProjectRequest(rq.get, None))
       probe2.reply(StepSucceded())
-      probe3.expectMsg(5.seconds, NewProjectRequest(rq.get, None))
+      probe3.expectMsg(30.seconds, NewProjectRequest(rq.get, None))
       probe3.reply(StepSucceded())
 
       1 mustEqual 1
 
-      val result = Await.result(resultFuture,30.seconds)
+      val result = Await.result(resultFuture,90.seconds)
       result mustEqual ProjectCreateSucceeded(rq.get)
     }
   }

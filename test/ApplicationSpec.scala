@@ -9,7 +9,6 @@ import play.api.test.Helpers._
 import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.inject.{Injector, bind}
 import testHelpers.TestDatabase
-
 import scala.reflect.ClassTag
 
 /**
@@ -17,8 +16,9 @@ import scala.reflect.ClassTag
  * You can mock out a whole application including requests, plugins etc.
  * For more information, consult the wiki.
  */
+
 @RunWith(classOf[JUnitRunner])
-class ApplicationSpec extends Specification with MockedCacheApi {
+class ApplicationSpec extends PlaySpecification with MockedCacheApi {
   sequential
 
   //can over-ride bindings here. see https://www.playframework.com/documentation/2.5.x/ScalaTestingWithGuice
