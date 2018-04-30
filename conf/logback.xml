@@ -50,6 +50,7 @@
     <logger name="com.gargoylesoftware.htmlunit.javascript" level="OFF" />
     <logger name="MockProjectCreationActor" level="DEBUG"/>
     <logger name="services.actors.ProjectCreationActor" level="DEBUG"/>
+    <logger name="services.actors.creation" level="DEBUG"/>
 
     <root level="ERROR">
         <appender-ref ref="STDOUT" />
