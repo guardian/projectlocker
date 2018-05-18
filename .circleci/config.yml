@@ -6,118 +6,134 @@
 # than the prescribed lifecycle of 1.0. In general, we recommend using this generated
 # configuration as a reference rather than using it in production, though in most
 # cases it should duplicate the execution of your original 1.0 config.
+
+defaults: &defaults
+  working_directory: ~/fredex42/projectlocker
+  parallelism: 1
+  shell: /bin/bash --login
+  docker:
+    - image: 855023211239.dkr.ecr.eu-west-1.amazonaws.com/guardianmultimedia/projectlockerbuild
+  # CircleCI 2.0 does not support environment variables that refer to each other the same way as 1.0 did.
+  # If any of these refer to each other, rewrite them so that they don't or see https://circleci.com/docs/2.0/env-vars/#interpolating-environment-variables-to-set-other-environment-variables .
+  environment:
+    CIRCLE_ARTIFACTS: /tmp/circleci-artifacts
+    CIRCLE_TEST_REPORTS: /tmp/circleci-test-results
+    SBT_OPTS: -Dfile.encoding=UTF8 -Xms512M -Xmx1024M -Xss1M -XX:+CMSClassUnloadingEnabled -XX:+UseCompressedOops -Dbuild.tag="$CIRCLE_TAG" -Dbuild.number=$CIRCLE_BUILD_NUM -Dbuild.vcs.number=$CIRCLE_SHA1
+    JEST_JUNIT_OUTPUT: ${CIRCLE_TEST_REPORTS}/jest/frontend-junit.xml
+
 version: 2
 jobs:
-  build:
-    working_directory: ~/fredex42/projectlocker
-    parallelism: 1
-    shell: /bin/bash --login
-    # CircleCI 2.0 does not support environment variables that refer to each other the same way as 1.0 did.
-    # If any of these refer to each other, rewrite them so that they don't or see https://circleci.com/docs/2.0/env-vars/#interpolating-environment-variables-to-set-other-environment-variables .
-    environment:
-      CIRCLE_ARTIFACTS: /tmp/circleci-artifacts
-      CIRCLE_TEST_REPORTS: /tmp/circleci-test-results
-      SBT_OPTS: -Dfile.encoding=UTF8 -Xms512M -Xmx1024M -Xss1M -XX:+CMSClassUnloadingEnabled -XX:+UseCompressedOops -Dbuild.tag="$CIRCLE_TAG" -Dbuild.number=$CIRCLE_BUILD_NUM -Dbuild.vcs.number=$CIRCLE_SHA1
-      JEST_JUNIT_OUTPUT: ${CIRCLE_TEST_REPORTS}/jest/frontend-junit.xml
-    # In CircleCI 1.0 we used a pre-configured image with a large number of languages and other packages.
-    # In CircleCI 2.0 you can now specify your own image, or use one of our pre-configured images.
-    # The following configuration line tells CircleCI to use the specified docker image as the runtime environment for you job.
-    # We have selected a pre-built image that mirrors the build environment we use on
-    # the 1.0 platform, but we recommend you choose an image more tailored to the needs
-    # of each job. For more information on choosing an image (or alternatively using a
-    # VM instead of a container) see https://circleci.com/docs/2.0/executor-types/
-    # To see the list of pre-built images that CircleCI provides for most common languages see
-    # https://circleci.com/docs/2.0/circleci-images/
-    docker:
-    - image: circleci/build-image:ubuntu-14.04-XXL-upstart-1189-5614f37
-      command: /sbin/init
+  scala_build_test:
+    <<: *defaults
     steps:
-    # Machine Setup
-    #   If you break your build into multiple jobs with workflows, you will probably want to do the parts of this that are relevant in each
-    # The following `checkout` command checks out your code to your working directory. In 1.0 we did this implicitly. In 2.0 you can choose where in the course of a job your code should be checked out.
-    - checkout
-    # Prepare for artifact and test results  collection equivalent to how it was done on 1.0.
-    # In many cases you can simplify this from what is generated here.
-    # 'See docs on artifact collection here https://circleci.com/docs/2.0/artifacts/'
-    - run: mkdir -p $CIRCLE_ARTIFACTS $CIRCLE_TEST_REPORTS
-    # This is based on your 1.0 configuration file or project settings
-    - run:
-        working_directory: ~/fredex42/projectlocker
-        command: 'echo ''UTC'' | sudo tee -a /etc/timezone; sudo dpkg-reconfigure
-          -f noninteractive tzdata; sudo service mysql restart; sudo service postgresql
-          restart; '
-    - run:
-        working_directory: ~/fredex42/projectlocker
-        command: sudo update-alternatives --set java /usr/lib/jvm/jdk1.8.0/bin/java; sudo update-alternatives --set javac /usr/lib/jvm/jdk1.8.0/bin/javac; echo -e "export JAVA_HOME=/usr/lib/jvm/jdk1.8.0" >> $BASH_ENV
-    - run:
-        working_directory: ~/fredex42/projectlocker
-        command: nvm install 8.1.3 && nvm alias default 8.1.3
-    # Dependencies
-    #   This would typically go in either a build or a build-and-test job when using workflows
-    # Restore the dependency cache
-    - restore_cache:
-        keys:
-        # This branch if available
-        - v1-dep-{{ .Branch }}-
-        # Default branch if not
-        - v1-dep-master-
-        # Any branch if there are none on the default branch - this should be unnecessary if you have your default branch configured correctly
-        - v1-dep-
-    # This is based on your 1.0 configuration file or project settings
-    - run: wget -q https://dl.bintray.com/sbt/debian/sbt-0.13.15.deb
-    - run: sudo dpkg -i sbt-0.13.15.deb
-    - run: sudo apt-get update
-    - run: sudo apt-get install rpm librpmbuild3 libxml2-utils
+      # The following `checkout` command checks out your code to your working directory. In 1.0 we did this implicitly. In 2.0 you can choose where in the course of a job your code should be checked out.
+      - checkout
+      # Prepare for artifact and test results  collection equivalent to how it was done on 1.0.
+      # In many cases you can simplify this from what is generated here.
+      # 'See docs on artifact collection here https://circleci.com/docs/2.0/artifacts/'
+      - run: mkdir -p $CIRCLE_ARTIFACTS $CIRCLE_TEST_REPORTS
+      - restore_cache:
+          keys:
+          # This branch if available
+          - dep-{{ .Branch }}-scala
+          # Default branch if not
+          - dep-master-scala
+          # Any branch if there are none on the default branch - this should be unnecessary if you have your default branch configured correctly
+          - dep-
+      - run: sbt test:compile
 
-    # This is based on your 1.0 configuration file or project settings
-    - run: cd frontend; npm install
-    - run: cd frontend; npm run build
-    - run: sbt test:compile
-    - run: ~/jython/bin/pip install -r postrun/requirements.txt
-    - run: mkdir -p postrun/lib/python
-    - run: cp -a ~/jython/Lib postrun/lib/python
-    # Save dependency cache
-    - save_cache:
-        key: v1-dep-{{ .Branch }}-{{ epoch }}
-        paths:
-        # This is a broad list of cache paths to include many possible development environments
-        # You can probably delete some of these entries
-        - vendor/bundle
-        - ~/virtualenvs
-        - ~/.m2
-        - ~/.ivy2
-        - ~/.bundle
-        - ~/.go_workspace
-        - ~/.gradle
-        - ~/.cache/bower
-        # These cache paths were specified in the 1.0 config
-        - ~/.sbt
-        - ~/jython
-        - frontend/node_modules
-        - $HOME/.play
-    # This is based on your 1.0 configuration file or project settings
-    - run: sudo -u postgres createuser projectlocker
-    - run: sudo -u postgres createdb projectlocker -O projectlocker
-    - run: sudo -u postgres createdb projectlocker_test -O projectlocker
-    # Test
-    #   This would typically be a build job when using workflows, possibly combined with build
-    # This is based on your 1.0 configuration file or project settings
-    - run: sbt test
-    - run: cd frontend; npm run test
-    - run: scripts/check_evolutions.sh
-    - run: PYTHONPATH=postrun/scripts ~/jython/bin/nosetests -w postrun/tests
-    # Deployment
-    # Your existing circle.yml file contains deployment steps.
-    # The config translation tool does not support translating deployment steps
-    # since deployment in CircleCI 2.0 are better handled through workflows.
-    # See the documentation for more information https://circleci.com/docs/2.0/workflows/
-    # Teardown
-    #   If you break your build into multiple jobs with workflows, you will probably want to do the parts of this that are relevant in each
-    # Save test results
-    - store_test_results:
-        path: /tmp/circleci-test-results
-    # Save artifacts
-    - store_artifacts:
-        path: /tmp/circleci-artifacts
-    - store_artifacts:
-        path: /tmp/circleci-test-results
+      # Save dependency cache
+      - save_cache:
+          key: dep-{{ .Branch }}-scala-{{ epoch }}
+          paths:
+          - ~/.ivy2
+          - ~/.sbt
+          - $HOME/.play
+      # This is based on your 1.0 configuration file or project settings
+      - run: sudo -u postgres createuser projectlocker
+      - run: sudo -u postgres createdb projectlocker -O projectlocker
+      - run: sudo -u postgres createdb projectlocker_test -O projectlocker
+
+      - run: sbt test
+
+      # Save test results
+      - store_test_results:
+          path: /tmp/circleci-test-results
+      # Save artifacts
+      - store_artifacts:
+          path: /tmp/circleci-artifacts
+      - store_artifacts:
+          path: /tmp/circleci-test-results
+
+  react_build_test:
+    <<: *defaults
+    steps:
+      - checkout
+      - restore_cache:
+          keys:
+          # This branch if available
+          - dep-{{ .Branch }}-react
+          # Default branch if not
+          - dep-master-react
+          # Any branch if there are none on the default branch - this should be unnecessary if you have your default branch configured correctly
+          - dep-react
+      - run: cd frontend; npm install
+      - save_cache:
+          key: dep-{{ .Branch }}-react-{{ epoch }}
+          paths:
+            - frontend/node_modules
+      - run: cd frontend; npm run build
+      - run: cd frontend; npm run test
+      - run: scripts/check_evolutions.sh
+      - run: cd frontend; npm run compile
+
+      - store_test_results:
+          path: /tmp/circleci-test-results
+      # Save artifacts
+      - store_artifacts:
+          path: /tmp/circleci-artifacts
+      - store_artifacts:
+          path: /tmp/circleci-test-results
+
+  jython_build_test:
+    <<: *defaults
+    steps:
+      - checkout
+      - restore_cache:
+          keys:
+          # This branch if available
+          - dep-{{ .Branch }}-jython
+          # Default branch if not
+          - dep-master-jython
+          # Any branch if there are none on the default branch - this should be unnecessary if you have your default branch configured correctly
+          - dep-jython
+      - run: ~/jython/bin/pip install -r postrun/requirements.txt
+      - run: mkdir -p postrun/lib/python
+      - run: cp -a ~/jython/Lib postrun/lib/python
+      - save_cache:
+          key: dep-{{ .Branch }}-jython-{{ epoch }}
+          paths:
+            - ~/jython
+      - run: PYTHONPATH=postrun/scripts ~/jython/bin/nosetests -w postrun/tests
+      - store_test_results:
+          path: /tmp/circleci-test-results
+      # Save artifacts
+      - store_artifacts:
+          path: /tmp/circleci-artifacts
+      - store_artifacts:
+          path: /tmp/circleci-test-results
+
+#deployment:
+#  make_rpm:
+#    branch: /.*/
+#    commands:
+#      - cd frontend; npm run compile
+#      - sbt rpm:packageBin
+#      - for x in `ls target/rpm/RPMS/noarch/projectlocker*.rpm`; do bash ./upload_to_s3.sh "$x"; done
+workflows:
+  version: 2
+  build_and_test:
+    jobs:
+      - scala_build_test
+      - react_build_test
+      - jython_build_test
