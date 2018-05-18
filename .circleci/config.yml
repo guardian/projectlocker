@@ -40,7 +40,7 @@ jobs:
           - dep-master-scala
           # Any branch if there are none on the default branch - this should be unnecessary if you have your default branch configured correctly
           - dep-
-      - run: sbt test:compile
+      - run: echo exit | sbt test:compile
 
       # Save dependency cache
       - save_cache:
@@ -54,7 +54,7 @@ jobs:
       - run: sudo -u postgres createdb projectlocker -O projectlocker
       - run: sudo -u postgres createdb projectlocker_test -O projectlocker
 
-      - run: sbt test
+      - run: echo exit | sbt test
 
       # Save test results
       - store_test_results:
@@ -69,14 +69,14 @@ jobs:
     <<: *defaults
     steps:
       - checkout
-      - restore_cache:
-          keys:
-          # This branch if available
-          - dep-{{ .Branch }}-react
-          # Default branch if not
-          - dep-master-react
-          # Any branch if there are none on the default branch - this should be unnecessary if you have your default branch configured correctly
-          - dep-react
+#      - restore_cache:
+#          keys:
+#          # This branch if available
+#          - dep-{{ .Branch }}-react
+#          # Default branch if not
+#          - dep-master-react
+#          # Any branch if there are none on the default branch - this should be unnecessary if you have your default branch configured correctly
+#          - dep-react
       - run: cd frontend; npm install
       - save_cache:
           key: dep-{{ .Branch }}-react-{{ epoch }}
