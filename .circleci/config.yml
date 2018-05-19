@@ -13,6 +13,10 @@ defaults: &defaults
   shell: /bin/bash --login
   docker:
     - image: 855023211239.dkr.ecr.eu-west-1.amazonaws.com/guardianmultimedia/projectlockerbuild
+    - image: circleci/postgres:9.6.2-alpine
+      environment:
+        POSTGRES_USER: projectlocker
+        POSTGRES_DB: projectlocker_test
   # CircleCI 2.0 does not support environment variables that refer to each other the same way as 1.0 did.
   # If any of these refer to each other, rewrite them so that they don't or see https://circleci.com/docs/2.0/env-vars/#interpolating-environment-variables-to-set-other-environment-variables .
   environment:
@@ -50,9 +54,10 @@ jobs:
           - ~/.sbt
           - $HOME/.play
       # This is based on your 1.0 configuration file or project settings
-      - run: sudo -u postgres createuser projectlocker
-      - run: sudo -u postgres createdb projectlocker -O projectlocker
-      - run: sudo -u postgres createdb projectlocker_test -O projectlocker
+#      - run: sudo -u postgres /usr/pgsql-9.2/bin/pg_ctl start -D /var/lib/pgsql/9.2/data
+#      - run: sudo -u postgres createuser projectlocker
+      - run: /usr/pgsql-9.2/bin/createdb -h localhost -U projectlocker projectlocker
+#      - run: sudo -u postgres createdb projectlocker_test -O projectlocker
 
       - run: echo exit | sbt test
 
@@ -69,14 +74,14 @@ jobs:
     <<: *defaults
     steps:
       - checkout
-#      - restore_cache:
-#          keys:
-#          # This branch if available
-#          - dep-{{ .Branch }}-react
-#          # Default branch if not
-#          - dep-master-react
-#          # Any branch if there are none on the default branch - this should be unnecessary if you have your default branch configured correctly
-#          - dep-react
+      - restore_cache:
+          keys:
+          # This branch if available
+          - dep-{{ .Branch }}-react
+          # Default branch if not
+          - dep-master-react
+          # Any branch if there are none on the default branch - this should be unnecessary if you have your default branch configured correctly
+          - dep-react
       - run: cd frontend; npm install
       - save_cache:
           key: dep-{{ .Branch }}-react-{{ epoch }}
@@ -123,17 +128,22 @@ jobs:
       - store_artifacts:
           path: /tmp/circleci-test-results
 
-#deployment:
-#  make_rpm:
-#    branch: /.*/
-#    commands:
-#      - cd frontend; npm run compile
-#      - sbt rpm:packageBin
-#      - for x in `ls target/rpm/RPMS/noarch/projectlocker*.rpm`; do bash ./upload_to_s3.sh "$x"; done
+  make_rpm:
+    <<: *defaults
+    steps:
+      - run: cd frontend; npm run compile
+      - run: sbt rpm:packageBin
+      - run: bash -c 'for x in `ls target/rpm/RPMS/noarch/projectlocker*.rpm`; do bash ./upload_to_s3.sh "$x"; done'
+
 workflows:
   version: 2
   build_and_test:
     jobs:
       - scala_build_test
-      - react_build_test
-      - jython_build_test
+#      - react_build_test
+#      - jython_build_test
+#      - make_rpm:
+#          requires:
+#            - scala_build_test
+#            - react_build_test
+#            - jython_build_test
