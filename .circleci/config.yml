@@ -36,6 +36,7 @@ jobs:
       # In many cases you can simplify this from what is generated here.
       # 'See docs on artifact collection here https://circleci.com/docs/2.0/artifacts/'
       - run: mkdir -p $CIRCLE_ARTIFACTS $CIRCLE_TEST_REPORTS
+      - run: scripts/check_evolutions.sh
       - restore_cache:
           keys:
           # This branch if available
@@ -86,14 +87,13 @@ jobs:
 #          - dep-master-react
 #          # Any branch if there are none on the default branch - this should be unnecessary if you have your default branch configured correctly
 #          - dep-react
-      - run: cd frontend; npm install
+      - run: cd frontend; yarn install
       - save_cache:
           key: dep-{{ .Branch }}-react-{{ epoch }}
           paths:
             - frontend/node_modules
       - run: cd frontend; npm run build
       - run: cd frontend; npm run test
-      - run: scripts/check_evolutions.sh
       - run: cd frontend; npm run compile
 
       - store_test_results:
@@ -143,11 +143,11 @@ workflows:
   version: 2
   build_and_test:
     jobs:
-      - scala_build_test
+#      - scala_build_test
       - react_build_test
-      - jython_build_test
-      - make_rpm:
-          requires:
-            - scala_build_test
-            - react_build_test
-            - jython_build_test
+#      - jython_build_test
+#      - make_rpm:
+#          requires:
+#            - scala_build_test
+#            - react_build_test
+#            - jython_build_test
