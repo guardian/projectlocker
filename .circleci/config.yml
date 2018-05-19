@@ -78,14 +78,14 @@ jobs:
     <<: *defaults
     steps:
       - checkout
-      - restore_cache:
-          keys:
-          # This branch if available
-          - dep-{{ .Branch }}-react
-          # Default branch if not
-          - dep-master-react
-          # Any branch if there are none on the default branch - this should be unnecessary if you have your default branch configured correctly
-          - dep-react
+#      - restore_cache:
+#          keys:
+#          # This branch if available
+#          - dep-{{ .Branch }}-react
+#          # Default branch if not
+#          - dep-master-react
+#          # Any branch if there are none on the default branch - this should be unnecessary if you have your default branch configured correctly
+#          - dep-react
       - run: cd frontend; npm install
       - save_cache:
           key: dep-{{ .Branch }}-react-{{ epoch }}
@@ -144,10 +144,10 @@ workflows:
   build_and_test:
     jobs:
       - scala_build_test
-#      - react_build_test
-#      - jython_build_test
-#      - make_rpm:
-#          requires:
-#            - scala_build_test
-#            - react_build_test
-#            - jython_build_test
+      - react_build_test
+      - jython_build_test
+      - make_rpm:
+          requires:
+            - scala_build_test
+            - react_build_test
+            - jython_build_test
