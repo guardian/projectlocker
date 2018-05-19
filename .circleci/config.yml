@@ -57,6 +57,7 @@ jobs:
 #      - run: sudo -u postgres /usr/pgsql-9.2/bin/pg_ctl start -D /var/lib/pgsql/9.2/data
 #      - run: sudo -u postgres createuser projectlocker
       - run: /usr/pgsql-9.2/bin/createdb -h localhost -U projectlocker projectlocker
+      - run: ln -s /usr/bin/sha256sum /usr/bin/shasum
 #      - run: sudo -u postgres createdb projectlocker_test -O projectlocker
       - run: ~/jython/bin/pip install -r postrun/requirements.txt
       - run: mkdir -p postrun/lib/python
