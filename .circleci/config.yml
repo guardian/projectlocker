@@ -143,11 +143,11 @@ workflows:
   version: 2
   build_and_test:
     jobs:
-#      - scala_build_test
+      - scala_build_test
       - react_build_test
-#      - jython_build_test
-#      - make_rpm:
-#          requires:
-#            - scala_build_test
-#            - react_build_test
-#            - jython_build_test
+      - jython_build_test
+      - make_rpm:
+          requires:
+            - scala_build_test
+            - react_build_test
+            - jython_build_test
