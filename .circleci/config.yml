@@ -13,10 +13,6 @@ defaults: &defaults
   shell: /bin/bash --login
   docker:
     - image: 855023211239.dkr.ecr.eu-west-1.amazonaws.com/guardianmultimedia/projectlockerbuild
-    - image: circleci/postgres:9.6.2-alpine
-      environment:
-        POSTGRES_USER: projectlocker
-        POSTGRES_DB: projectlocker_test
   # CircleCI 2.0 does not support environment variables that refer to each other the same way as 1.0 did.
   # If any of these refer to each other, rewrite them so that they don't or see https://circleci.com/docs/2.0/env-vars/#interpolating-environment-variables-to-set-other-environment-variables .
   environment:
@@ -29,6 +25,12 @@ version: 2
 jobs:
   scala_build_test:
     <<: *defaults
+    docker:
+      - image: 855023211239.dkr.ecr.eu-west-1.amazonaws.com/guardianmultimedia/projectlockerbuild
+      - image: circleci/postgres:9.6.2-alpine
+        environment:
+          POSTGRES_USER: projectlocker
+          POSTGRES_DB: projectlocker_test
     steps:
       # The following `checkout` command checks out your code to your working directory. In 1.0 we did this implicitly. In 2.0 you can choose where in the course of a job your code should be checked out.
       - checkout
@@ -66,6 +68,11 @@ jobs:
 
       - run: echo exit | sbt test
 
+      - persist_to_workspace:
+          root: .
+          paths:
+           - target/
+
       # Save test results
       - store_test_results:
           path: /tmp/circleci-test-results
@@ -95,6 +102,11 @@ jobs:
       - run: cd frontend; npm run build
       - run: cd frontend; npm run test
       - run: cd frontend; npm run compile
+
+      - persist_to_workspace:
+          root: .
+          paths:
+            - public/javascripts/bundle.js
 
       - store_test_results:
           path: /tmp/circleci-test-results
@@ -126,6 +138,12 @@ jobs:
       - run: PYTHONPATH=postrun/scripts ~/jython/bin/nosetests -w postrun/tests
       - store_test_results:
           path: /tmp/circleci-test-results
+
+      - persist_to_workspace:
+          root: .
+          paths:
+            - postrun/lib/python
+
       # Save artifacts
       - store_artifacts:
           path: /tmp/circleci-artifacts
@@ -135,7 +153,16 @@ jobs:
   make_rpm:
     <<: *defaults
     steps:
-      - run: cd frontend; npm run compile
+      - checkout
+
+      - attach_workspace:
+          at: /mnt/workspace
+
+      - run: cp -a /mnt/workspace/public/javascripts/bundle.js ./public/javascripts/bundle.js
+      - run: if [ ! -d ./target ]; then mkdir -p target; fi
+      - run: if [ ! -d ./postrun/lib ]; then mkdir -p postrun/lib; fi
+      - run: cp -a /mnt/workspace/target/* ./target
+      - run: cp -a /mnt/workspace/postrun/lib/* postrun/lib
       - run: sbt rpm:packageBin
       - run: bash -c 'for x in `ls target/rpm/RPMS/noarch/projectlocker*.rpm`; do bash ./upload_to_s3.sh "$x"; done'
 
