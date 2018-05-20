@@ -18,7 +18,6 @@ defaults: &defaults
   environment:
     CIRCLE_ARTIFACTS: /tmp/circleci-artifacts
     CIRCLE_TEST_REPORTS: /tmp/circleci-test-results
-    SBT_OPTS: -Dfile.encoding=UTF8 -Xms512M -Xmx1024M -Xss1M -XX:+CMSClassUnloadingEnabled -XX:+UseCompressedOops -Dbuild.tag="$CIRCLE_TAG" -Dbuild.number=$CIRCLE_BUILD_NUM -Dbuild.vcs.number=$CIRCLE_SHA1
     JEST_JUNIT_OUTPUT: ${CIRCLE_TEST_REPORTS}/jest/frontend-junit.xml
 
 version: 2
@@ -47,7 +46,7 @@ jobs:
           - dep-master-scala
           # Any branch if there are none on the default branch - this should be unnecessary if you have your default branch configured correctly
           - dep-
-      - run: echo exit | sbt test:compile
+      - run: SBT_OPTS="-Dfile.encoding=UTF8 -Xms512M -Xmx1024M -Xss1M -XX:+CMSClassUnloadingEnabled -XX:+UseCompressedOops -Dbuild.tag=\"$CIRCLE_TAG\" -Dbuild.number=$CIRCLE_BUILD_NUM -Dbuild.vcs.number=$CIRCLE_SHA1" echo exit | sbt test:compile
 
       # Save dependency cache
       - save_cache:
@@ -59,7 +58,7 @@ jobs:
       # This is based on your 1.0 configuration file or project settings
 #      - run: sudo -u postgres /usr/pgsql-9.2/bin/pg_ctl start -D /var/lib/pgsql/9.2/data
 #      - run: sudo -u postgres createuser projectlocker
-      - run: /usr/pgsql-9.2/bin/createdb -h localhost -U projectlocker projectlocker
+      - run: /usr/bin/createdb -h localhost -U projectlocker projectlocker
       - run: ln -s /usr/bin/sha256sum /usr/bin/shasum
 #      - run: sudo -u postgres createdb projectlocker_test -O projectlocker
       - run: ~/jython/bin/pip install -r postrun/requirements.txt
@@ -86,14 +85,14 @@ jobs:
     <<: *defaults
     steps:
       - checkout
-#      - restore_cache:
-#          keys:
-#          # This branch if available
-#          - dep-{{ .Branch }}-react
-#          # Default branch if not
-#          - dep-master-react
-#          # Any branch if there are none on the default branch - this should be unnecessary if you have your default branch configured correctly
-#          - dep-react
+      - restore_cache:
+          keys:
+          # This branch if available
+          - dep-{{ .Branch }}-react
+          # Default branch if not
+          - dep-master-react
+          # Any branch if there are none on the default branch - this should be unnecessary if you have your default branch configured correctly
+          - dep-react
       - run: cd frontend; yarn install
       - save_cache:
           key: dep-{{ .Branch }}-react-{{ epoch }}
@@ -158,12 +157,30 @@ jobs:
       - attach_workspace:
           at: /mnt/workspace
 
+      #scala deps are by far the longest so make sure we have those.
+      - restore_cache:
+          keys:
+          # This branch if available
+          - dep-{{ .Branch }}-scala
+          # Default branch if not
+          - dep-master-scala
+          # Any branch if there are none on the default branch - this should be unnecessary if you have your default branch configured correctly
+          - dep-
+
+      #bring in compiled javascript from react_build_test
       - run: cp -a /mnt/workspace/public/javascripts/bundle.js ./public/javascripts/bundle.js
       - run: if [ ! -d ./target ]; then mkdir -p target; fi
       - run: if [ ! -d ./postrun/lib ]; then mkdir -p postrun/lib; fi
+      #bring in compilation results from scala-build_test
       - run: cp -a /mnt/workspace/target/* ./target
+      #bring in jython deps from jython_build_test
       - run: cp -a /mnt/workspace/postrun/lib/* postrun/lib
-      - run: sbt rpm:packageBin
+      #disable python bytecompile, as we're running jython anyway
+      - run: mv /usr/lib/rpm/brp-python-bytecompile /usr/lib/rpm/brp-python-bytecompile.old
+      - run: echo "exit 0" > /usr/lib/rpm/brp-python-bytecompile
+      - run: chmod a+x /usr/lib/rpm/brp-python-bytecompile
+      #need to set SBT_OPTS here as we refer to the buitin env vars to set the tag, build number, etc.  Otherwise they are not interpolated.
+      - run: SBT_OPTS="-Dfile.encoding=UTF8 -Xms512M -Xmx1024M -Xss1M -XX:+CMSClassUnloadingEnabled -XX:+UseCompressedOops -Dbuild.tag=\"$CIRCLE_TAG\" -Dbuild.number=$CIRCLE_BUILD_NUM -Dbuild.vcs.number=$CIRCLE_SHA1" sbt rpm:packageBin
       - run: bash -c 'for x in `ls target/rpm/RPMS/noarch/projectlocker*.rpm`; do bash ./upload_to_s3.sh "$x"; done'
 
 workflows:

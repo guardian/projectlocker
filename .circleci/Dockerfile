@@ -2,8 +2,8 @@ FROM centos:7.4.1708
 
 
 #ned to install shasum
-COPY ./containerscripts/postgres.sh /tmp
-RUN bash /tmp/postgres.sh
+#COPY ./containerscripts/postgres.sh /tmp
+#RUN bash /tmp/postgres.sh
 
 COPY ./containerscripts/javasbt.sh /tmp
 RUN bash /tmp/javasbt.sh
