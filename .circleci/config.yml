@@ -1,0 +1,196 @@
+# This configuration was automatically generated from a CircleCI 1.0 config.
+# It should include any build commands you had along with commands that CircleCI
+# inferred from your project structure. We strongly recommend you read all the
+# comments in this file to understand the structure of CircleCI 2.0, as the idiom
+# for configuration has changed substantially in 2.0 to allow arbitrary jobs rather
+# than the prescribed lifecycle of 1.0. In general, we recommend using this generated
+# configuration as a reference rather than using it in production, though in most
+# cases it should duplicate the execution of your original 1.0 config.
+
+defaults: &defaults
+  working_directory: ~/fredex42/projectlocker
+  parallelism: 1
+  shell: /bin/bash --login
+  docker:
+    - image: 855023211239.dkr.ecr.eu-west-1.amazonaws.com/guardianmultimedia/projectlockerbuild
+  # CircleCI 2.0 does not support environment variables that refer to each other the same way as 1.0 did.
+  # If any of these refer to each other, rewrite them so that they don't or see https://circleci.com/docs/2.0/env-vars/#interpolating-environment-variables-to-set-other-environment-variables .
+  environment:
+    CIRCLE_ARTIFACTS: /tmp/circleci-artifacts
+    CIRCLE_TEST_REPORTS: /tmp/circleci-test-results
+    JEST_JUNIT_OUTPUT: ${CIRCLE_TEST_REPORTS}/jest/frontend-junit.xml
+
+version: 2
+jobs:
+  scala_build_test:
+    <<: *defaults
+    docker:
+      - image: 855023211239.dkr.ecr.eu-west-1.amazonaws.com/guardianmultimedia/projectlockerbuild
+      - image: circleci/postgres:9.3.23-alpine
+        environment:
+          POSTGRES_USER: projectlocker
+          POSTGRES_DB: projectlocker_test
+    steps:
+      # The following `checkout` command checks out your code to your working directory. In 1.0 we did this implicitly. In 2.0 you can choose where in the course of a job your code should be checked out.
+      - checkout
+      # Prepare for artifact and test results  collection equivalent to how it was done on 1.0.
+      # In many cases you can simplify this from what is generated here.
+      # 'See docs on artifact collection here https://circleci.com/docs/2.0/artifacts/'
+      - run: mkdir -p $CIRCLE_ARTIFACTS $CIRCLE_TEST_REPORTS
+      - run: scripts/check_evolutions.sh
+      - restore_cache:
+          keys:
+          # This branch if available
+          - dep-{{ .Branch }}-scala
+          # Default branch if not
+          - dep-master-scala
+          # Any branch if there are none on the default branch - this should be unnecessary if you have your default branch configured correctly
+          - dep-
+      - run: SBT_OPTS="-Dfile.encoding=UTF8 -Xms512M -Xmx1024M -Xss1M -XX:+CMSClassUnloadingEnabled -XX:+UseCompressedOops -Dbuild.tag=\"$CIRCLE_TAG\" -Dbuild.number=$CIRCLE_BUILD_NUM -Dbuild.vcs.number=$CIRCLE_SHA1" echo exit | sbt test:compile
+
+      # Save dependency cache
+      - save_cache:
+          key: dep-{{ .Branch }}-scala-{{ epoch }}
+          paths:
+          - ~/.ivy2
+          - ~/.sbt
+          - $HOME/.play
+      - run: /usr/bin/createdb -h localhost -U projectlocker projectlocker
+      - run: ln -s /usr/bin/sha256sum /usr/bin/shasum
+#      - run: sudo -u postgres createdb projectlocker_test -O projectlocker
+      - run: ~/jython/bin/pip install -r postrun/requirements.txt
+      - run: mkdir -p postrun/lib/python
+      - run: cp -a ~/jython/Lib postrun/lib/python
+
+      - run: echo exit | sbt test
+
+      - persist_to_workspace:
+          root: .
+          paths:
+           - target/
+
+      # Save test results
+      - store_test_results:
+          path: /tmp/circleci-test-results
+      # Save artifacts
+      - store_artifacts:
+          path: /tmp/circleci-artifacts
+      - store_artifacts:
+          path: /tmp/circleci-test-results
+
+  react_build_test:
+    <<: *defaults
+    steps:
+      - checkout
+      - restore_cache:
+          keys:
+          # This branch if available
+          - dep-{{ .Branch }}-react
+          # Default branch if not
+          - dep-master-react
+          # Any branch if there are none on the default branch - this should be unnecessary if you have your default branch configured correctly
+          - dep-react
+      - run: cd frontend; yarn install
+      - save_cache:
+          key: dep-{{ .Branch }}-react-{{ epoch }}
+          paths:
+            - frontend/node_modules
+      - run: cd frontend; npm run build
+      - run: cd frontend; npm run test
+      - run: cd frontend; npm run compile
+
+      - persist_to_workspace:
+          root: .
+          paths:
+            - public/javascripts/bundle.js
+
+      - store_test_results:
+          path: /tmp/circleci-test-results
+      # Save artifacts
+      - store_artifacts:
+          path: /tmp/circleci-artifacts
+      - store_artifacts:
+          path: /tmp/circleci-test-results
+
+  jython_build_test:
+    <<: *defaults
+    steps:
+      - checkout
+      - restore_cache:
+          keys:
+          # This branch if available
+          - dep-{{ .Branch }}-jython
+          # Default branch if not
+          - dep-master-jython
+          # Any branch if there are none on the default branch - this should be unnecessary if you have your default branch configured correctly
+          - dep-jython
+      - run: ~/jython/bin/pip install -r postrun/requirements.txt
+      - run: mkdir -p postrun/lib/python
+      - run: cp -a ~/jython/Lib postrun/lib/python
+      - save_cache:
+          key: dep-{{ .Branch }}-jython-{{ epoch }}
+          paths:
+            - ~/jython
+      - run: PYTHONPATH=postrun/scripts ~/jython/bin/nosetests -w postrun/tests
+      - store_test_results:
+          path: /tmp/circleci-test-results
+
+      - persist_to_workspace:
+          root: .
+          paths:
+            - postrun/lib/python
+
+      # Save artifacts
+      - store_artifacts:
+          path: /tmp/circleci-artifacts
+      - store_artifacts:
+          path: /tmp/circleci-test-results
+
+  make_rpm:
+    <<: *defaults
+    steps:
+      - checkout
+
+      - attach_workspace:
+          at: /mnt/workspace
+
+      #scala deps are by far the longest so make sure we have those.
+      - restore_cache:
+          keys:
+          # This branch if available
+          - dep-{{ .Branch }}-scala
+          # Default branch if not
+          - dep-master-scala
+          # Any branch if there are none on the default branch - this should be unnecessary if you have your default branch configured correctly
+          - dep-
+
+      #ensure shasum alias is working
+      - run: if [ ! -x /usr/bin/shasum ]; then ln -s /usr/bin/sha256sum /usr/bin/shasum; fi
+      #bring in compiled javascript from react_build_test
+      - run: cp -a /mnt/workspace/public/javascripts/bundle.js ./public/javascripts/bundle.js
+      - run: if [ ! -d ./target ]; then mkdir -p target; fi
+      - run: if [ ! -d ./postrun/lib ]; then mkdir -p postrun/lib; fi
+      #bring in compilation results from scala-build_test
+      - run: cp -a /mnt/workspace/target/* ./target
+      #bring in jython deps from jython_build_test
+      - run: cp -a /mnt/workspace/postrun/lib/* postrun/lib
+      #disable python bytecompile, as we're running jython anyway
+      - run: mv /usr/lib/rpm/brp-python-bytecompile /usr/lib/rpm/brp-python-bytecompile.old
+      - run: echo "exit 0" > /usr/lib/rpm/brp-python-bytecompile
+      - run: chmod a+x /usr/lib/rpm/brp-python-bytecompile
+      #need to set SBT_OPTS here as we refer to the buitin env vars to set the tag, build number, etc.  Otherwise they are not interpolated.
+      - run: echo exit | SBT_OPTS="-Dfile.encoding=UTF8 -Xms512M -Xmx1024M -Xss1M -XX:+CMSClassUnloadingEnabled -XX:+UseCompressedOops -Dbuild.tag=\"$CIRCLE_TAG\" -Dbuild.number=$CIRCLE_BUILD_NUM -Dbuild.vcs.number=$CIRCLE_SHA1" sbt rpm:packageBin
+      - run: bash -c 'for x in `ls target/rpm/RPMS/noarch/projectlocker*.rpm`; do bash ./upload_to_s3.sh "$x"; done'
+
+workflows:
+  version: 2
+  build_and_test:
+    jobs:
+      - scala_build_test
+      - react_build_test
+      - jython_build_test
+      - make_rpm:
+          requires:
+            - scala_build_test
+            - react_build_test
+            - jython_build_test
