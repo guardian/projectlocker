@@ -8,40 +8,31 @@ import akka.testkit._
 import models.{FileEntry, ProjectRequest, ProjectRequestFull}
 import play.api.Logger
 import play.api.db.slick.DatabaseConfigProvider
-import play.api.inject.bind
-import play.api.inject.guice.GuiceApplicationBuilder
-import slick.jdbc.{JdbcBackend, JdbcProfile}
-import testHelpers.TestDatabase
+import slick.jdbc.JdbcProfile
 import services.actors.ProjectCreationActor
 import services.actors.creation.GenericCreationActor._
 import akka.pattern.ask
 import akka.testkit
-import services.actors.creation.{CreateFileEntry, CreationMessage}
+import play.api.test.WithApplication
+import utils.BuildMyApp
 
 import scala.concurrent.{Await, Future}
 import scala.concurrent.duration._
 import scala.util.{Failure, Try}
 import scala.concurrent.ExecutionContext.Implicits.global
 
-class ProjectCreationSpec extends Specification {
-  sequential
-
+class ProjectCreationSpec extends Specification with BuildMyApp {
   private val logger=Logger(getClass)
-
-  //can over-ride bindings here. see https://www.playframework.com/documentation/2.5.x/ScalaTestingWithGuice
-  private val application = new GuiceApplicationBuilder()
-    .overrides(bind[DatabaseConfigProvider].to[TestDatabase.testDbProvider])
-    .build
-  private val injector = application.injector
-
-  private val dbConfigProvider = injector.instanceOf(classOf[DatabaseConfigProvider])
-  private implicit val system = injector.instanceOf(classOf[ActorSystem])
-  private implicit val db = dbConfigProvider.get[JdbcProfile].db
-
   implicit val timeout:akka.util.Timeout = 30.seconds
 
   "runNextActorInSequence" should {
-    "run a list of actors providing that they all return successfully" in {
+    "run a list of actors providing that they all return successfully" in new WithApplication(buildApp){
+      private val injector = app.injector
+
+      private val dbConfigProvider = injector.instanceOf(classOf[DatabaseConfigProvider])
+      private implicit val system = injector.instanceOf(classOf[ActorSystem])
+      private implicit val db = dbConfigProvider.get[JdbcProfile].db
+
       val probe1 = TestProbe()
       val probe2 = TestProbe()
       val probe3 = TestProbe()
@@ -50,7 +41,6 @@ class ProjectCreationSpec extends Specification {
       val ac = system.actorOf(Props(new ProjectCreationActor {
         override val creationActorChain: Seq[ActorRef] = Seq(probe1.ref, probe2.ref, probe3.ref)
       }))
-      logger.info(ac.toString)
 
       val rq = Await.result(ProjectRequest("somefile.prj",1,"some test file",1,"testuser",None,None).hydrate,10.seconds)
       rq must beSome
@@ -65,85 +55,86 @@ class ProjectCreationSpec extends Specification {
       probe3.expectMsg(30.seconds, NewProjectRequest(rq.get, None))
       probe3.reply(StepSucceded())
 
-      1 mustEqual 1
-
       val result = Await.result(resultFuture,90.seconds)
       result mustEqual ProjectCreateSucceeded(rq.get)
     }
-  }
 
-  "CreateFileEntry->NewProjectRequest" should {
-    "create a file entry and respond with StepSucceeded" in {
-      val ac = system.actorOf(Props(new CreateFileEntry(dbConfigProvider)))
+    "stop when an actor reports a failure and roll back the ones that had run before" in new WithApplication(buildApp){
+      private val injector = app.injector
 
-      val fileEntryBefore = Await.result(FileEntry.entryFor("testfile.prproj",1), 2 seconds)
-      fileEntryBefore must beSuccessfulTry
-      fileEntryBefore.get.length mustEqual 0
+      private val dbConfigProvider = injector.instanceOf(classOf[DatabaseConfigProvider])
+      private implicit val system = injector.instanceOf(classOf[ActorSystem])
+      private implicit val db = dbConfigProvider.get[JdbcProfile].db
 
-      val maybeRq = Await.result(ProjectRequest("testfile",1,"Test project entry", 1, "test-user", None, None).hydrate, 10 seconds)
-      maybeRq must beSome
+      val probe1 = TestProbe()
+      val probe2 = TestProbe()
+      val probe3 = TestProbe()
 
-      val dateTime = LocalDateTime.now()
-      val msg = NewProjectRequest(maybeRq.get, Some(dateTime))
-
-      val response = Await.result((ac ? msg).mapTo[Either[CreationMessage, CreationMessage]], 10 seconds)
-      response must beRight
-
-      val fileEntryAfter = Await.result(FileEntry.entryFor("testfile.prproj",1), 2 seconds)
-      fileEntryAfter must beSuccessfulTry
-      val entrySeq = fileEntryAfter.get
-      entrySeq.length mustEqual 1
-      entrySeq.head.hasContent must beFalse
-    }
-
-    "return StepFailed with an exception if there is an error" in {
-      val ex=new RuntimeException("My hovercraft is full of eels")
-      val ac = system.actorOf(Props(new CreateFileEntry(dbConfigProvider) {
-        override def getDestFileFor(rq: ProjectRequestFull, recordTimestamp: Timestamp)
-                                   (implicit db: JdbcBackend#DatabaseDef): Future[Try[FileEntry]] = Future(Failure(ex))
+      val actorSeq = Seq(probe1.ref,probe2.ref,probe3.ref)
+      val ac = system.actorOf(Props(new ProjectCreationActor {
+        override val creationActorChain: Seq[ActorRef] = Seq(probe1.ref, probe2.ref, probe3.ref)
       }))
 
-      val fileEntryBefore = Await.result(FileEntry.entryFor("testfile2.prproj",1), 2 seconds)
-      fileEntryBefore must beSuccessfulTry
-      fileEntryBefore.get.length mustEqual 0
+      val rq = Await.result(ProjectRequest("somefile.prj",1,"some test file",1,"testuser",None,None).hydrate,10.seconds)
+      rq must beSome
 
-      val maybeRq = Await.result(ProjectRequest("testfile2",1,"Test project entry", 1, "test-user", None, None).hydrate, 10 seconds)
-      maybeRq must beSome
+      val resultFuture = ac ? NewProjectRequest(rq.get, None)
 
-      val dateTime = LocalDateTime.now()
-      val msg = NewProjectRequest(maybeRq.get, Some(dateTime))
+      val ex=new RuntimeException("My hovercraft is full of eels")
 
-      val response = Await.result((ac ? msg).mapTo[Either[StepFailed, StepSucceded]], 10 seconds)
-      response must beLeft(StepFailed(ex))
+      probe1.expectMsg(5.seconds, NewProjectRequest(rq.get, None))
+      probe1.reply(StepSucceded())
+      probe2.expectMsg(5.seconds, NewProjectRequest(rq.get, None))
+      probe2.reply(StepFailed(ex))
+      probe2.expectMsg(5.seconds, NewProjectRollback(rq.get))
+      probe2.reply(StepSucceded())
+      probe1.expectMsg(5.seconds, NewProjectRollback(rq.get))
+      probe1.reply(StepSucceded())
 
-      val fileEntryAfter = Await.result(FileEntry.entryFor("testfile2.prproj",1), 2 seconds)
-      fileEntryAfter must beSuccessfulTry
-      val entrySeq = fileEntryAfter.get
-      entrySeq.length mustEqual 0
+      probe3.expectNoMessage(5.seconds)
+
+      val result = Await.result(resultFuture,15.seconds)
+      result mustEqual ProjectCreateFailed(rq.get)
+    }
+
+    "continue rollback even if a rollback fails" in new WithApplication(buildApp){
+      private val injector = app.injector
+
+      private val dbConfigProvider = injector.instanceOf(classOf[DatabaseConfigProvider])
+      private implicit val system = injector.instanceOf(classOf[ActorSystem])
+      private implicit val db = dbConfigProvider.get[JdbcProfile].db
+
+      val probe1 = TestProbe()
+      val probe2 = TestProbe()
+      val probe3 = TestProbe()
+
+      val actorSeq = Seq(probe1.ref,probe2.ref,probe3.ref)
+      val ac = system.actorOf(Props(new ProjectCreationActor {
+        override val creationActorChain: Seq[ActorRef] = Seq(probe1.ref, probe2.ref, probe3.ref)
+      }))
+
+      val rq = Await.result(ProjectRequest("somefile.prj",1,"some test file",1,"testuser",None,None).hydrate,10.seconds)
+      rq must beSome
+
+      val resultFuture = ac ? NewProjectRequest(rq.get, None)
+
+      val ex=new RuntimeException("My hovercraft is full of eels")
+
+      probe1.expectMsg(5.seconds, NewProjectRequest(rq.get, None))
+      probe1.reply(StepSucceded())
+      probe2.expectMsg(5.seconds, NewProjectRequest(rq.get, None))
+      probe2.reply(StepFailed(ex))
+      probe2.expectMsg(5.seconds, NewProjectRollback(rq.get))
+      probe2.reply(StepFailed(ex))
+      probe1.expectMsg(5.seconds, NewProjectRollback(rq.get))
+      probe1.reply(StepSucceded())
+
+      probe3.expectNoMessage(5.seconds)
+
+      val result = Await.result(resultFuture,15.seconds)
+      result mustEqual ProjectCreateFailed(rq.get)
     }
   }
 
-  "CreateFileEntry->NewProjectRollback" should {
-    "delete an existing file entry" in {
-      val ac = system.actorOf(Props(new CreateFileEntry(dbConfigProvider)))
 
-      val fileEntryBefore = Await.result(FileEntry.entryFor("project_to_delete.prproj",1), 2 seconds)
-      fileEntryBefore must beSuccessfulTry
-      fileEntryBefore.get.length mustEqual 1
-
-      val maybeRq = Await.result(ProjectRequest("project_to_delete",1,"Test project entry", 1, "test-user", None, None).hydrate, 10 seconds)
-      maybeRq must beSome
-
-      val dateTime = LocalDateTime.now()
-      val msg = NewProjectRollback(maybeRq.get)
-
-      val response = Await.result((ac ? msg).mapTo[Either[CreationMessage, CreationMessage]], 10 seconds)
-      response must beRight
-
-      val fileEntryAfter = Await.result(FileEntry.entryFor("project_to_delete.prproj",1), 2 seconds)
-      fileEntryAfter must beSuccessfulTry
-      val entrySeq = fileEntryAfter.get
-      entrySeq.length mustEqual 0
-    }
-  }
 }

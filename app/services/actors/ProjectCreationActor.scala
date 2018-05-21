@@ -14,6 +14,7 @@ import scala.util.{Failure, Success}
 
 class ProjectCreationActor extends GenericCreationActor {
   override val persistenceId = "project-creation-actor"
+  override protected val logger=Logger(getClass)
 
   import GenericCreationActor._
   implicit val timeout:akka.util.Timeout = 30.seconds
@@ -29,10 +30,7 @@ class ProjectCreationActor extends GenericCreationActor {
   def runNextActorInSequence(actorSequence:Seq[ActorRef], rq:ProjectRequestFull):Future[Either[StepFailed,StepSucceded]] = {
     if(actorSequence.isEmpty) return Future(Right(StepSucceded()))
 
-    logger.info(actorSequence.head.toString())
-    logger.info(actorSequence.toString())
-
-    logger.info(s"i am ${context.self}")
+    logger.debug(s"i am ${context.self}")
     val resultFuture = actorSequence.head ? NewProjectRequest(rq, None)
     resultFuture.onComplete({ //use this to catch exceptions
       case Success(result)=>logger.info(s"actor ask success: $result")
@@ -41,7 +39,7 @@ class ProjectCreationActor extends GenericCreationActor {
 
     resultFuture.flatMap({
       case successMessage:StepSucceded=>
-        logger.info("stepSucceeded")
+        logger.debug("stepSucceeded, running next actor in sequence")
         runNextActorInSequence(actorSequence.tail, rq) flatMap {
           case Left(failedMessage)=>  //if the _next_ step fails, tell this step to roll back
             (actorSequence.head ? NewProjectRollback(rq)).map(result=>Left(failedMessage))
@@ -49,7 +47,7 @@ class ProjectCreationActor extends GenericCreationActor {
             Future(Right(successMessage))
         }
       case failedMessage:StepFailed=> //if the step fails, tell it to roll back
-        logger.info("StepFailed")
+        logger.warn(s"StepFailed, sending rollback to ${actorSequence.head}")
         //don't actually care about the result of rollback, but do care about sequencing
         (actorSequence.head ? NewProjectRollback(rq)).map(result=>Left(failedMessage))
       case other:Any=>
@@ -58,10 +56,6 @@ class ProjectCreationActor extends GenericCreationActor {
     })
   }
 
-//  val creationActorChain:Seq[ActorRef] = Seq(
-//    CreateFileEntry.getClass,
-//    GetStorageDriver.getClass
-//  ).map(cls=>context.actorOf(Props(cls)))
   val creationActorChain:Seq[ActorRef] = Seq()
 
   override def receiveCommand: Receive = {
