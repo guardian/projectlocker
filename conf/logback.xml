@@ -33,7 +33,7 @@
     <logger name="models.PlutoCommission" level="WARN"/>
     <logger name="services.PlutoWGCommissionScanner" level="WARN"/>
     <logger name="controllers.Files" level="WARN" />
-    <logger name="StorageControllerSpec" level="WARN"/>
+    <logger name="controllers.StorageControllerSpec" level="WARN"/>
     <logger name="auth.Security" level="WARN"/>
     <logger name="controllers.Application" level="INFO"/>
     <logger name="controllers.System" level="INFO"/>

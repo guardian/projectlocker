@@ -1,27 +1,29 @@
+package controllers
+
 import java.io.{File, FileOutputStream}
 import java.sql.Timestamp
 
+import akka.actor.ActorSystem
+import akka.stream.ActorMaterializer
 import models.{ProjectEntry, ProjectEntrySerializer, ProjectTemplate, ProjectTemplateSerializer}
 import org.junit.runner._
 import org.specs2.runner._
 import org.specs2.specification.{AfterAll, BeforeAll}
 import play.api.test.Helpers._
 import play.api.test._
-
-import scala.concurrent.{Await, Future}
+import scala.concurrent.Await
 import scala.concurrent.duration._
 import scala.io.Source
-import scala.util.{Failure, Success}
 /**
  * Add your spec here.
  * You can mock out a whole application including requests, plugins etc.
  * For more information, consult the wiki.
  */
 import play.api.libs.json._
-import scala.concurrent.ExecutionContext.Implicits.global
 
 @RunWith(classOf[JUnitRunner])
 class FileControllerSpec extends GenericControllerSpec with BeforeAll with AfterAll with ProjectEntrySerializer with ProjectTemplateSerializer{
+  tag("controllers")
   sequential
 
   override def beforeAll() = {
@@ -59,7 +61,9 @@ class FileControllerSpec extends GenericControllerSpec with BeforeAll with After
   override val testConflictId: Int = 1
 
   "FileController.create" should {
-    "refuse to over-write an existing record with another that has the same filename and storage" in {
+    "refuse to over-write an existing record with another that has the same filename and storage" in new WithApplication(buildApp) {
+      implicit val system:ActorSystem = app.actorSystem
+      implicit val materializer:ActorMaterializer = ActorMaterializer()
       val testInvalidDocument =
         """{
           |"filepath":"/path/to/a/video.mxf",
@@ -74,7 +78,7 @@ class FileControllerSpec extends GenericControllerSpec with BeforeAll with After
           |}
         """.stripMargin
 
-      val response = route(application, FakeRequest(
+      val response = route(app, FakeRequest(
         method="PUT",
         uri=uriRoot,
         headers=FakeHeaders(Seq(("Content-Type", "application/json"))),
@@ -91,9 +95,9 @@ class FileControllerSpec extends GenericControllerSpec with BeforeAll with After
   }
 
   "FileController.uploadContent" should {
-    "respond 404 if data is attempted to be written to a non-existing file" in {
+    "respond 404 if data is attempted to be written to a non-existing file" in new WithApplication(buildApp) {
       val testbuffer = "this is my test data\nwith another line"
-      val response = route(application, FakeRequest(
+      val response = route(app, FakeRequest(
         method="PUT",
         uri="/api/file/9999/content",
         headers=FakeHeaders(Seq(("Content-Type", "application/octet-stream"))),
@@ -103,9 +107,11 @@ class FileControllerSpec extends GenericControllerSpec with BeforeAll with After
       status(response) mustEqual NOT_FOUND
     }
 
-    "accept data for an existing file" in {
+    "accept data for an existing file" in new WithApplication(buildApp) {
+      implicit val system:ActorSystem = app.actorSystem
+      implicit val materializer:ActorMaterializer = ActorMaterializer()
       val testbuffer = "this is my test data\nwith another line"
-      val response = route(application, FakeRequest(
+      val response = route(app, FakeRequest(
         method="PUT",
         uri="/api/file/4/content",
         headers=FakeHeaders(Seq(("Content-Type", "application/octet-stream"))),
@@ -120,9 +126,11 @@ class FileControllerSpec extends GenericControllerSpec with BeforeAll with After
       writtenContent mustEqual testbuffer
     }
 
-    "refuse to over-write a file with existing data" in {
+    "refuse to over-write a file with existing data" in new WithApplication(buildApp) {
+      implicit val system:ActorSystem = app.actorSystem
+      implicit val materializer:ActorMaterializer = ActorMaterializer()
       val testbuffer = "this is my test data\nwith another line"
-      val response = route(application, FakeRequest(
+      val response = route(app, FakeRequest(
         method="PUT",
         uri="/api/file/2/content",
         headers=FakeHeaders(Seq(("Content-Type", "application/octet-stream"))),
@@ -138,8 +146,10 @@ class FileControllerSpec extends GenericControllerSpec with BeforeAll with After
   }
 
   "FileController.references" should {
-    "return lists of the things that reference a given file" in {
-      val response = route(application, FakeRequest("GET","/api/file/2/associations").withSession("uid"->"testuser")).get
+    "return lists of the things that reference a given file" in new WithApplication(buildApp) {
+      implicit val system:ActorSystem = app.actorSystem
+      implicit val materializer:ActorMaterializer = ActorMaterializer()
+      val response = route(app, FakeRequest("GET","/api/file/2/associations").withSession("uid"->"testuser")).get
 
       status(response) mustEqual OK
 

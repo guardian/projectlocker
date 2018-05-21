@@ -1,7 +1,8 @@
-import helpers.{JythonRunner, PostrunDataCache}
+package helpers
+
+import org.junit.runner._
 import org.specs2.mutable._
 import org.specs2.runner._
-import org.junit.runner._
 
 import scala.concurrent.duration._
 @RunWith(classOf[JUnitRunner])

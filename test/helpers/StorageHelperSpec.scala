@@ -1,24 +1,27 @@
+package helpers
+
 import java.io._
 import java.sql.Timestamp
 import java.time.LocalDateTime
 
 import drivers.{PathStorage, StorageDriver}
-import helpers.StorageHelper
 import models.{FileEntry, StorageEntry}
 import org.apache.commons.io.input.NullInputStream
-import org.specs2.mutable.Specification
 import org.specs2.mock.Mockito
-
-import scala.concurrent.{Await, Future}
-import sys.process._
-import scala.concurrent.duration._
-import scala.util.{Failure, Success, Try}
-import scala.concurrent.ExecutionContext.Implicits.global
-import org.apache.commons.io.output.NullOutputStream
+import org.specs2.mutable.Specification
 import play.api.Logger
-import slick.jdbc.JdbcBackend
+import play.api.db.slick.DatabaseConfigProvider
+import slick.jdbc.{JdbcBackend, JdbcProfile}
 
-class StorageHelperSpec extends Specification with Mockito with TestDatabaseAccess {
+import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.duration._
+import scala.concurrent.{Await, Future}
+import scala.sys.process._
+import scala.util.{Failure, Success, Try}
+import play.api.test.WithApplication
+import org.apache.commons.io.FilenameUtils
+
+class StorageHelperSpec extends Specification with Mockito with utils.BuildMyApp {
   "StorageHelper.copyStream" should {
     "reliably copy one stream to another, returning the number of bytes copied" in {
       val testFileNameSrc = "/tmp/storageHelperSpecTest-src-1" // shouldn't have spaces!
@@ -53,7 +56,11 @@ class StorageHelperSpec extends Specification with Mockito with TestDatabaseAcce
   }
 
   "StorageHelper.copyFile" should {
-    "look up two file entries, get streams from their device drivers and initiate copy" in {
+    "look up two file entries, get streams from their device drivers and initiate copy" in new WithApplication(buildApp) {
+      val injector = app.injector
+      protected val dbConfigProvider = injector.instanceOf(classOf[DatabaseConfigProvider])
+      protected implicit val db = dbConfigProvider.get[JdbcProfile].db
+
       val testFileNameSrc = "/tmp/storageHelperSpecTest-src-2" // shouldn't have spaces!
       val testFileNameDest = "/tmp/storageHelperSpecTest-dst-2" // shouldn't have spaces!
       try {
@@ -64,8 +71,8 @@ class StorageHelperSpec extends Specification with Mockito with TestDatabaseAcce
 
         val ts = Timestamp.valueOf(LocalDateTime.now())
 
-        val testSourceEntry = FileEntry(None, testFileNameSrc, 1, "testuser", 1, ts, ts, ts, hasContent = true, hasLink = false)
-        val testDestEntry = FileEntry(None, testFileNameDest, 1, "testuser", 1, ts, ts, ts, hasContent = false, hasLink = false)
+        val testSourceEntry = FileEntry(None, FilenameUtils.getBaseName(testFileNameSrc), 1, "testuser", 1, ts, ts, ts, hasContent = true, hasLink = false)
+        val testDestEntry = FileEntry(None, FilenameUtils.getBaseName(testFileNameDest), 1, "testuser", 1, ts, ts, ts, hasContent = false, hasLink = false)
 
         val realStorageHelper = new StorageHelper
 
@@ -85,7 +92,11 @@ class StorageHelperSpec extends Specification with Mockito with TestDatabaseAcce
       }
     }
 
-    "fail if the destination file is not the same size as the source" in {
+    "fail if the destination file is not the same size as the source" in new WithApplication(buildApp){
+      val injector = app.injector
+      protected val dbConfigProvider = injector.instanceOf(classOf[DatabaseConfigProvider])
+      protected implicit val db = dbConfigProvider.get[JdbcProfile].db
+
       val mockedStorageDriver = mock[PathStorage]
       mockedStorageDriver.getReadStream(any[String])
       mockedStorageDriver.getReadStream(any[String]) answers(path=>Success(new NullInputStream(60*1024L)))
@@ -102,14 +113,14 @@ class StorageHelperSpec extends Specification with Mockito with TestDatabaseAcce
         Seq("/bin/dd", "if=/dev/urandom", s"of=$testFileNameSrc", "bs=1k", "count=600").!
         val ts = Timestamp.valueOf(LocalDateTime.now())
 
-        val testSourceEntry = new FileEntry(Some(1234), testFileNameSrc, 1, "testuser", 1, ts, ts, ts, hasContent = true, hasLink = false){
+        val testSourceEntry = new FileEntry(Some(1234), FilenameUtils.getBaseName(testFileNameSrc), 1, "testuser", 1, ts, ts, ts, hasContent = true, hasLink = false){
           override def storage(implicit db: JdbcBackend#DatabaseDef):Future[Option[StorageEntry]] = {
             println("testSourceEntry.storage")
             Future(Some(mockedStorage))
           }
         }
 
-        val testDestEntry = FileEntry(None, testFileNameDest, 1, "testuser", 1, ts, ts, ts, hasContent = false, hasLink = false)
+        val testDestEntry = FileEntry(None, FilenameUtils.getBaseName(testFileNameDest), 1, "testuser", 1, ts, ts, ts, hasContent = false, hasLink = false)
 
         val realStorageHelper = new StorageHelper
 
@@ -132,7 +143,11 @@ class StorageHelperSpec extends Specification with Mockito with TestDatabaseAcce
       }
     }
 
-    "return an error if source does not have a valid storage driver" in {
+    "return an error if source does not have a valid storage driver" in new WithApplication(buildApp){
+      val injector = app.injector
+      protected val dbConfigProvider = injector.instanceOf(classOf[DatabaseConfigProvider])
+      protected implicit val db = dbConfigProvider.get[JdbcProfile].db
+
       // create a test file
       val testFileNameSrc = "/tmp/storageHelperSpecTest-src-3" // shouldn't have spaces!
       val testFileNameDest = "/tmp/storageHelperSpecTest-dst-3" // shouldn't have spaces!
@@ -140,8 +155,8 @@ class StorageHelperSpec extends Specification with Mockito with TestDatabaseAcce
         Seq("/bin/dd", "if=/dev/urandom", s"of=$testFileNameSrc", "bs=1k", "count=600").!
         val ts = Timestamp.valueOf(LocalDateTime.now())
 
-        val testSourceEntry = FileEntry(None, testFileNameSrc, 2, "testuser", 1, ts, ts, ts, hasContent = true, hasLink = false)
-        val testDestEntry = FileEntry(None, testFileNameSrc, 1, "testuser", 1, ts, ts, ts, hasContent = false, hasLink = false)
+        val testSourceEntry = FileEntry(None, FilenameUtils.getBaseName(testFileNameSrc), 2, "testuser", 1, ts, ts, ts, hasContent = true, hasLink = false)
+        val testDestEntry = FileEntry(None, FilenameUtils.getBaseName(testFileNameSrc), 1, "testuser", 1, ts, ts, ts, hasContent = false, hasLink = false)
 
         val realStorageHelper = new StorageHelper
 
@@ -161,7 +176,10 @@ class StorageHelperSpec extends Specification with Mockito with TestDatabaseAcce
       }
     }
 
-    "return an error if dest does not have a valid storage driver" in {
+    "return an error if dest does not have a valid storage driver" in new WithApplication(buildApp){
+      val injector = app.injector
+      protected val dbConfigProvider = injector.instanceOf(classOf[DatabaseConfigProvider])
+      protected implicit val db = dbConfigProvider.get[JdbcProfile].db
       // create a test file
       val testFileNameSrc = "/tmp/storageHelperSpecTest-src-5" // shouldn't have spaces!
       val testFileNameDest = "/tmp/storageHelperSpecTest-dst-5" // shouldn't have spaces!
@@ -169,8 +187,8 @@ class StorageHelperSpec extends Specification with Mockito with TestDatabaseAcce
         Seq("/bin/dd", "if=/dev/urandom", s"of=$testFileNameSrc", "bs=1k", "count=600").!
         val ts = Timestamp.valueOf(LocalDateTime.now())
 
-        val testSourceEntry = FileEntry(None, testFileNameSrc, 1, "testuser", 1, ts, ts, ts, hasContent = true, hasLink = false)
-        val testDestEntry = FileEntry(None, testFileNameSrc, 2, "testuser", 1, ts, ts, ts, hasContent = false, hasLink = false)
+        val testSourceEntry = FileEntry(None, FilenameUtils.getBaseName(testFileNameSrc), 1, "testuser", 1, ts, ts, ts, hasContent = true, hasLink = false)
+        val testDestEntry = FileEntry(None, FilenameUtils.getBaseName(testFileNameDest), 2, "testuser", 1, ts, ts, ts, hasContent = false, hasLink = false)
 
         val realStorageHelper = new StorageHelper
 

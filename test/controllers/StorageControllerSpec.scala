@@ -1,19 +1,10 @@
-import akka.actor.ActorSystem
-import akka.stream.ActorMaterializer
+package controllers
+
+import java.io.{File, FileOutputStream}
+
 import org.junit.runner._
 import org.specs2.runner._
-import play.api.db.slick.DatabaseConfigProvider
-import play.api.inject.guice.GuiceApplicationBuilder
-import play.api.test.Helpers._
-import play.api.test._
-import play.api.inject.bind
-import testHelpers.TestDatabase
-import play.api.{Application, Logger}
-import scala.concurrent.{Await, Future}
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.duration._
-import akka.actor._
-import akka.stream.ActorMaterializer
+import org.specs2.specification.BeforeAfterAll
 
 /**
  * Add your spec here.
@@ -23,10 +14,22 @@ import akka.stream.ActorMaterializer
 import play.api.libs.json._
 
 @RunWith(classOf[JUnitRunner])
-class StorageControllerSpec extends GenericControllerSpec {
+class StorageControllerSpec extends GenericControllerSpec with BeforeAfterAll {
   sequential
   override val componentName: String = "StorageController"
   override val uriRoot: String = "/api/storage"
+
+  override def beforeAll(): Unit ={
+    val f = new File("/tmp/teststorage")
+    if(!f.exists())
+      f.mkdirs()
+  }
+
+  override def afterAll(): Unit ={
+    val f = new File("/tmp/teststorage")
+    if(f.exists())
+      f.delete()
+  }
 
   override def testParsedJsonObject(checkdata: JsLookupResult, parsed_test_json: JsValue) = {
     val object_keys = Seq("storageType","user")
@@ -37,7 +40,7 @@ class StorageControllerSpec extends GenericControllerSpec {
 
   override val testGetId: Int = 1
   override val testGetDocument: String = """{"storageType": "Local", "user": "me"}"""
-  override val testCreateDocument: String =  """{"storageType": "Local", "user": "tests", "rootpath":"/tmp"}"""
+  override val testCreateDocument: String =  """{"storageType": "Local", "user": "tests", "rootpath":"/tmp/teststorage"}"""
   override val testDeleteId: Int = 4
   override val testConflictId: Int = 2
   override val minimumNewRecordId: Int = 3

@@ -1,8 +1,10 @@
+package helpers
+
 import auth.HMAC
 import org.junit.runner.RunWith
 import org.specs2.mutable._
 import org.specs2.runner.JUnitRunner
-import play.api.mvc.{Headers, RequestHeader}
+import play.api.mvc.Headers
 import play.api.test.FakeRequest
 
 @RunWith(classOf[JUnitRunner])

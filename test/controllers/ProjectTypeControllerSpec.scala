@@ -1,8 +1,12 @@
+package controllers
+
+import akka.actor.ActorSystem
+import akka.stream.ActorMaterializer
 import org.junit.runner._
 import org.specs2.runner._
 import play.api.libs.json._
-import play.api.test.{FakeHeaders, FakeRequest}
 import play.api.test.Helpers._
+import play.api.test._
 
 import scala.concurrent.Await
 import scala.concurrent.duration._
@@ -30,8 +34,10 @@ class ProjectTypeControllerSpec extends GenericControllerSpec {
   override val testConflictId: Int = -1
 
   "ProjectTypeController.listPostrun" should {
-    "return a list of the postrun ids associated with the project type" in {
-      val response = route(application, FakeRequest(
+    "return a list of the postrun ids associated with the project type" in new WithApplication(buildApp){
+      implicit val system:ActorSystem = app.actorSystem
+      implicit val materializer:ActorMaterializer = ActorMaterializer()
+      val response = route(app, FakeRequest(
         method = "GET",
         uri = s"$uriRoot/$testGetId/postrun",
         headers = FakeHeaders(),

@@ -1,13 +1,7 @@
-import auth.LDAP
-import org.mockito._
+package utils
+
 import org.specs2.mock.Mockito
 import play.api.cache.SyncCacheApi
-import org.mockito.AdditionalMatchers._
-
-import scala.concurrent.duration.Duration
-import scala.runtime.Nothing$
-import scala.collection.JavaConverters._
-import scala.reflect.ClassTag
 
 trait MockedCacheApi extends Mockito {
   val mockedSyncCacheApi = mock[SyncCacheApi]

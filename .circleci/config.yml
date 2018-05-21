@@ -12,7 +12,7 @@ defaults: &defaults
   parallelism: 1
   shell: /bin/bash --login
   docker:
-    - image: 855023211239.dkr.ecr.eu-west-1.amazonaws.com/guardianmultimedia/projectlockerbuild
+    - image: 855023211239.dkr.ecr.eu-west-1.amazonaws.com/guardianmultimedia/projectlockerbuild:20180521_1
   # CircleCI 2.0 does not support environment variables that refer to each other the same way as 1.0 did.
   # If any of these refer to each other, rewrite them so that they don't or see https://circleci.com/docs/2.0/env-vars/#interpolating-environment-variables-to-set-other-environment-variables .
   environment:
@@ -25,7 +25,7 @@ jobs:
   scala_build_test:
     <<: *defaults
     docker:
-      - image: 855023211239.dkr.ecr.eu-west-1.amazonaws.com/guardianmultimedia/projectlockerbuild
+      - image: 855023211239.dkr.ecr.eu-west-1.amazonaws.com/guardianmultimedia/projectlockerbuild:20180521_1
       - image: circleci/postgres:9.3.23-alpine
         environment:
           POSTGRES_USER: projectlocker

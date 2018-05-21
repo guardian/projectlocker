@@ -1,15 +1,19 @@
+package controllers
+
+import akka.actor.ActorSystem
+import akka.stream.ActorMaterializer
 import org.junit.runner._
 import org.specs2.runner._
 import play.api.libs.json._
-import play.api.test.FakeRequest
 import play.api.test.Helpers._
 import play.api.test._
 
-import scala.concurrent.{Await, Future}
+import scala.concurrent.Await
 import scala.concurrent.duration._
 
 @RunWith(classOf[JUnitRunner])
 class PostrunControllerSpec extends GenericControllerSpec {
+  tag("controllers")
   sequential
 
   override val componentName: String = "PostrunController"
@@ -31,8 +35,10 @@ class PostrunControllerSpec extends GenericControllerSpec {
   override val testConflictId: Int = 1
 
   "PostrunActionController.associate" should {
-    "create an association between postrun action and project type" in {
-      val response= route(application, FakeRequest(PUT, s"$uriRoot/1/projecttype/4").withSession("uid"->"testuser")).get
+    "create an association between postrun action and project type" in new WithApplication(buildApp) {
+      implicit val system:ActorSystem = app.actorSystem
+      implicit val materializer:ActorMaterializer = ActorMaterializer()
+      val response= route(app, FakeRequest(PUT, s"$uriRoot/1/projecttype/4").withSession("uid"->"testuser")).get
 
       status(response) must equalTo(OK)
       val jsondata = Await.result(bodyAsJsonFuture(response), 5.seconds).as[JsValue]
@@ -42,8 +48,10 @@ class PostrunControllerSpec extends GenericControllerSpec {
   }
 
   "PostrunActionController.unassociate" should {
-    "remove an association between postrun action and project type" in {
-      val response= route(application, FakeRequest(DELETE, s"$uriRoot/3/projecttype/4").withSession("uid"->"testuser")).get
+    "remove an association between postrun action and project type" in new WithApplication(buildApp) {
+      implicit val system:ActorSystem = app.actorSystem
+      implicit val materializer:ActorMaterializer = ActorMaterializer()
+      val response= route(app, FakeRequest(DELETE, s"$uriRoot/3/projecttype/4").withSession("uid"->"testuser")).get
 
       status(response) must equalTo(OK)
       val jsondata = Await.result(bodyAsJsonFuture(response), 5.seconds).as[JsValue]
