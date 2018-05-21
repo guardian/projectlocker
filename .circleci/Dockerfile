@@ -15,3 +15,6 @@ RUN cp /root/.bashrc /home/circleci
 RUN yum -y install git
 COPY ./containerscripts/jython.sh /tmp
 RUN bash /tmp/jython.sh
+
+COPY ./containerscripts/awstools.sh /tmp
+RUN bash /tmp/awstools.sh

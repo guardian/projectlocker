@@ -55,9 +55,6 @@ jobs:
           - ~/.ivy2
           - ~/.sbt
           - $HOME/.play
-      # This is based on your 1.0 configuration file or project settings
-#      - run: sudo -u postgres /usr/pgsql-9.2/bin/pg_ctl start -D /var/lib/pgsql/9.2/data
-#      - run: sudo -u postgres createuser projectlocker
       - run: /usr/bin/createdb -h localhost -U projectlocker projectlocker
       - run: ln -s /usr/bin/sha256sum /usr/bin/shasum
 #      - run: sudo -u postgres createdb projectlocker_test -O projectlocker
@@ -167,6 +164,8 @@ jobs:
           # Any branch if there are none on the default branch - this should be unnecessary if you have your default branch configured correctly
           - dep-
 
+      #ensure shasum alias is working
+      - run: if [ ! -x /usr/bin/shasum ]; then ln -s /usr/bin/sha256sum /usr/bin/shasum; fi
       #bring in compiled javascript from react_build_test
       - run: cp -a /mnt/workspace/public/javascripts/bundle.js ./public/javascripts/bundle.js
       - run: if [ ! -d ./target ]; then mkdir -p target; fi
@@ -180,7 +179,7 @@ jobs:
       - run: echo "exit 0" > /usr/lib/rpm/brp-python-bytecompile
       - run: chmod a+x /usr/lib/rpm/brp-python-bytecompile
       #need to set SBT_OPTS here as we refer to the buitin env vars to set the tag, build number, etc.  Otherwise they are not interpolated.
-      - run: SBT_OPTS="-Dfile.encoding=UTF8 -Xms512M -Xmx1024M -Xss1M -XX:+CMSClassUnloadingEnabled -XX:+UseCompressedOops -Dbuild.tag=\"$CIRCLE_TAG\" -Dbuild.number=$CIRCLE_BUILD_NUM -Dbuild.vcs.number=$CIRCLE_SHA1" sbt rpm:packageBin
+      - run: echo exit | SBT_OPTS="-Dfile.encoding=UTF8 -Xms512M -Xmx1024M -Xss1M -XX:+CMSClassUnloadingEnabled -XX:+UseCompressedOops -Dbuild.tag=\"$CIRCLE_TAG\" -Dbuild.number=$CIRCLE_BUILD_NUM -Dbuild.vcs.number=$CIRCLE_SHA1" sbt rpm:packageBin
       - run: bash -c 'for x in `ls target/rpm/RPMS/noarch/projectlocker*.rpm`; do bash ./upload_to_s3.sh "$x"; done'
 
 workflows:
