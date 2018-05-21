@@ -6,6 +6,7 @@ import akka.http.scaladsl.Http
 import akka.http.scaladsl.model._
 import models.ProjectEntry
 import models.messages.{NewAssetFolder, NewAssetFolderSerializer}
+import org.slf4j.MDC
 import play.api.Configuration
 import play.api.libs.json.Json
 import play.api.mvc.Headers
@@ -46,6 +47,9 @@ trait ListenAssetFolder extends NewAssetFolderSerializer with JsonComms{
     val notifyUrl =  s"${configuration.get[String]("pluto.server_url")}/gnm_asset_folder/api/notify"
     val bodyContent:String = Json.toJson(msg).toString()
     logger.debug(s"Going to send json: $bodyContent to $notifyUrl")
+
+    MDC.put("bodyContent", bodyContent)
+    MDC.put("notifyUrl", notifyUrl)
 
     Http()
       .singleRequest(HttpRequest(method=HttpMethods.POST, uri = notifyUrl, headers = List(getPlutoAuth))

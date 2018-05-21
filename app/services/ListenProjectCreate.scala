@@ -5,7 +5,7 @@ import akka.http.scaladsl.model._
 import models.ProjectEntry
 import models.messages.{NewProjectCreated, NewProjectCreatedSerializer}
 import play.api.libs.json.Json
-
+import org.slf4j.MDC
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success}
 
@@ -16,6 +16,8 @@ trait ListenProjectCreate extends NewProjectCreatedSerializer with JsonComms {
     
     logger.debug(s"Going to send json: $bodyContent to $notifyUrl")
 
+    MDC.put("bodyContent", bodyContent)
+    MDC.put("notifyUrl", notifyUrl)
     Http().singleRequest(HttpRequest(method=HttpMethods.POST, uri = notifyUrl, headers = List(getPlutoAuth))
       .withEntity(HttpEntity(ContentType(MediaTypes.`application/json`),bodyContent)))
       .map(handlePlutoResponse)

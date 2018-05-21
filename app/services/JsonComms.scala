@@ -10,6 +10,7 @@ import models.ProjectEntry
 import play.api.{Configuration, Logger}
 import play.api.libs.json.{JsValue, Json}
 import slick.jdbc.PostgresProfile
+import org.slf4j.MDC
 
 import scala.concurrent.{Await, ExecutionContext, Future}
 import scala.concurrent.duration._
@@ -25,6 +26,9 @@ trait JsonComms {
 
   protected def handlePlutoResponse(response:HttpResponse)(implicit ec:ExecutionContext):Either[Boolean,JsValue] = {
     val body = Await.result(bodyAsJsonFuture(response), 5.seconds)
+
+    MDC.put("http_status",response.status.toString())
+    MDC.put("response_body", body.toString)
 
     if (response.status.intValue()>=200 && response.status.intValue() <= 299) {
       logger.info("Pluto responded success")
