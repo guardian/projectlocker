@@ -1,3 +1,5 @@
+package postrun
+
 import java.io.File
 
 import helpers.PostrunDataCache
@@ -8,28 +10,24 @@ import play.api.Logger
 import play.api.db.slick.DatabaseConfigProvider
 import play.api.inject.bind
 import play.api.inject.guice.GuiceApplicationBuilder
-import postrun.RunXmlLint
-import slick.jdbc.JdbcProfile
+import play.api.test.WithApplication
+import slick.jdbc.{JdbcProfile, PostgresProfile}
 import testHelpers.TestDatabase
+import utils.BuildMyApp
 
+import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.duration._
 import scala.concurrent.{Await, Future}
 import scala.util.Try
-import scala.concurrent.duration._
-import scala.concurrent.ExecutionContext.Implicits.global
 
-class RunXmlLintSpec extends Specification {
-  protected val application = new GuiceApplicationBuilder()
-    .overrides(bind[DatabaseConfigProvider].to[TestDatabase.testDbProvider])
-    .build
-
-  private val logger = Logger(getClass)
-  private val injector = application.injector
-
-  protected val dbConfigProvider = injector.instanceOf(classOf[DatabaseConfigProvider])
-  protected implicit val db = dbConfigProvider.get[JdbcProfile].db
-
+class RunXmlLintSpec extends Specification with BuildMyApp{
   "RunXmlLint.postrun" should {
-    "run xmllint against an existing file" in {
+    "run xmllint against an existing file" in new WithApplication(buildApp){
+      private val injector = app.injector
+
+      protected val dbConfigProvider = injector.instanceOf(classOf[DatabaseConfigProvider])
+      protected implicit val db = dbConfigProvider.get[PostgresProfile].db
+
       FileUtils.copyFile(new File("postrun/tests/data/blank_premiere_2017.prproj"), new File("/tmp/test_run_xmllint.prproj"))
 
       val dataCache = PostrunDataCache(Map())
@@ -46,7 +44,12 @@ class RunXmlLintSpec extends Specification {
       result must beSuccessfulTry
     }
 
-    "fail if the given file does not exist" in {
+    "fail if the given file does not exist" in new WithApplication(buildApp){
+      private val injector = app.injector
+
+      protected val dbConfigProvider = injector.instanceOf(classOf[DatabaseConfigProvider])
+      protected implicit val db = dbConfigProvider.get[PostgresProfile].db
+
       val dataCache = PostrunDataCache(Map())
       val s = new RunXmlLint
       val futureResults = Await.result(Future.sequence(Seq(
@@ -61,7 +64,12 @@ class RunXmlLintSpec extends Specification {
       result must beFailedTry
     }
 
-    "fail if the given file is not a gzip file" in {
+    "fail if the given file is not a gzip file" in new WithApplication(buildApp){
+      private val injector = app.injector
+
+      protected val dbConfigProvider = injector.instanceOf(classOf[DatabaseConfigProvider])
+      protected implicit val db = dbConfigProvider.get[PostgresProfile].db
+
       FileUtils.copyFile(new File("postrun/tests/test_make_asset_folder.py"), new File("/tmp/test_run_xmllint_notgzip.prproj"))
       val dataCache = PostrunDataCache(Map())
       val s = new RunXmlLint

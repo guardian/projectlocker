@@ -22,7 +22,7 @@
     </appender>-->
 
     <logger name="play" level="INFO" />
-    <logger name="application" level="WARN" />
+    <logger name="application" level="ERROR" />
     <logger name="services.PostrunActionScanner" level="WARN"/>
     <logger name="helpers.ProjectCreateHelperImpl" level="WARN"/>
     <logger name="services.actors.ClusterListener" level="WARN"/>
@@ -45,7 +45,7 @@
     <logger name="controllers.Files" level="WARN" />
     <logger name="postrun.UpdateAdobeUuid" level="INFO"/>
     <logger name="models.ProjectMetadata" level="WARN"/>
-    <logger name="UpdateAdobeUuidSpec" level="WARN"/>
+    <logger name="postrun.UpdateAdobeUuidSpec" level="WARN"/>
     <logger name="services.StorageScanner" level="DEBUG"/>
     <logger name="com.gargoylesoftware.htmlunit.javascript" level="OFF" />
     <logger name="MockProjectCreationActor" level="DEBUG"/>

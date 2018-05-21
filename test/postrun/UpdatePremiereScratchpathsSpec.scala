@@ -1,3 +1,5 @@
+package postrun
+
 import java.io.File
 
 import helpers.PostrunDataCache
@@ -7,27 +9,25 @@ import org.specs2.mutable.Specification
 import play.api.db.slick.DatabaseConfigProvider
 import play.api.inject.bind
 import play.api.inject.guice.GuiceApplicationBuilder
-import postrun.UpdatePremiereScratchpaths
-import slick.jdbc.JdbcProfile
+import play.api.test.WithApplication
+import slick.jdbc.{JdbcProfile, PostgresProfile}
 import testHelpers.TestDatabase
+import utils.BuildMyApp
 
+import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.duration._
 import scala.concurrent.{Await, Future}
 import scala.util.Try
-import scala.concurrent.duration._
-import scala.concurrent.ExecutionContext.Implicits.global
 
-class UpdatePremiereScratchpathsSpec extends Specification {
-  protected val application = new GuiceApplicationBuilder()
-    .overrides(bind[DatabaseConfigProvider].to[TestDatabase.testDbProvider])
-    .build
-
-  private val injector = application.injector
-
-  protected val dbConfigProvider = injector.instanceOf(classOf[DatabaseConfigProvider])
-  protected implicit val db = dbConfigProvider.get[JdbcProfile].db
+class UpdatePremiereScratchpathsSpec extends Specification with BuildMyApp {
 
   "UpdatePremiereScratchpaths.postrun" should {
-    "correctly read in and update a gzipped xml file" in {
+    "correctly read in and update a gzipped xml file" in  new WithApplication(buildApp){
+      private val injector = app.injector
+
+      protected val dbConfigProvider = injector.instanceOf(classOf[DatabaseConfigProvider])
+      protected implicit val db = dbConfigProvider.get[PostgresProfile].db
+
       FileUtils.copyFileToDirectory(new File("postrun/tests/data/blank_premiere_2017.prproj"), new File("/tmp"))
 
       val dataCache = PostrunDataCache(Map("created_asset_folder"->"/path/to/my/assets"))

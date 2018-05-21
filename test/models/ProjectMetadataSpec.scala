@@ -1,20 +1,19 @@
-import helpers.PostrunDataCache
-import models.{ProjectEntry, ProjectMetadata, ProjectType}
-import org.apache.commons.io.FileUtils
+package models
+
 import org.specs2.mutable.Specification
 import play.api.Logger
 import play.api.db.slick.DatabaseConfigProvider
 import play.api.inject.bind
 import play.api.inject.guice.GuiceApplicationBuilder
-import slick.jdbc.JdbcProfile
+import play.api.test.WithApplication
+import slick.jdbc.{JdbcProfile, PostgresProfile}
 import testHelpers.TestDatabase
+import utils.BuildMyApp
 
-import scala.concurrent.{Await, Future}
-import scala.util.Try
+import scala.concurrent.Await
 import scala.concurrent.duration._
-import scala.concurrent.ExecutionContext.Implicits.global
 
-class ProjectMetadataSpec extends Specification {
+class ProjectMetadataSpec extends Specification with BuildMyApp {
   sequential
   protected val application = new GuiceApplicationBuilder()
     .overrides(bind[DatabaseConfigProvider].to[TestDatabase.testDbProvider])
@@ -27,7 +26,12 @@ class ProjectMetadataSpec extends Specification {
   protected implicit val db = dbConfigProvider.get[JdbcProfile].db
 
   "ProjectMetadata.setBulk" should {
-    "add a Map of keys to the database" in {
+    "add a Map of keys to the database" in new WithApplication(buildApp){
+      private val injector = app.injector
+
+      protected val dbConfigProvider = injector.instanceOf(classOf[DatabaseConfigProvider])
+      protected implicit val db = dbConfigProvider.get[PostgresProfile].db
+
       val result = Await.result(ProjectMetadata.setBulk(4,Map("key"->"value","key_two"->"value_two")),10 seconds)
 
       result must beSuccessfulTry(2)
@@ -39,7 +43,13 @@ class ProjectMetadataSpec extends Specification {
       getResult.get.value mustEqual Some("value")
     }
 
-    "not fail when updating keys" in {
+    "not fail when updating keys" in new WithApplication(buildApp){
+      private val injector = app.injector
+
+      protected val dbConfigProvider = injector.instanceOf(classOf[DatabaseConfigProvider])
+      protected implicit val db = dbConfigProvider.get[PostgresProfile].db
+
+
       val result = Await.result(ProjectMetadata.setBulk(4,Map("key"->"other value","key_two"->"other value_two")),10 seconds)
 
       result must beSuccessfulTry(2)
@@ -47,12 +57,22 @@ class ProjectMetadataSpec extends Specification {
   }
 
   "ProjectMetadata.entryFor" should {
-    "retrieve the value of a key that has been previously set" in {
+    "retrieve the value of a key that has been previously set" in new WithApplication(buildApp){
+      private val injector = app.injector
+
+      protected val dbConfigProvider = injector.instanceOf(classOf[DatabaseConfigProvider])
+      protected implicit val db = dbConfigProvider.get[PostgresProfile].db
+
       val result = Await.result(ProjectMetadata.entryFor(2,"first_key"), 10 seconds)
       result must beSome(ProjectMetadata(Some(1),2,"first_key",Some("first value")))
     }
 
-    "return None if a key is not set" in {
+    "return None if a key is not set" in new WithApplication(buildApp){
+      private val injector = app.injector
+
+      protected val dbConfigProvider = injector.instanceOf(classOf[DatabaseConfigProvider])
+      protected implicit val db = dbConfigProvider.get[PostgresProfile].db
+
       val result = Await.result(ProjectMetadata.entryFor(2,"dfjkhsfd"), 10 seconds)
       result must beNone
 
@@ -62,7 +82,12 @@ class ProjectMetadataSpec extends Specification {
   }
 
   "ProjectMetadata.allMetadataFor" should {
-    "return all of the metadata keys for the given project" in {
+    "return all of the metadata keys for the given project" in new WithApplication(buildApp){
+      private val injector = app.injector
+
+      protected val dbConfigProvider = injector.instanceOf(classOf[DatabaseConfigProvider])
+      protected implicit val db = dbConfigProvider.get[PostgresProfile].db
+
       val result = Await.result(ProjectMetadata.allMetadataFor(2), 10 seconds)
       result must beSuccessfulTry
       val returnedSeq = result.get

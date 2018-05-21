@@ -1,26 +1,16 @@
-import java.util.UUID
+package models
 
-import models.{PlutoWorkingGroup, PlutoWorkingGroupSerializer}
 import org.specs2.mutable.Specification
 import play.api.db.slick.DatabaseConfigProvider
-import play.api.inject.bind
-import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.libs.json.Json
-import slick.jdbc.{JdbcProfile, PostgresProfile}
-import testHelpers.TestDatabase
+import slick.jdbc.PostgresProfile
+import utils.BuildMyApp
+import play.api.test.WithApplication
 
 import scala.concurrent.Await
 import scala.concurrent.duration._
 
-class PlutoWorkingGroupSpec extends Specification with PlutoWorkingGroupSerializer {
-  protected val application = new GuiceApplicationBuilder()
-    .overrides(bind[DatabaseConfigProvider].to[TestDatabase.testDbProvider])
-    .build
-
-  private val injector = application.injector
-
-  protected val dbConfigProvider = injector.instanceOf(classOf[DatabaseConfigProvider])
-  protected implicit val db = dbConfigProvider.get[PostgresProfile].db
+class PlutoWorkingGroupSpec extends Specification with BuildMyApp with PlutoWorkingGroupSerializer {
 
   "PlutoWorkingGroup" should {
     "automatically deserialize working group entries" in {
@@ -33,7 +23,12 @@ class PlutoWorkingGroupSpec extends Specification with PlutoWorkingGroupSerializ
       content.hide must beNone
     }
 
-    "save deserialized working group entries to the database" in {
+    "save deserialized working group entries to the database" in new WithApplication(buildApp) {
+      private val injector = app.injector
+
+      protected val dbConfigProvider = injector.instanceOf(classOf[DatabaseConfigProvider])
+      protected implicit val db = dbConfigProvider.get[PostgresProfile].db
+
       val jsonData = """{"name":"test working group","uuid":"625CA9CB-F8F6-49E2-ABFD-3A1BC3D2E371"}"""
       val content = Json.parse(jsonData).as[PlutoWorkingGroup]
 
@@ -47,7 +42,11 @@ class PlutoWorkingGroupSpec extends Specification with PlutoWorkingGroupSerializ
       result.get.id must beSome
     }
 
-    "not re-save a model that already exists" in {
+    "not re-save a model that already exists" in new WithApplication(buildApp) {
+      private val injector = app.injector
+
+      protected val dbConfigProvider = injector.instanceOf(classOf[DatabaseConfigProvider])
+      protected implicit val db = dbConfigProvider.get[PostgresProfile].db
       val jsonData = """{"name":"test working group","uuid":"DA60602E-55C1-4F2A-8EDD-2737BEB4916E"}"""
       val content = Json.parse(jsonData).as[PlutoWorkingGroup]
 

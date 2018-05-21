@@ -1,29 +1,19 @@
-import helpers.ProjectCreateHelper
-import models._
+package models
+
 import org.specs2.mutable.Specification
 import play.api.db.slick.DatabaseConfigProvider
 import play.api.inject.bind
 import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.libs.json._
-import play.api.libs.functional.syntax._
 import slick.jdbc.JdbcProfile
 import testHelpers.TestDatabase
-
+import play.api.test.WithApplication
 import scala.concurrent.Await
 import scala.concurrent.duration._
 
-class PlutoCommissionSpec extends Specification with TimestampSerialization {
-  protected val application = new GuiceApplicationBuilder()
-    .overrides(bind[DatabaseConfigProvider].to[TestDatabase.testDbProvider])
-    .build
-
-  private val injector = application.injector
-
-  protected val dbConfigProvider = injector.instanceOf(classOf[DatabaseConfigProvider])
-  protected implicit val db = dbConfigProvider.get[JdbcProfile].db
-
+class PlutoCommissionSpec extends Specification with utils.BuildMyApp with TimestampSerialization {
   "PlutoCommission" should {
-    "deserialize a response from the pluto server " in {
+    "deserialize a response from the pluto server " in new WithApplication(buildApp){
       val jsonData = Json.parse("""[
                                   |    {
                                   |        "collection_id": 11,
@@ -65,6 +55,10 @@ class PlutoCommissionSpec extends Specification with TimestampSerialization {
                                   |        ]
                                   |    }
                                   |]""".stripMargin)
+      private val injector = app.injector
+
+      protected val dbConfigProvider = injector.instanceOf(classOf[DatabaseConfigProvider])
+      protected implicit val db = dbConfigProvider.get[JdbcProfile].db
 
       val data = jsonData.as[List[JsValue]].map(PlutoCommission.fromServerRepresentation(_,99,"AG"))
       data.length mustEqual 3
@@ -81,7 +75,12 @@ class PlutoCommissionSpec extends Specification with TimestampSerialization {
   }
 
   "PlutoCommission.mostRecentByWorkingGroup" should {
-    "return the most recently modified commission in the provided group" in {
+    "return the most recently modified commission in the provided group" in new WithApplication(buildApp){
+      private val injector = app.injector
+
+      protected val dbConfigProvider = injector.instanceOf(classOf[DatabaseConfigProvider])
+      protected implicit val db = dbConfigProvider.get[JdbcProfile].db
+
       val result = Await.result(PlutoCommission.mostRecentByWorkingGroup(1),10.seconds)
 
       result must beSuccessfulTry

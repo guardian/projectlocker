@@ -1,14 +1,15 @@
-import java.io.{BufferedInputStream, ByteArrayInputStream, File, FileInputStream}
+package helpers
 
-import org.specs2.matcher.MatchResult
-import org.specs2.mutable._
-import org.specs2.runner._
-import org.junit.runner._
+import java.io.{File, FileInputStream}
+
 import drivers.PathStorage
 import models.{StorageEntry, StorageStatus}
+import org.junit.runner._
+import org.specs2.mutable._
+import org.specs2.runner._
 
 import scala.io.Source
-import sys.process._
+import scala.sys.process._
 
 @RunWith(classOf[JUnitRunner])
 class PathStorageDriverSpec extends Specification with org.specs2.mock.Mockito {

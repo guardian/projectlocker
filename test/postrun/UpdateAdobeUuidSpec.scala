@@ -1,3 +1,5 @@
+package postrun
+
 import java.io.File
 
 import helpers.PostrunDataCache
@@ -8,28 +10,26 @@ import play.api.Logger
 import play.api.db.slick.DatabaseConfigProvider
 import play.api.inject.bind
 import play.api.inject.guice.GuiceApplicationBuilder
-import postrun.UpdateAdobeUuid
-import slick.jdbc.JdbcProfile
+import play.api.test.WithApplication
+import slick.jdbc.{JdbcProfile, PostgresProfile}
 import testHelpers.TestDatabase
+import utils.BuildMyApp
 
+import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.duration._
 import scala.concurrent.{Await, Future}
 import scala.util.Try
-import scala.concurrent.duration._
-import scala.concurrent.ExecutionContext.Implicits.global
 
-class UpdateAdobeUuidSpec extends Specification {
-  protected val application = new GuiceApplicationBuilder()
-    .overrides(bind[DatabaseConfigProvider].to[TestDatabase.testDbProvider])
-    .build
-
-  private val logger = Logger(getClass)
-  private val injector = application.injector
-
-  protected val dbConfigProvider = injector.instanceOf(classOf[DatabaseConfigProvider])
-  protected implicit val db = dbConfigProvider.get[JdbcProfile].db
+class UpdateAdobeUuidSpec extends Specification with BuildMyApp {
+  private val logger=Logger(getClass)
 
   "UpdateAdobeUuid.postrun" should {
-    "correctly read in and update a gzipped xml file" in {
+    "correctly read in and update a gzipped xml file" in  new WithApplication(buildApp){
+      private val injector = app.injector
+
+      protected val dbConfigProvider = injector.instanceOf(classOf[DatabaseConfigProvider])
+      protected implicit val db = dbConfigProvider.get[PostgresProfile].db
+
       FileUtils.copyFile(new File("postrun/tests/data/blank_premiere_2017.prproj"), new File("/tmp/test_update_uuid.prproj"))
 
       val dataCache = PostrunDataCache(Map())

@@ -15,10 +15,10 @@ libraryDependencies ++= Seq( jdbc, ehcache , ws   , specs2 % Test, guice )
 
 libraryDependencies += evolutions
 
-concurrentRestrictions in Global := Seq(
+/*concurrentRestrictions in Global := Seq(
   Tags.limit(Tags.Test, 1),
   Tags.limitAll(1)
-)
+)*/
 
 PlayKeys.devSettings := Seq("play.akka.dev-mode.akka.http.server.request-timeout"->"120 seconds")
 
