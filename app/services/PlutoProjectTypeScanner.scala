@@ -1,22 +1,15 @@
 package services
 
-import java.net.URLEncoder
-import java.time.ZoneId
-import java.time.format.DateTimeFormatter
-import java.time.temporal.TemporalUnit
 import javax.inject.{Inject, Singleton}
 
+import org.slf4j.MDC
 import akka.actor.ActorSystem
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.model._
 import akka.http.scaladsl.model.headers.BasicHttpCredentials
 import akka.stream.ActorMaterializer
-import akka.stream.scaladsl._
-import akka.util.ByteString
-import helpers.DirectoryScanner
 import models._
 import play.api.db.slick.DatabaseConfigProvider
-import play.api.libs.json.{JsValue, Json}
 import play.api.{Configuration, Logger}
 import slick.jdbc.PostgresProfile
 
@@ -38,11 +31,13 @@ class PlutoProjectTypeScanner @Inject() (playConfig:Configuration, actorSystemI:
     configuration.getOptional[String]("pluto.sync_enabled") match {
       case Some("yes")=>
         val projectTypeUri = s"${configuration.get[String]("pluto.server_url")}/commission/api/project-subtype/"
+        MDC.put("project_subtype_uri", projectTypeUri)
         logger.debug(s"project subtype uri is $projectTypeUri")
 
         val authorization = headers.Authorization(BasicHttpCredentials(configuration.get[String]("pluto.username"),configuration.get[String]("pluto.password")))
 
         Http().singleRequest(HttpRequest(uri = projectTypeUri, headers = List(authorization))).flatMap(response=>{
+          MDC.put("http_status",response.status.toString())
           if(response.status==StatusCodes.OK){
             bodyAsJsonFuture(response)
           } else if(response.status==StatusCodes.Forbidden || response.status==StatusCodes.Unauthorized) {
@@ -55,11 +50,12 @@ class PlutoProjectTypeScanner @Inject() (playConfig:Configuration, actorSystemI:
           }
         }).onComplete({
           case Success(parseResult)=>
+            MDC.put("response_body", parseResult.toString)
             logger.debug(s"Received $parseResult from server")
             parseResult match {
               case Right(parsedData)=>
                 val typeList = parsedData.as[List[IncomingProjectSubtype]]
-                logger.debug(s"Got project subtype list:")
+                MDC.put("project_subtypes", typeList.toString)
                 typeList.foreach(subtype=>{
                   logger.debug(s"\t$subtype")
 
@@ -78,6 +74,7 @@ class PlutoProjectTypeScanner @Inject() (playConfig:Configuration, actorSystemI:
                   })
                 })
               case Left(unparsedData)=>
+                MDC.put("unparsed_data", unparsedData)
                 Failure(new RuntimeException(s"Could not parse data from server, got $unparsedData"))
             }
           case Failure(error)=>logger.error(s"Unable to get working groups from server: $error")

@@ -10,6 +10,7 @@ import helpers.{DirectoryScanner, JythonRunner, PrecompileException}
 import models.PostrunAction
 import java.time.{Instant, ZonedDateTime}
 
+import org.slf4j.MDC
 import play.api.db.slick.DatabaseConfigProvider
 import slick.jdbc.PostgresProfile
 
@@ -65,6 +66,7 @@ class PostrunActionScanner @Inject() (dbConfigProvider: DatabaseConfigProvider, 
     logger.debug("Rescanning postrun actions")
 
     val scriptsDir = config.get[String]("postrun.scriptsPath")
+    MDC.put("scripts_dir", scriptsDir)
     DirectoryScanner.scanAll(scriptsDir).map({
       case Failure(error)=>
         logger.error(s"Could not scan $scriptsDir: ", error)
