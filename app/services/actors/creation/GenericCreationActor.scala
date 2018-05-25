@@ -6,7 +6,7 @@ import java.util.UUID
 
 import akka.actor.{ActorRef, Props}
 import akka.persistence._
-import models.ProjectRequestFull
+import models.{FileEntry, ProjectEntry, ProjectRequestFull}
 import play.api.Logger
 
 import scala.concurrent.Future
@@ -21,25 +21,27 @@ object GenericCreationActor {
     val eventId: UUID
   }
 
+  case class ProjectCreateTransientData(destFileEntry: Option[FileEntry], createdProjectEntry: Option[ProjectEntry])
   /**
     * This message is sent to each actor in the chain when creating a new project.  Each should do its work and send the result
     * back to the sender
     * @param rq [[ProjectRequestFull]] model describing the project to be created
     */
-  case class NewProjectRequest(rq:ProjectRequestFull, createTime:Option[LocalDateTime]) extends CreationMessage
+  case class NewProjectRequest(rq:ProjectRequestFull, createTime:Option[LocalDateTime], data:ProjectCreateTransientData) extends CreationMessage
 
   /**
     * This message is send to each actor in the chain when the project creation has failed.  Each should undo the work that was previously
     * done in response to [[NewProjectRequest]]
     * @param rq [[ProjectRequestFull]] model describing the project being rolled back
     */
-  case class NewProjectRollback(rq:ProjectRequestFull) extends CreationMessage
+  case class NewProjectRollback(rq:ProjectRequestFull, data:ProjectCreateTransientData) extends CreationMessage
 
   case class ProjectCreateFailed(rq:ProjectRequestFull) extends CreationMessage
   case class ProjectCreateSucceeded(rq:ProjectRequestFull) extends CreationMessage
 
-  case class StepSucceded() extends CreationMessage
-  case class StepFailed(err:Throwable) extends CreationMessage
+  case class StepSucceded(updatedData:ProjectCreateTransientData) extends CreationMessage
+
+  case class StepFailed(updatedData:ProjectCreateTransientData, err:Throwable) extends CreationMessage
 
   case class NewCreationEvent(rq:CreationMessage, eventId:UUID) extends CreationEvent
 
@@ -70,10 +72,11 @@ trait GenericCreationActor extends PersistentActor {
     val newUuid = UUID.randomUUID()
     persist(NewCreationEvent(msg,newUuid)){event=>
       updateState(event)
-      logger.debug("persisted generic request event to journal, now performing")
+      logger.debug(s"persisted generic request event with uuid $newUuid to journal, now performing")
       val originalSender = sender()
       block(msg,originalSender).andThen({
         case Success(result)=>
+          logger.debug(s"create event $newUuid has been handled")
           self ! CreateEventHandled(newUuid)
         case Failure(err)=> //should probably seperate errors into Recoverable and Nonrecoverable subclasses
           logger.error("Creation step failed", err)

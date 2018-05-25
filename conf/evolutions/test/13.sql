@@ -27,7 +27,7 @@ INSERT INTO "ProjectEntry" (id, K_PROJECT_TYPE, S_TITLE, S_VIDISPINE_ID,T_CREATE
 INSERT INTO "ProjectFileAssociation" (id, K_PROJECT_ENTRY, K_FILE_ENTRY) VALUES (1, 1,2);
 INSERT INTO "ProjectFileAssociation" (id, K_PROJECT_ENTRY, K_FILE_ENTRY) VALUES (2, 3,5);
 
-INSERT INTO "ProjectTemplate" (id, S_NAME, K_PROJECT_TYPE, K_FILE_REF) VALUES (1, 'Premiere test template 1', 1, 1);
+INSERT INTO "ProjectTemplate" (id, S_NAME, K_PROJECT_TYPE, K_FILE_REF) VALUES (1, 'Premiere test template 1', 1,3);
 INSERT INTO "ProjectTemplate" (id, S_NAME, K_PROJECT_TYPE, K_FILE_REF) VALUES (2, 'Another wonderful test template', 2, 2);
 INSERT INTO "ProjectTemplate" (id, S_NAME, K_PROJECT_TYPE, K_FILE_REF) VALUES (3, 'Some random test template', 2, 2);
 

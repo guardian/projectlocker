@@ -8,14 +8,13 @@ import org.specs2.mutable.Specification
 import play.api.db.slick.DatabaseConfigProvider
 import play.api.test.WithApplication
 import services.actors.creation.{CreateFileEntry, CreationMessage}
-import services.actors.creation.GenericCreationActor.{NewProjectRequest, NewProjectRollback, StepFailed, StepSucceded}
+import services.actors.creation.GenericCreationActor._
 import slick.jdbc.{JdbcBackend, JdbcProfile}
 import utils.BuildMyApp
 
 import scala.concurrent.{Await, Future}
 import scala.util.{Failure, Try}
 import scala.concurrent.duration._
-
 import scala.concurrent.ExecutionContext.Implicits.global
 
 class CreateFileEntrySpec extends Specification with BuildMyApp {
@@ -31,6 +30,8 @@ class CreateFileEntrySpec extends Specification with BuildMyApp {
 
       val ac = system.actorOf(Props(new CreateFileEntry(dbConfigProvider)))
 
+      val initialData = ProjectCreateTransientData(None, None)
+
       val fileEntryBefore = Await.result(FileEntry.entryFor("testfile.prproj",1), 2 seconds)
       fileEntryBefore must beSuccessfulTry
       fileEntryBefore.get.length mustEqual 0
@@ -39,7 +40,7 @@ class CreateFileEntrySpec extends Specification with BuildMyApp {
       maybeRq must beSome
 
       val dateTime = LocalDateTime.now()
-      val msg = NewProjectRequest(maybeRq.get, Some(dateTime))
+      val msg = NewProjectRequest(maybeRq.get, Some(dateTime), initialData)
 
       val response = Await.result((ac ? msg).mapTo[Either[CreationMessage, CreationMessage]], 10 seconds)
       response must beRight
@@ -64,6 +65,8 @@ class CreateFileEntrySpec extends Specification with BuildMyApp {
                                    (implicit db: JdbcBackend#DatabaseDef): Future[Try[FileEntry]] = Future(Failure(ex))
       }))
 
+      val initialData = ProjectCreateTransientData(None, None)
+
       val fileEntryBefore = Await.result(FileEntry.entryFor("testfile2.prproj",1), 2 seconds)
       fileEntryBefore must beSuccessfulTry
       fileEntryBefore.get.length mustEqual 0
@@ -72,10 +75,10 @@ class CreateFileEntrySpec extends Specification with BuildMyApp {
       maybeRq must beSome
 
       val dateTime = LocalDateTime.now()
-      val msg = NewProjectRequest(maybeRq.get, Some(dateTime))
+      val msg = NewProjectRequest(maybeRq.get, Some(dateTime), initialData)
 
       val response = Await.result((ac ? msg).mapTo[Either[StepFailed, StepSucceded]], 10 seconds)
-      response must beLeft(StepFailed(ex))
+      response must beLeft(StepFailed(initialData, ex))
 
       val fileEntryAfter = Await.result(FileEntry.entryFor("testfile2.prproj",1), 2 seconds)
       fileEntryAfter must beSuccessfulTry
@@ -98,11 +101,13 @@ class CreateFileEntrySpec extends Specification with BuildMyApp {
       fileEntryBefore must beSuccessfulTry
       fileEntryBefore.get.length mustEqual 1
 
+      val initialData = ProjectCreateTransientData(None, None)
+
       val maybeRq = Await.result(ProjectRequest("project_to_delete",1,"Test project entry", 1, "test-user", None, None).hydrate, 10 seconds)
       maybeRq must beSome
 
       val dateTime = LocalDateTime.now()
-      val msg = NewProjectRollback(maybeRq.get)
+      val msg = NewProjectRollback(maybeRq.get, initialData)
 
       val response = Await.result((ac ? msg).mapTo[Either[CreationMessage, CreationMessage]], 10 seconds)
       response must beRight

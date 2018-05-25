@@ -41,7 +41,7 @@
     <logger name="services.actors.MessageProcessorActor" level="WARN"/>
     <logger name="services.actors.MessageProcessorState" level="WARN"/>
     <logger name="services.PlutoProjectTypeScanner" level="WARN"/>
-    <logger name="models.FileEntry" level="WARN" />
+    <logger name="models.FileEntry" level="DEBUG" />
     <logger name="controllers.Files" level="WARN" />
     <logger name="postrun.UpdateAdobeUuid" level="INFO"/>
     <logger name="models.ProjectMetadata" level="WARN"/>

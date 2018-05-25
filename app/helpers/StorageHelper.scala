@@ -5,7 +5,7 @@ import java.io.{InputStream, OutputStream}
 import drivers.StorageDriver
 import models.{FileEntry, StorageEntry}
 import play.api.Logger
-
+import org.slf4j.MDC
 import scala.concurrent.Future
 import scala.util.{Failure, Success, Try}
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -97,6 +97,10 @@ class StorageHelper {
       if(successfulResults.length==2){
         Right(successfulResults)
       } else {
+        MDC.put("sourceFile", sourceFile.toString)
+        MDC.put("destFile", destFile.toString)
+        logger.debug(s"sourceFile: ${sourceFile.toString}")
+        logger.debug(s"destFile: ${destFile.toString}")
         Left(Seq("Either source or destination was missing a storage or a storage driver"))
       }
     })

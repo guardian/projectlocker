@@ -104,22 +104,26 @@ class CreateFileEntry @Inject() (dbConfigProvider:DatabaseConfigProvider) extend
     case entryRequest:NewProjectRequest=>
       val originalSender = sender()
       val recordTimestamp = Timestamp.valueOf(entryRequest.createTime.getOrElse(LocalDateTime.now()))
+      val projectCreateData = entryRequest.data
+
       getDestFileFor(entryRequest.rq, recordTimestamp).map({
         case Success(fileEntry)=>
           fileEntry.save
-          originalSender ! Right(DidCreateFileEntry(fileEntry))
+          originalSender ! Right(StepSucceded(projectCreateData.copy(destFileEntry = Some(fileEntry))))
         case Failure(error)=>
           logger.error("Could not create destination file record", error)
-          originalSender ! Left(StepFailed(error))
+          originalSender ! Left(StepFailed(projectCreateData, error))
       })
     case rollbackRequest:NewProjectRollback=>
       val originalSender = sender()
+      val projectCreateData = rollbackRequest.data
+
       removeDestFileFor(rollbackRequest.rq).map({
         case Success(deletedFileEntry)=>
-          originalSender ! Right(StepSucceded)
+          originalSender ! Right(StepSucceded(projectCreateData.copy(destFileEntry = None)))
         case Failure(error)=>
           logger.error("Could not remove destination file record in rollback", error)
-          originalSender ! Left(StepFailed(error))
+          originalSender ! Left(StepFailed(projectCreateData.copy(destFileEntry = None), error))
       })
     case _=>
       super.receiveCommand
