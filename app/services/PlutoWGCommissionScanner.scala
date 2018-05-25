@@ -3,8 +3,9 @@ package services
 import java.net.URLEncoder
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
-import java.time.temporal.TemporalUnit
 import javax.inject.{Inject, Singleton}
+
+import org.slf4j.MDC
 
 import akka.actor.ActorSystem
 import akka.http.scaladsl.Http
@@ -43,6 +44,7 @@ class PlutoWGCommissionScanner @Inject() (playConfig:Configuration, actorSystemI
     logger.info(s"refreshing commissions $startAt -> ${startAt + pageSize} for ${workingGroup.name} (${workingGroup.id}) via url $commissionUrl")
 
     Http().singleRequest(HttpRequest(uri = commissionUrl, headers = List(authorization))).flatMap(response=>{
+      MDC.put("http_status",response.status.toString())
       if(response.status==StatusCodes.OK){
         bodyAsJsonFuture(response)
       } else if(response.status==StatusCodes.Forbidden || response.status==StatusCodes.Unauthorized) {
@@ -60,6 +62,7 @@ class PlutoWGCommissionScanner @Inject() (playConfig:Configuration, actorSystemI
       }
     }).map({
       case Right(parsedData)=>
+        MDC.put("body",parsedData.toString())
         logger.debug(s"Received $parsedData from server")
           val commissionList = parsedData.as[List[JsValue]]
             .map(PlutoCommission.fromServerRepresentation(_,workingGroup.id.get,forSite))
@@ -67,6 +70,7 @@ class PlutoWGCommissionScanner @Inject() (playConfig:Configuration, actorSystemI
                 case Success(comm)=>comm
               })
           logger.debug(s"Got commission list:")
+          MDC.put("commission_list", commissionList.toString())
           Success(
             commissionList.foldLeft[Int](0)((acc, comm)=>{
               logger.debug(s"\t$comm")
@@ -75,6 +79,7 @@ class PlutoWGCommissionScanner @Inject() (playConfig:Configuration, actorSystemI
               acc+1
             }))
       case Left(string)=>
+        MDC.put("body", string)
         val msg = s"Could not parse response from server: $string"
         logger.error(msg)
         Failure(new RuntimeException(msg))
@@ -119,6 +124,7 @@ class PlutoWGCommissionScanner @Inject() (playConfig:Configuration, actorSystemI
         val authorization = headers.Authorization(BasicHttpCredentials(configuration.get[String]("pluto.username"),configuration.get[String]("pluto.password")))
 
         Http().singleRequest(HttpRequest(uri = workingGroupUri, headers = List(authorization))).flatMap(response=>{
+          MDC.put("http_status",response.status.toString())
           if(response.status==StatusCodes.OK){
             bodyAsJsonFuture(response)
           } else if(response.status==StatusCodes.Forbidden || response.status==StatusCodes.Unauthorized) {
@@ -131,11 +137,13 @@ class PlutoWGCommissionScanner @Inject() (playConfig:Configuration, actorSystemI
           }
         }).onComplete({
           case Success(parseResult)=>
+            MDC.put("body",parseResult.toString)
             logger.debug(s"Received $parseResult from server")
             parseResult match {
               case Right(parsedData)=>
                 val wgList = parsedData.as[List[PlutoWorkingGroup]]
                 logger.debug(s"Got working group list:")
+                MDC.put("working_group_list",wgList.toString())
                 wgList.foreach(wg=>{
                   logger.debug(s"\t$wg")
                   Await.result(wg.ensureRecorded,10.seconds) match {
@@ -146,16 +154,21 @@ class PlutoWGCommissionScanner @Inject() (playConfig:Configuration, actorSystemI
                             case Success(commissionsUpdated)=> //the db operation completed ok
                               logger.info(s"Successfully updated ${commissionsUpdated} commissions for working group ${wg.name} (${wg.uuid})")
                             case Failure(error)=>
+                              MDC.put("working_group",wg.toString)
                               logger.error(s"Database error updating commissions for working group ${wg.name} (${wg.uuid}):", error)
                           }
                         case Failure(error)=>
+                          MDC.put("working_group",wg.toString)
                           logger.error(s"Unable to update commissions for working group ${wg.name} (${wg.uuid}):", error)
                       })
                     case Failure(error)=>
+                      MDC.put("working_group",wg.toString)
                       logger.error(s"Unable to save working group to database: ", error)
                   }
                 })
               case Left(unparsedData)=>
+                MDC.put("body",unparsedData)
+                logger.error(s"Unable to parse data from server")
                 Failure(new RuntimeException(s"Could not parse data from server, got $unparsedData"))
             }
           case Failure(error)=>logger.error(s"Unable to get working groups from server: $error")
