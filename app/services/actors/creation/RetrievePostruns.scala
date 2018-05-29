@@ -61,6 +61,7 @@ class RetrievePostruns @Inject() (dbConfigProvider:DatabaseConfigProvider) exten
       }
     case rollbackRequest:NewProjectRollback=>
       logger.debug("No rollback necessary for this actor")
+      sender() ! StepSucceded(updatedData = rollbackRequest.data.copy(postrunSequence = None))
     case _=>
       super.receiveCommand
   }

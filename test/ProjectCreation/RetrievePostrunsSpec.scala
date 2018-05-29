@@ -44,7 +44,6 @@ class RetrievePostrunsSpec extends Specification with BuildMyApp with Mockito {
       val result = Await.result((ac ? msg).mapTo[CreationMessage], 10 seconds)
       result must beAnInstanceOf[StepSucceded]
 
-      println(result.asInstanceOf[StepSucceded])
       val maybePostrunSeq = result.asInstanceOf[StepSucceded].updatedData.postrunSequence
       maybePostrunSeq must beSome
       val postrunSeq = maybePostrunSeq.get
@@ -106,6 +105,27 @@ class RetrievePostrunsSpec extends Specification with BuildMyApp with Mockito {
 
       result.asInstanceOf[StepFailed].updatedData mustEqual initialData
       result.asInstanceOf[StepFailed].err mustEqual fakeError
+    }
+  }
+
+  "RetrievePostruns->NewProjectRollback" should {
+    "return StepSucceeded" in new WithApplication(buildApp){
+      private val injector = app.injector
+
+      private val dbConfigProvider = injector.instanceOf(classOf[DatabaseConfigProvider])
+      private implicit val system = injector.instanceOf(classOf[ActorSystem])
+      private implicit val db = dbConfigProvider.get[JdbcProfile].db
+
+      val ac = system.actorOf(Props(new RetrievePostruns(dbConfigProvider)))
+
+      val maybeRq = Await.result(ProjectRequest("testprojectfile",1,"Test project entry", 1, "test-user", None, None).hydrate, 10 seconds)
+      maybeRq must beSome
+
+      val initialData = ProjectCreateTransientData(None, None,None)
+      val msg = NewProjectRollback(maybeRq.get,initialData)
+      val result = Await.result((ac ? msg).mapTo[CreationMessage], 10 seconds)
+      result must beAnInstanceOf[StepSucceded]
+
     }
   }
 }
