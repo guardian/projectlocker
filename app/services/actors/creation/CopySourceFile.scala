@@ -19,9 +19,6 @@ import scala.concurrent.ExecutionContext.Implicits.global
 object CopySourceFile {
   def props = Props[CopySourceFile]
   import GenericCreationActor._
-
-  case class CopySourceFileRequest(prq: NewProjectRequest, savedFileEntry: FileEntry) extends CreationMessage
-  case class CopySourceFileCompleted(copiedFileEntry:FileEntry)
 }
 
 /**
