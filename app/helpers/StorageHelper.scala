@@ -57,24 +57,35 @@ class StorageHelper {
     }
   }
 
-  def deleteFile(targetFile: FileEntry)(implicit db:slick.jdbc.PostgresProfile#Backend#Database):Future[Boolean] = {
+  def deleteFile(targetFile: FileEntry)(implicit db:slick.jdbc.PostgresProfile#Backend#Database):Future[Either[String, FileEntry]] = {
     val futures = Future.sequence(Seq(targetFile.storage, targetFile.getFullPath))
 
     futures.map(results=>{
       val storageResult = results.head.asInstanceOf[Option[StorageEntry]]
+      MDC.put("storageResult", storageResult.toString)
       val fullPath = results(1).asInstanceOf[String]
+      MDC.put("fullPath", fullPath)
       storageResult match {
         case Some(storageEntry) =>
           storageEntry.getStorageDriver match {
             case Some(storageDriver) =>
-              storageDriver.deleteFileAtPath(fullPath)
+              MDC.put("storageDriver", storageDriver.toString)
+              storageDriver.deleteFileAtPath(fullPath) match {
+                case true=>
+                  val updatedFileEntry = targetFile.copy(hasContent = false)
+                  updatedFileEntry.save
+                  Right(updatedFileEntry)
+                case false=>
+                  Left("storage driver failed to delete file")
+              }
+
             case None =>
               logger.error(s"Can't delete file at $fullPath because storage $storageEntry has no storage driver")
-              false
+              Left("No storage driver configured, enable debugging for helpers.StorageHelper for more info")
           }
         case None =>
           logger.error(s"Can't delete file at $fullPath because file record has no storage")
-          false
+          Left("No storage reference on record, enable debugging for helpers.StorageHelper for more info")
       }
     })
   }

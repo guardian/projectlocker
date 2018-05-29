@@ -26,7 +26,9 @@ object CopySourceFile {
 
 /**
   * copies the template file associated with the template provided in [[services.actors.creation.GenericCreationActor.NewProjectRequest]] to
-  * the file given by [[services.actors.creation.GenericCreationActor.ProjectCreateTransientData.destFileEntry]]
+  * the file given by [[services.actors.creation.GenericCreationActor.ProjectCreateTransientData.destFileEntry]].
+  * On rollback, deletes the file given by [[services.actors.creation.GenericCreationActor.ProjectCreateTransientData.destFileEntry]]
+  * and updates it to have no content again
   */
 class CopySourceFile  @Inject() (dbConfigProvider:DatabaseConfigProvider) extends GenericCreationActor {
   override val persistenceId = "creation-get-storage-actor"
@@ -34,6 +36,8 @@ class CopySourceFile  @Inject() (dbConfigProvider:DatabaseConfigProvider) extend
   import CopySourceFile._
   import GenericCreationActor._
   private implicit val db=dbConfigProvider.get[JdbcProfile].db
+
+  protected val storageHelper = new StorageHelper
 
   override def receiveCommand: Receive = {
     case copyRequest:NewProjectRequest=>
@@ -52,7 +56,6 @@ class CopySourceFile  @Inject() (dbConfigProvider:DatabaseConfigProvider) extend
           case Some(storageDriver)=>
             MDC.put("storageDriver", storageDriver.toString)
             logger.info(s"Got storage driver: $storageDriver")
-            val storageHelper = new StorageHelper
             rq.projectTemplate.file.flatMap(sourceFileEntry=>{
               MDC.put("sourceFileEntry", sourceFileEntry.toString)
               MDC.put("savedFileEntry", savedFileEntry.toString)
@@ -69,34 +72,25 @@ class CopySourceFile  @Inject() (dbConfigProvider:DatabaseConfigProvider) extend
                 val updatedData = copyRequest.data.copy(destFileEntry = Some(copiedFileEntry))
                 originalSender ! StepSucceded(updatedData)
             })
-
-//             fileCopyFuture.flatMap({
-//              case Left(error)=>
-//                logger.error(s"File copy failed: ${error.toString}")
-//                Future(Failure(new RuntimeException(error.mkString("\n"))))
-//              case Right(writtenFile)=>
-//                logger.info(s"Creating new project entry from $writtenFile")
-//                ProjectEntry.createFromFile(writtenFile, rq.projectTemplate, rq.title, createTime,
-//                  rq.user,rq.workingGroupId, rq.commissionId, rq.existingVidispineId).flatMap({
-//                  case Success(createdProjectEntry)=>
-//                    logger.info(s"Project entry created as id ${createdProjectEntry.id}")
-//                    if(rq.shouldNotify) sendCreateMessageToSelf(createdProjectEntry, rq.projectTemplate)
-//                    doPostrunActions(writtenFile, createdProjectEntry, rq.projectTemplate) map {
-//                      case Left(errorMessage)=>
-//                        Failure(new PostrunActionError(errorMessage))
-//                      case Right(successMessage)=>
-//                        logger.info(successMessage)
-//                        Success(createdProjectEntry)
-//                    }
-//                  case Failure(error)=>
-//                    logger.error("Could not create project file: ", error)
-//                    Future(Failure(error))
-//                })
-//            })
         }
       }
     case rollbackRequest:NewProjectRollback=>
-      logger.debug("no rollback needed for this actor")
+      doPersistedAsync(rollbackRequest) { (msg, originalSender) =>
+        val rq = rollbackRequest.rq
+        rollbackRequest.data.destFileEntry match {
+          case Some(fileEntry)=>
+            storageHelper.deleteFile(fileEntry).map({
+              case Right(updateFileRef)=>
+                val updatedData = rollbackRequest.data.copy(destFileEntry = Some(updateFileRef))
+                originalSender ! StepSucceded(updatedData)
+              case Left(errorString)=>
+                originalSender ! StepFailed(rollbackRequest.data, new RuntimeException(errorString))
+            })
+          case None=>
+            originalSender ! StepFailed(rollbackRequest.data, new RuntimeException("No file entry available to roll back"))
+            Future(Failure(new RuntimeException("No file entry available to roll back")))
+        }
+      }
     case _=>
       super.receiveCommand
   }

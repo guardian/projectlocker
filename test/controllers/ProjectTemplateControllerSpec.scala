@@ -28,7 +28,7 @@ class ProjectTemplateControllerSpec extends GenericControllerSpec {
   }
 
   override val testGetId: Int = 1
-  override val testGetDocument: String = """{"name": "Premiere test template 1","projectTypeId": 1,"fileRef": 1}"""
+  override val testGetDocument: String = """{"name": "Premiere test template 1","projectTypeId": 1,"fileRef": 5}"""
   override val testCreateDocument: String =  """{"name": "Cubase test template 1","projectTypeId": 2,"fileRef": 4}"""
   override val minimumNewRecordId = 3
   override val testDeleteId: Int = 2

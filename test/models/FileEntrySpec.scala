@@ -14,6 +14,7 @@ import scala.concurrent.duration._
 
 class FileEntrySpec extends Specification with utils.BuildMyApp {
   tag("controllers")
+  sequential
 
   "updateFileHasContent" should {
     "update an existing database record if an id exists" in new WithApplication(buildApp){

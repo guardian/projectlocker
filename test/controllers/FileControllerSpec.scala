@@ -58,7 +58,7 @@ class FileControllerSpec extends GenericControllerSpec with BeforeAll with After
   override val testCreateDocument: String =  """{"filepath":"/path/to/some/other.project","storage":1,"user":"testuser","version":3,"ctime":"2017-03-17T13:51:00.123+0000","mtime":"2017-03-17T13:51:00.123+0000","atime":"2017-03-17T13:51:00.123+0000", "hasContent": false, "hasLink": false}"""
   override val minimumNewRecordId = 6
   override val testDeleteId: Int = 3
-  override val testConflictId: Int = 1
+  override val testConflictId: Int = 5
 
   "FileController.create" should {
     "refuse to over-write an existing record with another that has the same filename and storage" in new WithApplication(buildApp) {
