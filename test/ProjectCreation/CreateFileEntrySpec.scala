@@ -30,7 +30,7 @@ class CreateFileEntrySpec extends Specification with BuildMyApp {
 
       val ac = system.actorOf(Props(new CreateFileEntry(dbConfigProvider)))
 
-      val initialData = ProjectCreateTransientData(None, None)
+      val initialData = ProjectCreateTransientData(None, None, None)
 
       val fileEntryBefore = Await.result(FileEntry.entryFor("testfile.prproj",1), 2 seconds)
       fileEntryBefore must beSuccessfulTry
@@ -65,7 +65,7 @@ class CreateFileEntrySpec extends Specification with BuildMyApp {
                                    (implicit db: JdbcBackend#DatabaseDef): Future[Try[FileEntry]] = Future(Failure(ex))
       }))
 
-      val initialData = ProjectCreateTransientData(None, None)
+      val initialData = ProjectCreateTransientData(None, None, None)
 
       val fileEntryBefore = Await.result(FileEntry.entryFor("testfile2.prproj",1), 2 seconds)
       fileEntryBefore must beSuccessfulTry
@@ -101,7 +101,7 @@ class CreateFileEntrySpec extends Specification with BuildMyApp {
       fileEntryBefore must beSuccessfulTry
       fileEntryBefore.get.length mustEqual 1
 
-      val initialData = ProjectCreateTransientData(None, None)
+      val initialData = ProjectCreateTransientData(None, None, None)
 
       val maybeRq = Await.result(ProjectRequest("project_to_delete",1,"Test project entry", 1, "test-user", None, None).hydrate, 10 seconds)
       maybeRq must beSome

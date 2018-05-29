@@ -51,7 +51,7 @@ class CopySourceFileSpec extends Specification with BuildMyApp with Mockito {
       val maybeRq = Await.result(ProjectRequest("testprojectfile",1,"Test project entry", 1, "test-user", None, None).hydrate, 10 seconds)
       maybeRq must beSome
 
-      val initialData = ProjectCreateTransientData(Some(fileEntryDest.get.head), None)
+      val initialData = ProjectCreateTransientData(Some(fileEntryDest.get.head), None,None)
       val msg = NewProjectRequest(maybeRq.get,None,initialData)
       val result = Await.result((ac ? msg).mapTo[CreationMessage], 10 seconds)
       result must beAnInstanceOf[StepSucceded]
@@ -83,7 +83,7 @@ class CopySourceFileSpec extends Specification with BuildMyApp with Mockito {
       val maybeRq = Await.result(ProjectRequest("testprojectfile",1,"Test project entry", 1, "test-user", None, None).hydrate, 10 seconds)
       maybeRq must beSome
 
-      val initialData = ProjectCreateTransientData(Some(fileEntryDest.get.head), None)
+      val initialData = ProjectCreateTransientData(Some(fileEntryDest.get.head), None, None)
       val msg = NewProjectRequest(maybeRq.get,None,initialData)
       val result = Await.result((ac ? msg).mapTo[CreationMessage], 10 seconds)
       result must beAnInstanceOf[StepFailed]
@@ -120,7 +120,7 @@ class CopySourceFileSpec extends Specification with BuildMyApp with Mockito {
       val maybeRq = Await.result(ProjectRequest("testprojectfile",1,"Test project entry", 1, "test-user", None, None).hydrate, 10 seconds)
       maybeRq must beSome
 
-      val initialData = ProjectCreateTransientData(Some(fileEntryDest.get.head), None)
+      val initialData = ProjectCreateTransientData(Some(fileEntryDest.get.head), None, None)
       val msg = NewProjectRollback(maybeRq.get,initialData)
       val result = Await.result((ac ? msg).mapTo[CreationMessage], 10 seconds)
       result must beAnInstanceOf[StepSucceded]

@@ -43,6 +43,7 @@ INSERT INTO "PostrunAction" (id, S_RUNNABLE, S_TITLE, S_OWNER, I_VERSION, T_CTIM
 
 INSERT INTO "PostrunAssociationRow" (id, K_POSTRUN, K_PROJECTTYPE) VALUES (1, 1, 1);
 INSERT INTO "PostrunAssociationRow" (id, K_POSTRUN, K_PROJECTTYPE) VALUES (2, 2, 1);
+INSERT INTO "PostrunAssociationRow" (id, K_POSTRUN, K_PROJECTTYPE) VALUES (4, 5, 1);
 INSERT INTO "PostrunAssociationRow" (id, K_POSTRUN, K_PROJECTTYPE) VALUES (3, 2, 4);
 
 INSERT INTO "PostrunDependency" (id,K_SOURCE, K_DEPENDSON) VALUES (1, 1, 5);

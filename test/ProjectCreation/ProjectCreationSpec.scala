@@ -41,7 +41,7 @@ class ProjectCreationSpec extends Specification with BuildMyApp {
         override val creationActorChain: Seq[ActorRef] = Seq(probe1.ref, probe2.ref, probe3.ref)
       }))
 
-      val initialData = ProjectCreateTransientData(None, None)
+      val initialData = ProjectCreateTransientData(None, None, None)
 
       val rq = Await.result(ProjectRequest("somefile.prj",1,"some test file",1,"testuser",None,None).hydrate,10.seconds)
       rq must beSome
@@ -74,7 +74,7 @@ class ProjectCreationSpec extends Specification with BuildMyApp {
       val probe2 = TestProbe()
       val probe3 = TestProbe()
 
-      val initialData = ProjectCreateTransientData(None, None)
+      val initialData = ProjectCreateTransientData(None, None, None)
 
       val actorSeq = Seq(probe1.ref,probe2.ref,probe3.ref)
       val ac = system.actorOf(Props(new ProjectCreationActor {
@@ -118,7 +118,7 @@ class ProjectCreationSpec extends Specification with BuildMyApp {
       val ac = system.actorOf(Props(new ProjectCreationActor {
         override val creationActorChain: Seq[ActorRef] = Seq(probe1.ref, probe2.ref, probe3.ref)
       }))
-      val initialData = ProjectCreateTransientData(None, None)
+      val initialData = ProjectCreateTransientData(None, None, None)
 
       val rq = Await.result(ProjectRequest("somefile.prj",1,"some test file",1,"testuser",None,None).hydrate,10.seconds)
       rq must beSome

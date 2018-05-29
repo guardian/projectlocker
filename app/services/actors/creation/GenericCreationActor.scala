@@ -6,7 +6,7 @@ import java.util.UUID
 
 import akka.actor.{ActorRef, Props}
 import akka.persistence._
-import models.{FileEntry, ProjectEntry, ProjectRequestFull}
+import models.{FileEntry, PostrunAction, ProjectEntry, ProjectRequestFull}
 import play.api.Logger
 
 import scala.concurrent.Future
@@ -21,7 +21,7 @@ object GenericCreationActor {
     val eventId: UUID
   }
 
-  case class ProjectCreateTransientData(destFileEntry: Option[FileEntry], createdProjectEntry: Option[ProjectEntry])
+  case class ProjectCreateTransientData(destFileEntry: Option[FileEntry], createdProjectEntry: Option[ProjectEntry], postrunSequence: Option[Seq[PostrunAction]])
   /**
     * This message is sent to each actor in the chain when creating a new project.  Each should do its work and send the result
     * back to the sender

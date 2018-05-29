@@ -63,7 +63,7 @@ class ProjectCreationActor extends GenericCreationActor {
       logger.info(s"i am ${context.self}")
       logger.info(s"sender is ${sender()}")
       val originalSender = sender()
-      val initialData = ProjectCreateTransientData(None,None)
+      val initialData = ProjectCreateTransientData(None,None,None)
       runNextActorInSequence(creationActorChain, rq.rq, initialData).map({
         case Left(stepFailed)=>
           logger.warn("A subactor failed")

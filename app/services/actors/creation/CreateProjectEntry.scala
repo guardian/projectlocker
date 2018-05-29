@@ -16,7 +16,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.util.{Failure, Success, Try}
 
 class CreateProjectEntry @Inject() (@Named("message-processor-actor") messageProcessor:ActorRef, dbConfigProvider:DatabaseConfigProvider) extends GenericCreationActor {
-  override val persistenceId = "creation-get-storage-actor"
+  override val persistenceId = "creation-project-entry-actor"
 
   import GenericCreationActor._
   private implicit val db=dbConfigProvider.get[JdbcProfile].db
