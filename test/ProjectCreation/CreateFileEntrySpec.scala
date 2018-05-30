@@ -42,8 +42,8 @@ class CreateFileEntrySpec extends Specification with BuildMyApp {
       val dateTime = LocalDateTime.now()
       val msg = NewProjectRequest(maybeRq.get, Some(dateTime), initialData)
 
-      val response = Await.result((ac ? msg).mapTo[Either[CreationMessage, CreationMessage]], 10 seconds)
-      response must beRight
+      val response = Await.result((ac ? msg).mapTo[CreationMessage], 10 seconds)
+      response must beAnInstanceOf[StepSucceded]
 
       val fileEntryAfter = Await.result(FileEntry.entryFor("testfile.prproj",1), 2 seconds)
       fileEntryAfter must beSuccessfulTry
@@ -77,8 +77,8 @@ class CreateFileEntrySpec extends Specification with BuildMyApp {
       val dateTime = LocalDateTime.now()
       val msg = NewProjectRequest(maybeRq.get, Some(dateTime), initialData)
 
-      val response = Await.result((ac ? msg).mapTo[Either[StepFailed, StepSucceded]], 10 seconds)
-      response must beLeft(StepFailed(initialData, ex))
+      val response = Await.result((ac ? msg).mapTo[CreationMessage], 10 seconds)
+      response mustEqual StepFailed(initialData, ex)
 
       val fileEntryAfter = Await.result(FileEntry.entryFor("testfile2.prproj",1), 2 seconds)
       fileEntryAfter must beSuccessfulTry
@@ -109,8 +109,8 @@ class CreateFileEntrySpec extends Specification with BuildMyApp {
       val dateTime = LocalDateTime.now()
       val msg = NewProjectRollback(maybeRq.get, initialData)
 
-      val response = Await.result((ac ? msg).mapTo[Either[CreationMessage, CreationMessage]], 10 seconds)
-      response must beRight
+      val response = Await.result((ac ? msg).mapTo[CreationMessage], 10 seconds)
+      response must beAnInstanceOf[StepSucceded]
 
       val fileEntryAfter = Await.result(FileEntry.entryFor("project_to_delete.prproj",1), 2 seconds)
       fileEntryAfter must beSuccessfulTry

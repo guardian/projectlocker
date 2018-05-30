@@ -1,13 +1,16 @@
 package utils
 
 import akka.stream.ActorMaterializer
+import akka.testkit.TestProbe
 import helpers.{ProjectCreateHelper, ProjectCreateHelperImpl}
 import play.api.cache.SyncCacheApi
 import play.api.cache.ehcache.EhCacheModule
 import play.api.db.slick.DatabaseConfigProvider
 import play.api.inject.bind
 import play.api.inject.guice.GuiceApplicationBuilder
+import play.api.libs.concurrent.AkkaGuiceSupport
 import play.api.libs.json.Json
+import services.actors.ProjectCreationActor
 import testHelpers.TestDatabase
 
 import scala.concurrent.Future
