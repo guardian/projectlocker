@@ -9,6 +9,7 @@ import drivers.StorageDriver
 import akka.pattern.ask
 import exceptions.ProjectCreationError
 import models.{FileEntry, ProjectRequestFull, ProjectType}
+import org.slf4j.MDC
 import play.api.db.slick.DatabaseConfigProvider
 import slick.jdbc.JdbcProfile
 
@@ -108,22 +109,31 @@ class CreateFileEntry @Inject() (dbConfigProvider:DatabaseConfigProvider) extend
 
       getDestFileFor(entryRequest.rq, recordTimestamp).map({
         case Success(fileEntry)=>
-          fileEntry.save
-          originalSender ! Right(StepSucceded(projectCreateData.copy(destFileEntry = Some(fileEntry))))
+          logger.info(s"Creating file $fileEntry")
+          fileEntry.save.map({
+            case Success(savedFileEntry)=>
+              originalSender ! StepSucceded(projectCreateData.copy(destFileEntry = Some(savedFileEntry)))
+            case Failure(error)=>
+              MDC.put("fileEntry", fileEntry.toString)
+              logger.error("Failed to create file", error)
+              originalSender ! StepFailed(projectCreateData, error)
+          })
         case Failure(error)=>
+          MDC.put("entryRequest", entryRequest.toString)
           logger.error("Could not create destination file record", error)
-          originalSender ! Left(StepFailed(projectCreateData, error))
+          originalSender ! StepFailed(projectCreateData, error)
       })
+
     case rollbackRequest:NewProjectRollback=>
       val originalSender = sender()
       val projectCreateData = rollbackRequest.data
 
       removeDestFileFor(rollbackRequest.rq).map({
         case Success(deletedFileEntry)=>
-          originalSender ! Right(StepSucceded(projectCreateData.copy(destFileEntry = None)))
+          originalSender ! StepSucceded(projectCreateData.copy(destFileEntry = None))
         case Failure(error)=>
           logger.error("Could not remove destination file record in rollback", error)
-          originalSender ! Left(StepFailed(projectCreateData.copy(destFileEntry = None), error))
+          originalSender ! StepFailed(projectCreateData.copy(destFileEntry = None), error)
       })
     case _=>
       super.receiveCommand

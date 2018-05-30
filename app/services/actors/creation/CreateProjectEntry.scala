@@ -117,6 +117,7 @@ class CreateProjectEntry @Inject() (@Named("message-processor-actor") messagePro
           case Success(validatedRequest) =>
             rollbackRequest.data.createdProjectEntry match {
               case Some(createdProjectEntry) =>
+                logger.info(s"Rolling back created project file entry $createdProjectEntry, deleting it from database")
                 createdProjectEntry.removeFromDatabase.map({
                   case Success(rows) =>
                     if (rows == 0)

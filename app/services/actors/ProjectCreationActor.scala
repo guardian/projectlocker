@@ -1,23 +1,39 @@
 package services.actors
 
-import akka.actor.{ActorRef, Props}
+import javax.inject.Inject
+
+import akka.actor.{ActorRef, ActorSystem, Props}
 import akka.pattern.ask
 import models.ProjectRequestFull
-import play.api.Logger
+import org.slf4j.MDC
+import play.api.{Application, Logger}
+import play.api.inject.Injector
 import services.actors.creation.GenericCreationActor.{NewProjectRequest, NewProjectRollback, StepFailed, StepSucceded}
-import services.actors.creation.{CreateFileEntry, CreationMessage, GenericCreationActor, CopySourceFile}
+import services.actors.creation._
 
 import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits._
 import scala.concurrent.duration._
 import scala.util.{Failure, Success}
 
-class ProjectCreationActor extends GenericCreationActor {
+class ProjectCreationActor @Inject() (system:ActorSystem, app:Application) extends GenericCreationActor {
   override val persistenceId = "project-creation-actor"
   override protected val logger=Logger(getClass)
 
   import GenericCreationActor._
   implicit val timeout:akka.util.Timeout = 30.seconds
+
+  /**
+    * This property defines the step chain to create a project, in terms of actors required.
+    * It's overridden in the tests, to create an artificial chain with TestProbes.
+    */
+  val creationActorChain:Seq[ActorRef] = Seq(
+    system.actorOf(Props(app.injector.instanceOf(classOf[CreateFileEntry]))),
+    system.actorOf(Props(app.injector.instanceOf(classOf[CopySourceFile]))),
+    system.actorOf(Props(app.injector.instanceOf(classOf[CreateProjectEntry]))),
+    system.actorOf(Props(app.injector.instanceOf(classOf[RetrievePostruns]))),
+    system.actorOf(Props(app.injector.instanceOf(classOf[PostrunExecutor]))),
+  )
 
   /**
     * Runs the next actor in the given sequence recursively by sending it [[NewProjectRequest]].
@@ -32,8 +48,8 @@ class ProjectCreationActor extends GenericCreationActor {
 
     val resultFuture = actorSequence.head ? NewProjectRequest(rq, None,data)
     resultFuture.onComplete({ //use this to catch exceptions
-      case Success(result)=>logger.info(s"actor ask success: $result")
-      case Failure(error)=>logger.info(s"actor ask failure: $error")
+      case Success(result)=>logger.debug(s"actor ask success: $result")
+      case Failure(error)=>logger.debug(s"actor ask failure: $error")
     })
 
     resultFuture.flatMap({
@@ -43,7 +59,7 @@ class ProjectCreationActor extends GenericCreationActor {
           case Left(failedMessage)=>  //if the _next_ step fails, tell this step to roll back
             (actorSequence.head ? NewProjectRollback(rq, successMessage.updatedData)).map(result=>Left(failedMessage))
           case Right(nextActorSuccess)=>
-            Future(Right(successMessage))
+            Future(Right(nextActorSuccess))
         }
       case failedMessage:StepFailed=> //if the step fails, tell it to roll back
         logger.warn(s"StepFailed, sending rollback to ${actorSequence.head}")
@@ -55,8 +71,6 @@ class ProjectCreationActor extends GenericCreationActor {
     })
   }
 
-  val creationActorChain:Seq[ActorRef] = Seq()
-
   override def receiveCommand: Receive = {
     case rq:NewProjectRequest=>
       logger.info(s"got request: $rq")
@@ -67,10 +81,17 @@ class ProjectCreationActor extends GenericCreationActor {
       runNextActorInSequence(creationActorChain, rq.rq, initialData).map({
         case Left(stepFailed)=>
           logger.warn("A subactor failed")
-          originalSender ! ProjectCreateFailed(rq.rq)
+          originalSender ! ProjectCreateFailed(rq.rq, stepFailed.err)
         case Right(stepSucceded)=>
           logger.info("All subactors succeded")
-          originalSender ! ProjectCreateSucceeded(rq.rq)
+          stepSucceded.updatedData.createdProjectEntry match {
+            case None=>
+              MDC.put("updatedData", stepSucceded.updatedData.toString)
+              logger.error("Project creation actors succeeded but no created project entry?")
+              originalSender ! ProjectCreateFailed(rq.rq, new RuntimeException("Project creation actors succeeded but no created project entry?"))
+            case Some(projectEntry)=>
+              originalSender ! ProjectCreateSucceeded(rq.rq, projectEntry)
+          }
       })
     case msg:Any=>
       logger.info(s"got other message: ${msg}")

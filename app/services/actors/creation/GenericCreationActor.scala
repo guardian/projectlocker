@@ -36,8 +36,8 @@ object GenericCreationActor {
     */
   case class NewProjectRollback(rq:ProjectRequestFull, data:ProjectCreateTransientData) extends CreationMessage
 
-  case class ProjectCreateFailed(rq:ProjectRequestFull) extends CreationMessage
-  case class ProjectCreateSucceeded(rq:ProjectRequestFull) extends CreationMessage
+  case class ProjectCreateFailed(rq:ProjectRequestFull, error:Throwable) extends CreationMessage
+  case class ProjectCreateSucceeded(rq:ProjectRequestFull, createdProjectEntry:ProjectEntry) extends CreationMessage
 
   case class StepSucceded(updatedData:ProjectCreateTransientData) extends CreationMessage
 

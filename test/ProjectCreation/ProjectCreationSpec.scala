@@ -37,7 +37,7 @@ class ProjectCreationSpec extends Specification with BuildMyApp {
       val probe3 = TestProbe()
 
       val actorSeq = Seq(probe1.ref,probe2.ref,probe3.ref)
-      val ac = system.actorOf(Props(new ProjectCreationActor {
+      val ac = system.actorOf(Props(new ProjectCreationActor(system, app) {
         override val creationActorChain: Seq[ActorRef] = Seq(probe1.ref, probe2.ref, probe3.ref)
       }))
 
@@ -51,7 +51,8 @@ class ProjectCreationSpec extends Specification with BuildMyApp {
 
       probe1.expectMsg(30.seconds, NewProjectRequest(rq.get, None, initialData))
       logger.info(probe1.lastSender.toString)
-      val updatedData = initialData.copy(createdProjectEntry = Some(ProjectEntry(None,1,None,"test title",timestamp,"tst-user",None,None)))
+      val fakeProject = ProjectEntry(None,1,None,"test title",timestamp,"tst-user",None,None)
+      val updatedData = initialData.copy(createdProjectEntry = Some(fakeProject))
 
       probe1.reply(StepSucceded(updatedData))
       probe2.expectMsg(30.seconds, NewProjectRequest(rq.get, None, updatedData))
@@ -60,7 +61,7 @@ class ProjectCreationSpec extends Specification with BuildMyApp {
       probe3.reply(StepSucceded(updatedData))
 
       val result = Await.result(resultFuture,90.seconds)
-      result mustEqual ProjectCreateSucceeded(rq.get)
+      result mustEqual ProjectCreateSucceeded(rq.get, fakeProject)
     }
 
     "stop when an actor reports a failure and roll back the ones that had run before" in new WithApplication(buildApp){
@@ -77,7 +78,7 @@ class ProjectCreationSpec extends Specification with BuildMyApp {
       val initialData = ProjectCreateTransientData(None, None, None)
 
       val actorSeq = Seq(probe1.ref,probe2.ref,probe3.ref)
-      val ac = system.actorOf(Props(new ProjectCreationActor {
+      val ac = system.actorOf(Props(new ProjectCreationActor(system, app) {
         override val creationActorChain: Seq[ActorRef] = Seq(probe1.ref, probe2.ref, probe3.ref)
       }))
 
@@ -100,7 +101,7 @@ class ProjectCreationSpec extends Specification with BuildMyApp {
       probe3.expectNoMessage(5.seconds)
 
       val result = Await.result(resultFuture,15.seconds)
-      result mustEqual ProjectCreateFailed(rq.get)
+      result mustEqual ProjectCreateFailed(rq.get, ex)
     }
 
     "continue rollback even if a rollback fails" in new WithApplication(buildApp){
@@ -115,7 +116,7 @@ class ProjectCreationSpec extends Specification with BuildMyApp {
       val probe3 = TestProbe()
 
       val actorSeq = Seq(probe1.ref,probe2.ref,probe3.ref)
-      val ac = system.actorOf(Props(new ProjectCreationActor {
+      val ac = system.actorOf(Props(new ProjectCreationActor(system, app) {
         override val creationActorChain: Seq[ActorRef] = Seq(probe1.ref, probe2.ref, probe3.ref)
       }))
       val initialData = ProjectCreateTransientData(None, None, None)
@@ -139,7 +140,7 @@ class ProjectCreationSpec extends Specification with BuildMyApp {
       probe3.expectNoMessage(5.seconds)
 
       val result = Await.result(resultFuture,15.seconds)
-      result mustEqual ProjectCreateFailed(rq.get)
+      result mustEqual ProjectCreateFailed(rq.get, ex)
     }
   }
 
