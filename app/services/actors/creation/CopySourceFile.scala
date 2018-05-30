@@ -49,7 +49,7 @@ class CopySourceFile  @Inject() (dbConfigProvider:DatabaseConfigProvider) extend
         rq.destinationStorage.getStorageDriver match {
           case None=>
             logger.error(s"No storage driver was configured for ${rq.destinationStorage}")
-            Future(Failure(new RuntimeException(s"No storage driver was configured for ${rq.destinationStorage}")))
+            Future(Success(s"No storage driver was configured for ${rq.destinationStorage}")) //success here => do not retry
           case Some(storageDriver)=>
             MDC.put("storageDriver", storageDriver.toString)
             logger.info(s"Got storage driver: $storageDriver")
@@ -63,7 +63,7 @@ class CopySourceFile  @Inject() (dbConfigProvider:DatabaseConfigProvider) extend
                 val errorString = error.mkString("\n")
                 logger.error(errorString)
                 originalSender ! StepFailed(copyRequest.data, new RuntimeException(errorString))
-                Failure(new RuntimeException(errorString))
+                Success(s"No storage driver was configured for ${rq.destinationStorage}")
               case Right(copiedFileEntry:FileEntry)=>
                 logger.debug(copiedFileEntry.toString)
                 val updatedData = copyRequest.data.copy(destFileEntry = Some(copiedFileEntry))
@@ -85,7 +85,7 @@ class CopySourceFile  @Inject() (dbConfigProvider:DatabaseConfigProvider) extend
             })
           case None=>
             originalSender ! StepFailed(rollbackRequest.data, new RuntimeException("No file entry available to roll back"))
-            Future(Failure(new RuntimeException("No file entry available to roll back")))
+            Future(Success(s"No storage driver was configured for ${rq.destinationStorage}"))
         }
       }
     case _=>

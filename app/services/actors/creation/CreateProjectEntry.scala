@@ -97,12 +97,12 @@ class CreateProjectEntry @Inject() (@Named("message-processor-actor") messagePro
               case Failure(error) =>
                 logger.error("Could not create project file: ", error)
                 originalSender ! StepFailed(createRequest.data, error)
-                Failure(error)
+                Success("Could not create project file: ")
             })
           case Failure(validationError) =>
             logger.error("Can't execute CreateProjectEntry", validationError)
             originalSender ! StepFailed(createRequest.data, validationError)
-            Future(Failure(validationError))
+            Future(Success(validationError.toString))
         }
       }
 

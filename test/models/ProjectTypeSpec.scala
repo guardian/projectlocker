@@ -26,7 +26,7 @@ class ProjectTypeSpec extends Specification with BuildMyApp {
       val result = Await.result(pt.get.postrunActions,10.seconds)
       result must beSuccessfulTry
 
-      result.get.length mustEqual 2
+      result.get.length mustEqual 3
 
     }
   }

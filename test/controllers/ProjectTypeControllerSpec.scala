@@ -48,7 +48,7 @@ class ProjectTypeControllerSpec extends GenericControllerSpec {
       val jsondata = Await.result(bodyAsJsonFuture(response), 5.seconds).as[JsValue]
 
       (jsondata \ "status").as[String] mustEqual "ok"
-      (jsondata \ "result").as[Seq[Int]] mustEqual Seq(1, 2)
+      (jsondata \ "result").as[Seq[Int]] mustEqual Seq(1, 2, 5)
     }
   }
 }

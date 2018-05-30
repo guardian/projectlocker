@@ -55,7 +55,7 @@ class RetrievePostruns @Inject() (dbConfigProvider:DatabaseConfigProvider) exten
               Success(s"Loaded ${postrunSeq.length} postruns")
             case Failure(error)=>
               originalSender ! StepFailed(createRequest.data, error)
-              Failure(error)
+              Success(error.toString)
           })
         })
       }
