@@ -18,7 +18,9 @@ defaults: &defaults
   environment:
     CIRCLE_ARTIFACTS: /tmp/circleci-artifacts
     CIRCLE_TEST_REPORTS: /tmp/circleci-test-results
-    JEST_JUNIT_OUTPUT: ${CIRCLE_TEST_REPORTS}/jest/frontend-junit.xml
+    JEST_JUNIT_OUTPUT: /tmp/circleci-test-results/jest/frontend-junit.xml
+    SBT_JUNIT_OUTPUT: /tmp/circleci-test-results/sbt/sbt-junit.xml
+    JYTHON_JUNIT_OUTPUT: /tmp/circleci-test-results/jython/nose-junit.xml
 
 version: 2
 jobs:
@@ -36,7 +38,7 @@ jobs:
       # Prepare for artifact and test results  collection equivalent to how it was done on 1.0.
       # In many cases you can simplify this from what is generated here.
       # 'See docs on artifact collection here https://circleci.com/docs/2.0/artifacts/'
-      - run: mkdir -p $CIRCLE_ARTIFACTS $CIRCLE_TEST_REPORTS
+      - run: mkdir -p $CIRCLE_ARTIFACTS `dirname $SBT_JUNIT_OUTPUT`
       - run: scripts/check_evolutions.sh
       - restore_cache:
           keys:
@@ -75,13 +77,12 @@ jobs:
       # Save artifacts
       - store_artifacts:
           path: /tmp/circleci-artifacts
-      - store_artifacts:
-          path: /tmp/circleci-test-results
 
   react_build_test:
     <<: *defaults
     steps:
       - checkout
+      - run: mkdir -p $CIRCLE_ARTIFACTS `dirname $JEST_JUNIT_OUTPUT`
       - restore_cache:
           keys:
           # This branch if available
@@ -109,13 +110,12 @@ jobs:
       # Save artifacts
       - store_artifacts:
           path: /tmp/circleci-artifacts
-      - store_artifacts:
-          path: /tmp/circleci-test-results
 
   jython_build_test:
     <<: *defaults
     steps:
       - checkout
+      - run: mkdir -p $CIRCLE_ARTIFACTS `dirname $JYTHON_JUNIT_OUTPUT`
       - restore_cache:
           keys:
           # This branch if available
@@ -131,7 +131,7 @@ jobs:
           key: dep-{{ .Branch }}-jython-{{ epoch }}
           paths:
             - ~/jython
-      - run: PYTHONPATH=postrun/scripts ~/jython/bin/nosetests -w postrun/tests
+      - run: PYTHONPATH=postrun/scripts ~/jython/bin/nosetests -w postrun/tests --with-xunit --xunit-file=$JYTHON_JUNIT_OUTPUT
       - store_test_results:
           path: /tmp/circleci-test-results
 
@@ -143,8 +143,7 @@ jobs:
       # Save artifacts
       - store_artifacts:
           path: /tmp/circleci-artifacts
-      - store_artifacts:
-          path: /tmp/circleci-test-results
+
 
   make_rpm:
     <<: *defaults

@@ -15,10 +15,7 @@ libraryDependencies ++= Seq( jdbc, ehcache , ws   , specs2 % Test, guice )
 
 libraryDependencies += evolutions
 
-/*concurrentRestrictions in Global := Seq(
-  Tags.limit(Tags.Test, 1),
-  Tags.limitAll(1)
-)*/
+testOptions in Test ++= Seq( Tests.Argument("junitxml", "junit.outdir", sys.env.getOrElse("SBT_JUNIT_OUTPUT","/tmp")), Tests.Argument("console") )
 
 PlayKeys.devSettings := Seq("play.akka.dev-mode.akka.http.server.request-timeout"->"120 seconds")
 
