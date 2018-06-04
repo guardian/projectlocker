@@ -53,9 +53,9 @@ trait StorageSerializer {
 
 case class StorageEntry(id: Option[Int], rootpath: Option[String], clientpath: Option[String], storageType: String,
                         user:Option[String], password:Option[String], host:Option[String], port:Option[Int], status:Option[StorageStatus.Value]) {
-  val logger: Logger = Logger(this.getClass)
 
   def getStorageDriver:Option[StorageDriver] = {
+    val logger: Logger = Logger(this.getClass)
     if(storageType=="Local"){
       Some(new PathStorage(this))
     } else {
