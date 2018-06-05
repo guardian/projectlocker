@@ -103,7 +103,10 @@ class MessageProcessorActor @Inject()(configurationI: Configuration, actorSystem
       logger.error(s"Could not save snapshot ${metadata.sequenceNr} for ${metadata.persistenceId}: ",error)
     case retry: RetryFromState=>  //retry all events in journal
       logger.debug("initiating retry cycle")
-      state.foreach{ self ! _._2 }
+      state.foreach{ stateEntry=>
+        logger.debug(s"${stateEntry._1.toString}: ${stateEntry._2.toString}")
+        self ! stateEntry._2
+      }
 
     case msgAsObject: NewAssetFolder =>
       persist(NewAssetFolderEvent(msgAsObject, UUID.randomUUID())) { event=>
