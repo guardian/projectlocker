@@ -61,6 +61,7 @@ class MessageProcessorActor @Inject()(configurationI: Configuration, actorSystem
     * @param event event to add
     */
   def updateState(event:MessageEvent): Unit = {
+    logger.debug(s"Marked event ${event.eventId} as pending (${event.rq})")
     state = state.updated(event)
     if(lastSequenceNr % snapshotInterval ==0 && lastSequenceNr!=0)
       saveSnapshot(state)
@@ -101,8 +102,8 @@ class MessageProcessorActor @Inject()(configurationI: Configuration, actorSystem
       deleteMessages(metadata.sequenceNr)
     case SaveSnapshotFailure(metadata,error)=>
       logger.error(s"Could not save snapshot ${metadata.sequenceNr} for ${metadata.persistenceId}: ",error)
-    case retry: RetryFromState=>  //retry all events in journal
-      logger.debug("initiating retry cycle")
+    case retry: RetryFromState=>  //retry all events in state, i.e. everything that has not had confirmHandle() called
+      logger.debug(s"initiating retry cycle, entries in state: ${state.size}")
       state.foreach{ stateEntry=>
         logger.debug(s"${stateEntry._1.toString}: ${stateEntry._2.toString}")
         self ! stateEntry._2
@@ -150,7 +151,9 @@ class MessageProcessorActor @Inject()(configurationI: Configuration, actorSystem
       logger.debug("received new project created event")
       val msgAsObject = evtAsObject.rq
       configuration.getOptional[String]("pluto.sync_enabled") match {
-        case Some("no") => logger.warn("Not sending asset folder message to pluto as sync_enabled is set to 'no'")
+        case Some("no") =>
+          logger.warn("Not sending asset folder message to pluto as sync_enabled is set to 'no'")
+          confirmHandled(evtAsObject)
         case _ =>
           logger.debug(s"Project created message to send: $msgAsObject")
           sendProjectCreatedMessage(msgAsObject).map({
