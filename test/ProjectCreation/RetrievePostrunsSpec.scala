@@ -46,6 +46,7 @@ class RetrievePostrunsSpec extends Specification with BuildMyApp with Mockito {
       result must beAnInstanceOf[StepSucceded]
 
       val maybePostrunSeq = result.asInstanceOf[StepSucceded].updatedData.postrunSequence
+      println(maybePostrunSeq)
       maybePostrunSeq must beSome
       val postrunSeq = maybePostrunSeq.get
 
