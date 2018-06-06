@@ -24,6 +24,7 @@ import org.mockito.Mockito._
 import helpers.StorageHelper
 
 class RetrievePostrunsSpec extends Specification with BuildMyApp with Mockito {
+  sequential
   implicit val timeout:akka.util.Timeout = 30.seconds
 
   "RetrievePostruns->NewProjectRequest" should {
