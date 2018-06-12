@@ -1,7 +1,9 @@
 package controllers
 
-import javax.inject.{Inject, Singleton}
+import javax.inject.{Inject, Named, Singleton}
 
+import akka.actor.ActorRef
+import akka.pattern.ask
 import auth.Security
 import com.unboundid.ldap.sdk.LDAPConnectionPool
 import exceptions.{BadDataException, ProjectCreationError, RecordNotFoundException}
@@ -13,6 +15,8 @@ import play.api.db.slick.DatabaseConfigProvider
 import play.api.libs.json.{JsError, JsResult, JsValue, Json}
 import play.api.mvc._
 import play.mvc.Http.Response
+import services.actors.creation.{CreationMessage, GenericCreationActor}
+import services.actors.creation.GenericCreationActor.{NewProjectRequest, ProjectCreateTransientData}
 import slick.jdbc.PostgresProfile
 import slick.lifted.TableQuery
 import slick.jdbc.PostgresProfile.api._
@@ -21,11 +25,11 @@ import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.util.{Failure, Success, Try}
 
-/**
-  * Created by localhome on 17/01/2017.
-  */
+import scala.concurrent.duration._
+
 @Singleton
-class ProjectEntryController @Inject() (cc:ControllerComponents, config: Configuration,
+class ProjectEntryController @Inject() (@Named("project-creation-actor") projectCreationActor:ActorRef,
+                                        cc:ControllerComponents, config: Configuration,
                                         dbConfigProvider: DatabaseConfigProvider, projectHelper:ProjectCreateHelper,
                                         cacheImpl:SyncCacheApi)
   extends GenericDatabaseObjectControllerWithFilter[ProjectEntry,ProjectEntryFilterTerms]
@@ -68,15 +72,15 @@ class ProjectEntryController @Inject() (cc:ControllerComponents, config: Configu
 
   /**
     * Fully generic container method to process an update request
-    * @param requestedId an ID to identify what should be updated, this is passed to [[selector]]
-    * @param selector a function that takes [[requestedId]] and returns a Future, containing a Try, containing a sequence of ProjectEntries
+    * @param requestedId an ID to identify what should be updated, this is passed to `selector`
+    * @param selector a function that takes `requestedId` and returns a Future, containing a Try, containing a sequence of ProjectEntries
     *                 that correspond to the provided ID
     * @param f a function to perform the actual update.  This is only called if selector returns a valid sequence of at least one ProjectEntry,
-    *          and is called for each ProjectEntry in the sequence that [[selector]] returns.
+    *          and is called for each ProjectEntry in the sequence that `selector` returns.
     *          It should return a Future containing a Try containing the number of rows updated.
-    * @tparam T the data type of [[requestedId]]
+    * @tparam T the data type of `requestedId`
     * @return A Future containing a sequnce of results for each invokation of f. with either a Failure indicating why
-    *         [[f]] was not called, or a Success with the result of [[f]]
+    *         `f` was not called, or a Success with the result of `f`
     */
   def doUpdateGenericSelector[T](requestedId:T, selector:T=>Future[Try[Seq[ProjectEntry]]])(f: ProjectEntry=>Future[Try[Int]]):Future[Seq[Try[Int]]] = selector(requestedId).flatMap({
     case Success(someSeq)=>
@@ -236,19 +240,35 @@ class ProjectEntryController @Inject() (cc:ControllerComponents, config: Configu
 
   override def validateFilterParams(request: Request[JsValue]): JsResult[ProjectEntryFilterTerms] = request.body.validate[ProjectEntryFilterTerms]
 
-  def createFromFullRequest(rq:ProjectRequestFull)(implicit db: slick.jdbc.PostgresProfile#Backend#Database) = projectHelper.create(rq,None).map({
-    case Failure(error)=>
-      logger.error("Could not create new project", error)
-      error match {
-        case projectCreationError:ProjectCreationError=>
-          BadRequest(Json.obj("status"->"error","detail"->projectCreationError.getMessage))
-        case _=>
-          InternalServerError(Json.obj("status"->"error","detail"->error.toString))
-      }
-    case Success(projectEntry)=>
-      logger.error(s"Created new project: $projectEntry")
-      Ok(Json.obj("status"->"ok","detail"->"created project", "projectId"->projectEntry.id.get))
-  })
+//  def createFromFullRequest(rq:ProjectRequestFull)(implicit db: slick.jdbc.PostgresProfile#Backend#Database) = projectHelper.create(rq,None).map({
+//    case Failure(error)=>
+//      logger.error("Could not create new project", error)
+//      error match {
+//        case projectCreationError:ProjectCreationError=>
+//          BadRequest(Json.obj("status"->"error","detail"->projectCreationError.getMessage))
+//        case _=>
+//          InternalServerError(Json.obj("status"->"error","detail"->error.toString))
+//      }
+//    case Success(projectEntry)=>
+//      logger.error(s"Created new project: $projectEntry")
+//      Ok(Json.obj("status"->"ok","detail"->"created project", "projectId"->projectEntry.id.get))
+//  })
+
+  def createFromFullRequest(rq:ProjectRequestFull) = {
+    implicit val timeout:akka.util.Timeout = 60.seconds
+
+    val initialData = ProjectCreateTransientData(None, None, None)
+
+    val msg = NewProjectRequest(rq,None,initialData)
+    (projectCreationActor ? msg).mapTo[CreationMessage].map({
+      case GenericCreationActor.ProjectCreateSucceeded(succeededRequest, projectEntry)=>
+        logger.info(s"Created new project: $projectEntry")
+        Ok(Json.obj("status"->"ok","detail"->"created project", "projectId"->projectEntry.id.get))
+      case GenericCreationActor.ProjectCreateFailed(failedRequest, error)=>
+        logger.error("Could not create new project", error)
+        InternalServerError(Json.obj("status"->"error","detail"->error.toString))
+    })
+  }
 
   override def create = IsAuthenticatedAsync(parse.json) {uid=>{ request =>
     implicit val db = dbConfig.db

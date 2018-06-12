@@ -19,8 +19,6 @@ import scala.concurrent.ExecutionContext.Implicits.global
 
 case class PostrunAction (id:Option[Int],runnable:String, title:String, description:Option[String],
                           owner:String, version:Int, ctime: Timestamp) {
-  val logger = Logger(this.getClass)
-
   /**
     *  writes this model into the database, inserting if id is None and returning a fresh object with id set. If an id
     * was set, then returns the same object. */
@@ -63,6 +61,7 @@ case class PostrunAction (id:Option[Int],runnable:String, title:String, descript
     * @return a Try indicating whether the operation succeeded or not
     */
   def restoreBackupFile(backupPath: Path, originalFile: String) = Try {
+    val logger = Logger(this.getClass)
     logger.warn(s"Restoring backup file ${backupPath.toString}")
     FileUtils.copyFile(new File(backupPath.toString), new File(originalFile))
   }
@@ -94,6 +93,7 @@ case class PostrunAction (id:Option[Int],runnable:String, title:String, descript
 
     runner.runScriptAsync(inputPath.toString, scriptArgs, dataCache) map {
       case Success(scriptOutput) =>
+        val logger = Logger(this.getClass)
         logger.debug("Script started successfully")
         scriptOutput.raisedError match {
           case Some(error)=>
@@ -123,6 +123,7 @@ case class PostrunAction (id:Option[Int],runnable:String, title:String, descript
                         workingGroupMaybe: Option[PlutoWorkingGroup], commissionMaybe: Option[PlutoCommission])
                        (implicit config:Configuration):Future[Try[JythonOutput]] = {
     val className: String = runnable.substring(5) //strip off "java:" prefix
+    val logger = Logger(this.getClass)
     logger.debug(s"Initiating java based postrun $className...")
     try {
       val postrunClass = Class.forName(className).newInstance().asInstanceOf[PojoPostrun]
@@ -158,9 +159,11 @@ case class PostrunAction (id:Option[Int],runnable:String, title:String, descript
 
     backupProjectFile(projectFileName) flatMap {
       case Failure(error) =>
+        val logger = Logger(this.getClass)
         logger.error(s"Unable to back up project file $projectFileName:", error)
         Future(Failure(error))
       case Success(backupPath) =>
+        val logger = Logger(this.getClass)
         logger.info(s"Backed up project file from $projectFileName to ${backupPath.toString}")
         logger.debug(s"Going to try to run script at path $getScriptPath...")
 

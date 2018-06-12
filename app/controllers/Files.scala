@@ -126,14 +126,14 @@ class Files @Inject() (configuration: Configuration, dbConfigProvider: DatabaseC
   def deleteFromDisk(requestedId:Int, targetFile:FileEntry, deleteReferenced: Boolean, isRetry:Boolean=false):Future[Result] = deleteid(requestedId).flatMap({
     case Success(rowCount)=>
       storageHelper.deleteFile(targetFile).flatMap({
-        case true =>
+        case Right(updatedFile) =>
           targetFile.getFullPath.map(fullpath=> {
             Ok(Json.obj("status" -> "ok", "detail" -> "deleted", "filepath" -> fullpath, "id" -> requestedId))
           })
-        case false =>
+        case Left(errorString) =>
           targetFile.getFullPath.map(fullpath=>{
             logger.error(s"Could not delete on-disk file $fullpath")
-            InternalServerError(Json.obj("status" -> "error", "detail" -> "could not delete file on disk", "filepath" -> fullpath, "id"->requestedId))
+            InternalServerError(Json.obj("status" -> "error", "detail" -> errorString, "filepath" -> fullpath, "id"->requestedId))
           })
       })
     case Failure(error)=>Future(handleConflictErrorsAdvanced(error){

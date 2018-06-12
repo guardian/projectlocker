@@ -81,6 +81,16 @@ case class ProjectEntry (id: Option[Int], projectTypeId: Int, vidispineProjectId
       })
   }
 
+  def removeFromDatabase(implicit db:slick.jdbc.PostgresProfile#Backend#Database):Future[Try[Unit]] = id match {
+    case Some(realEntityId)=>
+      db.run(DBIO.seq(
+        TableQuery[FileAssociationRow].filter(_.projectEntry===realEntityId).delete,
+        TableQuery[ProjectEntryRow].filter(_.id===realEntityId).delete,
+      ).asTry)
+    case None=>
+      Future(Failure(new RuntimeException("A record must have been saved before it can be removed from the database")))
+  }
+
   /**
     * returns the contents of this record as a string->string map, for passing to postrun actions
     * @return

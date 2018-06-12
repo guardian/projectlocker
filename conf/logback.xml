@@ -22,9 +22,11 @@
     </appender>-->
 
     <logger name="play" level="INFO" />
-    <logger name="application" level="WARN" />
+    <logger name="application" level="ERROR" />
     <logger name="services.PostrunActionScanner" level="WARN"/>
     <logger name="helpers.ProjectCreateHelperImpl" level="WARN"/>
+    <logger name="helpers.PostrunSorter" level="DEBUG"/>
+
     <logger name="services.actors.ClusterListener" level="WARN"/>
     <logger name="controllers.MessageTest" level="WARN"/>
     <logger name="models.ProjectRequestPluto" level="WARN"/>
@@ -33,7 +35,7 @@
     <logger name="models.PlutoCommission" level="WARN"/>
     <logger name="services.PlutoWGCommissionScanner" level="WARN"/>
     <logger name="controllers.Files" level="WARN" />
-    <logger name="StorageControllerSpec" level="WARN"/>
+    <logger name="controllers.StorageControllerSpec" level="WARN"/>
     <logger name="auth.Security" level="WARN"/>
     <logger name="controllers.Application" level="INFO"/>
     <logger name="controllers.System" level="INFO"/>
@@ -41,13 +43,17 @@
     <logger name="services.actors.MessageProcessorActor" level="WARN"/>
     <logger name="services.actors.MessageProcessorState" level="WARN"/>
     <logger name="services.PlutoProjectTypeScanner" level="WARN"/>
-    <logger name="models.FileEntry" level="WARN" />
+    <logger name="models.FileEntry" level="DEBUG" />
     <logger name="controllers.Files" level="WARN" />
     <logger name="postrun.UpdateAdobeUuid" level="INFO"/>
     <logger name="models.ProjectMetadata" level="WARN"/>
-    <logger name="UpdateAdobeUuidSpec" level="WARN"/>
+    <logger name="postrun.UpdateAdobeUuidSpec" level="WARN"/>
     <logger name="services.StorageScanner" level="DEBUG"/>
     <logger name="com.gargoylesoftware.htmlunit.javascript" level="OFF" />
+    <logger name="MockProjectCreationActor" level="DEBUG"/>
+    <logger name="services.actors.ProjectCreationActor" level="DEBUG"/>
+    <logger name="ProjectCreation.ProjectCreationSpec" level="ERROR"/>
+    <logger name="services.actors.creation" level="DEBUG"/>
 
     <root level="ERROR">
         <appender-ref ref="STDOUT" />

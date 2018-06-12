@@ -12,20 +12,22 @@ defaults: &defaults
   parallelism: 1
   shell: /bin/bash --login
   docker:
-    - image: 855023211239.dkr.ecr.eu-west-1.amazonaws.com/guardianmultimedia/projectlockerbuild
+    - image: 855023211239.dkr.ecr.eu-west-1.amazonaws.com/guardianmultimedia/projectlockerbuild:20180521_1
   # CircleCI 2.0 does not support environment variables that refer to each other the same way as 1.0 did.
   # If any of these refer to each other, rewrite them so that they don't or see https://circleci.com/docs/2.0/env-vars/#interpolating-environment-variables-to-set-other-environment-variables .
   environment:
     CIRCLE_ARTIFACTS: /tmp/circleci-artifacts
     CIRCLE_TEST_REPORTS: /tmp/circleci-test-results
-    JEST_JUNIT_OUTPUT: ${CIRCLE_TEST_REPORTS}/jest/frontend-junit.xml
+    JEST_JUNIT_OUTPUT: /tmp/circleci-test-results/jest/frontend-junit.xml
+    SBT_JUNIT_OUTPUT: /tmp/circleci-test-results/sbt/sbt-junit.xml
+    JYTHON_JUNIT_OUTPUT: /tmp/circleci-test-results/jython/nose-junit.xml
 
 version: 2
 jobs:
   scala_build_test:
     <<: *defaults
     docker:
-      - image: 855023211239.dkr.ecr.eu-west-1.amazonaws.com/guardianmultimedia/projectlockerbuild
+      - image: 855023211239.dkr.ecr.eu-west-1.amazonaws.com/guardianmultimedia/projectlockerbuild:20180521_1
       - image: circleci/postgres:9.3.23-alpine
         environment:
           POSTGRES_USER: projectlocker
@@ -36,7 +38,7 @@ jobs:
       # Prepare for artifact and test results  collection equivalent to how it was done on 1.0.
       # In many cases you can simplify this from what is generated here.
       # 'See docs on artifact collection here https://circleci.com/docs/2.0/artifacts/'
-      - run: mkdir -p $CIRCLE_ARTIFACTS $CIRCLE_TEST_REPORTS
+      - run: mkdir -p $CIRCLE_ARTIFACTS `dirname $SBT_JUNIT_OUTPUT`
       - run: scripts/check_evolutions.sh
       - restore_cache:
           keys:
@@ -46,7 +48,7 @@ jobs:
           - dep-master-scala
           # Any branch if there are none on the default branch - this should be unnecessary if you have your default branch configured correctly
           - dep-
-      - run: SBT_OPTS="-Dfile.encoding=UTF8 -Xms512M -Xmx1024M -Xss1M -XX:+CMSClassUnloadingEnabled -XX:+UseCompressedOops -Dbuild.tag=\"$CIRCLE_TAG\" -Dbuild.number=$CIRCLE_BUILD_NUM -Dbuild.vcs.number=$CIRCLE_SHA1" echo exit | sbt test:compile
+      - run: SBT_OPTS="-Dfile.encoding=UTF8 -Xms512M -Xmx3072M -Xss1M -XX:+CMSClassUnloadingEnabled -XX:+UseCompressedOops -Dbuild.tag=\"$CIRCLE_TAG\" -Dbuild.number=$CIRCLE_BUILD_NUM -Dbuild.vcs.number=$CIRCLE_SHA1" echo exit | sbt test:compile
 
       # Save dependency cache
       - save_cache:
@@ -75,13 +77,12 @@ jobs:
       # Save artifacts
       - store_artifacts:
           path: /tmp/circleci-artifacts
-      - store_artifacts:
-          path: /tmp/circleci-test-results
 
   react_build_test:
     <<: *defaults
     steps:
       - checkout
+      - run: mkdir -p $CIRCLE_ARTIFACTS `dirname $JEST_JUNIT_OUTPUT`
       - restore_cache:
           keys:
           # This branch if available
@@ -109,13 +110,12 @@ jobs:
       # Save artifacts
       - store_artifacts:
           path: /tmp/circleci-artifacts
-      - store_artifacts:
-          path: /tmp/circleci-test-results
 
   jython_build_test:
     <<: *defaults
     steps:
       - checkout
+      - run: mkdir -p $CIRCLE_ARTIFACTS `dirname $JYTHON_JUNIT_OUTPUT`
       - restore_cache:
           keys:
           # This branch if available
@@ -131,7 +131,7 @@ jobs:
           key: dep-{{ .Branch }}-jython-{{ epoch }}
           paths:
             - ~/jython
-      - run: PYTHONPATH=postrun/scripts ~/jython/bin/nosetests -w postrun/tests
+      - run: PYTHONPATH=postrun/scripts ~/jython/bin/nosetests -w postrun/tests --with-xunit --xunit-file=$JYTHON_JUNIT_OUTPUT
       - store_test_results:
           path: /tmp/circleci-test-results
 
@@ -143,8 +143,7 @@ jobs:
       # Save artifacts
       - store_artifacts:
           path: /tmp/circleci-artifacts
-      - store_artifacts:
-          path: /tmp/circleci-test-results
+
 
   make_rpm:
     <<: *defaults
@@ -179,7 +178,7 @@ jobs:
       - run: echo "exit 0" > /usr/lib/rpm/brp-python-bytecompile
       - run: chmod a+x /usr/lib/rpm/brp-python-bytecompile
       #need to set SBT_OPTS here as we refer to the buitin env vars to set the tag, build number, etc.  Otherwise they are not interpolated.
-      - run: echo exit | SBT_OPTS="-Dfile.encoding=UTF8 -Xms512M -Xmx1024M -Xss1M -XX:+CMSClassUnloadingEnabled -XX:+UseCompressedOops -Dbuild.tag=\"$CIRCLE_TAG\" -Dbuild.number=$CIRCLE_BUILD_NUM -Dbuild.vcs.number=$CIRCLE_SHA1" sbt rpm:packageBin
+      - run: echo exit | SBT_OPTS="-Dfile.encoding=UTF8 -Xms512M -Xmx3072M -Xss1M -XX:+CMSClassUnloadingEnabled -XX:+UseCompressedOops -Dbuild.tag=\"$CIRCLE_TAG\" -Dbuild.number=$CIRCLE_BUILD_NUM -Dbuild.vcs.number=$CIRCLE_SHA1" sbt rpm:packageBin
       - run: bash -c 'for x in `ls target/rpm/RPMS/noarch/projectlocker*.rpm`; do bash ./upload_to_s3.sh "$x"; done'
 
 workflows:
