@@ -33,6 +33,7 @@ class ProjectCreationActor @Inject() (system:ActorSystem, app:Application) exten
     system.actorOf(Props(app.injector.instanceOf(classOf[CreateProjectEntry]))),
     system.actorOf(Props(app.injector.instanceOf(classOf[RetrievePostruns]))),
     system.actorOf(Props(app.injector.instanceOf(classOf[PostrunExecutor]))),
+    system.actorOf(Props(app.injector.instanceOf(classOf[NotifyPluto])))
   )
 
   /**
@@ -73,9 +74,6 @@ class ProjectCreationActor @Inject() (system:ActorSystem, app:Application) exten
 
   override def receiveCommand: Receive = {
     case rq:NewProjectRequest=>
-      logger.info(s"got request: $rq")
-      logger.info(s"i am ${context.self}")
-      logger.info(s"sender is ${sender()}")
       val originalSender = sender()
       val initialData = ProjectCreateTransientData(None,None,None)
       runNextActorInSequence(creationActorChain, rq.rq, initialData).map({

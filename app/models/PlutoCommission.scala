@@ -191,6 +191,15 @@ object PlutoCommission extends ((Option[Int],Int,String,Timestamp,Timestamp,Stri
     })
   }
 
+  def entryForId(id:Int)(implicit db:slick.jdbc.PostgresProfile#Backend#Database):Future[Option[PlutoCommission]] = {
+    db.run(
+      TableQuery[PlutoCommissionRow].filter(_.id===id).result.asTry
+    ).map({
+      case Success(resultSeq)=>resultSeq.headOption
+      case Failure(error)=>throw error
+    })
+  }
+
   //handle different explicit time format
   def timestampToDateTime(t: Timestamp): DateTime = new DateTime(t.getTime)
   def dateTimeToTimestamp(dt: DateTime): Timestamp = new Timestamp(dt.getMillis)
