@@ -39,6 +39,7 @@ class CreateProjectEntry @Inject() (@Named("message-processor-actor") messagePro
         projectType.forPluto(projectTemplate).onComplete({
           case Success(projectTypeForPluto)=>
             logger.debug(s"messageProcessor is $messageProcessor")
+            logger.info("Requesting send to pluto")
             messageProcessor ! NewProjectCreated(createdProjectEntry,
               projectTypeForPluto,
               maybeCommission.get,
@@ -91,7 +92,11 @@ class CreateProjectEntry @Inject() (@Named("message-processor-actor") messagePro
               rq.user, rq.workingGroupId, rq.commissionId, rq.existingVidispineId).map({
               case Success(createdProjectEntry) =>
                 logger.info(s"Project entry created as id ${createdProjectEntry.id}")
-                if (rq.shouldNotify) sendCreateMessage(createdProjectEntry, rq.projectTemplate)
+                if (rq.shouldNotify) {
+                  sendCreateMessage(createdProjectEntry, rq.projectTemplate)
+                } else {
+                  logger.warn(s"Not notifying pluto about creation of project $createdProjectEntry because shouldNotify is false")
+                }
                 originalSender ! StepSucceded(updatedData = createRequest.data.copy(createdProjectEntry = Some(createdProjectEntry)))
                 Success(rq.projectTemplate)
               case Failure(error) =>
