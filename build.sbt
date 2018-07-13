@@ -82,6 +82,8 @@ libraryDependencies ++= Seq(
 //Sentry
 libraryDependencies += "io.sentry" % "sentry-logback" % "1.7.2"
 
+//Reflections library for scanning classpath
+libraryDependencies += "org.reflections" % "reflections" % "0.9.11"
 
 enablePlugins(UniversalPlugin)
 
