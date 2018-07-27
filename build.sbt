@@ -46,6 +46,10 @@ libraryDependencies += "org.python" % "jython" % "2.7.1b2"
 // upgrade jackson-databind to remove Deserialization of Untrusted Data vuln
 libraryDependencies += "com.fasterxml.jackson.core" % "jackson-databind" % "2.8.11.1"
 
+// upgrade guava to remove Deserialization of Untruseted Data vuln
+// https://mvnrepository.com/artifact/com.google.guava/guava
+libraryDependencies += "com.google.guava" % "guava" % "25.1-jre"
+
 //messaging persistence and clustering
 libraryDependencies ++= Seq(
   "com.typesafe.akka" %% "akka-persistence" % "2.5.11",
