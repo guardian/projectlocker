@@ -12,7 +12,7 @@ defaults: &defaults
   parallelism: 1
   shell: /bin/bash --login
   docker:
-    - image: 855023211239.dkr.ecr.eu-west-1.amazonaws.com/guardianmultimedia/projectlockerbuild:20180521_1
+    - image: 855023211239.dkr.ecr.eu-west-1.amazonaws.com/guardianmultimedia/projectlockerbuild:20180820_1
   # CircleCI 2.0 does not support environment variables that refer to each other the same way as 1.0 did.
   # If any of these refer to each other, rewrite them so that they don't or see https://circleci.com/docs/2.0/env-vars/#interpolating-environment-variables-to-set-other-environment-variables .
   environment:
@@ -21,6 +21,7 @@ defaults: &defaults
     JEST_JUNIT_OUTPUT: /tmp/circleci-test-results/jest/frontend-junit.xml
     SBT_JUNIT_OUTPUT: /tmp/circleci-test-results/sbt/sbt-junit.xml
     JYTHON_JUNIT_OUTPUT: /tmp/circleci-test-results/jython/nose-junit.xml
+    ECR_ENDPOINT: 855023211239.dkr.ecr.eu-west-1.amazonaws.com/guardianmultimedia
 
 version: 2
 jobs:
@@ -149,6 +150,7 @@ jobs:
     <<: *defaults
     steps:
       - checkout
+      - setup_remote_docker
 
       - attach_workspace:
           at: /mnt/workspace
@@ -181,8 +183,13 @@ jobs:
       - run: echo exit | SBT_OPTS="-Dfile.encoding=UTF8 -Xms512M -Xmx3072M -Xss1M -XX:+CMSClassUnloadingEnabled -XX:+UseCompressedOops -Dbuild.tag=\"$CIRCLE_TAG\" -Dbuild.number=$CIRCLE_BUILD_NUM -Dbuild.vcs.number=$CIRCLE_SHA1" sbt rpm:packageBin
       - run: bash -c 'for x in `ls target/rpm/RPMS/noarch/projectlocker*.rpm`; do bash ./upload_to_s3.sh "$x"; done'
       #deploy built docker image (pulled from original circel.yml)
-      - run: echo "noreply@circleci.com" | docker login -u ${DOCKER_USER} -p ${DOCKER_PASSWORD}
-      - run: sbt docker:publish
+      - deploy:
+          name: Push application docker image
+          command: |
+            login="$(aws ecr get-login)"
+            ${login}
+            echo exit | sbt docker:publish
+
 workflows:
   version: 2
   build_and_test:
