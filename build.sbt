@@ -1,12 +1,28 @@
 import NativePackagerHelper._
 import RpmConstants._
 import com.typesafe.sbt.packager.docker
-
+import com.typesafe.sbt.packager.docker._
 name := "projectlocker"
 
 version := "1.0-dev"
 
-lazy val `projectlocker` = (project in file(".")).enablePlugins(PlayScala)
+lazy val `projectlocker` = (project in file("."))
+  .enablePlugins(PlayScala)
+  .enablePlugins(AshScriptPlugin) //needed for alpine-based images
+    .settings(
+      version := sys.props.getOrElse("build.number","DEV"),
+      dockerExposedPorts := Seq(9000),
+      dockerRepository := Some("/andyg42"),
+      dockerUsername  := Some("andyg42"),
+      packageName := "andyg42/projectlocker",
+      dockerBaseImage := "openjdk:8-jdk-alpine",
+      dockerAlias := docker.DockerAlias(None,Some("andyg42"),"projectlocker",Some(sys.props.getOrElse("build.number","DEV"))),
+      dockerCommands ++= Seq(
+        Cmd("RUN", "mv", "/opt/docker/conf/docker-application.conf", "/opt/docker/conf/application.conf"),
+        Cmd("RUN", "mkdir", "-p", "/opt/docker/target/persistence"),
+        Cmd("RUN", "ls", "-lhd", "/opt/docker/target/persistence")
+      )
+    )
 
 javaOptions in Test += "-Duser.timezone=UTC"
 
@@ -102,16 +118,3 @@ maintainerScripts in Rpm := Map(
   Post -> Seq("cp -f /usr/share/projectlocker/conf/sudo-trapdoor /etc/sudoers.d/projectlocker")
 )
 
-import com.typesafe.sbt.packager.docker._
-version in Docker := sys.props.getOrElse("build.number","DEV")
-
-dockerExposedPorts in Docker := Seq(9000)
-dockerRepository in Docker := Some("/andyg42")
-dockerUsername in Docker := Some("andyg42")
-packageName in Docker := "andyg42/projectlocker"
-dockerAlias in Docker := docker.DockerAlias(None,Some("andyg42"),"projectlocker",Some(sys.props.getOrElse("build.number","DEV")))
-dockerCommands ++= Seq(
-  Cmd("RUN", "mv", "/opt/docker/conf/docker-application.conf", "/opt/docker/conf/application.conf"),
-  Cmd("RUN", "mkdir", "-p", "/opt/docker/target/persistence"),
-  Cmd("RUN", "ls", "-lhd", "/opt/docker/target/persistence")
-)
