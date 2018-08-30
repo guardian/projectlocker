@@ -25,17 +25,27 @@ trait ListenProjectCreate extends NewProjectCreatedSerializer with JsonComms {
         case Left(error)=>Future(Left(error))
         case Right(parsedResponse)=>
           try {
-            val projectId = (parsedResponse \ "project_id").as[String]
-            //get an updated copy of the project entry from the database, as it is possible that a user has updated it in between
-            //the creation of the msg object and this getting called
-            ProjectEntry.entryForId(msg.projectEntry.id.get).map({
-              case Success(updatedProjectEntry)=>
-                updatedProjectEntry.copy(vidispineProjectId = Some(projectId)).save
-                Right(logger.info(s"Updated project entry id ${msg.projectEntry.id} with vidispine id $projectId"))
-              case Failure(error)=>
-                logger.error(s"Could not update database with vidispine id $projectId for entry id ${msg.projectEntry.id}", error)
-                Left(true)
-            })
+            val status = (parsedResponse \ "status").as[String]
+            if(status=="in_progress"){
+              logger.warn(s"Updating project entry ${msg.projectEntry.id} in Pluto - Pluto claims to already be processing this.")
+              (parsedResponse \ "detail").asOpt[String] match {
+                case Some(detail)=>logger.warn(s"Pluto said $detail")
+                case None=>logger.warn("Pluto provided no details")
+              }
+              Future(Left(false))
+            } else {
+              val projectId = (parsedResponse \ "project_id").as[String]
+              //get an updated copy of the project entry from the database, as it is possible that a user has updated it in between
+              //the creation of the msg object and this getting called
+              ProjectEntry.entryForId(msg.projectEntry.id.get).map({
+                case Success(updatedProjectEntry) =>
+                  updatedProjectEntry.copy(vidispineProjectId = Some(projectId)).save
+                  Right(logger.info(s"Updated project entry id ${msg.projectEntry.id} with vidispine id $projectId"))
+                case Failure(error) =>
+                  logger.error(s"Could not update database with vidispine id $projectId for entry id ${msg.projectEntry.id}", error)
+                  Left(true)
+              })
+            }
           } catch {
             case ex: Throwable=>
               logger.error("Got 200 response but no project_id")
