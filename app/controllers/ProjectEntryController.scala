@@ -1,7 +1,6 @@
 package controllers
 
 import javax.inject.{Inject, Named, Singleton}
-
 import akka.actor.ActorRef
 import akka.pattern.ask
 import auth.Security
@@ -9,6 +8,7 @@ import com.unboundid.ldap.sdk.LDAPConnectionPool
 import exceptions.{BadDataException, ProjectCreationError, RecordNotFoundException}
 import helpers.ProjectCreateHelper
 import models._
+import models.messages.NewProjectCreated
 import play.api.cache.SyncCacheApi
 import play.api.{Configuration, Logger}
 import play.api.db.slick.DatabaseConfigProvider
@@ -24,11 +24,11 @@ import slick.jdbc.PostgresProfile.api._
 import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.util.{Failure, Success, Try}
-
 import scala.concurrent.duration._
 
 @Singleton
 class ProjectEntryController @Inject() (@Named("project-creation-actor") projectCreationActor:ActorRef,
+                                        @Named("message-processor-actor") messageProcessor:ActorRef,
                                         cc:ControllerComponents, config: Configuration,
                                         dbConfigProvider: DatabaseConfigProvider, projectHelper:ProjectCreateHelper,
                                         cacheImpl:SyncCacheApi)
@@ -344,4 +344,17 @@ class ProjectEntryController @Inject() (@Named("project-creation-actor") project
         InternalServerError(Json.obj("status"->"error","detail"->error.toString))
     })
   }}
+
+//  def pokePluto(projectId:Int) = IsAuthenticatedAsync {uid=>{request=>
+//    ProjectEntry.entryForId(projectId).map({
+//      case Success(projectEntry)=>
+//        val projectTemplateFuture =
+//        val projectTypeFuture = ProjectType.entryFor(projectEntry.projectTypeId).map({
+//          case Success(projectType)=>projectType.forPluto()
+//        })
+//        messageProcessor ! NewProjectCreated(projectEntry, )
+//        Ok()
+//    })
+//
+//  }}
 }

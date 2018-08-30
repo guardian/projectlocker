@@ -155,6 +155,7 @@ class MessageProcessorActor @Inject()(configurationI: Configuration, actorSystem
           logger.warn("Not sending asset folder message to pluto as sync_enabled is set to 'no'")
           confirmHandled(evtAsObject)
         case _ =>
+          logger.info(s"Notifying Pluto that we created ${msgAsObject.projectEntry.projectTitle} (${msgAsObject.projectEntry.id})")
           logger.debug(s"Project created message to send: $msgAsObject")
           sendProjectCreatedMessage(msgAsObject).map({
             case Right(_) =>
