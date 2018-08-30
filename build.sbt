@@ -12,11 +12,11 @@ lazy val `projectlocker` = (project in file("."))
     .settings(
       version := sys.props.getOrElse("build.number","DEV"),
       dockerExposedPorts := Seq(9000),
-      dockerRepository := Some("/andyg42"),
-      dockerUsername  := Some("andyg42"),
+      dockerUsername  := sys.props.get("docker.username"),
+      dockerRepository := Some("andyg42"),
       packageName := "andyg42/projectlocker",
       dockerBaseImage := "openjdk:8-jdk-alpine",
-      dockerAlias := docker.DockerAlias(None,Some("andyg42"),"projectlocker",Some(sys.props.getOrElse("build.number","DEV"))),
+      dockerAlias := docker.DockerAlias(None,sys.props.get("docker.username"),"projectlocker",Some(sys.props.getOrElse("build.number","DEV"))),
       dockerCommands ++= Seq(
         Cmd("RUN", "mv", "/opt/docker/conf/docker-application.conf", "/opt/docker/conf/application.conf"),
         Cmd("RUN", "mkdir", "-p", "/opt/docker/target/persistence"),
