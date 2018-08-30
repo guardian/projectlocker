@@ -71,6 +71,7 @@ jobs:
           root: .
           paths:
            - target/
+           - project/
 
       # Save test results
       - store_test_results:
@@ -172,15 +173,24 @@ jobs:
       - run: if [ ! -d ./target ]; then mkdir -p target; fi
       - run: if [ ! -d ./postrun/lib ]; then mkdir -p postrun/lib; fi
       #bring in compilation results from scala-build_test
-      - run: cp -a /mnt/workspace/target/* ./target
+      - run:
+          name: Bring in compilation results
+          command: |
+            cp -av /mnt/workspace/target/* ./target
+            cp -av /mnt/workspace/project/* ./project
+
       #bring in jython deps from jython_build_test
-      - run: cp -a /mnt/workspace/postrun/lib/* postrun/lib
+      - run: cp -av /mnt/workspace/postrun/lib/* postrun/lib
       #disable python bytecompile, as we're running jython anyway
-      - run: mv /usr/lib/rpm/brp-python-bytecompile /usr/lib/rpm/brp-python-bytecompile.old
-      - run: echo "exit 0" > /usr/lib/rpm/brp-python-bytecompile
-      - run: chmod a+x /usr/lib/rpm/brp-python-bytecompile
+      - run:
+         name: Disable python bytecompile as we are running Jython
+         command: |
+           mv /usr/lib/rpm/brp-python-bytecompile /usr/lib/rpm/brp-python-bytecompile.old
+           echo "exit 0" > /usr/lib/rpm/brp-python-bytecompile
+           chmod a+x /usr/lib/rpm/brp-python-bytecompile
+
       #need to set SBT_OPTS here as we refer to the buitin env vars to set the tag, build number, etc.  Otherwise they are not interpolated.
-      - run: echo exit | SBT_OPTS="-Dfile.encoding=UTF8 -Xms512M -Xmx3072M -Xss1M -XX:+CMSClassUnloadingEnabled -XX:+UseCompressedOops -Dbuild.tag=\"$CIRCLE_TAG\" -Dbuild.number=$CIRCLE_BUILD_NUM -Dbuild.vcs.number=$CIRCLE_SHA1" sbt rpm:packageBin
+      - run: echo exit | SBT_OPTS="-Dfile.encoding=UTF8 -Dbuild.tag=\"$CIRCLE_TAG\" -Dbuild.number=$CIRCLE_BUILD_NUM -Dbuild.vcs.number=$CIRCLE_SHA1" sbt rpm:packageBin
       - run: bash -c 'for x in `ls target/rpm/RPMS/noarch/projectlocker*.rpm`; do bash ./upload_to_s3.sh "$x"; done'
       #deploy built docker image (pulled from original circel.yml)
       - deploy:
@@ -188,7 +198,7 @@ jobs:
           command: |
             echo Logging in as ${DOCKER_USER}
             echo "noreply@circleci.com" | docker login -u ${DOCKER_USER} -p ${DOCKER_PASSWORD}
-            echo exit | sbt docker:publish -Dbuild.tag=\"$CIRCLE_TAG\" -Dbuild.number=$CIRCLE_BUILD_NUM -Dbuild.vcs.number=$CIRCLE_SHA1 -Ddocker.username=${DOCKER_USER}
+            echo exit | SBT_OPTS="-Dfile.encoding=UTF8 -Dbuild.tag=\"$CIRCLE_TAG\" -Dbuild.number=$CIRCLE_BUILD_NUM -Dbuild.vcs.number=$CIRCLE_SHA1 -Ddocker.username=${DOCKER_USER}" sbt docker:publish
 
 workflows:
   version: 2
