@@ -83,7 +83,7 @@ class ProjectEntryControllerSpec extends Specification with utils.BuildMyApp wit
           |"vidispineId":"VX-1747"}
         """.stripMargin
 
-      val fakeProjectEntry = ProjectEntry(Some(999),1,None,"MyTestProjectEntry",Timestamp.valueOf(LocalDateTime.now()),"test-user",None,None)
+      val fakeProjectEntry = ProjectEntry(Some(999),1,None,"MyTestProjectEntry",Timestamp.valueOf(LocalDateTime.now()),"test-user",None,None,None)
       mockedProjectHelper.create(any[ProjectRequestFull],org.mockito.Matchers.eq(None))(org.mockito.Matchers.eq(db),org.mockito.Matchers.any[play.api.Configuration]) answers((arglist,mock)=>Future(Success(fakeProjectEntry)))
       val response = route(app, FakeRequest(
         method="PUT",

@@ -51,7 +51,7 @@ class ProjectCreationSpec extends Specification with BuildMyApp {
 
       probe1.expectMsg(30.seconds, NewProjectRequest(rq.get, None, initialData))
       logger.info(probe1.lastSender.toString)
-      val fakeProject = ProjectEntry(None,1,None,"test title",timestamp,"tst-user",None,None)
+      val fakeProject = ProjectEntry(None,1,None,"test title",timestamp,"tst-user",None,None,None)
       val updatedData = initialData.copy(createdProjectEntry = Some(fakeProject))
 
       probe1.reply(StepSucceded(updatedData))
