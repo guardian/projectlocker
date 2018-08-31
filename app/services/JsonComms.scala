@@ -24,6 +24,14 @@ trait JsonComms {
 
   protected def getPlutoAuth = headers.Authorization(BasicHttpCredentials(configuration.get[String]("pluto.username"),configuration.get[String]("pluto.password")))
 
+  /**
+    * generic response handler that takes the HttpResponse object as returned from connection and converts to an Either
+    * indicating success or failure.  On failure (i.e., a non-200 response code), a Left[Boolean] is returned with the
+    * parameter indicating whether to retry or not, on success a parsed JsValue is returned
+    * @param response `HttpResponse` object returend from the server
+    * @param ec implicitly provided execution context
+    * @return Either[Boolean,JsValue]
+    */
   protected def handlePlutoResponse(response:HttpResponse)(implicit ec:ExecutionContext):Either[Boolean,JsValue] = {
     val body = Await.result(bodyAsJsonFuture(response), 5.seconds)
 
