@@ -38,13 +38,17 @@ libraryDependencies += "com.typesafe.slick" %% "slick" % "3.2.2"
 
 
 //authentication
-libraryDependencies += "com.unboundid" % "unboundid-ldapsdk" % "2.3.6"
+libraryDependencies += "com.unboundid" % "unboundid-ldapsdk" % "4.0.5"
 
 // https://mvnrepository.com/artifact/org.python/jython
 libraryDependencies += "org.python" % "jython" % "2.7.1b2"
 
 // upgrade jackson-databind to remove Deserialization of Untrusted Data vuln
 libraryDependencies += "com.fasterxml.jackson.core" % "jackson-databind" % "2.8.11.1"
+
+// upgrade guava to remove Deserialization of Untruseted Data vuln
+// https://mvnrepository.com/artifact/com.google.guava/guava
+libraryDependencies += "com.google.guava" % "guava" % "25.1-jre"
 
 //messaging persistence and clustering
 libraryDependencies ++= Seq(
