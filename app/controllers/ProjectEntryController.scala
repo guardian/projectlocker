@@ -8,7 +8,7 @@ import com.unboundid.ldap.sdk.LDAPConnectionPool
 import exceptions.{BadDataException, ProjectCreationError, RecordNotFoundException}
 import helpers.ProjectCreateHelper
 import models._
-import models.messages.NewProjectCreated
+import models.messages.{NewAdobeUuid, NewAssetFolder, NewProjectCreated}
 import play.api.cache.SyncCacheApi
 import play.api.{Configuration, Logger}
 import play.api.db.slick.DatabaseConfigProvider
@@ -382,6 +382,31 @@ class ProjectEntryController @Inject() (@Named("project-creation-actor") project
 
             if(commission.isDefined) {
               messageProcessor ! NewProjectCreated(projectEntry, projectType, commission.get, projectEntry.created.getTime)
+
+              ProjectMetadata.entryFor(projectId, "created_asset_folder").map({
+                case Some(metadata)=>
+                  logger.info(s"Project ${projectEntry.projectTitle} ($projectId) has an asset folder at ${metadata.value}")
+                  metadata.value match {
+                    case Some(assetFolderPath)=>
+                      messageProcessor ! NewAssetFolder(assetFolderPath, Some(projectId), None) //passing None as the vidispine ID will put the message processor into a retry loop, to pick the ID up when there is one.
+                    case None=>
+                  }
+
+                case None=>
+                  logger.info(s"Project ${projectEntry.projectTitle} ($projectId) has no asset folder")
+              })
+
+              ProjectMetadata.entryFor(projectId, "new_adobe_uuid").map({
+                case Some(metadata)=>
+                  logger.info(s"Project ${projectEntry.projectTitle} ($projectId) has an adobe UUID: ${metadata.value}")
+                  metadata.value match {
+                    case Some(adobeUuid)=>messageProcessor ! NewAdobeUuid(projectEntry, adobeUuid)
+                    case None=>
+                  }
+                case None=>
+                  logger.info(s"Project ${projectEntry.projectTitle} ($projectId) has no adobe UUID")
+              })
+
               Ok(Json.obj("status"->"ok","detail"->"Queued message to update pluto"))
             } else {
               logger.error(s"Can't create project ${projectEntry.projectTitle} ($projectId) in Pluto as it does not have a commission associated with it")
