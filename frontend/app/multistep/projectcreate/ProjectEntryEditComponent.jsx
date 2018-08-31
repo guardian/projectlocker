@@ -3,6 +3,7 @@ import PropTypes from 'prop-types';
 import axios from 'axios';
 import ErrorViewComponent from '../common/ErrorViewComponent.jsx';
 import {validateVsid} from "../../validators/VsidValidator.jsx";
+import UploadingThrobber from '../common/UploadingThrobber.jsx';
 
 class ProjectEntryEditComponent extends React.Component {
     static propTypes = {
@@ -19,10 +20,13 @@ class ProjectEntryEditComponent extends React.Component {
             vsidInvalid: false,
             removeVsid: false,
             vsidChanged: false,
-            error:null
+            error:null,
+            forceAddInProgress: false,
+            forceAddCompleted: false
         };
         this.confirmClicked = this.confirmClicked.bind(this);
         this.vsidUpdated = this.vsidUpdated.bind(this);
+        this.doForceAdd = this.doForceAdd.bind(this);
     }
 
     confirmClicked(){
@@ -62,6 +66,39 @@ class ProjectEntryEditComponent extends React.Component {
         this.setState({vsidChanged: true, vsid: event.target.value, vsidInvalid: (validateVsid(event.target.value)!==null)});
     }
 
+    doForceAdd(event){
+        const projectId = this.props.match.params.itemid;
+        const disabled = !!this.state.vsid && !this.state.forceAddInProgress;
+        if(disabled) return;
+
+        this.setState({forceAddInProgress: true}, ()=> {
+            axios
+                .put("/api/project/" + projectId + "/pokepluto")
+                .then(response=>{
+                    this.setState({forceAddInProgress: false, forceAddCompleted: true});
+
+                })
+                .catch(error=>this.setState({error: error, forceAddInProgress: false, forceAddCompleted: false}))
+        });
+    }
+
+    forceAddOption(){
+        const disabled = !!this.state.vsid && !this.state.forceAddInProgress;
+        const messageText = disabled ? "Can't recreate in Pluto if we already have an ID" : "Re-create in Pluto"
+        return <span>
+            <UploadingThrobber loading={this.state.forceAddInProgress}/>
+            <a onClick={this.doForceAdd}
+               style={{color: disabled ? "grey" : "blue",
+
+                   cursor: disabled ? "auto" : "pointer",
+                   display: this.state.forceAddCompleted ? "none" : "inherit"
+               }}>
+                {messageText}
+            </a>
+            <p style={{display: this.state.forceAddCompleted ? "inherit" : "none"}}>Re-create request sent</p>
+        </span>
+    }
+
     render(){
         //FIXME: this css class should be renamed
         return(<div className="filter-list-block">
@@ -81,10 +118,12 @@ class ProjectEntryEditComponent extends React.Component {
                     <td><input id="vsid" value={this.state.vsid}
                                onChange={this.vsidUpdated}
                                disabled={this.state.removeVsid}
-                               style={{width: "95%"}}/>
+                               style={{width: "95%", marginBottom: 0}}/>
                             {this.state.vsidInvalid ?
                                 <i className="fa fa-exclamation" style={{color: "red", marginLeft: "0.5em"}}/> :
                                 <i className="fa fa-check" style={{color: "green", marginLeft: "0.5em"}}/>}
+                                <br/>
+                        {this.forceAddOption()}
                     </td>
                 </tr>
                 <tr>

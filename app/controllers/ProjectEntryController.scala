@@ -345,16 +345,53 @@ class ProjectEntryController @Inject() (@Named("project-creation-actor") project
     })
   }}
 
-//  def pokePluto(projectId:Int) = IsAuthenticatedAsync {uid=>{request=>
-//    ProjectEntry.entryForId(projectId).map({
-//      case Success(projectEntry)=>
-//        val projectTemplateFuture =
-//        val projectTypeFuture = ProjectType.entryFor(projectEntry.projectTypeId).map({
-//          case Success(projectType)=>projectType.forPluto()
-//        })
-//        messageProcessor ! NewProjectCreated(projectEntry, )
-//        Ok()
-//    })
-//
-//  }}
+  def lookupProjectTypeForPluto(projectEntry:ProjectEntry) = {
+    implicit val db=dbConfig.db
+    val projectTemplateFuture = ProjectTemplate.entryFor(projectEntry.projectTemplateId.get)
+    val projectTypeFuture = ProjectType.entryFor(projectEntry.projectTypeId)
+
+    Future.sequence(Seq(projectTemplateFuture, projectTypeFuture)).flatMap({resultSeq=>
+      val failures = resultSeq.collect({
+        case Failure(error)=>error
+      })
+
+      if(failures.nonEmpty){
+        for(f <- failures) yield logger.error("Could not look up pluto data", f)
+        throw new RuntimeException("Could not look up pluto data, see previous errors for details")
+      } else {
+        val projectTemplate = resultSeq.head.asInstanceOf[Option[ProjectTemplate]].get
+        val projectType = resultSeq(1).asInstanceOf[Try[ProjectType]].get
+        projectType.forPluto(projectTemplate)
+      }
+    })
+  }
+
+  def pokePluto(projectId:Int) = IsAuthenticatedAsync {uid=>{request=>
+    implicit val db=dbConfig.db
+    ProjectEntry.entryForId(projectId).flatMap({
+      case Success(projectEntry)=>
+        if(projectEntry.projectTemplateId.isEmpty)
+          Future(NotFound(Json.obj("status"->"error","detail"->s"Project $projectId does not have a template reference stored on it")))
+        else{
+          val ptForPlutoFuture = lookupProjectTypeForPluto(projectEntry)
+          val commissionFuture = projectEntry.getCommission
+
+          Future.sequence(Seq(ptForPlutoFuture, commissionFuture)).map(resultSeq=>{
+            val projectType = resultSeq.head.asInstanceOf[ProjectTypeForPluto]
+            val commission = resultSeq(1).asInstanceOf[Option[PlutoCommission]]
+
+            if(commission.isDefined) {
+              messageProcessor ! NewProjectCreated(projectEntry, projectType, commission.get, projectEntry.created.getTime)
+              Ok(Json.obj("status"->"ok","detail"->"Queued message to update pluto"))
+            } else {
+              logger.error(s"Can't create project ${projectEntry.projectTitle} ($projectId) in Pluto as it does not have a commission associated with it")
+              BadRequest(Json.obj("status"->"error","detail"->"Project has no commission"))
+            }
+          })
+        }
+    case Failure(error)=>
+      logger.error(s"Could not look up project entry for $projectId", error)
+      Future(InternalServerError(Json.obj("status"->"error","detail"->error.toString)))
+    })
+  }}
 }
