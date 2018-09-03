@@ -1,0 +1,48 @@
+version: "3"
+services:
+  web:
+    # replace username/repo:tag with your name and image details
+    image: andyg42/projectlocker:416
+    deploy:
+      replicas: 1
+      resources:
+        limits:
+          cpus: "0.4"
+          memory: 512M
+      restart_policy:
+        condition: on-failure
+    volumes:
+      - "projectlockerpersistence:/opt/docker/target/persistence"
+    ports:
+      - "9000:80"
+    networks:
+      - webnet
+  visualizer:
+    image: dockersamples/visualizer:stable
+    ports:
+      - "8080:8080"
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock"
+    deploy:
+      placement:
+        constraints: [node.role == manager]
+    networks:
+      - webnet
+  database:
+    image: postgres:9.3
+    environment:
+      POSTGRES_PASSWORD: projectlocker
+      POSTGRES_USER: projectlocker
+      PG_DATA: /data
+      POSTGRES_DB: projectlocker
+    ports:
+      - "5432:5432"
+    volumes:
+      - "postgresdata:/data"
+    networks:
+      - webnet
+volumes:
+  postgresdata:
+  projectlockerpersistence:
+networks:
+  webnet:

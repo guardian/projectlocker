@@ -55,7 +55,7 @@
     <logger name="ProjectCreation.ProjectCreationSpec" level="ERROR"/>
     <logger name="services.actors.creation" level="DEBUG"/>
 
-    <root level="ERROR">
+    <root level="INFO">
         <appender-ref ref="STDOUT" />
         <!-- <appender-ref ref="Sentry" />-->
     </root>
