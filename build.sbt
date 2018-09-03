@@ -18,6 +18,7 @@ lazy val `projectlocker` = (project in file("."))
       dockerBaseImage := "openjdk:8-jdk-alpine",
       dockerAlias := docker.DockerAlias(None,sys.props.get("docker.username"),"projectlocker",Some(sys.props.getOrElse("build.number","DEV"))),
       dockerCommands ++= Seq(
+        Cmd("EXPOSE", "9000", "2552"),
         Cmd("RUN", "mv", "/opt/docker/conf/docker-application.conf", "/opt/docker/conf/application.conf"),
         Cmd("RUN", "mkdir", "-p", "/opt/docker/target/persistence"),
         Cmd("RUN", "ls", "-lhd", "/opt/docker/target/persistence")
