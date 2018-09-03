@@ -78,6 +78,14 @@ libraryDependencies ++= Seq(
   "com.typesafe.akka" %% "akka-testkit" % "2.5.11" % Test
 )
 
+//AWS for media atom integration
+val awsVersion = "1.11.401"
+
+libraryDependencies ++= Seq(
+  "com.amazonaws" % "aws-java-sdk-sts" % awsVersion,
+  "com.amazonaws" % "aws-java-sdk-kinesis" % awsVersion
+)
+
 //Sentry
 libraryDependencies += "io.sentry" % "sentry-logback" % "1.7.2"
 

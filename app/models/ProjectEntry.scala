@@ -28,6 +28,25 @@ case class ProjectEntry (id: Option[Int], projectTypeId: Int, vidispineProjectId
   }
 
   /**
+    * get a [[MediaAtomProject]] object for this project
+    * @param messageType message type field for media atom
+    * @return a Future containing a Try with either the object or a Failure indicating the reason.
+    */
+  def getMediaAtomMessage(messageType:String):Future[Try[MediaAtomProject]] = commissionId match {
+    case Some(realCommissionId)=>
+      PlutoCommission.entryFor(realCommissionId).map({
+        case Some(plutoCommission)=>
+          val commissionId = s"${plutoCommission.siteId}-${plutoCommission.collectionId}"
+          Success(MediaAtomProject(messageType, vidispineProjectId.get, projectTitle, "In Production", commissionId, plutoCommission.title, None, created))
+        case None=>
+          Failure(new RuntimeException(s"No commission existed for project ${this.toString}"))
+      }).recover({
+        case err:Throwable=>Failure(err)
+      })
+  }
+
+
+  /**
     * Gets the working group record associated with this project entry
     * @param db implicitly provided database object
     * @return a Future, containing a Try representing whether the db operation succeeded, containing an Option which has the working group, if there is one.

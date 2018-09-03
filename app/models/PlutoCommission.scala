@@ -125,49 +125,6 @@ trait PlutoCommissionSerializer extends TimestampSerialization {
     )(PlutoCommission.apply _)
 }
 
-/*
-[
-    {
-        "collection_id": 11,
-        "user": 1,
-        "created": "2017-12-04T16:11:23.632",
-        "updated": "2017-12-04T16:11:28.288",
-        "gnm_commission_title": "addasads",
-        "gnm_commission_status": "New",
-        "gnm_commission_workinggroup": "8b2bc331-7a11-40d0-a1e5-1266bdf8dce5",
-        "gnm_commission_description": null,
-        "gnm_commission_owner": [
-            1
-        ]
-    },
-    {
-        "collection_id": 26,
-        "user": 1,
-        "created": "2017-12-06T15:17:19.425",
-        "updated": "2017-12-06T15:17:20.808",
-        "gnm_commission_title": "fwqggrgqggreqgr",
-        "gnm_commission_status": "New",
-        "gnm_commission_workinggroup": "8b2bc331-7a11-40d0-a1e5-1266bdf8dce5",
-        "gnm_commission_description": null,
-        "gnm_commission_owner": [
-            1
-        ]
-    },
-    {
-        "collection_id": 13,
-        "user": 1,
-        "created": "2017-12-04T16:18:12.105",
-        "updated": "2018-01-04T14:14:35.346",
-        "gnm_commission_title": "addasadsf",
-        "gnm_commission_status": "In production",
-        "gnm_commission_workinggroup": "8b2bc331-7a11-40d0-a1e5-1266bdf8dce5",
-        "gnm_commission_description": null,
-        "gnm_commission_owner": [
-            1
-        ]
-    }
-]
- */
 
 object PlutoCommission extends ((Option[Int],Int,String,Timestamp,Timestamp,String,String,Option[String],Int)=>PlutoCommission)  {
   def mostRecentByWorkingGroup(workingGroupId: Int)(implicit db: slick.jdbc.JdbcProfile#Backend#Database):Future[Try[Option[PlutoCommission]]] = {
@@ -176,6 +133,15 @@ object PlutoCommission extends ((Option[Int],Int,String,Timestamp,Timestamp,Stri
     ).map({
       case Failure(error)=>Failure(error)
       case Success(resultList)=> Success(resultList.headOption)
+    })
+  }
+
+  def entryFor(id: Int)(implicit db:slick.jdbc.PostgresProfile#Backend#Database):Future[Option[PlutoCommission]] = {
+    db.run(
+      TableQuery[PlutoCommissionRow].filter(_.id===id).result.asTry
+    ).map({
+      case Success(resultSeq)=>resultSeq.headOption
+      case Failure(error)=>throw error
     })
   }
 
