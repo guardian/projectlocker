@@ -97,7 +97,7 @@ class MediaAtomUpdateActor @Inject()(configurationI: Configuration, actorSystemI
       logger.debug(s"receiveRecover got message handled: ${handledEvt.eventId}")
       state = state.removed(handledEvt.eventId)
     case RecoveryCompleted=>
-      val d = durationToPair(Duration(configuration.getOptional[String]("pluto.resend_delay").getOrElse("10 seconds")))
+      val d = durationToPair(Duration(configuration.getOptional[String]("pluto.resend_delay").getOrElse("60 seconds")))
       val delay = FiniteDuration(d._1,d._2)
       logger.info(s"MessageProcessorActor completed journal recovery, starting automatic retries every $delay")
       actorSystem.scheduler.schedule(delay, delay,self,RetryFromState())
