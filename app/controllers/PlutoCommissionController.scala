@@ -36,7 +36,8 @@ class PlutoCommissionController @Inject()(dbConfigProvider:DatabaseConfigProvide
         }.drop(startAt).take(limit).sortBy(_.title.asc.nullsLast).result.asTry
     )
 
-    override def insert(entry: PlutoCommission, uid: String): Future[Try[Int]] = throw new RuntimeException("This is not supported")
+    override def insert(entry: PlutoCommission, uid: String): Future[Try[Int]] = db.run(
+        (TableQuery[PlutoCommissionRow] returning TableQuery[PlutoCommissionRow].map(_.id) += entry).asTry)
 
     override def deleteid(requestedId: Int):Future[Try[Int]] = throw new RuntimeException("This is not supported")
 
