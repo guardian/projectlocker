@@ -42,7 +42,9 @@ class PlutoCommissionController @Inject()(dbConfigProvider:DatabaseConfigProvide
         shouldCreateEntry(newEntry) match {
             case Right(_) =>
                 this.insert(newEntry, uid).map({
-                    case Success(result) => Ok(Json.obj("status" -> "ok", "detail" -> "added", "id" -> result.asInstanceOf[Int]))
+                    case Success(result) =>
+                        logger.info(s"Successfully created commission record ${result.asInstanceOf[Int]} for ${newEntry.title}")
+                        Ok(Json.obj("status" -> "ok", "detail" -> "added", "id" -> result.asInstanceOf[Int]))
                     case Failure(error) =>
                         logger.error(error.toString)
                         error match {
@@ -73,6 +75,7 @@ class PlutoCommissionController @Inject()(dbConfigProvider:DatabaseConfigProvide
             case Some(workingGroup) =>
                 PlutoCommission.fromServerRepresentation(request.body, workingGroup.id.get, siteId) match {
                     case Success(newEntry)=>
+                        logger.debug(s"Got pluto commission object ${newEntry}")
                         doCreateCommissionRecord(newEntry, uid)
                     case Failure(error)=>
                         logger.error(s"Could not look up working group for $workingGroupUuid", error)
