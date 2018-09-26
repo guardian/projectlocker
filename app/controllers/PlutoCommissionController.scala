@@ -68,22 +68,28 @@ class PlutoCommissionController @Inject()(dbConfigProvider:DatabaseConfigProvide
       * @return
       */
     override def create = IsAdminAsync(parse.json) { uid => { request =>
-        val siteId = (request.body \ "siteId").as[String]
-        val workingGroupUuid = (request.body \ "workingGroupId").as[String]
+        try {
+            val siteId = (request.body \ "siteId").as[String]
+            val workingGroupUuid = (request.body \ "gnm_commission_workinggroup").as[String]
 
-        PlutoWorkingGroup.entryForUuid(workingGroupUuid).flatMap({
-            case Some(workingGroup) =>
-                PlutoCommission.fromServerRepresentation(request.body, workingGroup.id.get, siteId) match {
-                    case Success(newEntry)=>
-                        logger.debug(s"Got pluto commission object ${newEntry}")
-                        doCreateCommissionRecord(newEntry, uid)
-                    case Failure(error)=>
-                        logger.error(s"Could not look up working group for $workingGroupUuid", error)
-                        Future(InternalServerError(Json.obj("status"->"error","detail"->error.toString)))
-                }
-            case None =>
-                Future(BadRequest(Json.obj("status" -> "error", "detail" -> "Working group does not exist")))
-        })
+            PlutoWorkingGroup.entryForUuid(workingGroupUuid).flatMap({
+                case Some(workingGroup) =>
+                    PlutoCommission.fromServerRepresentation(request.body, workingGroup.id.get, siteId) match {
+                        case Success(newEntry) =>
+                            logger.debug(s"Got pluto commission object $newEntry")
+                            doCreateCommissionRecord(newEntry, uid)
+                        case Failure(error) =>
+                            logger.error(s"Could not look up working group for $workingGroupUuid", error)
+                            Future(InternalServerError(Json.obj("status" -> "error", "detail" -> error.toString)))
+                    }
+                case None =>
+                    Future(BadRequest(Json.obj("status" -> "error", "detail" -> "Working group does not exist")))
+            })
+        } catch {
+            case e:Throwable=>
+                logger.error("Could not process create commission request:", e)
+                Future(InternalServerError(Json.obj("status"->"error","detail"->e.toString)))
+        }
     }
     }
 
