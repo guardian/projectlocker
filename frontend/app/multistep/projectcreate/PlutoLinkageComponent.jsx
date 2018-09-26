@@ -17,8 +17,7 @@ class PlutoLinkageComponent extends CommonMultistepComponent {
 
         this.state = {
             plutoCommissionRef: null,
-            workingGroupRef: null,
-            onlyInProduction: true
+            workingGroupRef: null
         }
     }
 
@@ -42,15 +41,7 @@ class PlutoLinkageComponent extends CommonMultistepComponent {
                     <td>Commission</td>
                     <td><CommissionSelector workingGroupId={this.state.workingGroupRef}
                                             selectedCommissionId={this.state.plutoCommissionRef}
-                                            showStatus={this.state.onlyInProduction ? "In production" : null}
                                             valueWasSet={value=>this.setState({plutoCommissionRef: value})}/>
-                        <input type="checkbox"
-                               checked={this.state.onlyInProduction}
-                               onChange={event=>this.setState({onlyInProduction: event.target.checked})}
-                               id="only-show-production"
-                                style={{marginLeft: "1em"}}
-                        />
-                        <label htmlFor="only-show-production" style={{display: "inline", marginLeft: "0.4em"}}>Only show commissions "In production"</label>
                     </td>
                 </tr>
                 </tbody>

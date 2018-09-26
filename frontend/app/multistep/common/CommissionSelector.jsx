@@ -7,7 +7,6 @@ class CommissionSelector extends React.Component {
     static propTypes = {
         workingGroupId: PropTypes.number.isRequired,
         selectedCommissionId: PropTypes.number.isRequired,
-        showStatus: PropTypes.string.isRequired,
         valueWasSet: PropTypes.func.isRequired
     };
 
@@ -17,7 +16,8 @@ class CommissionSelector extends React.Component {
         this.state = {
             commissionList: [],
             loading: false,
-            error: null
+            error: null,
+            onlyInProduction: false
         }
     }
 
@@ -27,7 +27,8 @@ class CommissionSelector extends React.Component {
 
     loadData(){
         this.setState({loading:true, error: null, commissionList:[]},()=>{
-            const searchDoc = {workingGroupId: this.props.workingGroupId, status: this.props.showStatus, match: "W_EXACT" };
+            const status = this.state.onlyInProduction ? "In production" : null;
+            const searchDoc = {workingGroupId: this.props.workingGroupId, status: status, match: "W_EXACT" };
             axios.put("/api/pluto/commission/list", searchDoc).then(response=>{
                 this.setState({loading: false,
                     error: null,
@@ -41,8 +42,11 @@ class CommissionSelector extends React.Component {
     }
 
     componentDidUpdate(prevProps, prevState){
-        if(prevProps.workingGroupId!==this.props.workingGroupId || prevProps.showStatus!==this.props.showStatus)
+        if(prevProps.workingGroupId!==this.props.workingGroupId) {
             this.loadData();
+        } else if(prevState.onlyInProduction!==this.state.onlyInProduction){
+            this.loadData();
+        }
     }
 
     render(){
@@ -51,13 +55,23 @@ class CommissionSelector extends React.Component {
         else if(this.state.error)
             return <ErrorViewComponent error={this.state.error}/>;
         else
-            return <select id="commission-selector"
+            return <div>
+                <select id="commission-selector"
                            onChange={event=>this.props.valueWasSet(parseInt(event.target.value))}
                            defaultValue={this.props.selectedCommissionId}>
                 {
                     this.state.commissionList.map(comm=><option key={comm.id} value={comm.id}>{comm.title}</option>)
                 }
-                </select>;
+                </select>
+                <input type="checkbox"
+                       checked={this.state.onlyInProduction}
+                       onChange={event=>this.setState({onlyInProduction: event.target.checked})}
+                       id="only-show-production"
+                       style={{marginLeft: "1em"}}
+                />
+                <label htmlFor="only-show-production" style={{display: "inline", marginLeft: "0.4em"}}>Only show commissions "In production"</label>
+
+            </div>;
     }
 }
 
