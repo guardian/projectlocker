@@ -116,6 +116,9 @@ object LDAP {
         logger.debug(s"Got roles $groups")
         Some(groups)
       } catch {
+        case ex:java.lang.IndexOutOfBoundsException=>
+          logger.error(s"User $uid has no roles attached?", ex)
+          None
         case lde: LDAPException =>
           logger.error("Could not look up ldap groups", lde)
           None
