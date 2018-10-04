@@ -200,6 +200,10 @@ object PostrunAction extends ((Option[Int],String,String,Option[String],String,I
       TableQuery[PostrunActionRow].result.asTry
     )
 
+  def allPython(implicit db:slick.jdbc.PostgresProfile#Backend#Database):Future[Try[Seq[PostrunAction]]] =
+    db.run(
+      TableQuery[PostrunActionRow].filter(_.runnable like "%.py").result.asTry
+    )
 }
 
 class PostrunActionRow(tag:Tag) extends Table[PostrunAction](tag, "PostrunAction") {

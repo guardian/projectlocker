@@ -48,12 +48,25 @@ class PostrunActionScanner @Inject() (dbConfigProvider: DatabaseConfigProvider, 
       logger.error("Precompiler could not recover, this should not happen", e)
   })
 
+  //Scan POJOs
+  logger.debug(s"URLs from classpath are ${ClasspathHelper.forClassLoader}")
+  val classLoadersList = ArrayBuffer(ClasspathHelper.contextClassLoader, ClasspathHelper.staticClassLoader)
+  val reflections = new Reflections(new ConfigurationBuilder()
+    .setScanners(new SubTypesScanner(false), new ResourcesScanner())
+    .setUrls(ClasspathHelper.forClassLoader())
+    .filterInputsBy(new FilterBuilder().include(FilterBuilder.prefix("postrun")))
+  )
+
+  reflections.getSubTypesOf(classOf[PojoPostrun]).asScala.foreach(classRef=>addIfNotExists(classRef.getCanonicalName,s"java:${classRef.getCanonicalName}"))
+
+
   protected def addIfNotExists(scriptName:String,absolutePath:String) = {
+    logger.debug(s"will add $scriptName at $absolutePath if it does not exist already")
     PostrunAction.entryForRunnable(scriptName) map {
       case Success(results)=>
         if(results.isEmpty){
           logger.info(s"Adding newly found postrun script $absolutePath to database")
-          val newRecord = PostrunAction(None,scriptName,scriptName,None,"system",1,new Timestamp(ZonedDateTime.now().toEpochSecond*1000))
+          val newRecord = PostrunAction(None,absolutePath,scriptName,None,"system",1,new Timestamp(ZonedDateTime.now().toEpochSecond*1000))
           newRecord.save map {
             case Failure(error)=>
               logger.error("Unable to save postrun script to database: ", error)
@@ -86,14 +99,5 @@ class PostrunActionScanner @Inject() (dbConfigProvider: DatabaseConfigProvider, 
             .foreach(file=>addFileIfNotExists(file))
     })
 
-    //Scan POJOs
-    val classLoadersList = ArrayBuffer(ClasspathHelper.contextClassLoader, ClasspathHelper.staticClassLoader)
-    val reflections = new Reflections(new ConfigurationBuilder()
-    .setScanners(new SubTypesScanner(false), new ResourcesScanner())
-    .setUrls(ClasspathHelper.forClassLoader(classLoadersList.head, classLoadersList(1)))
-        .filterInputsBy(new FilterBuilder().include(FilterBuilder.prefix("postrun")))
-    )
-
-    reflections.getSubTypesOf(classOf[PojoPostrun]).asScala.foreach(classRef=>addIfNotExists(classRef.getCanonicalName,classRef.getCanonicalName))
   }
 }
