@@ -45,7 +45,7 @@ def _run_helper_script(asset_folder_location,raven_client,fixmode=False,nosudo=F
     logger.debug("My path is {0}".format(mypath))
 
     if nosudo:
-        args = "{p} \"{f}\" {o} {g}".format(p=os.path.join(mypath, 'mkdir_on_behalf_of.pl'), f=asset_folder_location,
+        args = "perl {p} \"{f}\" {o} {g}".format(p=os.path.join(mypath, 'mkdir_on_behalf_of.pl'), f=asset_folder_location,
                                             o=str(af_owner), g=str(af_group))
     else:
         args = "/usr/bin/sudo -n {p} \"{f}\" {o} {g}".format(p=os.path.join(mypath, 'mkdir_on_behalf_of.pl'),

@@ -26,7 +26,7 @@ lazy val `projectlocker` = (project in file("."))
       dockerAlias := docker.DockerAlias(None,sys.props.get("docker.username"),"projectlocker",Some(sys.props.getOrElse("build.number","DEV"))),
       dockerCommands ++= Seq(
         Cmd("USER", "root"),
-        Cmd("RUN", "apk", "add", "sudo", "--no-cache"),
+        Cmd("RUN", "apk", "add", "sudo", "perl", "--no-cache"),
         Cmd("USER", "daemon"),
         Cmd("RUN", "mv", "/opt/docker/conf/docker-application.conf", "/opt/docker/conf/application.conf"),
         Cmd("RUN", "mkdir", "-p", "/opt/docker/target/persistence"),
