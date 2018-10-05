@@ -6,6 +6,12 @@ name := "projectlocker"
 
 version := "1.0-dev"
 
+//don't use RUNNING_PID file as that causes problems when we switch UIDs in Docker
+//https://stackoverflow.com/questions/28351405/restarting-play-application-docker-container-results-in-this-application-is-alr
+javaOptions in Universal ++= Seq(
+  "-Dpidfile.path=/dev/null"
+)
+
 lazy val `projectlocker` = (project in file("."))
   .enablePlugins(PlayScala)
   .enablePlugins(AshScriptPlugin) //needed for alpine-based images
