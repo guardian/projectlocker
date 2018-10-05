@@ -17,7 +17,7 @@ class FolderCreationFailed(StandardError):
     pass
 
 
-def _run_helper_script(asset_folder_location,raven_client,fixmode=False):
+def _run_helper_script(asset_folder_location,raven_client,fixmode=False,nosudo=False):
     """
     Run the setuid helper, to actually create/fix asset folders
     :param asset_folder_location: path on-disk to create or fix
@@ -44,9 +44,13 @@ def _run_helper_script(asset_folder_location,raven_client,fixmode=False):
     mypath = os.path.dirname(os.path.realpath(__file__))
     logger.debug("My path is {0}".format(mypath))
 
-    args = "/usr/bin/sudo -n {p} \"{f}\" {o} {g}".format(p=os.path.join(mypath, 'mkdir_on_behalf_of.pl'),
-                                             f=asset_folder_location,
-                                             o=str(af_owner), g=str(af_group))
+    if nosudo:
+        args = "{p} \"{f}\" {o} {g}".format(p=os.path.join(mypath, 'mkdir_on_behalf_of.pl'), f=asset_folder_location,
+                                            o=str(af_owner), g=str(af_group))
+    else:
+        args = "/usr/bin/sudo -n {p} \"{f}\" {o} {g}".format(p=os.path.join(mypath, 'mkdir_on_behalf_of.pl'),
+                                                 f=asset_folder_location,
+                                                 o=str(af_owner), g=str(af_group))
     if fixmode:
         args += " --fixmode"
 
@@ -100,12 +104,12 @@ def postrun(**kwargs):
                                              make_safe_string(kwargs['commissionTitle']),
                                              "{user}_{project}".format(user=make_safe_string(kwargs['projectOwner']),
                                                                        project=make_safe_string(kwargs['projectTitle'])))
-
+        nosudo = hasattr(settings,"ASSET_FOLDER_NOSUDO")
     except KeyError as e:
         logger.error("Missing necessary arguments to postrun. Provided arguments were:")
         pprint(kwargs)
         raise RuntimeError("Could not create asset folder, missing working group and/or commission? see log for details")
 
     logger.info("Creating new asset folder at {0}".format(asset_folder_location))
-    _run_helper_script(asset_folder_location, raven_client=None,fixmode=False)
+    _run_helper_script(asset_folder_location, raven_client=None,fixmode=False,nosudo=nosudo)
     return {'created_asset_folder': asset_folder_location}
