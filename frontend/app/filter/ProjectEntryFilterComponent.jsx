@@ -13,7 +13,7 @@ class ProjectEntryFilterComponent extends GenericEntryFilterComponent {
     componentWillMount(){
         this.setState({distinctOwners: []},()=> {
             axios.get("/api/project/distinctowners")
-                .then(result => this.setState({distinctOwners: ["Everyone"].concat(result.data.result)}))
+                .then(result => this.setState({distinctOwners: ["Everyone"].concat(result.data.result.sort())}))
                 .catch(error => {
                     console.error(error);
                     this.setState({error: error});
