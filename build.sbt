@@ -79,6 +79,10 @@ libraryDependencies += "com.google.guava" % "guava" % "25.1-jre"
 
 //messaging persistence and clustering
 libraryDependencies ++= Seq(
+  "com.lightbend.akka.management" %% "akka-management" % "0.18.0",
+  "com.lightbend.akka.management" %% "akka-management-cluster-bootstrap" % "0.18.0",
+  "com.lightbend.akka.discovery" %% "akka-discovery-kubernetes-api" % "0.18.0",
+  "com.lightbend.akka.discovery" %% "akka-discovery-dns" % "0.18.0",
   "com.typesafe.akka" %% "akka-persistence" % "2.5.11",
   "com.typesafe.akka" %% "akka-cluster" % "2.5.11",
   "com.typesafe.akka" %% "akka-cluster-metrics" % "2.5.11",
