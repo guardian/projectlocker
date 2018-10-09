@@ -15,7 +15,7 @@ import scala.concurrent.Future
 import scala.util.{Failure, Success, Try}
 import scala.concurrent.ExecutionContext.Implicits.global
 
-case class PlutoCommission (id:Option[Int], collectionId:Int, siteId: String, created: Timestamp, updated:Timestamp,
+case class PlutoCommission (id:Option[Int], collectionId:Option[Int], siteId: String, created: Timestamp, updated:Timestamp,
                             title: String, status: String, description: Option[String], workingGroup: Int) {
   private def logger = Logger(getClass)
 
@@ -87,7 +87,7 @@ case class PlutoCommission (id:Option[Int], collectionId:Int, siteId: String, cr
 
 class PlutoCommissionRow (tag:Tag) extends Table[PlutoCommission](tag,"PlutoCommission"){
   def id = column[Int]("id",O.PrimaryKey, O.AutoInc)
-  def collectionId = column[Int]("i_collection_id")
+  def collectionId = column[Option[Int]]("i_collection_id")
   def siteId = column[String]("s_site_id")
   def created = column[Timestamp]("t_created")
   def updated = column[Timestamp]("t_updated")
@@ -102,7 +102,7 @@ class PlutoCommissionRow (tag:Tag) extends Table[PlutoCommission](tag,"PlutoComm
 trait PlutoCommissionSerializer extends TimestampSerialization {
   implicit val plutoCommissionWrites:Writes[PlutoCommission] = (
     (JsPath \ "id").writeNullable[Int] and
-      (JsPath \ "collectionId").write[Int] and
+      (JsPath \ "collectionId").writeNullable[Int] and
       (JsPath \ "siteId").write[String] and
       (JsPath \ "created").write[Timestamp] and
       (JsPath \ "updated").write[Timestamp] and
@@ -114,7 +114,7 @@ trait PlutoCommissionSerializer extends TimestampSerialization {
 
   implicit val plutoCommissionReads:Reads[PlutoCommission] = (
     (JsPath \ "id").readNullable[Int] and
-      (JsPath \ "collectionId").read[Int] and
+      (JsPath \ "collectionId").readNullable[Int] and
       (JsPath \ "siteId").read[String] and
       (JsPath \ "created").read[Timestamp] and
       (JsPath \ "updated").read[Timestamp] and
@@ -169,7 +169,7 @@ trait PlutoCommissionSerializer extends TimestampSerialization {
 ]
  */
 
-object PlutoCommission extends ((Option[Int],Int,String,Timestamp,Timestamp,String,String,Option[String],Int)=>PlutoCommission)  {
+object PlutoCommission extends ((Option[Int],Option[Int],String,Timestamp,Timestamp,String,String,Option[String],Int)=>PlutoCommission)  {
   def mostRecentByWorkingGroup(workingGroupId: Int)(implicit db: slick.jdbc.JdbcProfile#Backend#Database):Future[Try[Option[PlutoCommission]]] = {
     db.run(
       TableQuery[PlutoCommissionRow].filter(_.workingGroup===workingGroupId).sortBy(_.updated.desc).take(1).result.asTry
@@ -209,7 +209,7 @@ object PlutoCommission extends ((Option[Int],Int,String,Timestamp,Timestamp,Stri
     try {
       val comm = new PlutoCommission(
         id = None,
-        collectionId = (serverRep \ "collection_id").as[Int],
+        collectionId = (serverRep \ "collection_id").asOpt[Int],
         siteId = forSiteId,
         created = (serverRep \ "created").as[Timestamp],
         updated = (serverRep \ "updated").as[Timestamp],

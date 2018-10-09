@@ -67,7 +67,7 @@ class PlutoCommissionSpec extends Specification with utils.BuildMyApp with Times
       data(1) must beSuccessfulTry
       data(2) must beSuccessfulTry
       println(data(2).get)
-      data(2).get.collectionId mustEqual 13
+      data(2).get.collectionId must beSome(13)
       data(2).get.title mustEqual "addasadsf"
       data(2).get.status mustEqual "In production"
 
@@ -85,7 +85,7 @@ class PlutoCommissionSpec extends Specification with utils.BuildMyApp with Times
 
       result must beSuccessfulTry
       result.get must beSome
-      result.get.get.collectionId mustEqual 4567
+      result.get.get.collectionId must beSome(4567)
       result.get.get.title mustEqual "My test commission 4"
     }
   }
