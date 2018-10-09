@@ -67,7 +67,7 @@ class PlutoCommissionController @Inject()(dbConfigProvider:DatabaseConfigProvide
       * form.
       * @return
       */
-    override def create = IsAuthenticatedAsync(parse.json) { uid => { request =>
+    def createExternal = IsAuthenticatedAsync(parse.json) { uid => { request =>
         try {
             val siteId = (request.body \ "siteId").as[String]
             val workingGroupUuid = (request.body \ "gnm_commission_workinggroup").as[String]
