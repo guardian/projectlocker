@@ -6,7 +6,7 @@ import com.google.inject.Inject
 import akka.actor.{Actor, ActorSystem, Props}
 import akka.cluster.pubsub.DistributedPubSub
 import akka.stream.ActorMaterializer
-import models.messages.{NewAdobeUuid, NewAssetFolder, NewProjectCreated, QueuedMessage}
+import models.messages.{NewAdobeUuid, NewAssetFolder, NewProjectCreated, NewCommissionCreated, QueuedMessage}
 import play.api.{Configuration, Logger}
 import services.{ListenAssetFolder, ListenNewUuid, ListenProjectCreate}
 import akka.persistence._
@@ -29,6 +29,8 @@ object MessageProcessorActor {
   case class NewProjectCreatedEvent(rq: NewProjectCreated, eventId: UUID) extends MessageEvent
   case class NewAdobeUuidEvent(rq: NewAdobeUuid, eventId: UUID) extends MessageEvent
   case class NewAssetFolderEvent(rq: NewAssetFolder, eventId: UUID) extends MessageEvent
+
+  case class NewCommissionCreatedEvent(rq: NewCommissionCreated, eventId: UUID) extends MessageEvent
 
   case class EventHandled(eventId: UUID)
   case class RetryFromState()
@@ -172,10 +174,24 @@ class MessageProcessorActor @Inject()(configurationI: Configuration, actorSystem
           })
       }
 
+    case msgAsObject:NewCommissionCreated =>
+      persist(NewCommissionCreatedEvent(msgAsObject, UUID.randomUUID())) { event=>
+        updateState(event)
+        logger.debug("persisted new commission create event to journal, now sending")
+        self ! event
+      }
+
+    case evtAsObject:NewCommissionCreatedEvent =>
+      logger.info("Informing pluto of new commission")
+      configuration.getOptional[String]("pluto.sync_enabled") match {
+        case Some("no") => logger.warn("Not sending commission created message to pluto as sync_enabled is set to 'no'")
+        case _=>
+
+      }
     case msgAsObject:NewAdobeUuid =>
       persist(NewAdobeUuidEvent(msgAsObject, UUID.randomUUID())) { event=>
         updateState(event)
-        logger.debug("persisted new adove uuid event to journal, now sending")
+        logger.debug("persisted new adobe uuid event to journal, now sending")
         self ! event
       }
 

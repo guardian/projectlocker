@@ -1,8 +1,11 @@
 package controllers
 
+import akka.actor.ActorRef
 import exceptions.{AlreadyExistsException, BadDataException}
 import javax.inject._
 import models._
+import java.time.Instant
+import models.messages.NewCommissionCreated
 import play.api.cache.SyncCacheApi
 import play.api.db.slick.DatabaseConfigProvider
 import play.api.libs.json.{JsResult, JsValue, Json}
@@ -13,11 +16,10 @@ import slick.lifted.TableQuery
 
 import scala.concurrent.Future
 import scala.util.{Failure, Success, Try}
-
 import scala.concurrent.ExecutionContext.Implicits.global
 
 @Singleton
-class PlutoCommissionController @Inject()(dbConfigProvider:DatabaseConfigProvider, cacheImpl:SyncCacheApi)
+class PlutoCommissionController @Inject()(dbConfigProvider:DatabaseConfigProvider, cacheImpl:SyncCacheApi, @Named("message-processor-actor") messageProcessorActor:ActorRef)
   extends GenericDatabaseObjectControllerWithFilter[PlutoCommission,PlutoCommissionFilterTerms]
     with PlutoCommissionSerializer with PlutoCommissionFilterTermsSerializer {
 
@@ -91,6 +93,15 @@ class PlutoCommissionController @Inject()(dbConfigProvider:DatabaseConfigProvide
                 Future(InternalServerError(Json.obj("status"->"error","detail"->e.toString)))
         }
     }
+    }
+
+    /**
+      * trigger a message to tell Pluto that a new commission has been created
+      * @param newEntry - entry that has been created.
+      * @param createdId - ID that it was created with
+      */
+    override def postCreateHook(newEntry: PlutoCommission, createdId: Int): Unit = {
+        messageProcessorActor ! NewCommissionCreated(newEntry.copy(id=Some(createdId)), Instant.now().toEpochMilli)
     }
 
     override def insert(entry: PlutoCommission, uid: String): Future[Try[Int]] = db.run(

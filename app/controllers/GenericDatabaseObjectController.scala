@@ -159,9 +159,15 @@ trait GenericDatabaseObjectControllerWithFilter[M,F] extends InjectedController 
     * Override this method in the subclass to prevent certain entries from being created
     * @param newEntry - entry that the client wants to create
     * @return Either[String,Boolean] indicating whether to proceed or not. If Right then the operation is carried out, if Left then the string
-    *         is used as the error responde detail
+    *         is used as the error response detail
     */
   def shouldCreateEntry(newEntry:M):Either[String,Boolean] = Right(true)
+
+  /**
+    * override this method in the subclass to get a hook point for more actions when the item has been created
+    * @param newEntry - entry that has been created.
+    */
+  def postCreateHook(newEntry:M, createdId:Int):Unit = {}
 
   def create = IsAdminAsync(parse.json) {uid=>{request =>
     this.validate(request).fold(
@@ -173,7 +179,9 @@ trait GenericDatabaseObjectControllerWithFilter[M,F] extends InjectedController 
         shouldCreateEntry(newEntry) match {
           case Right(_)=>
             this.insert(newEntry, uid).map({
-              case Success(result) => Ok(Json.obj("status" -> "ok", "detail" -> "added", "id" -> result.asInstanceOf[Int]))
+              case Success(result) =>
+                postCreateHook(newEntry, result.asInstanceOf[Int])
+                Ok(Json.obj("status" -> "ok", "detail" -> "added", "id" -> result.asInstanceOf[Int]))
               case Failure(error) =>
                 logger.error(error.toString)
                 error match {

@@ -4,7 +4,7 @@ import java.sql.Timestamp
 import java.time.ZonedDateTime
 
 import org.joda.time.DateTime
-import play.api.Logger
+import play.api.{Configuration, Logger}
 import play.api.libs.functional.syntax.unlift
 import play.api.libs.json._
 import play.api.libs.functional.syntax._
@@ -83,6 +83,53 @@ case class PlutoCommission (id:Option[Int], collectionId:Option[Int], siteId: St
     "commissionTitle"->title,
     "commissionDescription"->description.getOrElse("")
   )
+
+  /*
+    {
+        "collection_id": 11,
+        "user": 1,
+        "created": "2017-12-04T16:11:23.632",
+        "updated": "2017-12-04T16:11:28.288",
+        "gnm_commission_title": "addasads",
+        "gnm_commission_status": "New",
+        "gnm_commission_workinggroup": "8b2bc331-7a11-40d0-a1e5-1266bdf8dce5",
+        "gnm_commission_description": null,
+        "gnm_commission_owner": [
+            1
+        ]
+    },
+ */
+
+  /**
+    * returns a Json object for sending updates to the server (internal method)
+    * @param plutoCommission pluto commission object to update
+    * @param workingGroupUuid working group UUID it's associated with; call the overloaded version of this method to do the lookup
+    * @return JsValue
+    */
+  def toServerRepresentation(plutoCommission: PlutoCommission, workingGroupUuid:String):JsValue = Json.obj(
+    "user" -> 1,
+    "created" -> plutoCommission.created,
+    "updated" -> plutoCommission.updated,
+    "gnm_commission_title" -> plutoCommission.title,
+    "gnm_commission_status" -> plutoCommission.status,
+    "gnm_commission_description" -> plutoCommission.description,
+    "gnm_commission_owner" -> JsValue(Seq())
+  )
+
+  /**
+    * returns a Json object for sending updates to the server (main method)
+    * @param plutoCommission pluto commission object to update
+    * @return JsValue
+    */
+  def toServerRepresentation(plutoCommission: PlutoCommission)(implicit db:slick.jdbc.PostgresProfile#Backend#Database, config:Configuration):Future[JsValue] = {
+    PlutoWorkingGroup.entryForId(plutoCommission.workingGroup).map({
+      case None=>
+        logger.error(s"Could not generate server representation for commission id ${plutoCommission.id} as it had no valid working group")
+        throw new RuntimeException(s"Could not generate server representation for commission id ${plutoCommission.id} as it had no valid working group")
+      case Some(workingGroupFull)=>
+        toServerRepresentation(plutoCommission, workingGroupFull.uuid)
+    })
+  }
 }
 
 class PlutoCommissionRow (tag:Tag) extends Table[PlutoCommission](tag,"PlutoCommission"){
