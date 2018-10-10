@@ -18,7 +18,7 @@ class PlutoLinkageComponent extends CommonMultistepComponent {
         this.state = {
             plutoCommissionRef: null,
             workingGroupRef: null,
-            onlyInProduction: true
+            showStatus: "In production"
         }
     }
 
@@ -42,15 +42,15 @@ class PlutoLinkageComponent extends CommonMultistepComponent {
                     <td>Commission</td>
                     <td><CommissionSelector workingGroupId={this.state.workingGroupRef}
                                             selectedCommissionId={this.state.plutoCommissionRef}
-                                            showStatus={this.state.onlyInProduction ? "In production" : null}
+                                            showStatus={this.state.showStatus}
                                             valueWasSet={value=>this.setState({plutoCommissionRef: value})}/>
-                        <input type="checkbox"
-                               checked={this.state.onlyInProduction}
-                               onChange={event=>this.setState({onlyInProduction: event.target.checked})}
-                               id="only-show-production"
-                                style={{marginLeft: "1em"}}
-                        />
-                        <label htmlFor="only-show-production" style={{display: "inline", marginLeft: "0.4em"}}>Only show commissions "In production"</label>
+                        <br />
+                        <input id="only-show-production" type="radio" name="commission" checked={this.state.showStatus==="In production"} onChange={event=>this.setState({showStatus: "In production"})}/>
+                        <label className="commission_buttons" htmlFor="only-show-production" style={{display: "inline", marginLeft: "0.4em"}}>In Production</label>
+                        <input id="only-show-new" type="radio" name="commission" checked={this.state.showStatus==="New"} onChange={event=>this.setState({showStatus: "New"})}/>
+                        <label className="commission_buttons" htmlFor="only-show-new" style={{display: "inline", marginLeft: "0.4em"}}>New</label>
+                        <input id="show-everything" type="radio" name="commission" checked={this.state.showStatus===null} onChange={event=>this.setState({showStatus: null})}/>
+                        <label className="commission_buttons" htmlFor="show-everything" style={{display: "inline", marginLeft: "0.4em"}}>Everything</label>
                     </td>
                 </tr>
                 </tbody>
