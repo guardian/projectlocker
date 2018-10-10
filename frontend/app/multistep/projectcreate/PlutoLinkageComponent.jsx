@@ -46,11 +46,11 @@ class PlutoLinkageComponent extends CommonMultistepComponent {
                                             valueWasSet={value=>this.setState({plutoCommissionRef: value})}/>
                         <br />
                         <input id="only-show-production" type="radio" name="commission" checked={this.state.showStatus==="In production"} onChange={event=>this.setState({showStatus: "In production"})}/>
-                        <label htmlFor="only-show-production" style={{display: "inline", marginLeft: "0.4em"}}>"In production"</label>
+                        <label className="commission_buttons" htmlFor="only-show-production" style={{display: "inline", marginLeft: "0.4em"}}>In Production</label>
                         <input id="only-show-new" type="radio" name="commission" checked={this.state.showStatus==="New"} onChange={event=>this.setState({showStatus: "New"})}/>
-                        <label htmlFor="only-show-new" style={{display: "inline", marginLeft: "0.4em"}}>"New"</label>
+                        <label className="commission_buttons" htmlFor="only-show-new" style={{display: "inline", marginLeft: "0.4em"}}>New</label>
                         <input id="show-everything" type="radio" name="commission" checked={this.state.showStatus===null} onChange={event=>this.setState({showStatus: null})}/>
-                        <label htmlFor="show-everything" style={{display: "inline", marginLeft: "0.4em"}}>Everything</label>
+                        <label className="commission_buttons" htmlFor="show-everything" style={{display: "inline", marginLeft: "0.4em"}}>Everything</label>
                     </td>
                 </tr>
                 </tbody>
