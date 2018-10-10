@@ -2,8 +2,8 @@ package controllers
 
 import java.io.FileInputStream
 import java.util.Properties
-import javax.inject.{Inject, Singleton}
 
+import javax.inject.{Inject, Singleton}
 import play.api._
 import play.api.mvc._
 import auth.{LDAP, Security, User}
@@ -12,6 +12,7 @@ import helpers.DatabaseHelper
 import models.{LoginRequest, LoginRequestSerializer}
 import play.api.cache.SyncCacheApi
 import play.api.libs.json._
+import services.Cachebuster
 
 import scala.collection.JavaConverters._
 import scala.concurrent.Future
@@ -19,7 +20,8 @@ import scala.util.{Failure, Success, Try}
 import scala.concurrent.ExecutionContext.Implicits.global
 
 @Singleton
-class Application @Inject() (cc:ControllerComponents, p:PlayBodyParsers, config:Configuration, cacheImpl:SyncCacheApi, dbHelper:DatabaseHelper)
+class Application @Inject() (cc:ControllerComponents, p:PlayBodyParsers, config:Configuration,
+                             cacheImpl:SyncCacheApi, dbHelper:DatabaseHelper, cachebuster:Cachebuster)
   extends AbstractController(cc) with Security with LoginRequestSerializer {
 
   implicit val cache:SyncCacheApi = cacheImpl
@@ -30,7 +32,7 @@ class Application @Inject() (cc:ControllerComponents, p:PlayBodyParsers, config:
     * @return Action containing html
     */
   def index(path:String) = Action {
-    Ok(views.html.index())
+    Ok(views.html.index(cachebuster))
   }
 
   def timeoutTest(delay: Int) = Action {
