@@ -55,6 +55,7 @@
     <logger name="services.actors.ProjectCreationActor" level="DEBUG"/>
     <logger name="ProjectCreation.ProjectCreationSpec" level="ERROR"/>
     <logger name="services.actors.creation" level="DEBUG"/>
+    <logger name="services.CachebusterImpl" level="DEBUG"/>
 
     <root level="INFO">
         <appender-ref ref="STDOUT" />
