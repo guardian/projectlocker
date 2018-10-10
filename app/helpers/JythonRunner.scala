@@ -57,7 +57,7 @@ object JythonRunner {
   def precompile(implicit db:slick.jdbc.PostgresProfile#Backend#Database, config:Configuration):Future[Seq[Try[String]]] = {
     val interpreter = new PythonInterpreter()
 
-    PostrunAction.allEntries.map({
+    PostrunAction.allPython.map({
       case Success(entries)=>
         entries.map(entry=>{
           try {

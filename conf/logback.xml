@@ -24,6 +24,7 @@
     <logger name="play" level="INFO" />
     <logger name="application" level="ERROR" />
     <logger name="services.PostrunActionScanner" level="WARN"/>
+    <logger name="org.reflections" level="OFF"/>
     <logger name="helpers.ProjectCreateHelperImpl" level="WARN"/>
     <logger name="helpers.PostrunSorter" level="DEBUG"/>
 
