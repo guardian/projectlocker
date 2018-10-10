@@ -30,7 +30,7 @@ extends GeneralFilterEntryTerms[ProjectEntryRow, ProjectEntry] {
 
     if(title.isDefined) action = action.filter(_.projectTitle like makeWildcard(title.get))
     if(vidispineProjectId.isDefined) action = action.filter(_.vidispineProjectId like makeWildcard(vidispineProjectId.get))
-    if(user.isDefined) action = action.filter(_.user like makeWildcard(user.get))
+    if(user.isDefined && user.get!="Everyone") action = action.filter(_.user like makeWildcard(user.get))
     action
   }
 }
