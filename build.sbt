@@ -92,6 +92,11 @@ libraryDependencies ++= Seq(
   "com.typesafe.akka" %% "akka-testkit" % "2.5.11" % Test
 )
 
+//explicit akka upgrades for security
+libraryDependencies ++= Seq(
+  "com.typesafe.akka" %% "akka-http" % "10.0.14",
+)
+
 //Sentry
 libraryDependencies += "io.sentry" % "sentry-logback" % "1.7.2"
 
