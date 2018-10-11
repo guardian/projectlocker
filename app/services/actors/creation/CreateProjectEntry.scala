@@ -43,7 +43,10 @@ class CreateProjectEntry @Inject() (@Named("message-processor-actor") messagePro
             messageProcessor ! NewProjectCreated(createdProjectEntry,
               projectTypeForPluto,
               maybeCommission.get,
-              ZonedDateTime.now().toEpochSecond
+              ZonedDateTime.now().toEpochSecond,
+              createdProjectEntry.deletable.getOrElse(false),
+              createdProjectEntry.deep_archive.getOrElse(false),
+              createdProjectEntry.sensitive.getOrElse(false)
             )
           case Failure(error)=>
             logger.error(s"Can't sync project ${createdProjectEntry.projectTitle} to pluto: ", error)
@@ -88,22 +91,23 @@ class CreateProjectEntry @Inject() (@Named("message-processor-actor") messagePro
             val rq = createRequest.rq
             val createTime = createRequest.createTime
             logger.info(s"Creating new project entry from $writtenFile")
-            ProjectEntry.createFromFile(writtenFile, rq.projectTemplate, rq.title, createTime,
-              rq.user, rq.workingGroupId, rq.commissionId, rq.existingVidispineId).map({
-              case Success(createdProjectEntry) =>
-                logger.info(s"Project entry created as id ${createdProjectEntry.id}")
-                if (rq.shouldNotify) {
-                  sendCreateMessage(createdProjectEntry, rq.projectTemplate)
-                } else {
-                  logger.warn(s"Not notifying pluto about creation of project $createdProjectEntry because shouldNotify is false")
-                }
-                originalSender ! StepSucceded(updatedData = createRequest.data.copy(createdProjectEntry = Some(createdProjectEntry)))
-                Success(rq.projectTemplate)
-              case Failure(error) =>
-                logger.error("Could not create project file: ", error)
-                originalSender ! StepFailed(createRequest.data, error)
-                Success("Could not create project file: ")
-            })
+            ProjectEntry
+              .createFromFile(writtenFile, rq.projectTemplate, rq.title, createTime, rq.user, rq.workingGroupId, rq.commissionId, rq.existingVidispineId, rq.deletable, rq.deep_archive, rq.sensitive)
+              .map({
+                case Success(createdProjectEntry) =>
+                  logger.info(s"Project entry created as id ${createdProjectEntry.id}")
+                  if (rq.shouldNotify) {
+                    sendCreateMessage(createdProjectEntry, rq.projectTemplate)
+                  } else {
+                    logger.warn(s"Not notifying pluto about creation of project $createdProjectEntry because shouldNotify is false")
+                  }
+                  originalSender ! StepSucceded(updatedData = createRequest.data.copy(createdProjectEntry = Some(createdProjectEntry)))
+                  Success(rq.projectTemplate)
+                case Failure(error) =>
+                  logger.error("Could not create project file: ", error)
+                  originalSender ! StepFailed(createRequest.data, error)
+                  Success("Could not create project file: ")
+              })
           case Failure(validationError) =>
             logger.error("Can't execute CreateProjectEntry", validationError)
             originalSender ! StepFailed(createRequest.data, validationError)

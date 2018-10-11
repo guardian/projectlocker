@@ -43,7 +43,7 @@ class ProjectCreationSpec extends Specification with BuildMyApp {
 
       val initialData = ProjectCreateTransientData(None, None, None)
 
-      val rq = Await.result(ProjectRequest("somefile.prj",1,"some test file",1,"testuser",None,None).hydrate,10.seconds)
+      val rq = Await.result(ProjectRequest("somefile.prj",1,"some test file",1,"testuser",None,None, false, false, false).hydrate,10.seconds)
       rq must beSome
 
       val resultFuture = ac ? NewProjectRequest(rq.get, None, initialData)
@@ -51,7 +51,7 @@ class ProjectCreationSpec extends Specification with BuildMyApp {
 
       probe1.expectMsg(30.seconds, NewProjectRequest(rq.get, None, initialData))
       logger.info(probe1.lastSender.toString)
-      val fakeProject = ProjectEntry(None,1,None,"test title",timestamp,"tst-user",None,None)
+      val fakeProject = ProjectEntry(None,1,None,"test title",timestamp,"tst-user",None,None, None, None, None)
       val updatedData = initialData.copy(createdProjectEntry = Some(fakeProject))
 
       probe1.reply(StepSucceded(updatedData))
@@ -82,7 +82,7 @@ class ProjectCreationSpec extends Specification with BuildMyApp {
         override val creationActorChain: Seq[ActorRef] = Seq(probe1.ref, probe2.ref, probe3.ref)
       }))
 
-      val rq = Await.result(ProjectRequest("somefile.prj",1,"some test file",1,"testuser",None,None).hydrate,10.seconds)
+      val rq = Await.result(ProjectRequest("somefile.prj",1,"some test file",1,"testuser",None,None, false, false, false).hydrate,10.seconds)
       rq must beSome
 
       val resultFuture = ac ? NewProjectRequest(rq.get, None, initialData)
@@ -121,7 +121,7 @@ class ProjectCreationSpec extends Specification with BuildMyApp {
       }))
       val initialData = ProjectCreateTransientData(None, None, None)
 
-      val rq = Await.result(ProjectRequest("somefile.prj",1,"some test file",1,"testuser",None,None).hydrate,10.seconds)
+      val rq = Await.result(ProjectRequest("somefile.prj",1,"some test file",1,"testuser",None,None, false, false, false).hydrate,10.seconds)
       rq must beSome
 
       val resultFuture = ac ? NewProjectRequest(rq.get, None, initialData)

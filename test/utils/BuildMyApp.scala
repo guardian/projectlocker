@@ -2,7 +2,6 @@ package utils
 
 import akka.stream.ActorMaterializer
 import akka.testkit.TestProbe
-import helpers.{ProjectCreateHelper, ProjectCreateHelperImpl}
 import play.api.cache.SyncCacheApi
 import play.api.cache.ehcache.EhCacheModule
 import play.api.db.slick.DatabaseConfigProvider
@@ -17,8 +16,6 @@ import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits.global
 
 trait BuildMyApp extends MockedCacheApi {
-  val mockedProjectHelper = mock[ProjectCreateHelperImpl]
-
   def buildApp = new GuiceApplicationBuilder().disable(classOf[EhCacheModule])
     .overrides(bind[DatabaseConfigProvider].to[TestDatabase.testDbProvider])
     .overrides(bind[SyncCacheApi].toInstance(mockedSyncCacheApi))
@@ -26,7 +23,6 @@ trait BuildMyApp extends MockedCacheApi {
 
   def buildAppWithMockedProjectHelper = new GuiceApplicationBuilder().disable(classOf[EhCacheModule])
     .overrides(bind[DatabaseConfigProvider].to[TestDatabase.testDbProvider])
-    .overrides(bind[ProjectCreateHelper].toInstance(mockedProjectHelper))
     .overrides(bind[SyncCacheApi].toInstance(mockedSyncCacheApi))
     .build
 

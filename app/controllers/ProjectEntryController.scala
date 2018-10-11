@@ -7,7 +7,6 @@ import akka.pattern.ask
 import auth.Security
 import com.unboundid.ldap.sdk.LDAPConnectionPool
 import exceptions.{BadDataException, ProjectCreationError, RecordNotFoundException}
-import helpers.ProjectCreateHelper
 import models._
 import play.api.cache.SyncCacheApi
 import play.api.{Configuration, Logger}
@@ -30,7 +29,7 @@ import scala.concurrent.duration._
 @Singleton
 class ProjectEntryController @Inject() (@Named("project-creation-actor") projectCreationActor:ActorRef,
                                         cc:ControllerComponents, config: Configuration,
-                                        dbConfigProvider: DatabaseConfigProvider, projectHelper:ProjectCreateHelper,
+                                        dbConfigProvider: DatabaseConfigProvider,
                                         cacheImpl:SyncCacheApi)
   extends GenericDatabaseObjectControllerWithFilter[ProjectEntry,ProjectEntryFilterTerms]
     with ProjectEntrySerializer with ProjectEntryFilterTermsSerializer with ProjectRequestSerializer

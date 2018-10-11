@@ -7,7 +7,8 @@ import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits.global
 
 case class ProjectRequest(filename:String,destinationStorageId:Int,title:String, projectTemplateId:Int,
-                          user:String, workingGroupId: Option[Int], commissionId: Option[Int]) {
+                          user:String, workingGroupId: Option[Int], commissionId: Option[Int],
+                          deletable: Boolean, deep_archive: Boolean, sensitive: Boolean) {
   /* looks up the ids of destination storage and project template, and returns a new object with references to them or None */
   def hydrate(implicit db:slick.jdbc.PostgresProfile#Backend#Database):Future[Option[ProjectRequestFull]] = {
     val storageFuture = StorageEntryHelper.entryFor(this.destinationStorageId)
@@ -20,7 +21,7 @@ case class ProjectRequest(filename:String,destinationStorageId:Int,title:String,
           successfulResults.head.asInstanceOf[StorageEntry],
           this.title,
           successfulResults(1).asInstanceOf[ProjectTemplate],
-          user, workingGroupId, commissionId, existingVidispineId = None, shouldNotify = true))
+          user, workingGroupId, commissionId, existingVidispineId = None, shouldNotify = true, deletable, deep_archive, sensitive))
       } else None
     })
   }
@@ -28,7 +29,7 @@ case class ProjectRequest(filename:String,destinationStorageId:Int,title:String,
 
 case class ProjectRequestFull(filename:String,destinationStorage:StorageEntry,title:String,projectTemplate:ProjectTemplate,
                               user:String, workingGroupId: Option[Int], commissionId:Option[Int], existingVidispineId: Option[String],
-                              shouldNotify: Boolean) {
+                              shouldNotify: Boolean, deletable: Boolean, deep_archive: Boolean, sensitive: Boolean) {
 
 }
 
@@ -40,6 +41,9 @@ trait ProjectRequestSerializer {
       (JsPath \ "projectTemplateId").read[Int] and
       (JsPath \ "user").read[String] and
       (JsPath \ "workingGroupId").readNullable[Int] and
-      (JsPath \ "commissionId").readNullable[Int]
+      (JsPath \ "commissionId").readNullable[Int] and
+      (JsPath \ "deletable").read[Boolean] and
+      (JsPath \ "deepArchive").read[Boolean] and
+      (JsPath \ "sensitive").read[Boolean]
   )(ProjectRequest.apply _)
 }

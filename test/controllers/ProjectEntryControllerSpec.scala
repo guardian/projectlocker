@@ -5,7 +5,6 @@ import java.time.LocalDateTime
 
 import akka.actor.ActorSystem
 import akka.stream.ActorMaterializer
-import helpers.{ProjectCreateHelper, ProjectCreateHelperImpl}
 import models._
 import org.specs2.matcher.ThrownExpectations
 import org.specs2.mock.Mockito
@@ -83,8 +82,7 @@ class ProjectEntryControllerSpec extends Specification with utils.BuildMyApp wit
           |"vidispineId":"VX-1747"}
         """.stripMargin
 
-      val fakeProjectEntry = ProjectEntry(Some(999),1,None,"MyTestProjectEntry",Timestamp.valueOf(LocalDateTime.now()),"test-user",None,None)
-      mockedProjectHelper.create(any[ProjectRequestFull],org.mockito.Matchers.eq(None))(org.mockito.Matchers.eq(db),org.mockito.Matchers.any[play.api.Configuration]) answers((arglist,mock)=>Future(Success(fakeProjectEntry)))
+      val fakeProjectEntry = ProjectEntry(Some(999),1,None,"MyTestProjectEntry",Timestamp.valueOf(LocalDateTime.now()),"test-user",None,None, None, None, None)
       val response = route(app, FakeRequest(
         method="PUT",
         uri="/api/project/external/create",

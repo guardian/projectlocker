@@ -17,9 +17,13 @@ import scala.util.{Failure, Success}
   * @param user user that initiated the operation
   * @param workingGroupUuid uuid of the working group that this project will belong to
   * @param commissionVSID vidispine/pluto ID of the commission that this project will belong to
+  * @param deletable deletable flag
+  * @param deep_archive deep archive flag
+  * @param sensitive sensitive flag
   */
 case class ProjectRequestPluto(filename:String, title:String, plutoProjectTypeUuid:String, plutoProjectSubtype: Option[String],
-                               user:String, workingGroupUuid: String, commissionVSID: String, vidispineId: String) {
+                               user:String, workingGroupUuid: String, commissionVSID: String, vidispineId: String,
+                               deletable: Boolean, deep_archive: Boolean, sensitive: Boolean) {
   private val logger = Logger(getClass)
 
   /**
@@ -90,7 +94,10 @@ case class ProjectRequestPluto(filename:String, title:String, plutoProjectTypeUu
           successfulResults(2).asInstanceOf[PlutoWorkingGroup].id,
           successfulResults(3).asInstanceOf[PlutoCommission].id,
           existingVidispineId = Some(vidispineId),
-          shouldNotify = false))
+          shouldNotify = false,
+          deletable = deletable,
+          deep_archive = deep_archive,
+          sensitive = sensitive))
       } else {
         Left(resultSeq.collect({case Left(error)=>error}))
       }
@@ -107,6 +114,9 @@ trait ProjectRequestPlutoSerializer {
       (JsPath \ "user").read[String] and
       (JsPath \ "workingGroupUuid").read[String] and
       (JsPath \ "commissionVSID").read[String] and
-      (JsPath \ "vidispineId").read[String]
+      (JsPath \ "vidispineId").read[String] and
+      (JsPath \ "deletable").read[Boolean] and
+      (JsPath \ "deepArchive").read[Boolean] and
+      (JsPath \ "sensitive").read[Boolean]
     )(ProjectRequestPluto.apply _)
 }

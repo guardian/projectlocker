@@ -37,7 +37,7 @@ class RetrievePostrunsSpec extends Specification with BuildMyApp with Mockito {
 
       val ac = system.actorOf(Props(new RetrievePostruns(dbConfigProvider)))
 
-      val maybeRq = Await.result(ProjectRequest("testprojectfile",1,"Test project entry", 1, "test-user", None, None).hydrate, 10 seconds)
+      val maybeRq = Await.result(ProjectRequest("testprojectfile",1,"Test project entry", 1, "test-user", None, None, false, false, false).hydrate, 10 seconds)
       maybeRq must beSome
 
       val initialData = ProjectCreateTransientData(None, None,None)
@@ -65,7 +65,7 @@ class RetrievePostrunsSpec extends Specification with BuildMyApp with Mockito {
 
       val ac = system.actorOf(Props(new RetrievePostruns(dbConfigProvider)))
 
-      val maybeRq = Await.result(ProjectRequest("testprojectfile",1,"Test project entry", 2, "test-user", None, None).hydrate, 10 seconds)
+      val maybeRq = Await.result(ProjectRequest("testprojectfile",1,"Test project entry", 2, "test-user", None, None, false, false, false).hydrate, 10 seconds)
       maybeRq must beSome
 
       val initialData = ProjectCreateTransientData(None, None,None)
@@ -90,7 +90,7 @@ class RetrievePostrunsSpec extends Specification with BuildMyApp with Mockito {
 
       val ac = system.actorOf(Props(new RetrievePostruns(dbConfigProvider)))
 
-      val maybeRq = Await.result(ProjectRequest("testprojectfile",1,"Test project entry", 2, "test-user", None, None).hydrate, 10 seconds)
+      val maybeRq = Await.result(ProjectRequest("testprojectfile",1,"Test project entry", 2, "test-user", None, None, false, false, false).hydrate, 10 seconds)
       maybeRq must beSome
 
       val mockedProjectType = mock[ProjectType]
@@ -120,7 +120,7 @@ class RetrievePostrunsSpec extends Specification with BuildMyApp with Mockito {
 
       val ac = system.actorOf(Props(new RetrievePostruns(dbConfigProvider)))
 
-      val maybeRq = Await.result(ProjectRequest("testprojectfile",1,"Test project entry", 1, "test-user", None, None).hydrate, 10 seconds)
+      val maybeRq = Await.result(ProjectRequest("testprojectfile",1,"Test project entry", 1, "test-user", None, None, false, false, false).hydrate, 10 seconds)
       maybeRq must beSome
 
       val initialData = ProjectCreateTransientData(None, None,None)
