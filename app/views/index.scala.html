@@ -1,4 +1,4 @@
-@()
+@(cbVersion:String)
 
 <html>
 <head>
@@ -9,12 +9,11 @@
     <link rel="stylesheet" media="screen" href="@routes.Assets.at("stylesheets/react-multistep/custom.css")">
     <link rel="stylesheet" media="screen" href="@routes.Assets.at("stylesheets/react-multistep/prog-tracker.css")">
     <link rel="stylesheet" media="screen" href="@routes.Assets.at("font-awesome-4.7.0/css/font-awesome.min.css")">
-    <!--<link rel="stylesheet" href="@routes.Assets.at("stylesheets/main.css")">-->
-    <link rel="stylesheet" href="@routes.Assets.at("stylesheets/overrides.css")">
+    <link rel="stylesheet" href="@routes.Assets.at("stylesheets/overrides.css")?v=@(cbVersion)">
     <title>Projectlocker</title>
 </head>
 <body>
 <div id="app" />
-<script src="/assets/javascripts/bundle.js" type="text/javascript"></script>
+<script src="/assets/javascripts/bundle.js?v=@(cbVersion)" type="text/javascript"></script>
 </body>
 </html>

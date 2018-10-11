@@ -30,7 +30,16 @@ class Application @Inject() (cc:ControllerComponents, p:PlayBodyParsers, config:
     * @return Action containing html
     */
   def index(path:String) = Action {
-    Ok(views.html.index())
+    val cbVersionString = try {
+      val prop = new Properties()
+      prop.load(getClass.getClassLoader.getResourceAsStream("version.properties"))
+      Option(prop.getProperty("build-sha"))
+    } catch {
+      case e:Throwable=>
+        logger.warn("Could not get build-sha property: ", e)
+        None
+    }
+    Ok(views.html.index(cbVersionString.getOrElse("none")))
   }
 
   def timeoutTest(delay: Int) = Action {
