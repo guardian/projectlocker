@@ -10,18 +10,12 @@ import org.specs2.matcher.ThrownExpectations
 import org.specs2.mock.Mockito
 import org.specs2.mutable.Specification
 import play.api.db.slick.DatabaseConfigProvider
-import play.api.inject.bind
-import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.libs.json.{JsValue, Json}
 import play.api.test.Helpers._
 import play.api.test._
 import slick.jdbc.JdbcProfile
-import testHelpers.TestDatabase
-
-import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
 import scala.concurrent.{Await, Future}
-import scala.util.Success
 
 class ProjectEntryControllerSpec extends Specification with utils.BuildMyApp with ThrownExpectations with Mockito with ProjectEntrySerializer with PlutoConflictReplySerializer {
   sequential
@@ -79,7 +73,10 @@ class ProjectEntryControllerSpec extends Specification with utils.BuildMyApp wit
           |"title": "projectlocker test 4",
           |"user": "andy_gallagher",
           |"workingGroupUuid": "1b97c363-fba0-4771-90b5-9bd65aaed306",
-          |"vidispineId":"VX-1747"}
+          |"vidispineId":"VX-1747",
+          |"deletable": true,
+          |"deepArchive": false,
+          |"sensitive": false}
         """.stripMargin
 
       val fakeProjectEntry = ProjectEntry(Some(999),1,None,"MyTestProjectEntry",Timestamp.valueOf(LocalDateTime.now()),"test-user",None,None, None, None, None)
@@ -113,7 +110,10 @@ class ProjectEntryControllerSpec extends Specification with utils.BuildMyApp wit
           |"title": "projectlocker test 4",
           |"user": "andy_gallagher",
           |"workingGroupUuid": "1b97c363-fba0-4771-9cb5-9bd65aaed306",
-          |"vidispineId":"VX-2345"}
+          |"vidispineId":"VX-2345",
+          |"deletable": true,
+          |"deepArchive": false,
+          |"sensitive": false}
         """.stripMargin
 
       val response = route(app, FakeRequest(
