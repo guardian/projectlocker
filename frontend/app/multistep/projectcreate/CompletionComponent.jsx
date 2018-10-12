@@ -16,7 +16,10 @@ class ProjectCompletionComponent extends React.Component {
         projectFilename: PropTypes.string.isRequired,
         selectedWorkingGroupId: PropTypes.number.isRequired,
         selectedCommissionId: PropTypes.number.isRequired,
-        wgList: PropTypes.array.isRequired
+        wgList: PropTypes.array.isRequired,
+        deletable: PropTypes.bool.isRequired,
+        deep_archive: PropTypes.bool.isRequired,
+        sensitive: PropTypes.bool.isRequired
     };
 
     constructor(props){
@@ -37,7 +40,10 @@ class ProjectCompletionComponent extends React.Component {
             projectTemplateId: parseInt(this.props.selectedProjectTemplate),
             user: "frontend",    //this should be deprecated as the backend ignores it
             workingGroupId: this.props.selectedWorkingGroupId ? parseInt(this.props.selectedWorkingGroupId) : null,
-            commissionId: this.props.selectedCommissionId ? parseInt(this.props.selectedCommissionId ) : null
+            commissionId: this.props.selectedCommissionId ? parseInt(this.props.selectedCommissionId ) : null,
+            deletable: this.props.deletable,
+            deep_archive: this.props.deep_archive,
+            sensitive: this.props.sensitive
         };
     }
 
@@ -79,7 +85,11 @@ class ProjectCompletionComponent extends React.Component {
                               projectName={this.props.projectName} projectFilename={this.props.projectFilename}
                               selectedWorkingGroupId={this.props.selectedWorkingGroupId}
                               wgList={this.props.wgList}
-                              selectedCommissionId={this.props.selectedCommissionId}/>
+                              selectedCommissionId={this.props.selectedCommissionId}
+                              deletable={this.props.deletable}
+                              deep_archive={this.props.deep_archive}
+                              sensitive={this.props.sensitive}
+            />
 
             {this.getWarnings().map(warning=><p className="error-text">{warning}</p>)}
             <ErrorViewComponent error={this.state.error}/>

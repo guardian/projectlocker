@@ -4,6 +4,7 @@ import StorageEntryView from '../../EntryViews/StorageEntryView.jsx';
 import WorkingGroupEntryView from '../../EntryViews/WorkingGroupEntryView.jsx';
 import CommissionEntryView from '../../EntryViews/CommissionEntryView.jsx';
 import ProjectTemplateEntryView from '../../EntryViews/ProjectTemplateEntryView.jsx';
+import MediaRulesView from './MediaRulesView.jsx';
 
 class SummaryComponent extends React.Component {
     static propTypes = {
@@ -15,7 +16,10 @@ class SummaryComponent extends React.Component {
         projectFilename: PropTypes.string.isRequired,
         wgList: PropTypes.array.isRequired,
         selectedWorkingGroupId: PropTypes.number.isRequired,
-        selectedCommissionId: PropTypes.number.isRequired
+        selectedCommissionId: PropTypes.number.isRequired,
+        deletable: PropTypes.bool.isRequired,
+        deep_archive: PropTypes.bool.isRequired,
+        sensitive: PropTypes.bool.isRequired
     };
 
     constructor(props){
@@ -48,6 +52,10 @@ class SummaryComponent extends React.Component {
             <tr>
                 <td>Commission</td>
                 <td id="commission"><CommissionEntryView entryId={this.props.selectedCommissionId}/></td>
+            </tr>
+            <tr>
+                <td>Media Rules</td>
+                <td id="media-rules"><MediaRulesView deletable={this.props.deletable} deep_archive={this.props.deep_archive} sensitive={this.props.sensitive}/></td>
             </tr>
             </tbody>
         </table>;

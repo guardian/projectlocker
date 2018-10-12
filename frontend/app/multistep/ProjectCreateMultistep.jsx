@@ -153,6 +153,9 @@ class ProjectCreateMultistep extends React.Component {
                                              selectedWorkingGroupId={this.state.selectedWorkingGroup}
                                              selectedCommissionId={this.state.selectedCommissionId}
                                              wgList={this.state.wgList}
+                                             deletable={this.state.deletable}
+                                             deep_archive={this.state.deep_archive}
+                                             sensitive={this.state.sensitive}
                 />
             }
         ];
