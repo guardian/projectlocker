@@ -42,7 +42,7 @@ class ProjectCompletionComponent extends React.Component {
             workingGroupId: this.props.selectedWorkingGroupId ? parseInt(this.props.selectedWorkingGroupId) : null,
             commissionId: this.props.selectedCommissionId ? parseInt(this.props.selectedCommissionId ) : null,
             deletable: this.props.deletable,
-            deep_archive: this.props.deep_archive,
+            deepArchive: this.props.deep_archive,
             sensitive: this.props.sensitive
         };
     }
