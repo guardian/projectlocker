@@ -113,7 +113,7 @@ case class PlutoCommission (id:Option[Int], collectionId:Option[Int], siteId: St
     "gnm_commission_title" -> plutoCommission.title,
     "gnm_commission_status" -> plutoCommission.status,
     "gnm_commission_description" -> plutoCommission.description,
-    "gnm_commission_owner" -> JsValue(Seq())
+    "gnm_commission_owner" -> JsArray.empty
   )
 
   /**

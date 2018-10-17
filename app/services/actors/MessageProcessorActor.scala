@@ -186,8 +186,22 @@ class MessageProcessorActor @Inject()(configurationI: Configuration, actorSystem
       configuration.getOptional[String]("pluto.sync_enabled") match {
         case Some("no") => logger.warn("Not sending commission created message to pluto as sync_enabled is set to 'no'")
         case _=>
-
+          sendCommissionCreatedMessage(evtAsObject.rq).map({
+            case Right(_)=>
+              logger.info(s"Updated pluto with new commission ${evtAsObject.rq.commission.title} (${evtAsObject.rq.commission.id})")
+              confirmHandled(evtAsObject)
+            case Left(true)=>
+              logger.debug("will retry from state")
+            case Left(false)=>
+              logger.error("not retrying any more.")
+              confirmHandled(evtAsObject)
+          }).recoverWith({
+            case err:Throwable=>
+              logger.error("Could not set up communication with pluto: ", err)
+              Future(logger.debug("message will be requeued"))
+          })
       }
+
     case msgAsObject:NewAdobeUuid =>
       persist(NewAdobeUuidEvent(msgAsObject, UUID.randomUUID())) { event=>
         updateState(event)

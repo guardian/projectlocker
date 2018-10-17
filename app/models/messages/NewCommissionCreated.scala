@@ -10,10 +10,10 @@ trait NewCommissionCreatedSerializer extends PlutoCommissionSerializer with Time
   implicit val newCommissionCreatedWrites:Writes[NewCommissionCreated] = (
       (JsPath \ "commission").write[PlutoCommission] and
       (JsPath \ "timestamp").write[Long]
-  )(unlift(NewProjectCreated.unapply))
+  )(unlift(NewCommissionCreated.unapply))
 
   implicit val newCommissionCreatedReads:Reads[NewCommissionCreated] = (
       (JsPath \ "commission").read[PlutoCommission] and
       (JsPath \ "timestamp").read[Long]
-  )(NewProjectCreated.apply _)
+  )(NewCommissionCreated.apply _)
 }
