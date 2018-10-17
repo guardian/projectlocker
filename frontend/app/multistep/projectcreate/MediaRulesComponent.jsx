@@ -30,32 +30,35 @@ class MediaRulesComponent extends CommonMultistepComponent {
 
     render(){
         return <div>
-            <h3>Select Media Rules</h3>
-            <p>We need to know what media rules this project will have.  Please select the relevant media rules.</p>
+            <h3>Select Media Management Rules</h3>
+            <p>We need to know which archive management rules to apply to this project's media.</p>
             <table>
                 <tbody>
                 <tr>
                     <td>
                         <input id="deep" type="radio" name="rules" checked={this.state.deep_archive} onChange={event=>this.setDeepArchive(event.target.value==='on')}/>
-                        <label htmlFor="deep" style={{display: "inline", marginLeft: "0.4em"}}>Deep Archive</label>
-                        <br />
-                        The project will be archived to an external system after completion.
+                        <label htmlFor="deep" style={{display: "inline", marginLeft: "0.4em"}}>Keep media forever</label>
+                        <p className="option-description">
+                        The project and its assets will be archived long term externally after the project is marked as complete.
+                        </p>
                     </td>
                 </tr>
                 <tr>
                     <td>
                         <input id="deletable" type="radio" name="rules" checked={this.state.deletable} onChange={event=>this.setDeepArchive(event.target.value!=='on')}/>
-                        <label htmlFor="deletable" style={{display: "inline", marginLeft: "0.4em"}}>Deletable</label>
-                        <br />
-                        The project can be deleted by automated systems.
+                        <label htmlFor="deletable" style={{display: "inline", marginLeft: "0.4em"}}>Media can be removed once the projects has been completed</label>
+                        <p className="option-description">
+                        The project and its assets can be deleted after completion (Make sure all project deliverables are done before marking the project as complete).
+                        </p>
                     </td>
                 </tr>
                 <tr>
                     <td>
                         <input id="sensitive" type="checkbox" name="sensitive" checked={this.state.sensitive} onChange={event=>this.setState({sensitive: event.target.checked})}/>
-                        <label htmlFor="sensitive" style={{display: "inline", marginLeft: "0.4em"}}>Sensitive</label>
-                        <br />
-                        The project will contain sensitive content.
+                        <label htmlFor="sensitive" style={{display: "inline", marginLeft: "0.4em"}}>Media should not leave the building</label>
+                        <p className="option-description">
+                        The project will contain sensitive content and all assets will be kept and archived within the Guardian.
+                        </p>
                     </td>
                 </tr>
                 </tbody>
