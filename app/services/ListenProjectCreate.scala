@@ -14,7 +14,9 @@ trait ListenProjectCreate extends NewProjectCreatedSerializer with NewCommission
   def sendProjectCreatedMessage(msg: NewProjectCreated)(implicit ec:ExecutionContext, db: slick.jdbc.JdbcBackend#DatabaseDef):Future[Either[Boolean,Unit]] = {
     val bodyContent:String = Json.toJson(msg).toString()
 
-    genericSendPlutoMessage(bodyContent).flatMap({
+    val notifyUrl =  s"${configuration.get[String]("pluto.server_url")}/project/api/external/notifycreated/"
+
+    genericSendPlutoMessage(bodyContent,notifyUrl).flatMap({
       case Left(error)=>Future(Left(error))
       case Right(parsedResponse)=>
         try {
@@ -51,7 +53,9 @@ trait ListenProjectCreate extends NewProjectCreatedSerializer with NewCommission
   def sendCommissionCreatedMessage(msg:NewCommissionCreated)
                                   (implicit ec:ExecutionContext, db: slick.jdbc.JdbcBackend#DatabaseDef):Future[Either[Boolean,Unit]] = {
     val bodyContent:String = Json.toJson(msg).toString()
-    genericSendPlutoMessage(bodyContent).flatMap({
+    val notifyUrl =  s"${configuration.get[String]("pluto.server_url")}/commission/api/new/"
+
+    genericSendPlutoMessage(bodyContent, notifyUrl).flatMap({
       case Left(error)=>Future(Left(error))
       case Right(parsedResponse)=>
         try {
@@ -79,8 +83,7 @@ trait ListenProjectCreate extends NewProjectCreatedSerializer with NewCommission
     })
   }
 
-  def genericSendPlutoMessage(bodyContent:String)(implicit ec:ExecutionContext, db: slick.jdbc.JdbcBackend#DatabaseDef):Future[Either[Boolean, JsValue]] ={
-    val notifyUrl =  s"${configuration.get[String]("pluto.server_url")}/project/api/external/notifycreated/"
+  def genericSendPlutoMessage(bodyContent:String, notifyUrl:String)(implicit ec:ExecutionContext, db: slick.jdbc.JdbcBackend#DatabaseDef):Future[Either[Boolean, JsValue]] ={
     logger.debug(s"Going to send json: $bodyContent to $notifyUrl")
 
     MDC.put("bodyContent", bodyContent)
