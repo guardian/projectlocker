@@ -52,34 +52,36 @@ trait ListenProjectCreate extends NewProjectCreatedSerializer with NewCommission
 
   def sendCommissionCreatedMessage(msg:NewCommissionCreated)
                                   (implicit ec:ExecutionContext, db: slick.jdbc.JdbcBackend#DatabaseDef):Future[Either[Boolean,Unit]] = {
-    val bodyContent:String = Json.toJson(msg).toString()
-    val notifyUrl =  s"${configuration.get[String]("pluto.server_url")}/commission/api/new/"
+    msg.commission.toServerRepresentationForCreate.flatMap(jsv=>{
+      val bodyContent = jsv.toString()
+      val notifyUrl = s"${configuration.get[String]("pluto.server_url")}/commission/api/new"
 
-    genericSendPlutoMessage(bodyContent, notifyUrl).flatMap({
-      case Left(error)=>Future(Left(error))
-      case Right(parsedResponse)=>
-        try {
-          VidispineId.fromString((parsedResponse \ "commission_id").as[String]) match {
-            case Success(vsid)=>
-              logger.info(s"Received confirmation from pluto. Updating commission ${msg.commission.id} with provided VS ID ${vsid.toString}")
-              val updatedCommission = msg.commission.copy(collectionId = Some(vsid.numericPart), siteId = vsid.siteId)
-              updatedCommission.save.map({
-                case Success(savedComm)=>
-                  Right()
-                case Failure(err)=>
-                  logger.error("Could not save updated commission record", err)
-                  Left(true)
-              })
-            case Failure(err)=>
-              logger.error(s"Unable to convert ${(parsedResponse \ "commission_id").as[String]} from Pluto into a Vidispine ID", err)
+      genericSendPlutoMessage(bodyContent, notifyUrl).flatMap({
+        case Left(error) => Future(Left(error))
+        case Right(parsedResponse) =>
+          try {
+            VidispineId.fromString((parsedResponse \ "commission_id").as[String]) match {
+              case Success(vsid) =>
+                logger.info(s"Received confirmation from pluto. Updating commission ${msg.commission.id} with provided VS ID ${vsid.toString}")
+                val updatedCommission = msg.commission.copy(collectionId = Some(vsid.numericPart), siteId = vsid.siteId)
+                updatedCommission.save.map({
+                  case Success(savedComm) =>
+                    Right()
+                  case Failure(err) =>
+                    logger.error("Could not save updated commission record", err)
+                    Left(true)
+                })
+              case Failure(err) =>
+                logger.error(s"Unable to convert ${(parsedResponse \ "commission_id").as[String]} from Pluto into a Vidispine ID", err)
+                Future(Left(true))
+            }
+          } catch {
+            case ex: Throwable =>
+              logger.error("Got 200 response but no commission_id")
+              logger.error(s"Response content was ${parsedResponse.toString()}, trace is", ex)
               Future(Left(true))
           }
-        } catch {
-          case ex:Throwable=>
-            logger.error("Got 200 response but no commission_id")
-            logger.error(s"Response content was ${parsedResponse.toString()}, trace is", ex)
-            Future(Left(true))
-        }
+      })
     })
   }
 

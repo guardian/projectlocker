@@ -15,8 +15,10 @@ import scala.concurrent.Future
 import scala.util.{Failure, Success, Try}
 import scala.concurrent.ExecutionContext.Implicits.global
 
-case class PlutoCommission (id:Option[Int], collectionId:Option[Int], siteId: String, created: Timestamp, updated:Timestamp,
-                            title: String, status: String, description: Option[String], workingGroup: Int) {
+case class PlutoCommission (id:Option[Int], collectionId:Option[Int], siteId: String,
+                            created: Timestamp, updated:Timestamp, title: String, status: String,
+                            description: Option[String], workingGroup: Int, notes:Option[String], scheduledCompletion: Option[Timestamp],
+                            storageRuleDeletable:Option[Boolean], storageRuleSensitive:Option[Boolean], productionOffice:Option[String]) extends TimestampSerialization {
   private def logger = Logger(getClass)
 
   /**
@@ -100,6 +102,8 @@ case class PlutoCommission (id:Option[Int], collectionId:Option[Int], siteId: St
     },
  */
 
+  def boolToString(value:Boolean, stringIfTrue: String):String = if(value) stringIfTrue else ""
+
   /**
     * returns a Json object for sending updates to the server (internal method)
     * @param plutoCommission pluto commission object to update
@@ -113,7 +117,25 @@ case class PlutoCommission (id:Option[Int], collectionId:Option[Int], siteId: St
     "gnm_commission_title" -> plutoCommission.title,
     "gnm_commission_status" -> plutoCommission.status,
     "gnm_commission_description" -> plutoCommission.description,
-    "gnm_commission_owner" -> JsArray.empty
+    "gnm_commission_owner" -> JsArray.empty,
+    "gnm_commission_notes" -> plutoCommission.notes,
+    "gnm_commission_scheduledcompletion" -> plutoCommission.scheduledCompletion,
+    "gnm_storage_rule_deletable" -> boolToString(plutoCommission.storageRuleDeletable.getOrElse(false), "storage_rule_deletable"),
+    "gnm_storage_rule_sensitive" -> boolToString(plutoCommission.storageRuleDeletable.getOrElse(false), "storage_rule_sensitive"),
+    "gnm_commission_production_office" -> plutoCommission.productionOffice
+  )
+
+  def toServerRepresentationForCreate(plutoCommission: PlutoCommission, workingGroupUuid:String):JsValue = Json.obj(
+    "gnm_commission_title" -> plutoCommission.title,
+    "gnm_commission_status" -> plutoCommission.status,
+    "gnm_commission_description" -> plutoCommission.description,
+    "gnm_commission_owner" -> JsArray.empty,
+    "gnm_commission_notes" -> plutoCommission.notes,
+    "gnm_commission_scheduledcompletion" -> plutoCommission.scheduledCompletion,
+    "gnm_storage_rule_deletable" -> boolToString(plutoCommission.storageRuleDeletable.getOrElse(false), "storage_rule_deletable"),
+    "gnm_storage_rule_sensitive" -> boolToString(plutoCommission.storageRuleDeletable.getOrElse(false), "storage_rule_sensitive"),
+    "gnm_commission_production_office" -> plutoCommission.productionOffice,
+    "gnm_commission_workinggroup" -> workingGroupUuid
   )
 
   /**
@@ -130,6 +152,24 @@ case class PlutoCommission (id:Option[Int], collectionId:Option[Int], siteId: St
         toServerRepresentation(plutoCommission, workingGroupFull.uuid)
     })
   }
+
+  def toServerRepresentationForCreate(plutoCommission: PlutoCommission)(implicit db:slick.jdbc.PostgresProfile#Backend#Database, config:Configuration):Future[JsValue] = {
+    PlutoWorkingGroup.entryForId(plutoCommission.workingGroup).map({
+      case None=>
+        logger.error(s"Could not generate server representation for commission id ${plutoCommission.id} as it had no valid working group")
+        throw new RuntimeException(s"Could not generate server representation for commission id ${plutoCommission.id} as it had no valid working group")
+      case Some(workingGroupFull)=>
+        toServerRepresentationForCreate(plutoCommission, workingGroupFull.uuid)
+    })
+  }
+
+  def toServerRepresentation(implicit db:slick.jdbc.PostgresProfile#Backend#Database, config:Configuration):Future[JsValue] = {
+    toServerRepresentation(this)
+  }
+
+  def toServerRepresentationForCreate(implicit db:slick.jdbc.PostgresProfile#Backend#Database, config:Configuration):Future[JsValue] = {
+    toServerRepresentationForCreate(this)
+  }
 }
 
 class PlutoCommissionRow (tag:Tag) extends Table[PlutoCommission](tag,"PlutoCommission"){
@@ -142,8 +182,13 @@ class PlutoCommissionRow (tag:Tag) extends Table[PlutoCommission](tag,"PlutoComm
   def status = column[String]("s_status")
   def description = column[Option[String]]("s_description")
   def workingGroup = column[Int]("k_working_group")
+  def notes = column[Option[String]]("s_notes")
+  def scheduledCompletion = column[Option[Timestamp]]("t_scheduled_completion")
+  def storageRuleSensitive = column[Option[Boolean]]("b_storage_rule_sensitive")
+  def storageRuleDeletable = column[Option[Boolean]]("b_storage_rule_deletable")
+  def productionOffice = column[Option[String]]("s_production_office")
 
-  def * = (id.?, collectionId, siteId, created, updated, title, status, description, workingGroup) <> (PlutoCommission.tupled, PlutoCommission.unapply)
+  def * = (id.?, collectionId, siteId, created, updated, title, status, description, workingGroup, notes, scheduledCompletion, storageRuleDeletable, storageRuleSensitive, productionOffice) <> (PlutoCommission.tupled, PlutoCommission.unapply)
 }
 
 trait PlutoCommissionSerializer extends TimestampSerialization {
@@ -156,7 +201,12 @@ trait PlutoCommissionSerializer extends TimestampSerialization {
       (JsPath \ "title").write[String] and
       (JsPath \ "status").write[String] and
       (JsPath \ "description").writeNullable[String] and
-      (JsPath \ "workingGroupId").write[Int]
+      (JsPath \ "workingGroupId").write[Int] and
+      (JsPath \ "notes").writeNullable[String] and
+      (JsPath \ "scheduledCompletion").writeNullable[Timestamp] and
+      (JsPath \ "storageRuleDeletable").writeNullable[Boolean] and
+      (JsPath \ "storageRuleSensitive").writeNullable[Boolean] and
+      (JsPath \ "productionOffice").writeNullable[String]
   )(unlift(PlutoCommission.unapply))
 
   implicit val plutoCommissionReads:Reads[PlutoCommission] = (
@@ -168,7 +218,12 @@ trait PlutoCommissionSerializer extends TimestampSerialization {
       (JsPath \ "title").read[String] and
       (JsPath \ "status").read[String] and
       (JsPath \ "description").readNullable[String] and
-      (JsPath \ "workingGroupId").read[Int]
+      (JsPath \ "workingGroupId").read[Int] and
+      (JsPath \ "notes").readNullable[String] and
+      (JsPath \ "scheduledCompletion").readNullable[Timestamp] and
+      (JsPath \ "storageRuleDeletable").readNullable[Boolean] and
+      (JsPath \ "storageRuleSensitive").readNullable[Boolean] and
+      (JsPath \ "productionOffice").readNullable[String]
     )(PlutoCommission.apply _)
 }
 
@@ -216,7 +271,7 @@ trait PlutoCommissionSerializer extends TimestampSerialization {
 ]
  */
 
-object PlutoCommission extends ((Option[Int],Option[Int],String,Timestamp,Timestamp,String,String,Option[String],Int)=>PlutoCommission)  {
+object PlutoCommission extends ((Option[Int],Option[Int],String,Timestamp,Timestamp,String,String,Option[String],Int,Option[String],Option[Timestamp],Option[Boolean],Option[Boolean],Option[String])=>PlutoCommission)  {
   def mostRecentByWorkingGroup(workingGroupId: Int)(implicit db: slick.jdbc.JdbcProfile#Backend#Database):Future[Try[Option[PlutoCommission]]] = {
     db.run(
       TableQuery[PlutoCommissionRow].filter(_.workingGroup===workingGroupId).sortBy(_.updated.desc).take(1).result.asTry
@@ -263,7 +318,12 @@ object PlutoCommission extends ((Option[Int],Option[Int],String,Timestamp,Timest
         title = (serverRep \ "gnm_commission_title").as[String],
         status = (serverRep \ "gnm_commission_status").as[String],
         description = (serverRep \ "gnm_commission_description").asOpt[String],
-        workingGroup = forWorkingGroup
+        workingGroup = forWorkingGroup,
+        notes = (serverRep \ "gnm_commission_notes").asOpt[String],
+        scheduledCompletion = (serverRep \ "gnm_commission_scheduledcompletion").asOpt[Timestamp],
+        storageRuleDeletable = (serverRep \ "gnm_storage_rule_deletable").asOpt[String].map(_.length>1),
+        storageRuleSensitive = (serverRep \ "gnm_storage_rule_sensitive").asOpt[String].map(_.length>1),
+        productionOffice = (serverRep \ "gnm_commission_production_office").asOpt[String]
       )
       Success(comm)
     } catch {

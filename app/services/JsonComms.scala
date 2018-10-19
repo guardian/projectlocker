@@ -83,6 +83,7 @@ trait JsonComms {
           Right(Json.parse(dataString))
         } catch {
           case error:Throwable=>
+            logger.error(dataString)
             logger.error(s"Could not decode json object: ", error)
             Left(dataString)
         }

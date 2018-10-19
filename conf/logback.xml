@@ -40,7 +40,7 @@
     <logger name="controllers.Application" level="INFO"/>
     <logger name="controllers.System" level="INFO"/>
     <logger name="auth.LDAP" level="INFO"/>
-    <logger name="services.actors.MessageProcessorActor" level="WARN"/>
+    <logger name="services.actors.MessageProcessorActor" level="DEBUG"/>
     <logger name="services.actors.MessageProcessorState" level="WARN"/>
     <logger name="services.PlutoProjectTypeScanner" level="WARN"/>
     <logger name="models.FileEntry" level="DEBUG" />
