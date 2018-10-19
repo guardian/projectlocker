@@ -23,10 +23,10 @@
 
     <logger name="play" level="INFO" />
     <logger name="application" level="ERROR" />
-    <logger name="services.PostrunActionScanner" level="WARN"/>
+    <logger name="services.PostrunActionScanner" level="DEBUG"/>
     <logger name="org.reflections" level="OFF"/>
     <logger name="helpers.ProjectCreateHelperImpl" level="WARN"/>
-    <logger name="helpers.PostrunSorter" level="DEBUG"/>
+    <logger name="helpers.PostrunSorter" level="WARN"/>
 
     <logger name="services.actors.ClusterListener" level="WARN"/>
     <logger name="controllers.MessageTest" level="WARN"/>

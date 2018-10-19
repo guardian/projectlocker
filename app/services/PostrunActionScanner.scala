@@ -62,7 +62,7 @@ class PostrunActionScanner @Inject() (dbConfigProvider: DatabaseConfigProvider, 
 
   protected def addIfNotExists(scriptName:String,absolutePath:String) = {
     logger.debug(s"will add $scriptName at $absolutePath if it does not exist already")
-    PostrunAction.entryForRunnable(scriptName) map {
+    PostrunAction.entryForRunnable(absolutePath) map {
       case Success(results)=>
         if(results.isEmpty){
           logger.info(s"Adding newly found postrun script $absolutePath to database")
@@ -82,7 +82,7 @@ class PostrunActionScanner @Inject() (dbConfigProvider: DatabaseConfigProvider, 
   }
 
   protected def addFileIfNotExists(scriptFile: File) = {
-    addIfNotExists(scriptFile.getName, scriptFile.getAbsolutePath)
+    addIfNotExists(scriptFile.getName, scriptFile.getName)
   }
 
   val cancellable = actorSystem.scheduler.schedule(1 second,60 seconds) {
