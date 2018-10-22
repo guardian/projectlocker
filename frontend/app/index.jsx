@@ -1,6 +1,6 @@
 import React from 'react';
 import {render} from 'react-dom';
-import {BrowserRouter, Link, Route, Switch} from 'react-router-dom';
+import {BrowserRouter, Link, Route, Switch, Redirect} from 'react-router-dom';
 import StorageListComponent from './StorageComponent.jsx';
 
 import RootComponent from './RootComponent.jsx';
@@ -32,6 +32,8 @@ import PostrunDeleteComponent from './delete/PostrunDeleteComponent.jsx';
 
 import ServerDefaults from './ServerDefaults.jsx';
 
+import NotLoggedIn from './NotLoggedIn.jsx';
+
 import axios from 'axios';
 
 window.React = require('react');
@@ -46,7 +48,8 @@ class App extends React.Component {
         this.state = {
             isLoggedIn: false,
             currentUsername: "",
-            isAdmin: false
+            isAdmin: false,
+            loading: false
         };
 
         this.onLoggedIn = this.onLoggedIn.bind(this);
@@ -67,6 +70,7 @@ class App extends React.Component {
                 .then(response=>{ //200 response means we are logged in
                     this.setState({
                         isLoggedIn: true,
+                        loading: false,
                         currentUsername: response.data.uid,
                         isAdmin: response.data.isAdmin
                     });
@@ -74,6 +78,7 @@ class App extends React.Component {
                 .catch(error=>{
                     this.setState({
                         isLoggedIn: false,
+                        loading: false,
                         currentUsername: ""
                     })
                 })
@@ -118,6 +123,13 @@ class App extends React.Component {
     }
 
     render () {
+        console.debug("loading: ", this.state.loading, "isLoggedIn", this.state.isLoggedIn, "path", window.location.pathname);
+
+        if(!this.state.loading && !this.state.isLoggedIn && window.location.pathname !== "/"){
+            console.log("not logged in, redirecting to route");
+            return <NotLoggedIn timeOut={5}/>;
+        }
+
         return(
             <div>
                 <div id="leftmenu" className="leftmenu">
