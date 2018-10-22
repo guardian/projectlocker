@@ -6,6 +6,7 @@ import NameComponent from './projectcreate/NameComponent.jsx';
 import DestinationStorageComponent from './projectcreate/DestinationStorageComponent.jsx';
 import ProjectCompletionComponent from "./projectcreate/CompletionComponent.jsx";
 import PlutoLinkageComponent from './projectcreate/PlutoLinkageComponent.jsx';
+import MediaRulesComponent from './projectcreate/MediaRulesComponent.jsx';
 
 class ProjectCreateMultistep extends React.Component {
     static propTypes = {
@@ -25,13 +26,17 @@ class ProjectCreateMultistep extends React.Component {
             selectedStorage: null,
             projectName: "",
             projectFilename: "",
-            lastError: null
+            lastError: null,
+            deletable: false,
+            deep_archive: true,
+            sensitive: false
         };
 
         this.templateSelectionUpdated = this.templateSelectionUpdated.bind(this);
         this.nameSelectionUpdated = this.nameSelectionUpdated.bind(this);
         this.storageSelectionUpdated = this.storageSelectionUpdated.bind(this);
         this.plutoDataUpdated = this.plutoDataUpdated.bind(this);
+        this.rulesDataUpdated = this.rulesDataUpdated.bind(this);
     }
 
     requestDefaultProjectStorage(defaultValue){
@@ -94,6 +99,14 @@ class ProjectCreateMultistep extends React.Component {
         })
     }
 
+    rulesDataUpdated(newdata){
+        this.setState({
+            deletable: newdata.deletable,
+            deep_archive: newdata.deep_archive,
+            sensitive: newdata.sensitive
+        })
+    }
+
     render(){
         const steps = [
             {
@@ -116,6 +129,14 @@ class ProjectCreateMultistep extends React.Component {
                 />
             },
             {
+                name: "Media Rules",
+                component: <MediaRulesComponent valueWasSet={this.rulesDataUpdated}
+                                                deletable={this.state.deletable}
+                                                deep_archive={this.state.deep_archive}
+                                                sensitive={this.state.sensitive}
+                />
+            },
+            {
                 name: "Destination storage",
                 component: <DestinationStorageComponent storageList={this.state.storages}
                                                         selectedStorage={this.state.selectedStorage}
@@ -132,6 +153,9 @@ class ProjectCreateMultistep extends React.Component {
                                              selectedWorkingGroupId={this.state.selectedWorkingGroup}
                                              selectedCommissionId={this.state.selectedCommissionId}
                                              wgList={this.state.wgList}
+                                             deletable={this.state.deletable}
+                                             deep_archive={this.state.deep_archive}
+                                             sensitive={this.state.sensitive}
                 />
             }
         ];

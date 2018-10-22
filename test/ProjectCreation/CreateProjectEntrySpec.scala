@@ -38,7 +38,7 @@ class CreateProjectEntrySpec extends Specification with BuildMyApp with Mockito 
 
       val ac = system.actorOf(Props(new CreateProjectEntry(testMessageProcessor.ref, dbConfigProvider)))
 
-      val maybeRq = Await.result(ProjectRequest("testprojectfile",1,"Test project entry", 1, "test-user", Some(1), Some(1)).hydrate, 10 seconds)
+      val maybeRq = Await.result(ProjectRequest("testprojectfile",1,"Test project entry", 1, "test-user", Some(1), Some(1), false, false, false).hydrate, 10 seconds)
       maybeRq must beSome
 
       val initialData = ProjectCreateTransientData(Some(mockedFileEntry), None, None)
@@ -64,7 +64,7 @@ class CreateProjectEntrySpec extends Specification with BuildMyApp with Mockito 
 
       val ac = system.actorOf(Props(new CreateProjectEntry(testMessageProcessor.ref, dbConfigProvider)))
 
-      val maybeRq = Await.result(ProjectRequest("testprojectfile",1,"Test project entry", 1, "test-user", None, None).hydrate, 10 seconds)
+      val maybeRq = Await.result(ProjectRequest("testprojectfile",1,"Test project entry", 1, "test-user", None, None, false, false, false).hydrate, 10 seconds)
       maybeRq must beSome
 
       val initialData = ProjectCreateTransientData(Some(mockedFileEntry), None, None)
@@ -90,7 +90,7 @@ class CreateProjectEntrySpec extends Specification with BuildMyApp with Mockito 
 
       val ac = system.actorOf(Props(new CreateProjectEntry(testMessageProcessor.ref, dbConfigProvider)))
 
-      val maybeRq = Await.result(ProjectRequest("testprojectfile",1,"Test project entry", 1, "test-user", None, None).hydrate, 10 seconds)
+      val maybeRq = Await.result(ProjectRequest("testprojectfile",1,"Test project entry", 1, "test-user", None, None, false, false, false).hydrate, 10 seconds)
       maybeRq must beSome
 
       val initialData = ProjectCreateTransientData(Some(mockedFileEntry), None, None)
@@ -114,7 +114,7 @@ class CreateProjectEntrySpec extends Specification with BuildMyApp with Mockito 
 
       val ac = system.actorOf(Props(new CreateProjectEntry(testMessageProcessor.ref, dbConfigProvider)))
 
-      val maybeRq = Await.result(ProjectRequest("testprojectfile",1,"Test project entry", 1, "test-user", None, None).hydrate, 10 seconds)
+      val maybeRq = Await.result(ProjectRequest("testprojectfile",1,"Test project entry", 1, "test-user", None, None, false, false, false).hydrate, 10 seconds)
       maybeRq must beSome
 
       val initialData = ProjectCreateTransientData(Some(mockedFileEntry), None, None)
@@ -144,7 +144,7 @@ class CreateProjectEntrySpec extends Specification with BuildMyApp with Mockito 
 
       val ac = system.actorOf(Props(new CreateProjectEntry(testMessageProcessor.ref, dbConfigProvider)))
 
-      val maybeRq = Await.result(ProjectRequest("testprojectfile",1,"Test project entry", 1, "test-user", Some(1), Some(1)).hydrate, 10 seconds)
+      val maybeRq = Await.result(ProjectRequest("testprojectfile",1,"Test project entry", 1, "test-user", Some(1), Some(1), false, false, false).hydrate, 10 seconds)
       maybeRq must beSome
 
       val initialData = ProjectCreateTransientData(Some(mockedFileEntry), Some(mockedProjectEntry), None)

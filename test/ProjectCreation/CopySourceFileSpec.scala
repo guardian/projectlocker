@@ -48,7 +48,7 @@ class CopySourceFileSpec extends Specification with BuildMyApp with Mockito {
         storageHelper.copyFile(any[FileEntry],any[FileEntry])(any) returns Future(Right(fileEntryDest.get.head.copy(hasContent = true)))
       }))
 
-      val maybeRq = Await.result(ProjectRequest("testprojectfile",1,"Test project entry", 1, "test-user", None, None).hydrate, 10 seconds)
+      val maybeRq = Await.result(ProjectRequest("testprojectfile",1,"Test project entry", 1, "test-user", None, None, false, false, false).hydrate, 10 seconds)
       maybeRq must beSome
 
       val initialData = ProjectCreateTransientData(Some(fileEntryDest.get.head), None,None)
@@ -80,7 +80,7 @@ class CopySourceFileSpec extends Specification with BuildMyApp with Mockito {
         storageHelper.copyFile(any[FileEntry],any[FileEntry])(any) returns Future(Left(Seq("Something went KABOOM!")))
       }))
 
-      val maybeRq = Await.result(ProjectRequest("testprojectfile",1,"Test project entry", 1, "test-user", None, None).hydrate, 10 seconds)
+      val maybeRq = Await.result(ProjectRequest("testprojectfile",1,"Test project entry", 1, "test-user", None, None, false, false, false).hydrate, 10 seconds)
       maybeRq must beSome
 
       val initialData = ProjectCreateTransientData(Some(fileEntryDest.get.head), None, None)
@@ -117,7 +117,7 @@ class CopySourceFileSpec extends Specification with BuildMyApp with Mockito {
         override protected val storageHelper = mockedStorageHelper
       }))
 
-      val maybeRq = Await.result(ProjectRequest("testprojectfile",1,"Test project entry", 1, "test-user", None, None).hydrate, 10 seconds)
+      val maybeRq = Await.result(ProjectRequest("testprojectfile",1,"Test project entry", 1, "test-user", None, None, false, false, false).hydrate, 10 seconds)
       maybeRq must beSome
 
       val initialData = ProjectCreateTransientData(Some(fileEntryDest.get.head), None, None)
