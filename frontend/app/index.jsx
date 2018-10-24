@@ -8,6 +8,7 @@ import RootComponent from './RootComponent.jsx';
 import ProjectTypeMultistep from './multistep/ProjectTypeMultistep.jsx';
 import FileEntryList from './FileEntryList.jsx';
 import ProjectEntryList from './ProjectEntryList.jsx';
+import ProjectEntryBoxes from './ProjectEntryBoxes.jsx';
 import ProjectTypeList from './ProjectTypeList.jsx';
 
 import FileDeleteComponent from './delete/FileDeleteComponent.jsx';
@@ -158,7 +159,7 @@ class App extends React.Component {
                         <Route path="/project/new" component={ProjectCreateMultistep}/>
                         <Route path="/project/:itemid/delete" component={ProjectDeleteComponent}/>
                         <Route path="/project/:itemid" component={TitleEditComponent}/>
-                        <Route path="/project/" component={ProjectEntryList}/>
+                        <Route path="/project/" component={ProjectEntryBoxes}/>
                         <Route path="/validate/project" component={ProjectValidationView}/>
                         <Route path="/postrun/:itemid/delete" component={PostrunDeleteComponent}/>
                         <Route path="/postrun/:itemid" component={PostrunMultistep}/>

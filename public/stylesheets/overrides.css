@@ -212,6 +212,140 @@ ul.no-gap {
     margin-right: 1.1em;
 }
 
+.left_project_box {
+    float: left;
+    margin-left: 14px;
+    margin-top: 14px;
+}
+
+.middle_project_box {
+    float: left;
+}
+
+.right_project_box {
+    float: right;
+    font-size: 1.5em;
+
+}
+
+.project_box {
+    border: #000000 2px solid;
+    margin-left:100px;
+    height: 220px;
+    border-radius: 20px;
+    margin-bottom: 20px;
+
+}
+
+.middle_project_box td {
+    font-size: 1.7em;
+    margin: 0;
+    padding: 0;
+    padding-top: 10px;
+}
+
+.middle_project_box_data {
+
+}
+
+.middle_project_box_text {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    width: 400px;
+
+}
+
+.middle_project_box_div_version {
+    float: left;
+    width: calc(100vw - 740px);
+
+}
+
+.middle_project_box_div_row {
+    font-size: 1.7em;
+    clear: left;
+
+}
+
+.middle_project_box_div_one {
+    margin: 0;
+    padding: 0;
+    padding-top: 10px;
+    float: left;
+    width: 50px;
+}
+
+.middle_project_box_div_two {
+    margin: 0;
+    padding: 0;
+    padding-top: 10px;
+    float: left;
+    width: 50px;
+}
+
+.middle_project_box_div_three {
+    margin: 0;
+    padding: 0;
+    padding-top: 10px;
+    float: left;
+    width: calc(100vw - 1000px);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.middle_project_box_div_four {
+    margin: 0;
+    padding: 0;
+    padding-top: 10px;
+    float: left;
+    width: 120px;
+}
+
+.project_box_div_version {
+    border: #000000 2px solid;
+    margin-left:100px;
+    height: 220px;
+    border-radius: 20px;
+    margin-bottom: 20px;
+    width: calc(100vw - 280px);
+
+}
+
+.right_project_box_top {
+    margin-top: 10px;
+    margin-left: 10px;
+}
+
+.right_project_box_middle {
+    margin-right: 26px;
+}
+
+.right_project_box_bottom {
+    margin-right: 26px;
+    margin-top: 10px;
+}
+
+.middle_project_box_div_two_users {
+    margin: 0;
+    padding: 0;
+    padding-top: 5px;
+    float: left;
+    width: 50px;
+    font-size: 1.4em;
+}
+
+.middle_project_box_div_two_user {
+    margin: 0;
+    padding: 0;
+    padding-top: 6px;
+    float: left;
+    width: 50px;
+    font-size: 1.6em;
+    margin-left: 4px;
+
+}
 .media_rules {
     margin-right: 1.1em;
 }
