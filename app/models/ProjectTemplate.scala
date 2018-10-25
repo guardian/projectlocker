@@ -16,7 +16,8 @@ trait ProjectTemplateSerializer {
       (JsPath \ "name").write[String] and
       (JsPath \ "projectTypeId").write[Int] and
       (JsPath \ "fileRef").write[Int] and
-      (JsPath \ "plutoSubtype").writeNullable[Int]
+      (JsPath \ "plutoSubtype").writeNullable[Int] and
+      (JsPath \ "deprecated").writeNullable[Boolean]
     )(unlift(ProjectTemplate.unapply))
 
   implicit val templateReads:Reads[ProjectTemplate] = (
@@ -24,11 +25,12 @@ trait ProjectTemplateSerializer {
       (JsPath \ "name").read[String] and
       (JsPath \ "projectTypeId").read[Int] and
       (JsPath \ "fileRef").read[Int] and
-      (JsPath \ "plutoSubtype").readNullable[Int]
+      (JsPath \ "plutoSubtype").readNullable[Int] and
+      (JsPath \ "deprecated").readNullable[Boolean]
     )(ProjectTemplate.apply _)
 }
 
-case class ProjectTemplate (id: Option[Int],name: String, projectTypeId: Int, fileRef: Int, plutoSubtypeRef: Option[Int]) {
+case class ProjectTemplate (id: Option[Int],name: String, projectTypeId: Int, fileRef: Int, plutoSubtypeRef: Option[Int], deprecated: Option[Boolean]) {
   def projectType(implicit db: slick.jdbc.PostgresProfile#Backend#Database):Future[ProjectType] = db.run(
     TableQuery[ProjectTypeRow].filter(_.id===projectTypeId).result.asTry
   ).map({
@@ -60,11 +62,11 @@ class ProjectTemplateRow(tag: Tag) extends Table[ProjectTemplate](tag,"ProjectTe
   def fkProjectType=foreignKey("fk_project_type",projectType,TableQuery[ProjectTypeRow])(_.id)
   def fkFileRef=foreignKey("fk_file_ref",fileRef,TableQuery[FileEntryRow])(_.id)
   def fkPlutoSubtype=foreignKey("fk_pluto_subtype", plutoSubtype,TableQuery[PlutoProjectTypeRow])(_.id)
-
-  def * = (id.?, name, projectType, fileRef, plutoSubtype) <> (ProjectTemplate.tupled, ProjectTemplate.unapply)
+  def deprecated=column[Option[Boolean]]("b_deprecated")
+  def * = (id.?, name, projectType, fileRef, plutoSubtype, deprecated) <> (ProjectTemplate.tupled, ProjectTemplate.unapply)
 }
 
-object ProjectTemplate extends ((Option[Int],String,Int,Int,Option[Int])=>ProjectTemplate) {
+object ProjectTemplate extends ((Option[Int],String,Int,Int,Option[Int],Option[Boolean])=>ProjectTemplate) {
   def entryFor(entryId: Int)(implicit db:slick.jdbc.PostgresProfile#Backend#Database):Future[Option[ProjectTemplate]] =
     db.run(
       TableQuery[ProjectTemplateRow].filter(_.id===entryId).result.asTry

@@ -21,6 +21,7 @@ class ProjectTemplateMultistep extends CommonMultistepComponent
             fileId: null,
             name: "",
             storages: [],
+            deprecated: false,
             loadingComplete: false
         }
     }
@@ -60,6 +61,7 @@ class ProjectTemplateMultistep extends CommonMultistepComponent
                         fileId: loadedEntry.result.fileRef,
                         selectedFileId: loadedEntry.result.fileRef,
                         name: loadedEntry.result.name,
+                        deprecated: loadedEntry.result.deprecated,
                         selectedPlutoSubtype: loadedEntry.result.hasOwnProperty('plutoSubtype') ? loadedEntry.result.plutoSubtype : "",
                         loadingComplete: true
                     };
@@ -83,8 +85,9 @@ class ProjectTemplateMultistep extends CommonMultistepComponent
                                                   templateName={this.state.name}
                                                   plutoTypesList={this.state.plutoProjectTypesList}
                                                   selectedPlutoSubtype={this.state.selectedPlutoSubtype}
+                                                  deprecated={this.state.deprecated}
                                                   loadingComplete={this.state.loadingComplete}
-                                                  valueWasSet={(nameAndType)=>this.setState({selectedType: nameAndType.selectedType, name: nameAndType.name, selectedPlutoSubtype: nameAndType.selectedPlutoSubtype})}/>
+                                                  valueWasSet={(nameAndType)=>this.setState({selectedType: nameAndType.selectedType, name: nameAndType.name, selectedPlutoSubtype: nameAndType.selectedPlutoSubtype, deprecated: nameAndType.deprecated})}/>
             },
             {
                 name: 'Upload template',
@@ -99,6 +102,7 @@ class ProjectTemplateMultistep extends CommonMultistepComponent
                                                         name={this.state.name}
                                                         projectType={this.state.selectedType}
                                                         plutoSubtype={this.state.selectedPlutoSubtype}
+                                                        deprecated={this.state.deprecated}
                 />
             }
         ];

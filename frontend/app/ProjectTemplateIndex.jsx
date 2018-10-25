@@ -35,6 +35,7 @@ class ProjectTemplateIndex extends GeneralListComponent {
                 headerProps: {className: 'dashboardheader'},
                 render: subtyperef=><PlutoSubtypeEntryView entryId={subtyperef}/>
             },
+            GeneralListComponent.boolColumn("Deprecated","deprecated"),
             this.actionIcons()
         ];
     }

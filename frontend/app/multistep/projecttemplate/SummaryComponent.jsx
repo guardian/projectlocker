@@ -9,7 +9,8 @@ class SummaryComponent extends React.Component {
         fileId: PropTypes.number.isRequired,
         projectType: PropTypes.number.isRequired,
         name: PropTypes.string.isRequired,
-        plutoSubtype: PropTypes.number
+        plutoSubtype: PropTypes.number,
+        deprecated: PropTypes.bool.isRequired
     };
 
     constructor(props){
@@ -34,6 +35,10 @@ class SummaryComponent extends React.Component {
             <tr>
                 <td>Project type</td>
                 <td id="projectType"><ProjectTypeView entryId={this.props.projectType}/></td>
+            </tr>
+            <tr>
+                <td>Deprecated</td>
+                <td id="deprecated"><span style={{display: this.props.deprecated ? "inline-block":"none"}}>Yes</span><span style={{display: !this.props.deprecated ? "inline-block":"none"}}>No</span></td>
             </tr>
             </tbody>
         </table>;
