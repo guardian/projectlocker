@@ -54,6 +54,8 @@ class GeneralBoxComponent extends React.Component {
         this.columns = [
 
         ];
+
+        this.interfaceSize = 0;
     }
 
     componentDidMount() {
@@ -194,7 +196,11 @@ class GeneralBoxComponent extends React.Component {
         var i;
         var code_to_return = [];
         for (i = 0; i < this.state.data.length; i++) {
-            code_to_return[i] = <div className="project_box_div_version"><ProjectBoxLeftComponent /><ProjectBoxMiddleComponentDiv id={this.state.data[i]['id']} type={this.state.data[i]['projectTypeId']} title={this.state.data[i]['title']} user={this.state.data[i]['user']} /><ProjectBoxRightComponent /></div>;
+            if (this.interfaceSize == 0) {
+                code_to_return[i] = <div className="project_box_div_version_small"><ProjectBoxLeftComponent size={this.interfaceSize} /><ProjectBoxMiddleComponentDiv id={this.state.data[i]['id']} type={this.state.data[i]['projectTypeId']} title={this.state.data[i]['title']} user={this.state.data[i]['user']} size={this.interfaceSize} /><ProjectBoxRightComponent size={this.interfaceSize} /></div>;
+            } else {
+                code_to_return[i] = <div className="project_box_div_version"><ProjectBoxLeftComponent size={this.interfaceSize} /><ProjectBoxMiddleComponentDiv id={this.state.data[i]['id']} type={this.state.data[i]['projectTypeId']} title={this.state.data[i]['title']} user={this.state.data[i]['user']} size={this.interfaceSize} /><ProjectBoxRightComponent size={this.interfaceSize} /></div>;
+            }
         }
 
         return code_to_return
