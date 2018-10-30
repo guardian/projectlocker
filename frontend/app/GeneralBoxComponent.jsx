@@ -224,8 +224,8 @@ class GeneralBoxComponent extends React.Component {
 
                 <span className="banner-control">
                     <button id="newElementButton" onClick={this.newElementCallback}>New</button>
+                    <button className="size_button" onClick={this.btnClick.bind(this)}>Change Interface Size</button>
                 </span>
-                <button onClick={this.btnClick.bind(this)}>click</button>
                 {this.getProjects()}
             </div>
         );

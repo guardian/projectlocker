@@ -438,8 +438,15 @@ ul.no-gap {
     width: 40px;
     font-size: 1.6em;
     margin-left: 4px;
-}.media_rules {
+
+}
+
+.media_rules {
     margin-right: 1.1em;
+}
+
+.size_button {
+    margin-left: 10px;
 }
 
 .validation-status-text {
