@@ -207,7 +207,7 @@ class GeneralBoxComponent extends React.Component {
         return code_to_return
     }
 
-    btnClick(){
+    changeSize(){
         if (this.state.interfaceSize == 0) {
             this.setState({interfaceSize: 1},()=>this.reload());
         } else {
@@ -224,7 +224,7 @@ class GeneralBoxComponent extends React.Component {
 
                 <span className="banner-control">
                     <button id="newElementButton" onClick={this.newElementCallback}>New</button>
-                    <button className="size_button" onClick={this.btnClick.bind(this)}>Change Interface Size</button>
+                    <button className="size_button" onClick={this.changeSize.bind(this)}>Change Interface Size</button>
                 </span>
                 {this.getProjects()}
             </div>
