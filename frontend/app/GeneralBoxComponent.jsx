@@ -24,7 +24,8 @@ class GeneralBoxComponent extends React.Component {
             maximumItemsLoaded: false,
             plutoConfig: {},
             uid: "",
-            isAdmin: false
+            isAdmin: false,
+            interfaceSize: 0
         };
 
         this.pageSize = 20;
@@ -55,7 +56,7 @@ class GeneralBoxComponent extends React.Component {
 
         ];
 
-        this.interfaceSize = 0;
+        /*this.interfaceSize = 0;*/
     }
 
     componentDidMount() {
@@ -196,14 +197,18 @@ class GeneralBoxComponent extends React.Component {
         var i;
         var code_to_return = [];
         for (i = 0; i < this.state.data.length; i++) {
-            if (this.interfaceSize == 0) {
-                code_to_return[i] = <div className="project_box_div_version_small"><ProjectBoxLeftComponent size={this.interfaceSize} /><ProjectBoxMiddleComponentDiv id={this.state.data[i]['id']} type={this.state.data[i]['projectTypeId']} title={this.state.data[i]['title']} user={this.state.data[i]['user']} size={this.interfaceSize} /><ProjectBoxRightComponent size={this.interfaceSize} /></div>;
+            if (this.state.interfaceSize == 0) {
+                code_to_return[i] = <div className="project_box_div_version_small"><ProjectBoxLeftComponent size={this.state.interfaceSize} /><ProjectBoxMiddleComponentDiv id={this.state.data[i]['id']} type={this.state.data[i]['projectTypeId']} title={this.state.data[i]['title']} user={this.state.data[i]['user']} size={this.state.interfaceSize} /><ProjectBoxRightComponent size={this.state.interfaceSize} /></div>;
             } else {
-                code_to_return[i] = <div className="project_box_div_version"><ProjectBoxLeftComponent size={this.interfaceSize} /><ProjectBoxMiddleComponentDiv id={this.state.data[i]['id']} type={this.state.data[i]['projectTypeId']} title={this.state.data[i]['title']} user={this.state.data[i]['user']} size={this.interfaceSize} /><ProjectBoxRightComponent size={this.interfaceSize} /></div>;
+                code_to_return[i] = <div className="project_box_div_version"><ProjectBoxLeftComponent size={this.state.interfaceSize} /><ProjectBoxMiddleComponentDiv id={this.state.data[i]['id']} type={this.state.data[i]['projectTypeId']} title={this.state.data[i]['title']} user={this.state.data[i]['user']} size={this.state.interfaceSize} /><ProjectBoxRightComponent size={this.state.interfaceSize} /></div>;
             }
         }
 
         return code_to_return
+    }
+
+    btnClick(){
+        this.setState({interfaceSize: 1},()=>this.reload());
     }
 
     render() {
@@ -216,6 +221,7 @@ class GeneralBoxComponent extends React.Component {
                 <span className="banner-control">
                     <button id="newElementButton" onClick={this.newElementCallback}>New</button>
                 </span>
+                <button onClick={this.btnClick.bind(this)}>click</button>
                 {this.getProjects()}
             </div>
         );
