@@ -208,7 +208,11 @@ class GeneralBoxComponent extends React.Component {
     }
 
     btnClick(){
-        this.setState({interfaceSize: 1},()=>this.reload());
+        if (this.state.interfaceSize == 0) {
+            this.setState({interfaceSize: 1},()=>this.reload());
+        } else {
+            this.setState({interfaceSize: 0},()=>this.reload());
+        }
     }
 
     render() {
