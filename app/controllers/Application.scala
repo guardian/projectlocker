@@ -177,6 +177,8 @@ class Application @Inject() (cc:ControllerComponents, p:PlayBodyParsers, config:
       val dbCheck = resultSeq(1)
 
       if(ldapCheck.isFailure || dbCheck.isFailure){
+        if(ldapCheck.isFailure) logger.error(s"LDAP Healthcheck is failing: ${ldapCheck.failed.get.toString}")
+        if(dbCheck.isFailure) logger.error(s"DB Healthcheck is failing: ${dbCheck.failed.get.toString}")
         InternalServerError(makeHealthcheckBody("error",ldapCheck,dbCheck))
       } else{
         Ok(makeHealthcheckBody("ok",ldapCheck,dbCheck))
