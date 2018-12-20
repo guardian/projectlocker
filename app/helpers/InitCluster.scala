@@ -8,7 +8,7 @@ import akka.stream.ActorMaterializer
 import javax.inject.Inject
 import play.api.Logger
 
-class InitCluster @Inject()(system:ActorSystem){
+class InitCluster @Inject()(config:Configuration, system:ActorSystem){
   private val logger = Logger(getClass)
 
   implicit val systemImpl = system
@@ -18,5 +18,6 @@ class InitCluster @Inject()(system:ActorSystem){
 
   logger.info("In InitManagement class")
   AkkaManagement(system).start()
-  ClusterBootstrap(system).start()
+
+  if(config.hasPath("akka.discovery.method")) ClusterBootstrap(system).start()
 }
