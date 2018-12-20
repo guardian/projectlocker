@@ -6,7 +6,7 @@ import akka.management.AkkaManagement
 import akka.management.cluster.bootstrap.ClusterBootstrap
 import akka.stream.ActorMaterializer
 import javax.inject.Inject
-import play.api.Logger
+import play.api.{Configuration, Logger}
 
 class InitCluster @Inject()(config:Configuration, system:ActorSystem){
   private val logger = Logger(getClass)
