@@ -6,6 +6,12 @@ name := "projectlocker"
 
 version := "1.0-dev"
 
+//don't use RUNNING_PID file as that causes problems when we switch UIDs in Docker
+//https://stackoverflow.com/questions/28351405/restarting-play-application-docker-container-results-in-this-application-is-alr
+javaOptions in Universal ++= Seq(
+  "-Dpidfile.path=/dev/null"
+)
+
 lazy val `projectlocker` = (project in file("."))
   .enablePlugins(PlayScala)
   .enablePlugins(AshScriptPlugin) //needed for alpine-based images
@@ -19,6 +25,9 @@ lazy val `projectlocker` = (project in file("."))
       dockerBaseImage := "openjdk:8-jdk-alpine",
       dockerAlias := docker.DockerAlias(None,sys.props.get("docker.username"),"projectlocker",Some(sys.props.getOrElse("build.number","DEV"))),
       dockerCommands ++= Seq(
+        Cmd("USER", "root"),
+        Cmd("RUN", "apk", "add", "sudo", "perl", "--no-cache"),
+        Cmd("USER", "daemon"),
         Cmd("RUN", "mv", "/opt/docker/conf/docker-application.conf", "/opt/docker/conf/application.conf"),
         Cmd("RUN", "mkdir", "-p", "/opt/docker/target/persistence"),
         Cmd("RUN", "ls", "-lhd", "/opt/docker/target/persistence")
@@ -70,6 +79,10 @@ libraryDependencies += "com.google.guava" % "guava" % "25.1-jre"
 
 //messaging persistence and clustering
 libraryDependencies ++= Seq(
+  "com.lightbend.akka.management" %% "akka-management" % "0.18.0",
+  "com.lightbend.akka.management" %% "akka-management-cluster-bootstrap" % "0.18.0",
+  "com.lightbend.akka.discovery" %% "akka-discovery-kubernetes-api" % "0.18.0",
+  "com.lightbend.akka.discovery" %% "akka-discovery-dns" % "0.18.0",
   "com.typesafe.akka" %% "akka-persistence" % "2.5.11",
   "com.typesafe.akka" %% "akka-cluster" % "2.5.11",
   "com.typesafe.akka" %% "akka-cluster-metrics" % "2.5.11",
@@ -77,6 +90,11 @@ libraryDependencies ++= Seq(
   "org.iq80.leveldb"            % "leveldb"          % "0.7",
   "org.fusesource.leveldbjni"   % "leveldbjni-all"   % "1.8",
   "com.typesafe.akka" %% "akka-testkit" % "2.5.11" % Test
+)
+
+//explicit akka upgrades for security
+libraryDependencies ++= Seq(
+  "com.typesafe.akka" %% "akka-http" % "10.0.14",
 )
 
 //Sentry

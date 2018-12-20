@@ -14,3 +14,5 @@ rm -rf docker
 yum -y clean all
 rm -rf /var/cache/yum/*
 echo exit | sbt
+
+if [ ! -d ~/.sbt ]; then mkdir ~/.sbt; fi

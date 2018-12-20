@@ -1,0 +1,4 @@
+[repositories]
+  local
+  ivy-proxy-releases: https://nexus.gutools.co.uk/repository/ivy/, [organization]/[module]/(scala_[scalaVersion]/)(sbt_[sbtVersion]/)[revision]/[type]s/[artifact](-[classifier]).[ext]
+  maven-proxy-releases: https://nexus.gutools.co.uk/repository/maven/

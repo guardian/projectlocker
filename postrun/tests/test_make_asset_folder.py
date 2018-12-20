@@ -73,7 +73,7 @@ class TestPostrun(unittest2.TestCase):
             from scripts.make_asset_folder import postrun
             result = postrun(workingGroupName="Hard Work Group",commissionTitle="Serious Investigations", projectOwner="ken_smith", projectTitle="Where did my money go?")
 
-            mock_run.assert_called_once_with("/tmp/Hard_Work_Group/Serious_Investigations/ken_smith_Where_did_my_money_go",raven_client=None, fixmode=False)
+            mock_run.assert_called_once_with("/tmp/Hard_Work_Group/Serious_Investigations/ken_smith_Where_did_my_money_go",raven_client=None, fixmode=False, nosudo=False)
             self.assertDictEqual(result,{'created_asset_folder': "/tmp/Hard_Work_Group/Serious_Investigations/ken_smith_Where_did_my_money_go"})
 
     def test_postrun_missing_args(self):
