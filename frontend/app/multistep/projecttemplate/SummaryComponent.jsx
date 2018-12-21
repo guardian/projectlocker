@@ -38,7 +38,7 @@ class SummaryComponent extends React.Component {
             </tr>
             <tr>
                 <td>Deprecated</td>
-                <td id="deprecated"><span style={{display: this.props.deprecated ? "inline-block":"none"}}>Yes</span><span style={{display: !this.props.deprecated ? "inline-block":"none"}}>No</span></td>
+                <td id="deprecated">{this.props.deprecated ? "Yes" : "No"}</td>
             </tr>
             </tbody>
         </table>;
