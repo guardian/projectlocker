@@ -27,7 +27,7 @@
     <logger name="org.reflections" level="OFF"/>
     <logger name="helpers.ProjectCreateHelperImpl" level="WARN"/>
     <logger name="helpers.PostrunSorter" level="WARN"/>
-    <logger name="helpers.InitCluster" level="DEBUG"/>
+    <logger name="helpers.InitCluster" level="WARN"/>
     <logger name="services.actors.ClusterListener" level="WARN"/>
     <logger name="controllers.MessageTest" level="WARN"/>
     <logger name="models.ProjectRequestPluto" level="WARN"/>
