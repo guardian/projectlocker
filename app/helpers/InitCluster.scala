@@ -14,10 +14,14 @@ class InitCluster @Inject()(config:Configuration, system:ActorSystem){
   implicit val systemImpl = system
   implicit val materializer = ActorMaterializer()
   implicit val executionContext = system.dispatcher
-  implicit val cluster = Cluster(system)
+  logger.info("In InitCluster class")
 
-  logger.info("In InitManagement class")
-  AkkaManagement(system).start()
-
-  if(config.hasPath("akka.discovery.method")) ClusterBootstrap(system).start()
+  if(config.has("akka.discovery.method")){
+    logger.debug("config has akka discovery set, bootstrapping cluster...")
+    implicit val cluster = Cluster(system)
+    AkkaManagement(system).start()
+    ClusterBootstrap(system).start()
+  } else {
+    logger.debug("not running automatic cluster bootstrap, config has no discovery set.")
+  }
 }
