@@ -6,7 +6,7 @@ class ProjectTemplateEntryView extends GenericEntryView {
     static propTypes = {
         entryId: PropTypes.number.isRequired,
         name: PropTypes.string,
-        projectTypeId: PropTypes.number
+        projectTypeId: PropTypes.number,
     };
 
     componentWillMount(){

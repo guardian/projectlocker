@@ -92,6 +92,15 @@ class GeneralListComponent extends React.Component {
         };
     }
 
+    static boolColumn(name, key) {
+        return {
+            header: name,
+            key: key,
+            headerProps: { className: 'dashboardheader'},
+            render: value=><span>{ String( value ) }</span>
+        };
+    }
+
     /* this method supplies a column definition for datetimes */
     static dateTimeColumn(name,key) {
         return {

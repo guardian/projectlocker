@@ -10,7 +10,8 @@ class TemplateCompletionComponent extends React.Component {
         fileId: PropTypes.number.isRequired,
         projectType: PropTypes.number.isRequired,
         plutoSubtype: PropTypes.number,
-        name: PropTypes.string.isRequired
+        name: PropTypes.string.isRequired,
+        deprecated: PropTypes.bool.isRequired
     };
 
     constructor(props){
@@ -44,7 +45,8 @@ class TemplateCompletionComponent extends React.Component {
         let rtn = {
             name: this.props.name,
             projectTypeId: this.props.projectType,
-            fileRef: this.props.fileId
+            fileRef: this.props.fileId,
+            deprecated: this.props.deprecated
         };
         if(this.props.plutoSubtype!=="" && this.props.plutoSubtype!==null)  rtn['plutoSubtype'] = this.props.plutoSubtype;
         return rtn;
@@ -58,6 +60,7 @@ class TemplateCompletionComponent extends React.Component {
                               projectType={this.props.projectType}
                               name={this.props.name}
                               plutoSubtype={this.props.plutoSubtype}
+                              deprecated={this.props.deprecated}
             />
             <p className="information">Press "Confirm" to go ahead, or press Previous if you need to amend any details.</p>
             <ErrorViewComponent error={this.state.error}/>

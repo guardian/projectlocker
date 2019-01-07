@@ -11,6 +11,7 @@ class TypeSelectorComponent extends CommonMultistepComponent {
         selectedType: PropTypes.number.isRequired,
         templateName: PropTypes.string.isRequired,
         valueWasSet: PropTypes.func.isRequired,
+        deprecated: PropTypes.bool.isRequired,
         loadingComplete: PropTypes.boolean
     };
 
@@ -20,7 +21,8 @@ class TypeSelectorComponent extends CommonMultistepComponent {
         this.state = {
             selectedType: props.selectedType,
             name: props.templateName,
-            selectedPlutoSubtype: props.selectedPlutoSubtype
+            selectedPlutoSubtype: props.selectedPlutoSubtype,
+            deprecated: props.deprecated
         };
 
         this.selectorValueChanged = this.selectorValueChanged.bind(this);
@@ -31,7 +33,8 @@ class TypeSelectorComponent extends CommonMultistepComponent {
             this.setState({
                 selectedType: this.props.selectedType,
                 name: this.props.templateName,
-                selectedPlutoSubtype: this.props.selectedPlutoSubtype
+                selectedPlutoSubtype: this.props.selectedPlutoSubtype,
+                deprecated: this.props.deprecated
             });
         } else {
             super.componentDidUpdate(prevProps,prevState);
@@ -40,7 +43,7 @@ class TypeSelectorComponent extends CommonMultistepComponent {
 
 
     selectorValueChanged(event){
-        this.setState({name: this.props.templateName, selectedType: parseInt(event.target.value)}, ()=>
+        this.setState({name: this.props.templateName, selectedType: parseInt(event.target.value), deprecated: this.props.deprecated}, ()=>
             this.updateParent()
         );
     }
@@ -82,6 +85,8 @@ class TypeSelectorComponent extends CommonMultistepComponent {
                 <label htmlFor="projectNameSelector">Template name:</label>
                 <input type="text" id="projectNameSelector" value={this.state.name}
                            onChange={(event)=>this.setState({name: event.target.value})}/>
+                <label htmlFor="projectDeprecatedSelector">Deprecated:</label>
+                <input type="checkbox" id="projectDeprecatedSelector" checked={this.state.deprecated} onChange={(event)=>this.setState({deprecated: event.target.checked})}/>
             </div>
         )
 

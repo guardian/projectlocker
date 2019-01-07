@@ -11,7 +11,7 @@ class TemplateSelector extends React.Component {
 
     getTemplatesList(){
         if(this.props.allowNull){
-            return [{id: -1, name: "(not set)"}].concat(this.props.templatesList);
+            return [{id: -1, name: "(not set)", deprecated: false}].concat(this.props.templatesList);
         } else {
             return this.props.templatesList;
         }
@@ -21,7 +21,9 @@ class TemplateSelector extends React.Component {
         return <select id="project_template_selector" value={this.props.selectedTemplate}
                        onChange={event=>this.props.selectionUpdated(event.target.value)}>
             {
-                this.getTemplatesList().map(tpl=><option key={tpl.id} value={tpl.id}>{tpl.name}</option>)
+                this.getTemplatesList()
+                    .filter(tpl=> ! tpl.deprecated)
+                    .map(tpl=> <option key={tpl.id} value={tpl.id}>{tpl.name}</option>)
             }
         </select>
     }
