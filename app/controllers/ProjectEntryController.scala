@@ -59,7 +59,7 @@ class ProjectEntryController @Inject() (@Named("project-creation-actor") project
     selectVsid(vsid).map({
       case Success(result)=>
         if(result.isEmpty)
-          NotFound("")
+          NotFound(Json.obj("status"->"error","detail"->"no project with that ID"))
         else
           Ok(Json.obj("status"->"ok","result"->this.jstranslate(result)))
       case Failure(error)=>
