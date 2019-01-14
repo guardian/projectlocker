@@ -325,6 +325,10 @@ class ProjectEntryController @Inject() (@Named("project-creation-actor") project
             } else {
               createFromFullRequest(rq)
             }
+        }).recover({
+          case err:Throwable=>
+            logger.error(s"Could not run createExternal for ${request.body}", err)
+            InternalServerError(Json.obj("status"->"error", "detail"->err.toString))
         })
     )
   }}
