@@ -59,7 +59,7 @@ class ProjectEntryController @Inject() (@Named("project-creation-actor") project
     selectVsid(vsid).map({
       case Success(result)=>
         if(result.isEmpty)
-          NotFound("")
+          NotFound(Json.obj("status"->"error","detail"->"no project with that ID"))
         else
           Ok(Json.obj("status"->"ok","result"->this.jstranslate(result)))
       case Failure(error)=>
@@ -325,6 +325,10 @@ class ProjectEntryController @Inject() (@Named("project-creation-actor") project
             } else {
               createFromFullRequest(rq)
             }
+        }).recover({
+          case err:Throwable=>
+            logger.error(s"Could not run createExternal for ${request.body}", err)
+            InternalServerError(Json.obj("status"->"error", "detail"->err.toString))
         })
     )
   }}
