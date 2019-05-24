@@ -1,5 +1,7 @@
 package services.actors
 
+import java.time.ZonedDateTime
+import java.time.temporal.ChronoUnit
 import java.util.UUID
 
 import com.google.inject.Inject
@@ -27,8 +29,8 @@ object MessageProcessorActor {
   }
 
   case class NewProjectCreatedEvent(rq: NewProjectCreated, eventId: UUID) extends MessageEvent
-  case class NewAdobeUuidEvent(rq: NewAdobeUuid, eventId: UUID) extends MessageEvent
-  case class NewAssetFolderEvent(rq: NewAssetFolder, eventId: UUID) extends MessageEvent
+  case class NewAdobeUuidEvent(rq: NewAdobeUuid, eventId: UUID, receivedAt:ZonedDateTime) extends MessageEvent
+  case class NewAssetFolderEvent(rq: NewAssetFolder, eventId: UUID, receivedAt:ZonedDateTime) extends MessageEvent
 
   case class EventHandled(eventId: UUID)
   case class RetryFromState()
@@ -55,6 +57,7 @@ class MessageProcessorActor @Inject()(configurationI: Configuration, actorSystem
 
   protected val snapshotInterval = configuration.getOptional[Long]("pluto.persistence-snapshot-interval").getOrElse(50L)
   val logger = Logger(getClass)
+
 
   /**
     * add an event to the journal, and snapshot if required
@@ -110,7 +113,7 @@ class MessageProcessorActor @Inject()(configurationI: Configuration, actorSystem
       }
 
     case msgAsObject: NewAssetFolder =>
-      persist(NewAssetFolderEvent(msgAsObject, UUID.randomUUID())) { event=>
+      persist(NewAssetFolderEvent(msgAsObject, UUID.randomUUID(), ZonedDateTime.now())) { event=>
         updateState(event)
         logger.debug("persisted new asset folder event to journal, now sending")
         self ! event
@@ -123,7 +126,12 @@ class MessageProcessorActor @Inject()(configurationI: Configuration, actorSystem
         case _ =>
           getPlutoProjectForAssetFolder(evtAsObject.rq).map({
             case Left(errormessage) =>
-              logger.error(s"Could not prepare asset folder message for ${evtAsObject.rq.assetFolderPath} to be sent: $errormessage, pushing it to the back of the queue")
+              if(evtAsObject.receivedAt.isBefore(ZonedDateTime.now().minus(5, ChronoUnit.DAYS))){
+                logger.error(s"Received asset folder message for ${evtAsObject.rq.assetFolderPath} more than 5 days ago, dropping it as it's unlikely to work now")
+                confirmHandled(evtAsObject)
+              } else {
+                logger.error(s"Could not prepare asset folder message for ${evtAsObject.rq.assetFolderPath} to be sent: $errormessage, pushing it to the back of the queue")
+              }
             case Right(updatedMessage) =>
               logger.debug(s"Updated asset folder message to send: $updatedMessage")
               sendNewAssetFolderMessage(updatedMessage).map({
@@ -173,7 +181,7 @@ class MessageProcessorActor @Inject()(configurationI: Configuration, actorSystem
       }
 
     case msgAsObject:NewAdobeUuid =>
-      persist(NewAdobeUuidEvent(msgAsObject, UUID.randomUUID())) { event=>
+      persist(NewAdobeUuidEvent(msgAsObject, UUID.randomUUID(), ZonedDateTime.now())) { event=>
         updateState(event)
         logger.debug("persisted new adove uuid event to journal, now sending")
         self ! event
@@ -204,7 +212,13 @@ class MessageProcessorActor @Inject()(configurationI: Configuration, actorSystem
                       confirmHandled(evtAsObject)
                   })
                 case None =>
-                  logger.warn(s"Can't update project ${updatedEntry.id} in Pluto without a vidispine ID. Retrying after delay")
+                  if(evtAsObject.receivedAt.isBefore(ZonedDateTime.now().minus(5, ChronoUnit.DAYS))){
+                    logger.error(s"Received project UUID message for ${evtAsObject.rq.projectEntry.projectTitle} more than 5 days ago, dropping it as it's unlikely to work now")
+                    confirmHandled(evtAsObject)
+                  } else {
+                    logger.warn(s"Can't update project ${updatedEntry.id} in Pluto without a vidispine ID. Retrying after delay")
+                  }
+
               }
           })
       }
