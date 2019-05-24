@@ -1,6 +1,6 @@
 package models
 
-import java.io.File
+import java.io.{File, Reader}
 import java.nio.file.{Files, Path, Paths}
 import java.sql.Timestamp
 
@@ -18,6 +18,7 @@ import scala.concurrent.Future
 import scala.util.{Failure, Success, Try}
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.io.Source
+import scala.collection.JavaConverters._
 
 case class PostrunAction (id:Option[Int],runnable:String, title:String, description:Option[String],
                           owner:String, version:Int, ctime: Timestamp) {
@@ -73,6 +74,8 @@ case class PostrunAction (id:Option[Int],runnable:String, title:String, descript
     */
   def getScriptPath(implicit config:Configuration) = Paths.get(config.get[String]("postrun.scriptsPath"), this.runnable)
 
+  def scriptSourceAsReader(implicit config:Configuration):Try[Reader] = Try { Source.fromFile(getScriptPath.toString, "UTF-8").bufferedReader()}
+
   /**
     * Runs the provided Javascript as a postrun
     * @param engine implicitly provided ScriptEngine. Get this by declaring
@@ -83,22 +86,25 @@ case class PostrunAction (id:Option[Int],runnable:String, title:String, descript
                       workingGroupMaybe: Option[PlutoWorkingGroup], commissionMaybe: Option[PlutoCommission])
                      (implicit config:Configuration, engine:ScriptEngine) = {
 
-    val fileReader = Source.fromFile(getScriptPath.toString, "UTF-8").bufferedReader()
+    val maybeFileReader = scriptSourceAsReader
 
-    val scriptArgs = Map(
-      "projectFile" -> projectFileName
-    ) ++ projectEntry.asStringMap ++ projectType.asStringMap ++ commissionMaybe.map(_.asStringMap).getOrElse(Map()) ++ workingGroupMaybe.map(_.asStringMap).getOrElse(Map())
+    maybeFileReader match {
+      case Failure(err) => Failure(err)
+      case Success(fileReader) =>
+        val scriptArgs = Map(
+          "projectFile" -> projectFileName
+        ) ++ projectEntry.asStringMap ++ projectType.asStringMap ++ commissionMaybe.map(_.asStringMap).getOrElse(Map()) ++ workingGroupMaybe.map(_.asStringMap).getOrElse(Map())
 
+        val result = Try {
+          engine.eval(fileReader)
+          val invokable = engine.asInstanceOf[Invocable]
+          //pass the script arguments as a map/dictionary
+          invokable.invokeFunction("postrun", scriptArgs, dataCache.asScala.asJava)
+        }
 
-    val result = Try {
-      engine.eval(fileReader)
-      val invokable = engine.asInstanceOf[Invocable]
-      //pass the script arguments as a map/dictionary
-      invokable.invokeFunction("postrun", scriptArgs, dataCache)
+        fileReader.close()
+        result
     }
-
-    fileReader.close()
-    result
   }
 
   /**
