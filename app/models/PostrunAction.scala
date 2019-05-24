@@ -5,6 +5,7 @@ import java.nio.file.{Files, Path, Paths}
 import java.sql.Timestamp
 
 import helpers.{JythonOutput, JythonRunner, PostrunDataCache}
+import javax.script.{Invocable, ScriptEngine, ScriptEngineManager}
 import org.apache.commons.io.{FileUtils, FilenameUtils}
 import play.api.{Configuration, Logger}
 import play.api.libs.json.{JsPath, Reads, Writes}
@@ -16,6 +17,7 @@ import slick.jdbc.PostgresProfile.api._
 import scala.concurrent.Future
 import scala.util.{Failure, Success, Try}
 import scala.concurrent.ExecutionContext.Implicits.global
+import scala.io.Source
 
 case class PostrunAction (id:Option[Int],runnable:String, title:String, description:Option[String],
                           owner:String, version:Int, ctime: Timestamp) {
@@ -70,6 +72,34 @@ case class PostrunAction (id:Option[Int],runnable:String, title:String, descript
     * returns the on-disk path for the executable script
     */
   def getScriptPath(implicit config:Configuration) = Paths.get(config.get[String]("postrun.scriptsPath"), this.runnable)
+
+  /**
+    * Runs the provided Javascript as a postrun
+    * @param engine implicitly provided ScriptEngine. Get this by declaring
+    *               `implicit val engine = new ScriptEngineManager().getEngineByMimeType("text/javascript")` in the caller
+    *               you can also use `.getEngineByName("nashorn")`
+    */
+  protected def runJS(projectFileName:String,projectEntry:ProjectEntry,projectType:ProjectType,dataCache:PostrunDataCache,
+                      workingGroupMaybe: Option[PlutoWorkingGroup], commissionMaybe: Option[PlutoCommission])
+                     (implicit config:Configuration, engine:ScriptEngine) = {
+
+    val fileReader = Source.fromFile(getScriptPath.toString, "UTF-8").bufferedReader()
+
+    val scriptArgs = Map(
+      "projectFile" -> projectFileName
+    ) ++ projectEntry.asStringMap ++ projectType.asStringMap ++ commissionMaybe.map(_.asStringMap).getOrElse(Map()) ++ workingGroupMaybe.map(_.asStringMap).getOrElse(Map())
+
+
+    val result = Try {
+      engine.eval(fileReader)
+      val invokable = engine.asInstanceOf[Invocable]
+      //pass the script arguments as a map/dictionary
+      invokable.invokeFunction("postrun", scriptArgs, dataCache)
+    }
+
+    fileReader.close()
+    result
+  }
 
   /**
     * Runs the provided python script as a postrun
