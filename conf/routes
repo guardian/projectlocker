@@ -80,6 +80,7 @@ DELETE  /api/default/:key               @controllers.DefaultsController.deleteFo
 
 GET     /api/pluto/workinggroup            @controllers.PlutoWorkingGroupController.list(startAt:Int ?=0,length:Int ?=100)
 GET     /api/pluto/workinggroup/:id        @controllers.PlutoWorkingGroupController.getitem(id:Int)
+GET     /api/pluto/synccheck/commissions/:workingGroupId    @controllers.PlutoSyncCheckController.getPlutoCommsForWg(workingGroupId:Int)
 
 GET     /api/pluto/commission/:id          @controllers.PlutoCommissionController.getitem(id:Int)
 POST    /api/pluto/commission              @controllers.PlutoCommissionController.create

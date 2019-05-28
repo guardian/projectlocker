@@ -3,14 +3,13 @@ package services
 import java.net.URLEncoder
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
+
 import javax.inject.{Inject, Singleton}
-
 import org.slf4j.MDC
-
 import akka.actor.ActorSystem
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.model._
-import akka.http.scaladsl.model.headers.BasicHttpCredentials
+import akka.http.scaladsl.model.headers.{Authorization, BasicHttpCredentials}
 import akka.stream.ActorMaterializer
 import akka.stream.scaladsl._
 import akka.util.ByteString
@@ -21,7 +20,7 @@ import play.api.libs.json.{JsValue, Json}
 import play.api.{Configuration, Logger}
 import slick.jdbc.PostgresProfile
 
-import scala.concurrent.{Await, Future}
+import scala.concurrent.{Await, ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
 import scala.concurrent.duration._
 
@@ -37,12 +36,7 @@ class PlutoWGCommissionScanner @Inject() (playConfig:Configuration, actorSystemI
 
   implicit val db = dbConfigProvider.get[PostgresProfile].db
 
-  protected def refreshCommissionsInfo(workingGroup:PlutoWorkingGroup, forSite:String, sinceParam:String, startAt:Int, pageSize: Int):Future[Try[Int]] = {
-    val authorization = headers.Authorization(BasicHttpCredentials(configuration.get[String]("pluto.username"),configuration.get[String]("pluto.password")))
-
-    val commissionUrl = s"${configuration.get[String]("pluto.server_url")}/commission/api/external/list/?group=${workingGroup.uuid}&start=$startAt&length=$pageSize$sinceParam"
-    logger.info(s"refreshing commissions $startAt -> ${startAt + pageSize} for ${workingGroup.name} (${workingGroup.id}) via url $commissionUrl")
-
+  def requestData(commissionUrl:String, authorization:Authorization) =
     Http().singleRequest(HttpRequest(uri = commissionUrl, headers = List(authorization))).flatMap(response=>{
       MDC.put("http_status",response.status.toString())
       if(response.status==StatusCodes.OK){
@@ -60,16 +54,27 @@ class PlutoWGCommissionScanner @Inject() (playConfig:Configuration, actorSystemI
             throw new RuntimeException(s"Could not communicate with pluto: $string")
         })
       }
-    }).map({
+    })
+
+  def commissionListFromParsedData(parsedData:JsValue, workingGroupId:Int, forSite:String) = parsedData.as[List[JsValue]]
+    .map(PlutoCommission.fromServerRepresentation(_,workingGroupId,forSite))
+    .collect({
+      case Success(comm)=>comm
+    })
+  logger.debug(s"Got commission list:")
+
+  protected def refreshCommissionsInfo(workingGroup:PlutoWorkingGroup, forSite:String, sinceParam:String, startAt:Int, pageSize: Int):Future[Try[Int]] = {
+    val authorization = headers.Authorization(BasicHttpCredentials(configuration.get[String]("pluto.username"),configuration.get[String]("pluto.password")))
+
+    val commissionUrl = s"${configuration.get[String]("pluto.server_url")}/commission/api/external/list/?group=${workingGroup.uuid}&start=$startAt&length=$pageSize$sinceParam"
+    logger.info(s"refreshing commissions $startAt -> ${startAt + pageSize} for ${workingGroup.name} (${workingGroup.id}) via url $commissionUrl")
+
+    requestData(commissionUrl, authorization).map({
       case Right(parsedData)=>
         MDC.put("body",parsedData.toString())
         logger.debug(s"Received $parsedData from server")
-          val commissionList = parsedData.as[List[JsValue]]
-            .map(PlutoCommission.fromServerRepresentation(_,workingGroup.id.get,forSite))
-              .collect({
-                case Success(comm)=>comm
-              })
-          logger.debug(s"Got commission list:")
+
+        val commissionList = commissionListFromParsedData(parsedData, workingGroup.id.get, forSite)
           MDC.put("commission_list", commissionList.toString())
           Success(
             commissionList.foldLeft[Int](0)((acc, comm)=>{
