@@ -126,7 +126,7 @@ class MessageProcessorActor @Inject()(configurationI: Configuration, actorSystem
         case _ =>
           getPlutoProjectForAssetFolder(evtAsObject.rq).map({
             case Left(errormessage) =>
-              if(evtAsObject.receivedAt.isBefore(ZonedDateTime.now().minus(2, ChronoUnit.DAYS))){
+              if(evtAsObject.receivedAt.isBefore(ZonedDateTime.now().minus(5, ChronoUnit.DAYS))){
                 logger.error(s"Received asset folder message for ${evtAsObject.rq.assetFolderPath} more than 5 days ago, dropping it as it's unlikely to work now")
                 confirmHandled(evtAsObject)
               } else {
@@ -212,7 +212,7 @@ class MessageProcessorActor @Inject()(configurationI: Configuration, actorSystem
                       confirmHandled(evtAsObject)
                   })
                 case None =>
-                  if(evtAsObject.receivedAt.isBefore(ZonedDateTime.now().minus(2, ChronoUnit.DAYS))){
+                  if(evtAsObject.receivedAt.isBefore(ZonedDateTime.now().minus(5, ChronoUnit.DAYS))){
                     logger.error(s"Received project UUID message for ${evtAsObject.rq.projectEntry.projectTitle} more than 5 days ago, dropping it as it's unlikely to work now")
                     confirmHandled(evtAsObject)
                   } else {
