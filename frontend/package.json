@@ -30,7 +30,7 @@
     "sinon": "^2.3.7"
   },
   "dependencies": {
-    "axios": "^0.15.3",
+    "axios": "^0.19.0",
     "babel-core": "^6.24.0",
     "babel-env": "^2.4.1",
     "babel-loader": "^6.4.1",
