@@ -22,7 +22,7 @@ describe("CommissionSelector", ()=>{
         return moxios.wait(()=>{
             const req = moxios.requests.mostRecent();
             try{
-                expect(req.config.url).toEqual("/api/pluto/commission/list?limit=150");
+                expect(req.config.url).toEqual("/api/pluto/commission/list?length=150");
                 expect(req.config.data).toEqual(JSON.stringify({workingGroupId: 4, status:"In production", match:"W_EXACT"}))
             } catch(err) {
                 done.fail(err);
@@ -61,7 +61,7 @@ describe("CommissionSelector", ()=>{
         return moxios.wait(()=>{
             const req = moxios.requests.mostRecent();
             try{
-                expect(req.config.url).toEqual("/api/pluto/commission/list?limit=150");
+                expect(req.config.url).toEqual("/api/pluto/commission/list?length=150");
                 expect(req.config.data).toEqual(JSON.stringify({workingGroupId: 4, status:"In production", match:"W_EXACT"}))
             } catch(err) {
                 done.fail(err);
@@ -88,7 +88,7 @@ describe("CommissionSelector", ()=>{
         return moxios.wait(()=>{
             const req = moxios.requests.mostRecent();
             try{
-                expect(req.config.url).toEqual("/api/pluto/commission/list?limit=150");
+                expect(req.config.url).toEqual("/api/pluto/commission/list?length=150");
                 expect(req.config.data).toEqual(JSON.stringify({workingGroupId: 4, status:"In production", match:"W_EXACT"}))
             } catch(err) {
                 done.fail(err);

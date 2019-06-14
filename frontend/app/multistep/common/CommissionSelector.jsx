@@ -28,7 +28,7 @@ class CommissionSelector extends React.Component {
     loadData(){
         this.setState({loading:true, error: null, commissionList:[]},()=>{
             const searchDoc = {workingGroupId: this.props.workingGroupId, status: this.props.showStatus, match: "W_EXACT" };
-            axios.put("/api/pluto/commission/list?limit=150", searchDoc).then(response=>{
+            axios.put("/api/pluto/commission/list?length=150", searchDoc).then(response=>{
                 this.setState({loading: false,
                     error: null,
                     commissionList: response.data.result,
