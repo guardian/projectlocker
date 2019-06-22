@@ -1,5 +1,5 @@
 import com.google.inject.AbstractModule
-import helpers.{InitCluster, JythonRunner}
+import helpers.{JythonRunner}
 import play.api.Logger
 import play.api.libs.concurrent.AkkaGuiceSupport
 import services.actors.{MessageProcessorActor, ProjectCreationActor}
@@ -14,8 +14,8 @@ class Module extends AbstractModule with AkkaGuiceSupport {
     bind(classOf[TestModeWarning]).asEagerSingleton()
 
     if(!sys.env.contains("CI")) {
-      bind(classOf[InitCluster]).asEagerSingleton()
-      bind(classOf[PostrunActionScanner]).asEagerSingleton()
+      bind(classOf[AppStartup]).asEagerSingleton()
+
       bind(classOf[PlutoWGCommissionScanner]).asEagerSingleton()
       bind(classOf[PlutoProjectTypeScanner]).asEagerSingleton()
       bind(classOf[StorageScanner]).asEagerSingleton()
@@ -23,5 +23,6 @@ class Module extends AbstractModule with AkkaGuiceSupport {
     //this makes the actor instance accessible via injection
     bindActor[MessageProcessorActor]("message-processor-actor")
     bindActor[ProjectCreationActor]("project-creation-actor")
+    bindActor[PostrunActionScanner]("postrun-action-scanner")
   }
 }

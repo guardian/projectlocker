@@ -3,7 +3,7 @@ package services
 import java.io.File
 import java.sql.Timestamp
 
-import akka.actor.ActorSystem
+import akka.actor.{Actor, ActorSystem}
 import com.google.inject.{Inject, Singleton}
 import play.api.{Configuration, Logger}
 import helpers.{DirectoryScanner, JythonRunner, PrecompileException}
@@ -23,41 +23,49 @@ import collection.mutable._
 import scala.concurrent.duration._
 import scala.util.{Failure, Success}
 
+object PostrunActionScanner {
+  trait PASMsg
+
+  case object Rescan extends PASMsg
+}
+
 @Singleton
-class PostrunActionScanner @Inject() (dbConfigProvider: DatabaseConfigProvider, config:Configuration, actorSystem: ActorSystem) {
+class PostrunActionScanner @Inject() (dbConfigProvider: DatabaseConfigProvider, config:Configuration, actorSystem: ActorSystem) extends Actor {
   private val logger = Logger(this.getClass)
   import actorSystem.dispatcher
 
   implicit val db = dbConfigProvider.get[PostgresProfile].db
   implicit val configImplicit = config
 
-  //call out to JythonRunner to ensure that scripts are precompiled when we start up.
-  JythonRunner.precompile.map(results=>{
-    results.foreach({
-      case Success(runnable)=>
-        logger.debug(s"Successfully precompiled $runnable")
-      case Failure(error)=>error match {
-        case e:PrecompileException=>
-          logger.error(s"Could not precompile ${e.toString}", error)
-        case _=>
-          logger.error("Could not precompile: ", error)
-      }
+  def initialise() {
+    //call out to JythonRunner to ensure that scripts are precompiled when we start up.
+    JythonRunner.precompile.map(results => {
+      results.foreach({
+        case Success(runnable) =>
+          logger.debug(s"Successfully precompiled $runnable")
+        case Failure(error) => error match {
+          case e: PrecompileException =>
+            logger.error(s"Could not precompile ${e.toString}", error)
+          case _ =>
+            logger.error("Could not precompile: ", error)
+        }
+      })
+    }).recover({
+      case e: Throwable =>
+        logger.error("Precompiler could not recover, this should not happen", e)
     })
-  }).recover({
-    case e:Throwable=>
-      logger.error("Precompiler could not recover, this should not happen", e)
-  })
 
-  //Scan POJOs
-  logger.debug(s"URLs from classpath are ${ClasspathHelper.forClassLoader}")
-  val classLoadersList = ArrayBuffer(ClasspathHelper.contextClassLoader, ClasspathHelper.staticClassLoader)
-  val reflections = new Reflections(new ConfigurationBuilder()
-    .setScanners(new SubTypesScanner(false), new ResourcesScanner())
-    .setUrls(ClasspathHelper.forClassLoader())
-    .filterInputsBy(new FilterBuilder().include(FilterBuilder.prefix("postrun")))
-  )
+    //Scan POJOs
+    logger.debug(s"URLs from classpath are ${ClasspathHelper.forClassLoader}")
+    val classLoadersList = ArrayBuffer(ClasspathHelper.contextClassLoader, ClasspathHelper.staticClassLoader)
+    val reflections = new Reflections(new ConfigurationBuilder()
+      .setScanners(new SubTypesScanner(false), new ResourcesScanner())
+      .setUrls(ClasspathHelper.forClassLoader())
+      .filterInputsBy(new FilterBuilder().include(FilterBuilder.prefix("postrun")))
+    )
 
-  reflections.getSubTypesOf(classOf[PojoPostrun]).asScala.foreach(classRef=>addIfNotExists(classRef.getCanonicalName,s"java:${classRef.getCanonicalName}"))
+    reflections.getSubTypesOf(classOf[PojoPostrun]).asScala.foreach(classRef => addIfNotExists(classRef.getCanonicalName, s"java:${classRef.getCanonicalName}"))
+  }
 
 
   protected def addIfNotExists(scriptName:String,absolutePath:String) = {
@@ -85,19 +93,22 @@ class PostrunActionScanner @Inject() (dbConfigProvider: DatabaseConfigProvider, 
     addIfNotExists(scriptFile.getName, scriptFile.getName)
   }
 
-  val cancellable = actorSystem.scheduler.schedule(1 second,60 seconds) {
-    logger.debug("Rescanning postrun actions")
+  initialise()
 
-    val scriptsDir = config.get[String]("postrun.scriptsPath")
-    MDC.put("scripts_dir", scriptsDir)
-    DirectoryScanner.scanAll(scriptsDir).map({
-      case Failure(error)=>
-        logger.error(s"Could not scan $scriptsDir: ", error)
-      case Success(filesList)=>
-        filesList
+  override def receive: Receive = {
+    case PostrunActionScanner.Rescan=>
+      logger.debug("Rescanning postrun actions")
+
+      val scriptsDir = config.get[String]("postrun.scriptsPath")
+      MDC.put("scripts_dir", scriptsDir)
+      DirectoryScanner.scanAll(scriptsDir).map({
+        case Failure(error)=>
+          logger.error(s"Could not scan $scriptsDir: ", error)
+        case Success(filesList)=>
+          filesList
             .filter(file=>file.getName.endsWith(".py") && ! file.getName.startsWith("__"))
             .foreach(file=>addFileIfNotExists(file))
-    })
-
+      })
   }
+
 }
