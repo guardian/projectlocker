@@ -56,8 +56,7 @@ class PlutoWorkingGroupSpec extends Specification with BuildMyApp with PlutoWork
       content.hide must beNone
 
       val result = Await.result(content.ensureRecorded, 10.seconds)
-      result must beSuccessfulTry
-      result.get.id must beSome
+      result.id must beSome
     }
   }
 

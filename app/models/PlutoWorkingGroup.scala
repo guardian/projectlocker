@@ -40,23 +40,26 @@ case class PlutoWorkingGroup (id:Option[Int], hide:Option[String], name:String, 
   /**
     * inserts this record into the database if there is nothing with the given uuid present
     * @param db - implicitly provided database object
-    * @return a Future containing a Try containing a [[PlutoWorkingGroup]] object.
+    * @return a Future containing a containing a [[PlutoWorkingGroup]] object.
     *         If it was newly saved, or exists in the db, the id member will be set.
+    *         If the operation fails, the Future fails too, use onComplete or recover() to handle this.
     */
-  def ensureRecorded(implicit db: slick.jdbc.PostgresProfile#Backend#Database):Future[Try[PlutoWorkingGroup]] = {
+  def ensureRecorded(implicit db: slick.jdbc.PostgresProfile#Backend#Database):Future[PlutoWorkingGroup] = {
     db.run(
       TableQuery[PlutoWorkingGroupRow].filter(_.uuid===uuid).result.asTry
     ).flatMap({
       case Success(rows)=>
         if(rows.isEmpty) {
           logger.info(s"Saving working group $name ($uuid) to the database")
-          this.save
+          this.save.map({
+            case Success(result)=>result
+            case Failure(err)=>throw err
+          })
         } else {
-          Future(Success(rows.head))
+          Future(rows.head)
         }
       case Failure(error)=>
-        throw error
-        Future(Failure(error))
+        Future.failed(error)
     })
   }
 

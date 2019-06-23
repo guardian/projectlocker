@@ -16,7 +16,7 @@ class Module extends AbstractModule with AkkaGuiceSupport {
     if(!sys.env.contains("CI")) {
       bind(classOf[AppStartup]).asEagerSingleton()
 
-      bind(classOf[PlutoWGCommissionScanner]).asEagerSingleton()
+
       bind(classOf[PlutoProjectTypeScanner]).asEagerSingleton()
       bind(classOf[StorageScanner]).asEagerSingleton()
     }
@@ -24,5 +24,6 @@ class Module extends AbstractModule with AkkaGuiceSupport {
     bindActor[MessageProcessorActor]("message-processor-actor")
     bindActor[ProjectCreationActor]("project-creation-actor")
     bindActor[PostrunActionScanner]("postrun-action-scanner")
+    bindActor[PlutoWGCommissionScanner]("pluto-wg-commission-scanner")
   }
 }
