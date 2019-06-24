@@ -20,6 +20,7 @@ class ClockSingleton @Inject() (config:Configuration,
                                @Named("message-processor-actor") messageProcessorActor:ActorRef,
                                @Named("postrun-action-scanner") postrunActionScanner:ActorRef,
                                @Named("pluto-wg-commission-scanner") plutoWGCommissionScanner:ActorRef,
+                               @Named("pluto-project-type-scanner") plutoProjectTypeScanner:ActorRef,
                                )(implicit system:ActorSystem) extends Actor with Timers{
   import ClockSingleton._
   private val logger = Logger(getClass)
@@ -37,6 +38,7 @@ class ClockSingleton @Inject() (config:Configuration,
     timers.startPeriodicTimer(SlowClockTick, SlowClockTick, 5.minutes)
     timers.startPeriodicTimer(VerySlowClockTick, VerySlowClockTick, 1.hours)
     logger.info(s"Timer setup complete")
+    //self ! SlowClockTick
   }
 
   override def receive: Receive = {
@@ -45,6 +47,7 @@ class ClockSingleton @Inject() (config:Configuration,
     case SlowClockTick=>
       logger.debug("SlowClockTick")
       plutoWGCommissionScanner ! PlutoWGCommissionScanner.RefreshWorkingGroups
+      plutoProjectTypeScanner ! PlutoProjectTypeScanner.RefreshProjectTypes
 
     case VerySlowClockTick=>
       logger.debug("VerySlowClockTick")
