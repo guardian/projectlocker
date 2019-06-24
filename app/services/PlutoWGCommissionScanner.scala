@@ -31,7 +31,7 @@ object PlutoWGCommissionScanner {
 
 @Singleton
 class PlutoWGCommissionScanner @Inject() (playConfig:Configuration, actorSystemI:ActorSystem, dbConfigProvider: DatabaseConfigProvider)
-  extends Actor with JsonComms with PlutoCommissionSerializer with PlutoWorkingGroupSerializer {
+  extends Actor with PlutoWGCommissionScannerFunctions  {
 
   import PlutoWGCommissionScanner._
 
@@ -46,102 +46,6 @@ class PlutoWGCommissionScanner @Inject() (playConfig:Configuration, actorSystemI
   protected val ownRef = self
 
   protected def getHttp:HttpExt = Http()
-
-  protected def handleCommissionsInfoData(maybeData:Either[String, JsValue], workingGroup:PlutoWorkingGroup, forSite:String) = maybeData match {
-    case Right(parsedData)=>
-      MDC.put("body", parsedData.toString())
-      logger.debug(s"Received $parsedData from server")
-      val commissionList = parsedData.as[List[JsValue]]
-        .map(PlutoCommission.fromServerRepresentation(_, workingGroup.id.get, forSite))
-        .collect({
-          case Success(comm) => comm
-        })
-      MDC.put("commission_list", commissionList.toString())
-      val ensureFutures = Future.sequence(commissionList.map(_.ensureRecorded))
-
-  //    commissionList.foldLeft[Int](0)((acc, comm) => {
-  //      logger.debug(s"\t$comm")
-  ////      Await.result(comm.ensureRecorded, 10.seconds)
-  ////      if (acc >= pageSize - 1) refreshCommissionsInfo(workingGroup, forSite, sinceParam, startAt + acc, pageSize)
-  //      acc + 1
-  //    })
-      ensureFutures.map(resultList=>{
-        val failures = resultList.collect({case Failure(err)=>err})
-        if(failures.nonEmpty){
-          logger.error(s"Could not save all collections: ")
-          failures.foreach(err=>logger.error(s"\tFailed commission:", err))
-          Left(failures.mkString("\n"))
-        } else {
-          Right(resultList.length)
-        }
-      })
-    case Left(err)=>Future(Left(err))
-  }
-
-  def receivedWorkingGroupData(parsedData:JsValue) = {
-    val wgList = parsedData.as[List[PlutoWorkingGroup]]
-    logger.debug(s"Got working group list:")
-    MDC.put("working_group_list",wgList.toString())
-    Future.sequence(wgList.map(wg=>{
-      logger.debug(s"\t$wg")
-      val saveFuture = wg.ensureRecorded
-      saveFuture.onComplete({
-        case Success(updatedWg)=>
-          ownRef ! RefreshCommissionsForWG(updatedWg)
-
-//          refreshCommissionsForWg(updatedWg).onComplete({
-//            case Success(triedInt)=> //the future completed ok
-//              triedInt match {
-//                case Success(commissionsUpdated)=> //the db operation completed ok
-//                  logger.info(s"Successfully updated $commissionsUpdated commissions for working group ${wg.name} (${wg.uuid})")
-//                case Failure(error)=>
-//                  MDC.put("working_group",wg.toString)
-//                  logger.error(s"Database error updating commissions for working group ${wg.name} (${wg.uuid}):", error)
-//              }
-//            case Failure(error)=>
-//              MDC.put("working_group",wg.toString)
-//              logger.error(s"Unable to update commissions for working group ${wg.name} (${wg.uuid}):", error)
-//          })
-        case Failure(error)=>
-          MDC.put("working_group",wg.toString)
-          logger.error(s"Unable to save working group to database: ", error)
-      })
-      saveFuture
-    }))
-  }
-
-  def refreshWorkingGroups = {
-    logger.debug("in refreshWorkingGroups")
-    val workingGroupUri = s"${configuration.get[String]("pluto.server_url")}/commission/api/groups/"
-    logger.debug(s"working group uri is $workingGroupUri")
-
-    val authorization = headers.Authorization(BasicHttpCredentials(configuration.get[String]("pluto.username"),configuration.get[String]("pluto.password")))
-
-    getHttp.singleRequest(HttpRequest(uri = workingGroupUri, headers = List(authorization))).flatMap(response=>{
-      MDC.put("http_status",response.status.toString())
-      if(response.status==StatusCodes.OK){
-        bodyAsJsonFuture(response)
-      } else if(response.status==StatusCodes.Forbidden || response.status==StatusCodes.Unauthorized) {
-        logger.error("Could not log in to server")
-        bodyAsJsonFuture(response)
-      }  else {
-        logger.error(s"Server returned ${response.status}")
-        response.entity.discardBytes()
-        throw new RuntimeException("Could not communicate with pluto")
-      }
-    }).flatMap(parseResult=>{
-        MDC.put("body",parseResult.toString)
-        logger.debug(s"Received $parseResult from server")
-        parseResult match {
-          case Right(parsedData)=>
-            receivedWorkingGroupData(parsedData)
-          case Left(unparsedData)=>
-            MDC.put("body",unparsedData)
-            logger.error(s"Unable to parse data from server")
-            throw new RuntimeException(s"Could not parse data from server, got $unparsedData")
-        }
-    })
-  }
 
   override def receive: Receive = {
     case RefreshWorkingGroups=>
@@ -231,6 +135,6 @@ class PlutoWGCommissionScanner @Inject() (playConfig:Configuration, actorSystemI
               Left(s"Could not communicate with pluto: $string")
           })
         }
-      }).flatMap(response=>handleCommissionsInfoData(response, workingGroup, forSite))
+      }).flatMap(response=>handleCommissionsInfoData(response, workingGroup, forSite))  //FIXME: iterate over future pages.
   }
 }
