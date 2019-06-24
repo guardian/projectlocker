@@ -84,6 +84,7 @@ GET     /api/pluto/workinggroup/:id        @controllers.PlutoWorkingGroupControl
 GET     /api/pluto/commission/:id          @controllers.PlutoCommissionController.getitem(id:Int)
 POST    /api/pluto/commission              @controllers.PlutoCommissionController.create
 PUT     /api/pluto/commission/list         @controllers.PlutoCommissionController.listFiltered(startAt:Int ?=0, length:Int ?=100)
+GET     /api/pluto/rescan                   @controllers.PlutoWorkingGroupController.rescan
 
 POST    /api/login                         @controllers.Application.authenticate
 POST    /api/logout                        @controllers.Application.logout

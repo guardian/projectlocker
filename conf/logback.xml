@@ -35,6 +35,7 @@
     <logger name="models.PlutoWorkingGroup" level="WARN"/>
     <logger name="models.PlutoCommission" level="WARN"/>
     <logger name="services.PlutoWGCommissionScanner" level="DEBUG"/>
+    <logger name="services.ClockSingleton" level="DEBUG"/>
     <logger name="controllers.Files" level="WARN" />
     <logger name="controllers.StorageControllerSpec" level="WARN"/>
     <logger name="auth.Security" level="WARN"/>

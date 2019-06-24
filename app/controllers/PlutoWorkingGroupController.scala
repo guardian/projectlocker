@@ -1,6 +1,6 @@
 package controllers
+import akka.actor.ActorRef
 import javax.inject._
-
 import models.{PlutoWorkingGroup, PlutoWorkingGroupRow, PlutoWorkingGroupSerializer}
 import play.api.cache.SyncCacheApi
 import play.api.db.slick.DatabaseConfigProvider
@@ -9,13 +9,19 @@ import play.api.mvc.Request
 import slick.jdbc.PostgresProfile
 import slick.lifted.TableQuery
 import slick.jdbc.PostgresProfile.api._
+import akka.pattern.ask
+import services.PlutoWGCommissionScanner
 
 import scala.concurrent.Future
 import scala.util.Try
+import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.duration._
 
 @Singleton
-class PlutoWorkingGroupController @Inject() (dbConfigProvider:DatabaseConfigProvider, cacheImpl:SyncCacheApi)
+class PlutoWorkingGroupController @Inject() (dbConfigProvider:DatabaseConfigProvider, cacheImpl:SyncCacheApi, @Named("pluto-wg-commission-scanner") scanner:ActorRef)
   extends GenericDatabaseObjectController[PlutoWorkingGroup] with PlutoWorkingGroupSerializer {
+
+  implicit val timeout:akka.util.Timeout = 55 seconds
 
   implicit val db = dbConfigProvider.get[PostgresProfile].db
   implicit val cache:SyncCacheApi = cacheImpl
@@ -40,4 +46,19 @@ class PlutoWorkingGroupController @Inject() (dbConfigProvider:DatabaseConfigProv
 
   override def validate(request: Request[JsValue]): JsResult[PlutoWorkingGroup] = request.body.validate[PlutoWorkingGroup]
 
+  def rescan = IsAdminAsync { uid=> { request=>
+    (scanner ? PlutoWGCommissionScanner.RefreshWorkingGroups).map({
+      case akka.actor.Status.Success=>Ok("rescan started")
+      case akka.actor.Status.Failure(err)=>
+        logger.error(s"Could not start pluto scan: ", err)
+        InternalServerError("Could not start scan. See logs for details.")
+      case other@_=>
+        logger.error(s"Received unexpected reply from RefreshWorkingGroups: ${other.getClass}")
+        InternalServerError("Program error, see logs for details")
+    }).recover({
+      case err:Throwable=>
+        logger.error(s"Could not start pluto scan: ", err)
+        InternalServerError("Could not start scan. See logs for details.")
+    })
+  }}
 }
