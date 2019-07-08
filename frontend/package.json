@@ -10,10 +10,26 @@
     "dev": "webpack -d --watch"
   },
   "jest": {
+    "moduleFileExtensions": [
+      "js",
+      "jsx",
+      "json"
+    ],
+    "verbose": true,
     "moduleNameMapper": {
       "\\.(css|less)$": "identity-obj-proxy"
     },
-    "testResultsProcessor": "jest-junit"
+    "transform": {
+      "^.+\\.(js|jsx)?$": "babel-jest"
+    },
+    "transformIgnorePatterns": [
+      "node_modules/react-treebeard/.+\\\\.js$",
+      "node_modules/(?!panda-session).+\\\\.js$"
+    ],
+    "testResultsProcessor": "jest-junit",
+    "setupFiles": [
+      "./jestSetup.jsx"
+    ]
   },
   "author": "Andy Gallagher <andy.gallagher@theguardian.com>",
   "license": "ISC",
@@ -22,16 +38,17 @@
     "@babel/plugin-proposal-function-bind": "^7.2.0",
     "@babel/plugin-transform-react-jsx": "^7.3.0",
     "babel-core": "^7.0.0-bridge.0",
+    "babel-jest": "^24.8.0",
     "enzyme": "^3.7.0",
     "enzyme-adapter-react-16": "^1.6.0",
-    "jest": "^20.0.4",
-    "jest-cli": "^23.6.0",
+    "jest": "^24.8.0",
+    "jest-cli": "^24.8.0",
     "jest-junit": "^4.0.0",
     "moxios": "^0.4.0",
     "object.entries": "^1.0.4",
-    "snyk": "^1.192.3",
     "react-test-renderer": "^16.8.0",
     "sinon": "^2.3.7",
+    "snyk": "^1.192.3",
     "webpack-cli": "^3.2.3"
   },
   "dependencies": {
