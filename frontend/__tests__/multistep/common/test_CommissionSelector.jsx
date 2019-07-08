@@ -61,6 +61,7 @@ describe("CommissionSelector", ()=>{
         return moxios.wait(()=>{
             const req = moxios.requests.mostRecent();
             try{
+                expect(rendered.instance().state.error).toBeFalsy();
                 expect(req.config.url).toEqual("/api/pluto/commission/list?length=150");
                 expect(req.config.data).toEqual(JSON.stringify({workingGroupId: 4, status:"In production", match:"W_EXACT"}))
             } catch(err) {
@@ -70,7 +71,7 @@ describe("CommissionSelector", ()=>{
                 status: 500,
                 response: {detail:"hanungah",status:"error"}
             }).then(()=>{
-                expect(rendered.find('p.error-text').text()).toEqual("Server error 500: \"hanungah\"");
+                expect(rendered.instance().state.error).toBeTruthy();
                 done();
             }).catch(err=>done.fail(err));
         })
