@@ -27,8 +27,9 @@ lazy val `projectlocker` = (project in file("."))
       dockerCommands ++= Seq(
         Cmd("USER", "root"),
         Cmd("RUN", "apk", "add", "sudo", "perl", "--no-cache"),
-        Cmd("USER", "daemon"),
+        Cmd("RUN", "mkdir -p /etc/projectlocker && mv /opt/docker/postrun/postrun_settings.py /etc/projectlocker && ln -s /etc/projectlocker/postrun_settings.py /opt/docker/postrun/postrun_settings.py"),
         Cmd("RUN", "mv", "/opt/docker/conf/docker-application.conf", "/opt/docker/conf/application.conf"),
+        Cmd("USER", "daemon"),
         Cmd("RUN", "mkdir", "-p", "/opt/docker/target/persistence"),
         Cmd("RUN", "ls", "-lhd", "/opt/docker/target/persistence")
       )

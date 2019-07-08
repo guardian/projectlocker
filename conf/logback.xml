@@ -23,7 +23,7 @@
 
     <logger name="play" level="INFO" />
     <logger name="application" level="ERROR" />
-    <logger name="services.PostrunActionScanner" level="DEBUG"/>
+    <logger name="services.PostrunActionScanner" level="INFO"/>
     <logger name="org.reflections" level="OFF"/>
     <logger name="helpers.ProjectCreateHelperImpl" level="WARN"/>
     <logger name="helpers.PostrunSorter" level="WARN"/>
@@ -34,7 +34,8 @@
     <logger name="drivers.PathStorage" level="WARN"/>
     <logger name="models.PlutoWorkingGroup" level="WARN"/>
     <logger name="models.PlutoCommission" level="WARN"/>
-    <logger name="services.PlutoWGCommissionScanner" level="WARN"/>
+    <logger name="services.PlutoWGCommissionScanner" level="INFO"/>
+    <logger name="services.ClockSingleton" level="INFO"/>
     <logger name="controllers.Files" level="WARN" />
     <logger name="controllers.StorageControllerSpec" level="WARN"/>
     <logger name="auth.Security" level="WARN"/>
@@ -44,17 +45,17 @@
     <logger name="services.actors.MessageProcessorActor" level="WARN"/>
     <logger name="services.actors.MessageProcessorState" level="WARN"/>
     <logger name="services.PlutoProjectTypeScanner" level="WARN"/>
-    <logger name="models.FileEntry" level="DEBUG" />
+    <logger name="models.FileEntry" level="INFO" />
     <logger name="controllers.Files" level="WARN" />
     <logger name="postrun.UpdateAdobeUuid" level="INFO"/>
     <logger name="models.ProjectMetadata" level="WARN"/>
     <logger name="postrun.UpdateAdobeUuidSpec" level="WARN"/>
-    <logger name="services.StorageScanner" level="DEBUG"/>
+    <logger name="services.StorageScanner" level="INFO"/>
     <logger name="com.gargoylesoftware.htmlunit.javascript" level="OFF" />
     <logger name="MockProjectCreationActor" level="DEBUG"/>
-    <logger name="services.actors.ProjectCreationActor" level="DEBUG"/>
+    <logger name="services.actors.ProjectCreationActor" level="INFO"/>
     <logger name="ProjectCreation.ProjectCreationSpec" level="ERROR"/>
-    <logger name="services.actors.creation" level="DEBUG"/>
+    <logger name="services.actors.creation" level="INFO"/>
 
     <root level="INFO">
         <appender-ref ref="STDOUT" />
