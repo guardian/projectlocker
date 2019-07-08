@@ -95,46 +95,5 @@ class PlutoWGCommissionScannerSpec extends Specification with Mockito {
       result must beFailedTry
     }
 
-    /* I can't get the mocking to work for db.run() so can't use this test at present.
-    "pass RefreshCommissionsInfo with the most recent working group" in new AkkaTestkitSpecs2Support {
-      val testData = PlutoWorkingGroup(Some(2),None,"something","something")
-      val testComm = PlutoCommission(Some(2),1,"AA",Timestamp.from(Instant.now()), Timestamp.from(Instant.now()),"some-commission","In Production",None, 1)
-      val config = Configuration.empty
-      val dbConfigProvider = mock[DatabaseConfigProvider]
-      //val mockedDbConfig = mock[DatabaseConfig[PostgresProfile]]
-      val mockedDb = mock[PostgresProfile#Backend#Database]
-
-      dbConfigProvider.get[PostgresProfile] returns new DatabaseConfig[PostgresProfile] {
-        override def profileName: String = "testprofile"
-
-        override def profileIsObject: Boolean = false
-
-        override def config: Config = mock[Config]
-
-        override def db = mockedDb
-
-        override val profile = PostgresProfile
-
-        override val driver = PostgresProfile
-      }
-
-      mockedDb.run[Try[Seq[PlutoCommissionRow#TableElementType]]](any) returns Future(Success(Seq(testComm)))
-      mockedDb.run[Try[Seq[PlutoCommission]]](any) returns Future(Success(Seq(testComm)))
-      //mockedDb.run[AnyRef](any) returns Future(Success(Seq(testComm)))
-
-      val testProbe = TestProbe()
-      val mockedHttp:HttpExt = mock[HttpExt]
-
-      val toTestActor = system.actorOf(Props(new PlutoWGCommissionScanner(config, system, dbConfigProvider){
-        override protected val ownRef = testProbe.ref
-
-        override protected def getHttp: HttpExt = mockedHttp
-      }))
-
-      toTestActor ! RefreshCommissionsForWG(testData)
-
-      testProbe.expectMsg(3 seconds, RefreshCommissionsInfo(testData,"AA","",0,10))
-    }
-    */
   }
 }

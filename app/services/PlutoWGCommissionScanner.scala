@@ -11,15 +11,12 @@ import akka.http.scaladsl.{Http, HttpExt}
 import akka.http.scaladsl.model._
 import akka.http.scaladsl.model.headers.BasicHttpCredentials
 import akka.stream.ActorMaterializer
-import models.{PlutoCommission, PlutoCommissionSerializer, PlutoWorkingGroup, PlutoWorkingGroupSerializer}
+import models.{PlutoCommission, PlutoWorkingGroup}
 import play.api.db.slick.DatabaseConfigProvider
-import play.api.libs.json.{JsValue, Json}
 import play.api.{Configuration, Logger}
 import slick.jdbc.PostgresProfile
 
-import scala.concurrent.{Await, Future}
 import scala.util.{Failure, Success, Try}
-import scala.concurrent.duration._
 
 object PlutoWGCommissionScanner {
   trait ScannerMsg
@@ -93,19 +90,6 @@ class PlutoWGCommissionScanner @Inject() (playConfig:Configuration, actorSystemI
 
               //yah, having the site as a config setting is not good but it will do for the time being
               ownRef ! RefreshCommissionsInfo(workingGroup, configuration.get[String]("pluto.sitename"),sinceParam, 0, configuration.get[Int]("pluto.pageSize"))
-//              refreshCommissionsInfo(workingGroup, configuration.get[String]("pluto.sitename"),sinceParam, 0, configuration.get[Int]("pluto.pageSize")).onComplete({
-//                case Success(Right(count))=>
-//                  logger.info(s"Refreshed $count items from $workingGroup")
-//                  originalSender ! akka.actor.Status.Success
-//                case Success(Left(err))=>
-//                  val msg = s"Could not scan commissions from $workingGroup: $err"
-//                  logger.error(msg)
-//                  originalSender ! akka.actor.Status.Failure(new RuntimeException(msg))
-//                case Failure(err)=>
-//                  val msg = s"Refresh thread crashed: "
-//                  logger.error(msg, err)
-//                  originalSender ! akka.actor.Status.Failure(err)
-//              })
           })
         case None=>
           logger.error("Can't refresh commissions before working group has been saved.")

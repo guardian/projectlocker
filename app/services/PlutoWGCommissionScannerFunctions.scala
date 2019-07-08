@@ -31,12 +31,6 @@ trait PlutoWGCommissionScannerFunctions extends JsonComms with PlutoCommissionSe
       MDC.put("commission_list", commissionList.toString())
       val ensureFutures = Future.sequence(commissionList.map(_.ensureRecorded))
 
-      //    commissionList.foldLeft[Int](0)((acc, comm) => {
-      //      logger.debug(s"\t$comm")
-      ////      Await.result(comm.ensureRecorded, 10.seconds)
-      ////      if (acc >= pageSize - 1) refreshCommissionsInfo(workingGroup, forSite, sinceParam, startAt + acc, pageSize)
-      //      acc + 1
-      //    })
       ensureFutures.map(resultList=>{
         val failures = resultList.collect({case Failure(err)=>err})
         if(failures.nonEmpty){
@@ -60,19 +54,6 @@ trait PlutoWGCommissionScannerFunctions extends JsonComms with PlutoCommissionSe
         case Success(updatedWg)=>
           ownRef ! RefreshCommissionsForWG(updatedWg)
 
-        //          refreshCommissionsForWg(updatedWg).onComplete({
-        //            case Success(triedInt)=> //the future completed ok
-        //              triedInt match {
-        //                case Success(commissionsUpdated)=> //the db operation completed ok
-        //                  logger.info(s"Successfully updated $commissionsUpdated commissions for working group ${wg.name} (${wg.uuid})")
-        //                case Failure(error)=>
-        //                  MDC.put("working_group",wg.toString)
-        //                  logger.error(s"Database error updating commissions for working group ${wg.name} (${wg.uuid}):", error)
-        //              }
-        //            case Failure(error)=>
-        //              MDC.put("working_group",wg.toString)
-        //              logger.error(s"Unable to update commissions for working group ${wg.name} (${wg.uuid}):", error)
-        //          })
         case Failure(error)=>
           MDC.put("working_group",wg.toString)
           logger.error(s"Unable to save working group to database: ", error)
