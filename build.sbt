@@ -71,7 +71,7 @@ libraryDependencies += "com.unboundid" % "unboundid-ldapsdk" % "4.0.5"
 libraryDependencies += "org.python" % "jython" % "2.7.1b2"
 
 // upgrade jackson-databind to remove Deserialization of Untrusted Data vuln
-libraryDependencies += "com.fasterxml.jackson.core" % "jackson-databind" % "2.8.11.1"
+libraryDependencies += "com.fasterxml.jackson.core" % "jackson-databind" % "2.9.9"
 
 // upgrade guava to remove Deserialization of Untruseted Data vuln
 // https://mvnrepository.com/artifact/com.google.guava/guava
