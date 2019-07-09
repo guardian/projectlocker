@@ -85,18 +85,21 @@ libraryDependencies ++= Seq(
   "com.lightbend.akka.discovery" %% "akka-discovery-kubernetes-api" % akkaManagementVersion,
   "com.lightbend.akka.discovery" %% "akka-discovery-dns" % akkaManagementVersion,
   "com.lightbend.akka.discovery" %% "akka-discovery-config" % akkaManagementVersion,
-  "com.typesafe.akka" %% "akka-persistence" % "2.5.11",
-  "com.typesafe.akka" %% "akka-cluster" % "2.5.11",
-  "com.typesafe.akka" %% "akka-cluster-metrics" % "2.5.11",
-  "com.typesafe.akka" %% "akka-cluster-tools" % "2.5.11",
+  "com.typesafe.akka" %% "akka-persistence" % "2.5.23",
+  "com.typesafe.akka" %% "akka-cluster" % "2.5.23",
+  "com.typesafe.akka" %% "akka-cluster-metrics" % "2.5.23",
+  "com.typesafe.akka" %% "akka-cluster-tools" % "2.5.23",
   "org.iq80.leveldb"            % "leveldb"          % "0.7",
   "org.fusesource.leveldbjni"   % "leveldbjni-all"   % "1.8",
-  "com.typesafe.akka" %% "akka-testkit" % "2.5.11" % Test
+  "com.typesafe.akka" %% "akka-testkit" % "2.5.23" % Test
 )
 
 //explicit akka upgrades for security
 libraryDependencies ++= Seq(
-  "com.typesafe.akka" %% "akka-http" % "10.0.14",
+  "com.typesafe.akka" %% "akka-http" % "10.1.8",
+  "com.typesafe.akka" %% "akka-http-core" % "10.1.8",
+  "com.typesafe.akka" %% "akka-parsing" % "10.1.8",
+  "com.typesafe.akka" %% "akka-http-spray-json" % "10.1.8"
 )
 
 //Sentry
