@@ -239,20 +239,6 @@ class ProjectEntryController @Inject() (@Named("project-creation-actor") project
 
   override def validateFilterParams(request: Request[JsValue]): JsResult[ProjectEntryFilterTerms] = request.body.validate[ProjectEntryFilterTerms]
 
-//  def createFromFullRequest(rq:ProjectRequestFull)(implicit db: slick.jdbc.PostgresProfile#Backend#Database) = projectHelper.create(rq,None).map({
-//    case Failure(error)=>
-//      logger.error("Could not create new project", error)
-//      error match {
-//        case projectCreationError:ProjectCreationError=>
-//          BadRequest(Json.obj("status"->"error","detail"->projectCreationError.getMessage))
-//        case _=>
-//          InternalServerError(Json.obj("status"->"error","detail"->error.toString))
-//      }
-//    case Success(projectEntry)=>
-//      logger.error(s"Created new project: $projectEntry")
-//      Ok(Json.obj("status"->"ok","detail"->"created project", "projectId"->projectEntry.id.get))
-//  })
-
   def createFromFullRequest(rq:ProjectRequestFull) = {
     implicit val timeout:akka.util.Timeout = 60.seconds
 

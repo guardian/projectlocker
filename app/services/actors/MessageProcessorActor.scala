@@ -58,6 +58,7 @@ class MessageProcessorActor @Inject()(configurationI: Configuration, actorSystem
   protected val snapshotInterval = configuration.getOptional[Long]("pluto.persistence-snapshot-interval").getOrElse(50L)
   val logger = Logger(getClass)
 
+  private var restoreCompleted = false
 
   /**
     * add an event to the journal, and snapshot if required
@@ -89,10 +90,7 @@ class MessageProcessorActor @Inject()(configurationI: Configuration, actorSystem
       logger.debug(s"receiveRecover got message handled: ${handledEvt.eventId}")
       state = state.removed(handledEvt.eventId)
     case RecoveryCompleted=>
-      val d = durationToPair(Duration(configuration.getOptional[String]("pluto.resend_delay").getOrElse("10 seconds")))
-      val delay = FiniteDuration(d._1,d._2)
-      logger.info(s"MessageProcessorActor completed journal recovery, starting automatic retries every $delay")
-      actorSystem.scheduler.schedule(delay, delay,self,RetryFromState())
+      restoreCompleted=true
     case SnapshotOffer(_, snapshot: MessageProcessorState)=>
       logger.debug("receiveRecover got snapshot offer")
       state=snapshot
@@ -105,13 +103,16 @@ class MessageProcessorActor @Inject()(configurationI: Configuration, actorSystem
       deleteMessages(metadata.sequenceNr)
     case SaveSnapshotFailure(metadata,error)=>
       logger.error(s"Could not save snapshot ${metadata.sequenceNr} for ${metadata.persistenceId}: ",error)
-    case retry: RetryFromState=>  //retry all events in state, i.e. everything that has not had confirmHandle() called
-      logger.debug(s"initiating retry cycle, entries in state: ${state.size}")
-      state.foreach{ stateEntry=>
-        logger.debug(s"${stateEntry._1.toString}: ${stateEntry._2.toString}")
-        self ! stateEntry._2
+    case _: RetryFromState=>  //retry all events in state, i.e. everything that has not had confirmHandle() called
+      if(!restoreCompleted){
+        logger.warn(s"Received RetryFromState but recovery not completed yet, ignoring")
+      } else {
+        logger.debug(s"initiating retry cycle, entries in state: ${state.size}")
+        state.foreach { stateEntry =>
+          logger.debug(s"${stateEntry._1.toString}: ${stateEntry._2.toString}")
+          self ! stateEntry._2
+        }
       }
-
     case msgAsObject: NewAssetFolder =>
       persist(NewAssetFolderEvent(msgAsObject, UUID.randomUUID(), ZonedDateTime.now())) { event=>
         updateState(event)

@@ -3,31 +3,34 @@ package services
 import java.net.URLEncoder
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
+
 import javax.inject.{Inject, Singleton}
-
 import org.slf4j.MDC
-
-import akka.actor.ActorSystem
-import akka.http.scaladsl.Http
+import akka.actor.{Actor, ActorSystem}
+import akka.http.scaladsl.{Http, HttpExt}
 import akka.http.scaladsl.model._
 import akka.http.scaladsl.model.headers.BasicHttpCredentials
 import akka.stream.ActorMaterializer
-import akka.stream.scaladsl._
-import akka.util.ByteString
-import helpers.DirectoryScanner
-import models.{PlutoCommission, PlutoCommissionSerializer, PlutoWorkingGroup, PlutoWorkingGroupSerializer}
+import models.{PlutoCommission, PlutoWorkingGroup}
 import play.api.db.slick.DatabaseConfigProvider
-import play.api.libs.json.{JsValue, Json}
 import play.api.{Configuration, Logger}
 import slick.jdbc.PostgresProfile
 
-import scala.concurrent.{Await, Future}
 import scala.util.{Failure, Success, Try}
-import scala.concurrent.duration._
+
+object PlutoWGCommissionScanner {
+  trait ScannerMsg
+
+  case object RefreshWorkingGroups
+  case class RefreshCommissionsForWG(workingGroup: PlutoWorkingGroup)
+  case class RefreshCommissionsInfo(workingGroup:PlutoWorkingGroup, forSite:String, sinceParam:String, startAt:Int, pageSize: Int)
+}
 
 @Singleton
 class PlutoWGCommissionScanner @Inject() (playConfig:Configuration, actorSystemI:ActorSystem, dbConfigProvider: DatabaseConfigProvider)
-  extends JsonComms with PlutoCommissionSerializer with PlutoWorkingGroupSerializer {
+  extends Actor with PlutoWGCommissionScannerFunctions  {
+
+  import PlutoWGCommissionScanner._
 
   implicit val actorSystem = actorSystemI
   implicit val configuration = playConfig
@@ -37,153 +40,85 @@ class PlutoWGCommissionScanner @Inject() (playConfig:Configuration, actorSystemI
 
   implicit val db = dbConfigProvider.get[PostgresProfile].db
 
-  protected def refreshCommissionsInfo(workingGroup:PlutoWorkingGroup, forSite:String, sinceParam:String, startAt:Int, pageSize: Int):Future[Try[Int]] = {
-    val authorization = headers.Authorization(BasicHttpCredentials(configuration.get[String]("pluto.username"),configuration.get[String]("pluto.password")))
+  protected val ownRef = self
 
-    val commissionUrl = s"${configuration.get[String]("pluto.server_url")}/commission/api/external/list/?group=${workingGroup.uuid}&start=$startAt&length=$pageSize$sinceParam"
-    logger.info(s"refreshing commissions $startAt -> ${startAt + pageSize} for ${workingGroup.name} (${workingGroup.id}) via url $commissionUrl")
+  protected def getHttp:HttpExt = Http()
 
-    Http().singleRequest(HttpRequest(uri = commissionUrl, headers = List(authorization))).flatMap(response=>{
-      MDC.put("http_status",response.status.toString())
-      if(response.status==StatusCodes.OK){
-        bodyAsJsonFuture(response)
-      } else if(response.status==StatusCodes.Forbidden || response.status==StatusCodes.Unauthorized) {
-        logger.error("Could not log in to server")
-        bodyAsJsonFuture(response)
-      }  else {
-        logger.error(s"Server returned ${response.status}")
-        bodyAsJsonFuture(response).map({
-          //this will cause the Future to fail and is picked up by the caller
-          case Right(jsvalue)=>
-            throw new RuntimeException(s"Could not communicate with pluto: ${jsvalue.toString}")
-          case Left(string)=>
-            throw new RuntimeException(s"Could not communicate with pluto: $string")
-        })
+  override def receive: Receive = {
+    case RefreshWorkingGroups=>
+      val originalSender = sender()
+      configuration.getOptional[String]("pluto.sync_enabled") match {
+        case Some ("yes") =>
+          logger.debug("Sync enabled, refreshing working groups")
+          refreshWorkingGroups.onComplete({
+            case Failure(error)=>
+              logger.error(s"Unable to get working groups from server: $error")
+              originalSender ! akka.actor.Status.Failure(error)
+            case Success(_)=>
+              logger.info(s"Completed refreshing working groups")
+              originalSender ! akka.actor.Status.Success
+          })
+        case Some(_)=>
+          logger.warn("pluto sync is not enabled. set pluto.sync_enabled to 'yes' in order to enable it")
+        case None=>
+          logger.error("pluto sync is not enabled")
       }
-    }).map({
-      case Right(parsedData)=>
-        MDC.put("body",parsedData.toString())
-        logger.debug(s"Received $parsedData from server")
-          val commissionList = parsedData.as[List[JsValue]]
-            .map(PlutoCommission.fromServerRepresentation(_,workingGroup.id.get,forSite))
-              .collect({
-                case Success(comm)=>comm
-              })
-          logger.debug(s"Got commission list:")
-          MDC.put("commission_list", commissionList.toString())
-          Success(
-            commissionList.foldLeft[Int](0)((acc, comm)=>{
-              logger.debug(s"\t$comm")
-              Await.result(comm.ensureRecorded,10.seconds)
-              if(acc>=pageSize-1) refreshCommissionsInfo(workingGroup, forSite,sinceParam, startAt+acc, pageSize)
-              acc+1
-            }))
-      case Left(string)=>
-        MDC.put("body", string)
-        val msg = s"Could not parse response from server: $string"
-        logger.error(msg)
-        Failure(new RuntimeException(msg))
-    })
-  }
 
-  def refreshCommissionsForWg(workingGroup: PlutoWorkingGroup):Future[Try[Int]] = {
-    val authorization = headers.Authorization(BasicHttpCredentials(configuration.get[String]("pluto.username"),configuration.get[String]("pluto.password")))
+    case RefreshCommissionsForWG(workingGroup)=>
+      val originalSender = sender()
+      workingGroup.id match {
+        case Some(workingGroupId)=>
+          PlutoCommission.mostRecentByWorkingGroup(workingGroupId).onComplete({
+            case Failure(error)=>
+              logger.error(s"Could not get most recent commissions for $workingGroup", error)
+              originalSender ! akka.actor.Status.Failure(error)
+            case Success(Failure(error))=>
+              logger.error(s"Could not get most recent commissions for $workingGroup", error)
+              originalSender ! akka.actor.Status.Failure(error)
+            case Success(Success(maybeCommission))=>
+              logger.info(s"most recent commission: $maybeCommission")
+              val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:MM:ss.SSSZ").withZone(ZoneId.of("UTC"))
 
-    workingGroup.id match {
-      case Some(workingGroupId)=>
-        PlutoCommission.mostRecentByWorkingGroup(workingGroupId).flatMap({
-          case Failure(error)=>Future(Failure(error))
-          case Success(maybeCommission)=>
-            logger.debug(s"most recent commission: ${maybeCommission}")
-            val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:MM:ss.SSSZ").withZone(ZoneId.of("UTC"))
+              val sinceParam = maybeCommission match {
+                case Some(recentCommission)=>
+                  logger.info(s"Got most recent commission for $workingGroupId: $recentCommission")
+                  s"&since=${URLEncoder.encode(formatter.format(recentCommission.updated.toInstant.plus(java.time.Duration.ofSeconds(1))),"UTF-8")}"
+                case None=>
+                  logger.info(s"No commissions for $workingGroupId")
+                  ""
+              }
 
-            val sinceParam = maybeCommission match {
-              case Some(recentCommission)=>
-                logger.info(s"Got most recent commission for $workingGroupId: $recentCommission")
-                s"&since=${URLEncoder.encode(formatter.format(recentCommission.updated.toInstant.plus(java.time.Duration.ofSeconds(1))),"UTF-8")}"
-              case None=>
-                logger.info(s"No commissions for $workingGroupId")
-                ""
-            }
+              //yah, having the site as a config setting is not good but it will do for the time being
+              ownRef ! RefreshCommissionsInfo(workingGroup, configuration.get[String]("pluto.sitename"),sinceParam, 0, configuration.get[Int]("pluto.pageSize"))
+          })
+        case None=>
+          logger.error("Can't refresh commissions before working group has been saved.")
+          originalSender ! akka.actor.Status.Failure(new RuntimeException("Can't refresh commissions before working group has been saved."))
+      }
 
-            //yah, having the site as a config setting is not good but it will do for the time being
-            refreshCommissionsInfo(workingGroup, configuration.get[String]("pluto.sitename"),sinceParam, 0, configuration.get[Int]("pluto.pageSize"))
-        })
-      case None=>
-        logger.error("Can't refresh commissions before working group has been saved.")
-        Future(Failure(new RuntimeException("Can't refresh commissions before working group has been saved.")))
-    }
-  }
+    case RefreshCommissionsInfo(workingGroup:PlutoWorkingGroup, forSite:String, sinceParam:String, startAt:Int, pageSize: Int)=>
+      val authorization = headers.Authorization(BasicHttpCredentials(configuration.get[String]("pluto.username"), configuration.get[String]("pluto.password")))
 
-  def refreshWorkingGroups = {
-    configuration.getOptional[String]("pluto.sync_enabled") match {
-      case Some("yes")=>
-        val workingGroupUri = s"${configuration.get[String]("pluto.server_url")}/commission/api/groups/"
-        logger.debug(s"working group uri is $workingGroupUri")
+      val commissionUrl = s"${configuration.get[String]("pluto.server_url")}/commission/api/external/list/?group=${workingGroup.uuid}&start=$startAt&length=$pageSize$sinceParam"
+      logger.info(s"refreshing commissions $startAt -> ${startAt + pageSize} for ${workingGroup.name} (${workingGroup.id}) via url $commissionUrl")
 
-        val authorization = headers.Authorization(BasicHttpCredentials(configuration.get[String]("pluto.username"),configuration.get[String]("pluto.password")))
-
-        Http().singleRequest(HttpRequest(uri = workingGroupUri, headers = List(authorization))).flatMap(response=>{
-          MDC.put("http_status",response.status.toString())
-          if(response.status==StatusCodes.OK){
-            bodyAsJsonFuture(response)
-          } else if(response.status==StatusCodes.Forbidden || response.status==StatusCodes.Unauthorized) {
-            logger.error("Could not log in to server")
-            bodyAsJsonFuture(response)
-          }  else {
-            logger.error(s"Server returned ${response.status}")
-            response.entity.discardBytes()
-            throw new RuntimeException("Could not communicate with pluto")
-          }
-        }).onComplete({
-          case Success(parseResult)=>
-            MDC.put("body",parseResult.toString)
-            logger.debug(s"Received $parseResult from server")
-            parseResult match {
-              case Right(parsedData)=>
-                val wgList = parsedData.as[List[PlutoWorkingGroup]]
-                logger.debug(s"Got working group list:")
-                MDC.put("working_group_list",wgList.toString())
-                wgList.foreach(wg=>{
-                  logger.debug(s"\t$wg")
-                  Await.result(wg.ensureRecorded,10.seconds) match {
-                    case Success(updatedWg)=>
-                      refreshCommissionsForWg(updatedWg).onComplete({
-                        case Success(triedInt)=> //the future completed ok
-                          triedInt match {
-                            case Success(commissionsUpdated)=> //the db operation completed ok
-                              logger.info(s"Successfully updated ${commissionsUpdated} commissions for working group ${wg.name} (${wg.uuid})")
-                            case Failure(error)=>
-                              MDC.put("working_group",wg.toString)
-                              logger.error(s"Database error updating commissions for working group ${wg.name} (${wg.uuid}):", error)
-                          }
-                        case Failure(error)=>
-                          MDC.put("working_group",wg.toString)
-                          logger.error(s"Unable to update commissions for working group ${wg.name} (${wg.uuid}):", error)
-                      })
-                    case Failure(error)=>
-                      MDC.put("working_group",wg.toString)
-                      logger.error(s"Unable to save working group to database: ", error)
-                  }
-                })
-              case Left(unparsedData)=>
-                MDC.put("body",unparsedData)
-                logger.error(s"Unable to parse data from server")
-                Failure(new RuntimeException(s"Could not parse data from server, got $unparsedData"))
-            }
-          case Failure(error)=>logger.error(s"Unable to get working groups from server: $error")
-        })
-      case Some(_)=>
-        logger.warn("pluto sync is not enabled. set pluto.sync_enabled to 'yes' in order to enable it")
-      case None=>
-        logger.error("pluto sync is not enbled")
-    }
-
-  }
-
-  val cancellable = actorSystem.scheduler.schedule(1 second,60 seconds) {
-    logger.info("Rescanning working groups")
-
-    refreshWorkingGroups
+      getHttp.singleRequest(HttpRequest(uri = commissionUrl, headers = List(authorization))).flatMap(response => {
+        MDC.put("http_status", response.status.toString())
+        if (response.status == StatusCodes.OK) {
+          bodyAsJsonFuture(response)
+        } else if (response.status == StatusCodes.Forbidden || response.status == StatusCodes.Unauthorized) {
+          logger.error("Could not log in to server")
+          bodyAsJsonFuture(response)
+        } else {
+          logger.error(s"Server returned ${response.status}")
+          bodyAsJsonFuture(response).map({
+            //this will cause the Future to fail and is picked up by the caller
+            case Right(jsvalue) =>
+              Left(s"Could not communicate with pluto: ${jsvalue.toString}")
+            case Left(string) =>
+              Left(s"Could not communicate with pluto: $string")
+          })
+        }
+      }).flatMap(response=>handleCommissionsInfoData(response, workingGroup, forSite))  //FIXME: iterate over future pages.
   }
 }
