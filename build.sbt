@@ -22,15 +22,16 @@ lazy val `projectlocker` = (project in file("."))
       dockerRepository := Some("andyg42"),
       packageName in Docker := "andyg42/projectlocker",
       packageName := "projectlocker",
-      dockerBaseImage := "openjdk:8-jdk-alpine",
+      dockerBaseImage := "openjdk:8-jdk-slim",
+      dockerPermissionStrategy := DockerPermissionStrategy.Run,
       dockerAlias := docker.DockerAlias(None,sys.props.get("docker.username"),"projectlocker",Some(sys.props.getOrElse("build.number","DEV"))),
       dockerCommands ++= Seq(
         Cmd("USER", "root"),
-        Cmd("RUN", "apk", "add", "sudo", "perl", "--no-cache"),
-        Cmd("USER", "daemon"),
+        Cmd("RUN", "apt-get","-y", "update", "&&", "apt-get", "-y", "install", "sudo", "perl"),
         Cmd("RUN", "mv", "/opt/docker/conf/docker-application.conf", "/opt/docker/conf/application.conf"),
         Cmd("RUN", "mkdir", "-p", "/opt/docker/target/persistence"),
-        Cmd("RUN", "ls", "-lhd", "/opt/docker/target/persistence")
+        Cmd("RUN", "ls", "-lhd", "/opt/docker/target/persistence"),
+        Cmd("USER", "daemon"),
       )
     )
 
