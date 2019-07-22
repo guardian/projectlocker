@@ -30,8 +30,7 @@ lazy val `projectlocker` = (project in file("."))
         Cmd("RUN", "apt-get","-y", "update", "&&", "apt-get", "-y", "install", "sudo", "perl"),
         Cmd("RUN", "mkdir -p /etc/projectlocker && mv /opt/docker/postrun/postrun_settings.py /etc/projectlocker && ln -s /etc/projectlocker/postrun_settings.py /opt/docker/postrun/postrun_settings.py"),
         Cmd("RUN", "mv", "/opt/docker/conf/docker-application.conf", "/opt/docker/conf/application.conf"),
-        Cmd("USER", "daemon"),
-        Cmd("RUN", "mkdir", "-p", "/opt/docker/target/persistence"),
+        Cmd("RUN", "mkdir", "-p", "/opt/docker/target/persistence", "&&", "chown","daemon", "/opt/docker/target/persistence"),
         Cmd("RUN", "ls", "-lhd", "/opt/docker/target/persistence"),
         Cmd("USER", "daemon"),
       )
