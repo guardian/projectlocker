@@ -22,11 +22,11 @@ object ValidateProject {
   trait VPMsg
 
   /* public messages that are expected to be received */
-  case object ValidateAllProjects
+  case object ValidateAllProjects extends VPMsg
 
   /* public messages that will be sent in reply */
-  case class ValidationSuccess(totalProjects:Int, projectCount:Int, failedProjects:Seq[ProjectEntry])
-  case class ValidationError(err:Throwable)
+  case class ValidationSuccess(totalProjects:Int, projectCount:Int, failedProjects:Seq[ProjectEntry]) extends VPMsg
+  case class ValidationError(err:Throwable) extends VPMsg
 }
 
 @Singleton
@@ -44,7 +44,7 @@ class ValidateProject @Inject()(config:Configuration, dbConfigProvider:DatabaseC
     * @param queryFunc
     * @return
     */
-  def buildStream(parallelism:Int=4)(queryFunc: DBIOAction[Seq[ProjectEntry], NoStream, Nothing]) = {
+  def buildStream(parallelism:Int=4)(queryFunc: TableQuery[ProjectEntryRow]) = {
     val sinkFactory = Sink.fold[Seq[ProjectEntry],ProjectEntry](Seq())((acc,entry)=>acc++Seq(entry))
     GraphDSL.create(sinkFactory) { implicit builder=> sink=>
       import akka.stream.scaladsl.GraphDSL.Implicits._
@@ -53,6 +53,8 @@ class ValidateProject @Inject()(config:Configuration, dbConfigProvider:DatabaseC
       val noMerge = builder.add(Merge[ProjectEntry](parallelism))
       val yesMerge = builder.add(Merge[ProjectEntry](parallelism))
       val yesSink = builder.add(Sink.ignore)
+
+      //distrib.log("services.ValidateProject")
 
       src ~> distrib
       for(i<- 0 until parallelism){
@@ -74,7 +76,7 @@ class ValidateProject @Inject()(config:Configuration, dbConfigProvider:DatabaseC
     * @param parallelism
     * @return
     */
-  def runStream(parallelism:Int=4)(queryFunc: DBIOAction[Seq[ProjectEntry], NoStream, Nothing]) =
+  def runStream(parallelism:Int=4)(queryFunc:TableQuery[ProjectEntryRow]) =
     RunnableGraph.fromGraph(buildStream(parallelism)(queryFunc)).run()
 
   /**
@@ -82,10 +84,10 @@ class ValidateProject @Inject()(config:Configuration, dbConfigProvider:DatabaseC
     * @param queryFunc
     * @return
     */
-  def getTotalCount(queryFunc: DBIOAction[Seq[ProjectEntry], NoStream, Nothing]) = {
+  def getTotalCount(queryFunc: TableQuery[ProjectEntryRow]) = {
     val db = dbConfigProvider.get.db
 
-    db.run(queryFunc).map(_.length)
+    db.run(queryFunc.size.result)
   }
 
   /**
@@ -96,7 +98,7 @@ class ValidateProject @Inject()(config:Configuration, dbConfigProvider:DatabaseC
     * @param queryFunc
     * @return
     */
-  def performValidation(parallelism:Int=4)(queryFunc: DBIOAction[Seq[ProjectEntry], NoStream, Nothing]) = {
+  def performValidation(parallelism:Int=4)(queryFunc: TableQuery[ProjectEntryRow]) = {
     val resultFuture = for {
       c <- getTotalCount(queryFunc)
       r <- runStream()(queryFunc)
@@ -110,7 +112,8 @@ class ValidateProject @Inject()(config:Configuration, dbConfigProvider:DatabaseC
     case ValidateAllProjects=>
       val originalSender = sender()
 
-      performValidation()(TableQuery[ProjectEntryRow].result).onComplete({
+      logger.info("Starting validation of all projects...")
+      performValidation()(TableQuery[ProjectEntryRow]).onComplete({
         case Failure(err)=>
           logger.error(s"Projects validation failed: $err")
           originalSender ! ValidationError(err)

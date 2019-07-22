@@ -6,12 +6,12 @@ import models.{ProjectEntry, ProjectEntryRow}
 import org.slf4j.LoggerFactory
 import play.api.db.slick.DatabaseConfigProvider
 import slick.jdbc.PostgresProfile
-import slick.lifted.TableQuery
+import slick.lifted.{AbstractTable, TableQuery}
 import slick.jdbc.PostgresProfile.api._
 
 import scala.concurrent.ExecutionContext.Implicits.global
 
-class ProjectSearchSource(dbConfigProvider:DatabaseConfigProvider, pageSize:Int=100)(queryFunc: DBIOAction[Seq[ProjectEntry], NoStream, Nothing]) extends GraphStage[SourceShape[ProjectEntry]]{
+class ProjectSearchSource[E <:AbstractTable[_]](dbConfigProvider:DatabaseConfigProvider, pageSize:Int=100)(queryFunc: TableQuery[ProjectEntryRow]) extends GraphStage[SourceShape[ProjectEntry]]{
   private final val out:Outlet[ProjectEntry] = Outlet.create("ProjectSearchSource.out")
 
   override def shape = SourceShape.of(out)
@@ -20,6 +20,7 @@ class ProjectSearchSource(dbConfigProvider:DatabaseConfigProvider, pageSize:Int=
     private val logger = LoggerFactory.getLogger(getClass)
     private val dbConfig = dbConfigProvider.get[PostgresProfile]
     private var cache:List[ProjectEntry] = List()
+    private var resultCounter = 0
 
     setHandler(out, new AbstractOutHandler(){
       override def onPull() = {
@@ -28,14 +29,19 @@ class ProjectSearchSource(dbConfigProvider:DatabaseConfigProvider, pageSize:Int=
         val completionCb = createAsyncCallback[Unit](_=>complete(out))
 
         if(cache.isEmpty) { //cache is empty, we need to pull more results from the database
-          dbConfig.db.run(queryFunc).map(results=>{
+          logger.debug("empty cache, fetching more results")
+          dbConfig.db.run(queryFunc.drop(resultCounter).take(pageSize).result).map(results=>{
             logger.debug(s"ProjectEntry search returned ${results.length} more items")
+            resultCounter+=results.length
+
             cache = results.toList
             if(cache.isEmpty){
+              logger.debug("cache is still empty, assuming we got everything")
               //if the cache is still empty then we have iterated everything.
-              completionCb.invoke(_)
+              completionCb.invoke(() )
             } else {
               val nextResult = cache.head
+              logger.debug(s"pushing next result $nextResult")
               cache = cache.tail
               nextResultCb.invoke(nextResult)
             }
@@ -45,6 +51,7 @@ class ProjectSearchSource(dbConfigProvider:DatabaseConfigProvider, pageSize:Int=
               failureCb.invoke(err)
           })
         } else {            //we have results in the cache, don't serve from the database
+          logger.debug("cache is not empty, serving from cache")
           val nextResult = cache.head
           cache = cache.tail
           push(out,nextResult)

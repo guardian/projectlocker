@@ -209,3 +209,10 @@ ul.no-gap {
 .media_rules {
     margin-right: 1.1em;
 }
+
+.validation-status-text {
+    margin-right: 0.2em;
+    margin-left: 1em;
+    vertical-align: top;
+    float: left;
+}

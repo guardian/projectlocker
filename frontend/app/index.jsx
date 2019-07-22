@@ -39,6 +39,7 @@ import axios from 'axios';
 window.React = require('react');
 
 import Raven from 'raven-js';
+import ProjectValidationView from "./ProjectValidationView.jsx";
 
 
 class App extends React.Component {
@@ -111,6 +112,7 @@ class App extends React.Component {
                 <li style={{display: this.state.isAdmin ? "inherit" : "none"}}><Link to="/type/">Project Types...</Link></li>
                 <li style={{display: this.state.isAdmin ? "inherit" : "none"}}><Link to="/template/">Project Templates...</Link></li>
                 <li><Link to={this.state.isAdmin ? "/project/" : "/project/?mine"}>Projects...</Link></li>
+                <li style={{display: this.state.isAdmin ? "inherit" : "none"}}><Link to="/validate/project">Validate projectfiles...</Link></li>
                 <li style={{display: this.state.isAdmin ? "inherit" : "none"}}><Link to="/postrun/">Postrun Actions...</Link></li>
                 <li><Link to={this.state.isAdmin ? "/file/" : "/file/?mine"}>Files...</Link></li>
                 <li style={{display: this.state.isAdmin ? "inherit" : "none"}}><Link to="/defaults/">Server defaults...</Link></li>
@@ -153,6 +155,7 @@ class App extends React.Component {
                         <Route path="/project/:itemid/delete" component={ProjectDeleteComponent}/>
                         <Route path="/project/:itemid" component={TitleEditComponent}/>
                         <Route path="/project/" component={ProjectEntryList}/>
+                        <Route path="/validate/project" component={ProjectValidationView}/>
                         <Route path="/postrun/:itemid/delete" component={PostrunDeleteComponent}/>
                         <Route path="/postrun/:itemid" component={PostrunMultistep}/>
                         <Route path="/postrun/" component={PostrunList}/>

@@ -23,5 +23,6 @@ class Module extends AbstractModule with AkkaGuiceSupport {
     bindActor[PlutoWGCommissionScanner]("pluto-wg-commission-scanner")
     bindActor[PlutoProjectTypeScanner]("pluto-project-type-scanner")
     bindActor[StorageScanner]("storage-scanner")
+    bindActor[ValidateProject]("validate-project-actor")
   }
 }

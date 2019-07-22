@@ -1,6 +1,6 @@
 package testHelpers
 
-import javax.inject.Inject
+import javax.inject.{Inject, Named}
 import play.api.{Application, Logger}
 import play.api.db.slick.DatabaseConfigProvider
 import slick.basic.{DatabaseConfig,BasicProfile}
@@ -12,10 +12,10 @@ import slick.basic.{DatabaseConfig,BasicProfile}
 object TestDatabase {
   val logger: Logger = Logger(this.getClass)
 
-  class testDbProvider @Inject() (app:Application) extends DatabaseConfigProvider {
+  class testDbProvider @Inject() (app:Application, @play.db.NamedDatabase("test") provider:DatabaseConfigProvider) extends DatabaseConfigProvider {
     def get[P <: BasicProfile]: DatabaseConfig[P] = {
 
-      DatabaseConfigProvider.get("test")(app)
+      provider.get
     }
   }
 

@@ -56,6 +56,8 @@
     <logger name="services.actors.ProjectCreationActor" level="INFO"/>
     <logger name="ProjectCreation.ProjectCreationSpec" level="ERROR"/>
     <logger name="services.actors.creation" level="INFO"/>
+    <logger name="services.ValidateProject" level="DEBUG"/>
+    <logger name="streamcomponents.ProjectSearchSource" level="DEBUG"/>
 
     <root level="INFO">
         <appender-ref ref="STDOUT" />
