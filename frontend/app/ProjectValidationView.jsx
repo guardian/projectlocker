@@ -136,6 +136,7 @@ class ProjectValidationView extends React.Component {
                 Click "Run Validation" to perform the scan.
             </p>
         }
+
         if(!this.state.loading && this.state.hasRun){
             if(this.state.totalProjectCount===0){
                 return <p><i className="fa fa-3x fa-exclamation-triangle validation-status-text" style={{color:"orange", verticalAlign: "middle"}}/>Hmmm, there were no projects found to scan.</p>
@@ -143,7 +144,11 @@ class ProjectValidationView extends React.Component {
             if(this.state.problemProjects.length===0){
                 return <p><i className="fa fa-3x fa-smile-o validation-status-text" style={{color: "#f9e100", verticalAlign: "middle"}}/>Hooray, no unlinked projects found! {this.state.totalProjectCount} projects checked successfully</p>
             } else {
-                return <p><i className="fa fa-3x fa-exclamation-triangle validation-status-text" style={{color:"orange", verticalAlign: "middle"}}/>{this.state.problemProjects.length} projects were not found on their correct storage locations.<br/>Affected projects are shown in the table below.</p>
+                return <p>
+                    <i className="fa fa-3x fa-exclamation-triangle validation-status-text" style={{color:"orange", verticalAlign: "middle"}}/>
+                {this.state.problemProjects.length} projects were not found on their correct storage locations (scanned {this.state.totalProjectCount} projects in total)<br/>
+                Affected projects are shown in the table below.
+                </p>
             }
         }
     }
