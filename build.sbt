@@ -22,16 +22,18 @@ lazy val `projectlocker` = (project in file("."))
       dockerRepository := Some("andyg42"),
       packageName in Docker := "andyg42/projectlocker",
       packageName := "projectlocker",
-      dockerBaseImage := "openjdk:8-jdk-alpine",
+      dockerBaseImage := "openjdk:8-jdk-slim",
+      dockerPermissionStrategy := DockerPermissionStrategy.Run,
       dockerAlias := docker.DockerAlias(None,sys.props.get("docker.username"),"projectlocker",Some(sys.props.getOrElse("build.number","DEV"))),
       dockerCommands ++= Seq(
         Cmd("USER", "root"),
-        Cmd("RUN", "apk", "add", "sudo", "perl", "--no-cache"),
+        Cmd("RUN", "apt-get","-y", "update", "&&", "apt-get", "-y", "install", "sudo", "perl"),
         Cmd("RUN", "mkdir -p /etc/projectlocker && mv /opt/docker/postrun/postrun_settings.py /etc/projectlocker && ln -s /etc/projectlocker/postrun_settings.py /opt/docker/postrun/postrun_settings.py"),
         Cmd("RUN", "mv", "/opt/docker/conf/docker-application.conf", "/opt/docker/conf/application.conf"),
         Cmd("USER", "daemon"),
         Cmd("RUN", "mkdir", "-p", "/opt/docker/target/persistence"),
-        Cmd("RUN", "ls", "-lhd", "/opt/docker/target/persistence")
+        Cmd("RUN", "ls", "-lhd", "/opt/docker/target/persistence"),
+        Cmd("USER", "daemon"),
       )
     )
 
@@ -53,16 +55,16 @@ unmanagedResourceDirectories in Test +=  (baseDirectory ( _ /"target/web/public/
 resolvers += "scalaz-bintray" at "https://dl.bintray.com/scalaz/releases"
 
 libraryDependencies ++= Seq(
-  "postgresql" % "postgresql" % "9.1-901.jdbc3",
+  "org.postgresql" % "postgresql" % "42.2.5",
   // https://mvnrepository.com/artifact/com.typesafe.play/play-slick
-  "com.typesafe.play" %% "play-slick" % "3.0.3",
-  "com.typesafe.play" %% "play-slick-evolutions" % "3.0.3",
+  "com.typesafe.play" %% "play-slick" % "4.0.2",
+  "com.typesafe.play" %% "play-slick-evolutions" % "4.0.2",
   "commons-io" % "commons-io" % "2.6",
   // https://mvnrepository.com/artifact/com.typesafe.play/play-json-joda
-  "com.typesafe.play" %% "play-json-joda" % "2.6.9"
+  "com.typesafe.play" %% "play-json-joda" % "2.7.4"
 )
 // https://mvnrepository.com/artifact/com.typesafe.slick/slick
-libraryDependencies += "com.typesafe.slick" %% "slick" % "3.2.2"
+libraryDependencies += "com.typesafe.slick" %% "slick" % "3.3.2"
 
 
 //authentication
@@ -86,18 +88,21 @@ libraryDependencies ++= Seq(
   "com.lightbend.akka.discovery" %% "akka-discovery-kubernetes-api" % akkaManagementVersion,
   "com.lightbend.akka.discovery" %% "akka-discovery-dns" % akkaManagementVersion,
   "com.lightbend.akka.discovery" %% "akka-discovery-config" % akkaManagementVersion,
-  "com.typesafe.akka" %% "akka-persistence" % "2.5.11",
-  "com.typesafe.akka" %% "akka-cluster" % "2.5.11",
-  "com.typesafe.akka" %% "akka-cluster-metrics" % "2.5.11",
-  "com.typesafe.akka" %% "akka-cluster-tools" % "2.5.11",
+  "com.typesafe.akka" %% "akka-persistence" % "2.5.23",
+  "com.typesafe.akka" %% "akka-cluster" % "2.5.23",
+  "com.typesafe.akka" %% "akka-cluster-metrics" % "2.5.23",
+  "com.typesafe.akka" %% "akka-cluster-tools" % "2.5.23",
   "org.iq80.leveldb"            % "leveldb"          % "0.7",
   "org.fusesource.leveldbjni"   % "leveldbjni-all"   % "1.8",
-  "com.typesafe.akka" %% "akka-testkit" % "2.5.11" % Test
+  "com.typesafe.akka" %% "akka-testkit" % "2.5.23" % Test
 )
 
 //explicit akka upgrades for security
 libraryDependencies ++= Seq(
-  "com.typesafe.akka" %% "akka-http" % "10.0.14",
+  "com.typesafe.akka" %% "akka-http" % "10.1.8",
+  "com.typesafe.akka" %% "akka-http-core" % "10.1.8",
+  "com.typesafe.akka" %% "akka-parsing" % "10.1.8",
+  "com.typesafe.akka" %% "akka-http-spray-json" % "10.1.8"
 )
 
 //Sentry
