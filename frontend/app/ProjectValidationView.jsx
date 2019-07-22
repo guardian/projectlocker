@@ -7,6 +7,7 @@ import WorkingGroupEntryView from "./EntryViews/WorkingGroupEntryView.jsx";
 import CommissionEntryView from "./EntryViews/CommissionEntryView.jsx";
 import ProjectEntryFilterComponent from "./filter/ProjectEntryFilterComponent.jsx";
 import {Link} from "react-router-dom";
+import ErrorViewComponent from "./common/ErrorViewComponent.jsx";
 
 class ProjectValidationView extends React.Component {
     constructor(props){
@@ -103,8 +104,11 @@ class ProjectValidationView extends React.Component {
 
     runValidation(){
         this.setState({loading: true}, ()=>axios.post("/api/project/validate").then(result=>{
-            this.setState({loading: false, hasRun: true, totalProjectCount: 0,})
-        }))
+            this.setState({loading: false, hasRun: true, totalProjectCount: result.data.totalProjectsCount, problemProjects:result.data.failedProjectsList})
+        }).catch(err=>{
+            console.error(err);
+            this.setState({loading: false, hasRun: true, lastError:err})
+        }));
     }
 
     itemLimitWarning(){
@@ -117,7 +121,7 @@ class ProjectValidationView extends React.Component {
     showRunning(){
         if(this.state.loading) {
             return <p className="warning-text">
-                <img src="/assets/images/uploading.svg" className="smallicon" style={{display: this.state.loading ? "block" : "none"}}/>Searching
+                <img src="/assets/images/uploading.svg" className="smallicon" style={{display: this.state.loading ? "inline" : "none", verticalAlign: "middle", marginRight: "1em"}}/>Searching
                 for unlinked projects...</p>
         } else {
             return <p/>
@@ -127,29 +131,36 @@ class ProjectValidationView extends React.Component {
     showResult(){
         if(!this.state.loading && !this.state.hasRun){
             return <p style={{marginLeft: "1em"}}>
-                <i className="fa fa-3x fa-info-circle validation-status-text" style={{ color: "blue"}}/>
+                <i className="fa fa-3x fa-info-circle validation-status-text" style={{ color: "blue", verticalAlign: "middle"}}/>
                 This function checks that all of the projects in the database exist at their correct filesystem location.<br/>
                 Click "Run Validation" to perform the scan.
             </p>
         }
         if(!this.state.loading && this.state.hasRun){
             if(this.state.totalProjectCount===0){
-                return <p><i className="fa fa-3x fa-exclamation-triangle validation-status-text" style={{color:"orange"}}/>Hmmm, there were no projects found to scan.</p>
+                return <p><i className="fa fa-3x fa-exclamation-triangle validation-status-text" style={{color:"orange", verticalAlign: "middle"}}/>Hmmm, there were no projects found to scan.</p>
             }
             if(this.state.problemProjects.length===0){
-                return <p><i className="fa fa-3x fa-smile-o validation-status-text" style={{color: "yellow"}}/>Hooray, no unlinked projects found! {this.state.totalProjectCount} projects checked successfully</p>
+                return <p><i className="fa fa-3x fa-smile-o validation-status-text" style={{color: "#f9e100", verticalAlign: "middle"}}/>Hooray, no unlinked projects found! {this.state.totalProjectCount} projects checked successfully</p>
             } else {
-                return <p><i className="fa fa-3x fa-exclamation-triangle validation-status-text" style={{color:"orange"}}/>{this.state.problemProjects.length} projects were not found on their correct storage locations.<br/>Affected projects are shown in the table below.</p>
+                return <p><i className="fa fa-3x fa-exclamation-triangle validation-status-text" style={{color:"orange", verticalAlign: "middle"}}/>{this.state.problemProjects.length} projects were not found on their correct storage locations.<br/>Affected projects are shown in the table below.</p>
             }
         }
     }
 
+    showError(){
+        if(!this.state.loading && this.state.lastError){
+            return <ErrorViewComponent error={this.state.lastError}/>
+        }
+    }
     render(){
         return <div>
             <span className="list-title"><h2 className="list-title">Validate Projects</h2></span>
             {this.getFilterComponent()}
             {this.itemLimitWarning()}
             {this.showRunning()}
+            {this.showError()}
+
             <span className="banner-control">
                 <button id="newElementButton" onClick={this.runValidation}>Run validation</button>
             </span>
