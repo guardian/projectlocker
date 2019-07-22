@@ -194,6 +194,26 @@ case class FileEntry(id: Option[Int], filepath: String, storageId: Int, user:Str
         Failure(new RuntimeException(s"No storage could be found for ID ${this.storageId}"))
     })
   }
+
+  /**
+    * check if this FileEntry points to something real on disk
+    * @param db - implicitly provided database object
+    * @return a Future, containing a Left with a string if there was an error, or a Right with a Boolean flag indicating if the
+    *         pointed object exists on the storage
+    */
+  def validatePathExists(implicit db:slick.jdbc.PostgresProfile#Backend#Database) = {
+    val preReqs = for {
+      filePath <- getFullPath
+      maybeStorage <- storage
+    } yield (filePath,maybeStorage)
+
+    preReqs.map(pathAndMaybeStorage=>{
+      pathAndMaybeStorage._2.map(_.validatePathExists(pathAndMaybeStorage._1))
+    }).map({
+      case Some(result)=>result
+      case None=>Left(s"No storage could be found for ID $storageId on file $id")
+    })
+  }
 }
 
 /**
