@@ -1,7 +1,6 @@
 package controllers
 
 import javax.inject.{Inject, Named, Singleton}
-
 import akka.actor.ActorRef
 import akka.pattern.ask
 import auth.Security
@@ -14,6 +13,7 @@ import play.api.db.slick.DatabaseConfigProvider
 import play.api.libs.json.{JsError, JsResult, JsValue, Json}
 import play.api.mvc._
 import play.mvc.Http.Response
+import services.ValidateProject
 import services.actors.creation.{CreationMessage, GenericCreationActor}
 import services.actors.creation.GenericCreationActor.{NewProjectRequest, ProjectCreateTransientData}
 import slick.jdbc.PostgresProfile
@@ -23,11 +23,11 @@ import slick.jdbc.PostgresProfile.api._
 import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.util.{Failure, Success, Try}
-
 import scala.concurrent.duration._
 
 @Singleton
 class ProjectEntryController @Inject() (@Named("project-creation-actor") projectCreationActor:ActorRef,
+                                       @Named("validate-project-actor") validateProjectActor:ActorRef,
                                         cc:ControllerComponents, config: Configuration,
                                         dbConfigProvider: DatabaseConfigProvider,
                                         cacheImpl:SyncCacheApi)
@@ -331,6 +331,21 @@ class ProjectEntryController @Inject() (@Named("project-creation-actor") project
       case Failure(error)=>
         logger.error("Could not look up distinct project owners: ", error)
         InternalServerError(Json.obj("status"->"error","detail"->error.toString))
+    })
+  }}
+
+  def performFullValidation = IsAuthenticatedAsync {uid=>{request=>
+    implicit val actorTimeout:akka.util.Timeout = 55 seconds  //loadbalancer ususally times out after 60
+
+    (validateProjectActor ? ValidateProject.ValidateAllProjects).mapTo[ValidateProject.VPMsg].map({
+      case ValidateProject.ValidationSuccess(totalProjects, projectCount, failedProjects)=>
+        Ok(Json.obj("status"->"ok","totalProjectsCount"->totalProjects,"failedProjectsList"->failedProjects))
+      case ValidateProject.ValidationError(err)=>
+        InternalServerError(Json.obj("status"->"error","detail"->err.toString))
+    }).recover({
+      case err:Throwable=>
+        logger.error(s"Error calling ValidateProject actor: ", err)
+        InternalServerError(Json.obj("status"->"error", "detail"->err.toString))
     })
   }}
 }

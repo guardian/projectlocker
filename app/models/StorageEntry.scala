@@ -82,6 +82,11 @@ case class StorageEntry(id: Option[Int], rootpath: Option[String], clientpath: O
         case Failure(error)=>Failure(error)
       })
   }
+
+  def validatePathExists(filePath:String) = getStorageDriver.map(drv=>drv.pathExists(filePath:String)) match {
+    case None=>Left(s"No storage driver exists for storage $id ($rootpath)!")
+    case Some(result)=>Right(result)
+  }
 }
 
 class StorageEntryRow(tag:Tag) extends Table[StorageEntry](tag, "StorageEntry") {
