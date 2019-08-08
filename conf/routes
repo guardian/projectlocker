@@ -49,6 +49,7 @@ GET     /api/project/:id                   @controllers.ProjectEntryController.g
 #PUT     /api/project/:id                   @controllers.ProjectEntryController.update(id: Int)
 #DELETE  /api/project/:id                   @controllers.ProjectEntryController.delete(id: Int)
 POST     /api/project/validate              @controllers.ProjectEntryController.performFullValidation
+PUT     /api/project/pluto/update/:vsid     @controllers.ProjectEntryController.plutoUpdateNotify(vsid)
 
 GET     /api/projecttype                   @controllers.ProjectTypeController.list(startAt:Int ?=0,length:Int ?=100)
 PUT     /api/projecttype                   @controllers.ProjectTypeController.create

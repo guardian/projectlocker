@@ -4,7 +4,6 @@ import javax.inject.{Inject, Named, Singleton}
 import akka.actor.ActorRef
 import akka.pattern.ask
 import auth.Security
-import com.unboundid.ldap.sdk.LDAPConnectionPool
 import exceptions.{BadDataException, ProjectCreationError, RecordNotFoundException}
 import models._
 import play.api.cache.SyncCacheApi
@@ -12,7 +11,6 @@ import play.api.{Configuration, Logger}
 import play.api.db.slick.DatabaseConfigProvider
 import play.api.libs.json.{JsError, JsResult, JsValue, Json}
 import play.api.mvc._
-import play.mvc.Http.Response
 import services.ValidateProject
 import services.actors.creation.{CreationMessage, GenericCreationActor}
 import services.actors.creation.GenericCreationActor.{NewProjectRequest, ProjectCreateTransientData}
@@ -34,7 +32,7 @@ class ProjectEntryController @Inject() (@Named("project-creation-actor") project
   extends GenericDatabaseObjectControllerWithFilter[ProjectEntry,ProjectEntryFilterTerms]
     with ProjectEntrySerializer with ProjectEntryFilterTermsSerializer with ProjectRequestSerializer
     with ProjectRequestPlutoSerializer with UpdateTitleRequestSerializer with FileEntrySerializer
-    with PlutoConflictReplySerializer with Security
+    with PlutoConflictReplySerializer with PlutoUpdateRequestSerializer with Security
 {
   override implicit val cache:SyncCacheApi = cacheImpl
 
@@ -347,5 +345,44 @@ class ProjectEntryController @Inject() (@Named("project-creation-actor") project
         logger.error(s"Error calling ValidateProject actor: ", err)
         InternalServerError(Json.obj("status"->"error", "detail"->err.toString))
     })
+  }}
+
+  def plutoUpdateNotify(plutoId:String) = IsAuthenticatedAsync(parse.json) {uid=>{ request:Request[JsValue]=>
+    implicit val db = dbConfig.db
+    request.body.validate[PlutoProjectUpdateRequest].fold(
+      errors=>Future(BadRequest(Json.obj("status"->"error","detail"->JsError.toJson(errors)))),
+      updateRequest=>
+        ProjectEntry.lookupByVidispineId(plutoId).flatMap({
+          case Failure(err)=>
+            logger.error(s"Could not look up project with pluto ID $plutoId: ", err)
+            Future(InternalServerError(Json.obj("status"->"error","detail"->err.toString)))
+          case Success(matchingProjects)=>
+            if(matchingProjects.isEmpty){
+              logger.warn(s"Receieved update request for project $plutoId but no records found.")
+              Future(NotFound(Json.obj("status"->"error","detail"->s"No project known for $plutoId")))
+            } else if(matchingProjects.length>1){
+              logger.warn(s"Received update request for project $plutoId but ${matchingProjects.length} records matched! There must be a problem with the data.")
+              Future(Conflict(Json.obj("status"->"error","detail"->s"${matchingProjects.length} projects found for $plutoId")))
+            } else {
+              val record = matchingProjects.head
+              val updatedRecord = record.copy(
+                projectTitle = updateRequest.title,
+                deletable = Some(updateRequest.deletable),
+                deep_archive = Some(updateRequest.deepArchive),
+                sensitive = Some(updateRequest.sensitive)
+              )
+              logger.info(s"Project before update: $record")
+              logger.info(s"Project after update: $updatedRecord")
+              updatedRecord.save.map({
+                case Failure(err)=>
+                  logger.error(s"Could not save project record", err)
+                  InternalServerError(Json.obj("status"->"error","detail"->err.toString))
+                case Success(_)=>
+                  logger.info(s"Project $plutoId updated successfully")
+                  Ok(Json.obj("status"->"ok","detail"->"Project updated"))
+              })
+            }
+        })
+    )
   }}
 }
