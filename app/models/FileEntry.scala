@@ -4,7 +4,7 @@ import java.io.FileInputStream
 import java.nio.file.Paths
 import slick.jdbc.PostgresProfile.api._
 import java.sql.Timestamp
-
+import akka.stream.scaladsl.Source
 import drivers.StorageDriver
 import play.api.Logger
 import play.api.libs.functional.syntax._
@@ -29,7 +29,7 @@ import scala.concurrent.{Await, Future}
   * @param hasContent - boolean flag representing whether this entity has any data in it yet
   * @param hasLink - boolean flag representing whether this entitiy is linked to anything (i.e. a project) yet.
   */
-case class FileEntry(id: Option[Int], filepath: String, storageId: Int, user:String,version:Int,
+case class FileEntry(id: Option[Int], filepath: String, storageId: Int, user:String, version:Int,
                      ctime: Timestamp, mtime: Timestamp, atime: Timestamp, hasContent:Boolean, hasLink:Boolean) {
 
   /**
@@ -115,7 +115,7 @@ case class FileEntry(id: Option[Int], filepath: String, storageId: Int, user:Str
         db.run(
           TableQuery[FileEntryRow].filter(_.id===databaseId).delete.asTry
         ).map({
-          case Success(rowsAffected)=>Right(Unit)
+          case Success(_)=>Right(Unit)
           case Failure(error)=>Left(error)
         })
       case None=>

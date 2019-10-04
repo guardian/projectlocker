@@ -60,7 +60,8 @@ libraryDependencies ++= Seq(
   "com.typesafe.play" %% "play-slick-evolutions" % "4.0.2",
   "commons-io" % "commons-io" % "2.6",
   // https://mvnrepository.com/artifact/com.typesafe.play/play-json-joda
-  "com.typesafe.play" %% "play-json-joda" % "2.7.4"
+  "com.typesafe.play" %% "play-json-joda" % "2.7.4",
+  "commons-codec" % "commons-codec" % "1.12",
 )
 // https://mvnrepository.com/artifact/com.typesafe.slick/slick
 libraryDependencies += "com.typesafe.slick" %% "slick" % "3.3.2"

@@ -18,7 +18,7 @@ trait StorageDriver {
     * @param path [[String]] absolute path to write
     * @param dataStream [[java.io.FileInputStream]] to write from
     */
-  def writeDataToPath(path:String, dataStream:FileInputStream):Try[Unit]
+  def writeDataToPath(path:String, dataStream:InputStream):Try[Unit]
 
   /**
     * Directly write a byte array to the given path (blocking)
