@@ -82,14 +82,15 @@ class MatrixStoreDriver(override val storageRef: StorageEntry)(implicit val mat:
     try {
       do {
         bytesRead = input.read(buf.array())
+        if(bytesRead == -1) throw new EOFException
         totalRead += bytesRead
         buf.flip()
-        output.write(buf.array())
+        output.write(buf.array(),0,bytesRead)
         buf.clear()
       } while (bytesRead > 0)
       totalRead
     } catch {
-      case eof:EOFException=>
+      case _:EOFException=>
         logger.debug(s"Stream copy reached EOF")
         totalRead
     }
