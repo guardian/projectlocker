@@ -98,13 +98,13 @@ class StorageHelperSpec extends Specification with Mockito with utils.BuildMyApp
       protected implicit val db = dbConfigProvider.get[JdbcProfile].db
 
       val mockedStorageDriver = mock[PathStorage]
-      mockedStorageDriver.getReadStream(any[String])
-      mockedStorageDriver.getReadStream(any[String]) answers(path=>Success(new NullInputStream(60*1024L)))
-      mockedStorageDriver.getMetadata(any[String]) answers(path=>Map('size->"1234"))
+      mockedStorageDriver.getReadStream(any[String],any)
+      mockedStorageDriver.getReadStream(any[String],any) answers((_,_)=>Success(new NullInputStream(60*1024L)))
+      mockedStorageDriver.getMetadata(any[String],any) answers((_,_)=>Map('size->"1234"))
 
       val mockedStorage = mock[StorageEntry]
-      mockedStorage.getStorageDriver answers(mock=>{println("in mockedStorage"); Some(mockedStorageDriver)})
-      mockedStorage.rootpath answers(mock=>Some("/tmp"))
+      mockedStorage.getStorageDriver answers((_,_)=>{println("in mockedStorage"); Some(mockedStorageDriver)})
+      mockedStorage.rootpath answers((_,_)=>Some("/tmp"))
 
       val testFileNameSrc = "/tmp/storageHelperSpecTest-src-4" // shouldn't have spaces!
       val testFileNameDest = "/tmp/storageHelperSpecTest-dst-4" // shouldn't have spaces!
@@ -220,11 +220,11 @@ class StorageHelperSpec extends Specification with Mockito with utils.BuildMyApp
       val h = new StorageHelper {
         def testDoByteCopy(sourceStorageDriver:StorageDriver,
                            sourceStreamTry:Try[InputStream], destStreamTry:Try[OutputStream],
-                           sourceFullPath:String, destFullPath: String) =
-          doByteCopy(sourceStorageDriver,sourceStreamTry,destStreamTry,sourceFullPath,destFullPath)
+                           sourceFullPath:String, sourceVersion:Int, destFullPath: String) =
+          doByteCopy(sourceStorageDriver,sourceStreamTry,destStreamTry,sourceFullPath,sourceVersion, destFullPath)
       }
 
-      val result = h.testDoByteCopy(mockStorageDriver, sourceStreamTry,destStreamTry,"/source","/dest")
+      val result = h.testDoByteCopy(mockStorageDriver, sourceStreamTry,destStreamTry,"/source",123,"/dest")
 
       result must beLeft
       println(result.left.get)
@@ -245,11 +245,11 @@ class StorageHelperSpec extends Specification with Mockito with utils.BuildMyApp
           */
         def testDoByteCopy(sourceStorageDriver:StorageDriver,
                            sourceStreamTry:Try[InputStream], destStreamTry:Try[OutputStream],
-                           sourceFullPath:String, destFullPath: String) =
-          doByteCopy(sourceStorageDriver,sourceStreamTry,destStreamTry,sourceFullPath,destFullPath)
+                           sourceFullPath:String, sourceVersion:Int, destFullPath: String) =
+          doByteCopy(sourceStorageDriver,sourceStreamTry,destStreamTry,sourceFullPath,sourceVersion, destFullPath)
       }
 
-      val result = h.testDoByteCopy(mockStorageDriver, sourceStreamTry,destStreamTry,"/source","/dest")
+      val result = h.testDoByteCopy(mockStorageDriver, sourceStreamTry,destStreamTry,"/source",123,"/dest")
 
       result must beLeft
       println(result.left.get)
@@ -276,11 +276,11 @@ class StorageHelperSpec extends Specification with Mockito with utils.BuildMyApp
           */
         def testDoByteCopy(sourceStorageDriver:StorageDriver,
                            sourceStreamTry:Try[InputStream], destStreamTry:Try[OutputStream],
-                           sourceFullPath:String, destFullPath: String) =
-          doByteCopy(sourceStorageDriver,sourceStreamTry,destStreamTry,sourceFullPath,destFullPath)
+                           sourceFullPath:String, sourceVersion:Int, destFullPath: String) =
+          doByteCopy(sourceStorageDriver,sourceStreamTry,destStreamTry,sourceFullPath,sourceVersion, destFullPath)
       }
 
-      val result = h.testDoByteCopy(mockStorageDriver, sourceStreamTry,destStreamTry,"/source","/dest")
+      val result = h.testDoByteCopy(mockStorageDriver, sourceStreamTry,destStreamTry,"/source",123,"/dest")
 
       result must beLeft
       println(result.left.get)

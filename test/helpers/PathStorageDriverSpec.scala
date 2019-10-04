@@ -29,7 +29,7 @@ class PathStorageDriverSpec extends Specification with org.specs2.mock.Mockito {
       val s = new PathStorage(mock_storage)
 
       //this method is blocking
-      s.writeDataToPath("/tmp/testfile2", testbuffer.toCharArray.map(_.toByte))
+      s.writeDataToPath("/tmp/testfile2", 123, testbuffer.toCharArray.map(_.toByte))
 
       val writtenContent = Source.fromFile("/tmp/testfile2").getLines().mkString("\n")
       writtenContent mustEqual testbuffer
@@ -40,7 +40,7 @@ class PathStorageDriverSpec extends Specification with org.specs2.mock.Mockito {
 
       val testFile=new FileInputStream(new File("public/images/uploading.svg"))
 
-      s.writeDataToPath("/tmp/testfile3", testFile)
+      s.writeDataToPath("/tmp/testfile3",123, testFile)
 
       val checksumSource = "shasum -a 1 public/images/uploading.svg" #| "cut -c 1-40" !!
       val checksumDest = "shasum -a 1 /tmp/testfile3" #| "cut -c 1-40" !!
@@ -52,12 +52,12 @@ class PathStorageDriverSpec extends Specification with org.specs2.mock.Mockito {
       val s= new PathStorage(mock_storage)
 
       val testFile=new FileInputStream(new File("public/images/uploading.svg"))
-      s.writeDataToPath("/tmp/testfile4", testFile)
+      s.writeDataToPath("/tmp/testfile4", 123, testFile)
 
       val fileBefore = new File("/tmp/testfile4")
       fileBefore.exists must beTrue
 
-      s.deleteFileAtPath("/tmp/testfile4")
+      s.deleteFileAtPath("/tmp/testfile4", 123)
 
       val fileAfter = new File("/tmp/testfile4")
       fileAfter.exists must beFalse
@@ -68,12 +68,18 @@ class PathStorageDriverSpec extends Specification with org.specs2.mock.Mockito {
       val s = new PathStorage(mock_storage)
 
       //this method is blocking
-      s.writeDataToPath("/tmp/testfile5", testbuffer.toCharArray.map(_.toByte))
+      s.writeDataToPath("/tmp/testfile5", 123, testbuffer.toCharArray.map(_.toByte))
 
-      val metaDict = s.getMetadata("/tmp/testfile5")
+      val metaDict = s.getMetadata("/tmp/testfile5", 123)
       metaDict.get('size) must beSome("20")
       metaDict.get('lastModified) must beSome[String]
       metaDict.get('zzzzz) must beNone
+    }
+
+    "not support version numbers" in {
+      val s = new PathStorage(mock_storage)
+
+      s.supportsVersions mustEqual false
     }
   }
 }

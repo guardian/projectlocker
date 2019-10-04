@@ -22,9 +22,9 @@ class PathStorage(override val storageRef:StorageEntry) extends StorageDriver{
     new File(path)
   }
 
-  override def pathExists(path: String): Boolean = fileForPath(path).exists()
+  override def pathExists(path: String, version:Int): Boolean = fileForPath(path).exists()
 
-  override def writeDataToPath(path: String, dataStream: InputStream): Try[Unit] = Try {
+  override def writeDataToPath(path: String, version:Int, dataStream: InputStream): Try[Unit] = Try {
     val finalPath = storageRef.rootpath match {
       case Some(rootpath)=>Paths.get(rootpath,path)
       case None=>Paths.get(path)
@@ -40,7 +40,7 @@ class PathStorage(override val storageRef:StorageEntry) extends StorageDriver{
     logger.info(s"Finished writing to ${f.getAbsolutePath}")
   }
 
-  def writeDataToPath(path:String, data:Array[Byte]):Try[Unit] = Try {
+  def writeDataToPath(path:String, version:Int, data:Array[Byte]):Try[Unit] = Try {
     val finalPath = storageRef.rootpath match {
       case Some(rootpath)=>Paths.get(rootpath,path)
       case None=>Paths.get(path)
@@ -55,18 +55,18 @@ class PathStorage(override val storageRef:StorageEntry) extends StorageDriver{
     logger.info(s"Finished writing to ${f.getAbsolutePath}")
   }
 
-  override def deleteFileAtPath(path: String): Boolean = {
+  override def deleteFileAtPath(path: String, version:Int): Boolean = {
     val f = this.fileForPath(path)
     logger.info(s"Deleting file at ${f.getAbsolutePath}")
     f.delete()
   }
 
-  override def getWriteStream(path: String): Try[OutputStream] = Try {
+  override def getWriteStream(path: String, version:Int): Try[OutputStream] = Try {
     val f = this.fileForPath(path)
     new BufferedOutputStream(new FileOutputStream(f))
   }
 
-  override def getReadStream(path: String): Try[InputStream] = {
+  override def getReadStream(path: String, version:Int): Try[InputStream] = {
     val f = this.fileForPath(path)
     if(f.exists())
       Success(new BufferedInputStream(new FileInputStream(f)))
@@ -74,11 +74,13 @@ class PathStorage(override val storageRef:StorageEntry) extends StorageDriver{
       Failure(new RuntimeException(s"Path $path does not exist"))
   }
 
-  override def getMetadata(path: String): Map[Symbol, String] = {
+  override def getMetadata(path: String, version:Int): Map[Symbol, String] = {
     val f = this.fileForPath(path)
     Map(
       'size->f.length().toString,
       'lastModified->ZonedDateTime.ofInstant(Instant.ofEpochSecond(f.lastModified()),ZoneId.systemDefault()).toString
     )
   }
+
+  override def supportsVersions: Boolean = false
 }

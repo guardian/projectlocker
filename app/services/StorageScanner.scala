@@ -46,7 +46,7 @@ class StorageScanner @Inject() (dbConfigProvider:DatabaseConfigProvider, config:
         case Some(rootpath)=>
           entry.getStorageDriver match {
             case Some (storageDriver) =>
-              if (storageDriver.pathExists(rootpath)){
+              if (storageDriver.pathExists(rootpath, 0)){
                 logger.debug(s"Storage ${entry.storageType} ${entry.rootpath} is online")
                 if(entry.status.getOrElse(StorageStatus.UNKNOWN)!=StorageStatus.ONLINE) entry.copy(status=Some(StorageStatus.ONLINE)).save
               } else {

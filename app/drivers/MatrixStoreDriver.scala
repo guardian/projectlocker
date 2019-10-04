@@ -101,8 +101,8 @@ class MatrixStoreDriver(override val storageRef: StorageEntry)(implicit val mat:
     * @param path [[String]] absolute path to write
     * @param dataStream [[java.io.FileInputStream]] to write from
     */
-  def writeDataToPath(path:String, dataStream:InputStream):Try[Unit] = withVault { vault=>
-    val mxsFile = lookupPath(vault, path) match {
+  def writeDataToPath(path:String, version:Int, dataStream:InputStream):Try[Unit] = withVault { vault=>
+    val mxsFile = lookupPath(vault, path, version) match {
       case None=>
         val fileMeta = newFileMeta(path, -1)
         vault.createObject(fileMeta.toAttributes.toArray)
@@ -184,8 +184,8 @@ class MatrixStoreDriver(override val storageRef: StorageEntry)(implicit val mat:
     * @param data [[Array]] (of bytes) -  byte array to output
     * @return a Try indicating success or failure. If successful the Try has a unit value.
     */
-  def writeDataToPath(path:String, data:Array[Byte]):Try[Unit] = withVault { vault=>
-    val mxsFile = lookupPath(vault, path) match {
+  def writeDataToPath(path:String, version:Int, data:Array[Byte]):Try[Unit] = withVault { vault=>
+    val mxsFile = lookupPath(vault, path, version) match {
       case None=>
         val fileMeta = newFileMeta(path, data.length)
         vault.createObject(fileMeta.toAttributes.toArray)
@@ -207,8 +207,8 @@ class MatrixStoreDriver(override val storageRef: StorageEntry)(implicit val mat:
     * @param path [[String]] absolute path to delete
     * @return [[Boolean]] indicating whether the file was deleted or not.
     */
-  def deleteFileAtPath(path:String):Boolean = withVault { vault=>
-    lookupPath(vault, path) match {
+  def deleteFileAtPath(path:String, version:Int):Boolean = withVault { vault=>
+    lookupPath(vault, path, version) match {
       case None =>
         logger.error(s"No file to delete at $path on $storageRef")
         Success(false)
@@ -230,8 +230,8 @@ class MatrixStoreDriver(override val storageRef: StorageEntry)(implicit val mat:
     * @param path [[String]] Absolute path to open
     * @return [[java.io.InputStream]] subclass wrapped in a [[Try]]
     */
-  def getReadStream(path:String):Try[InputStream] = withVault { vault=>
-    lookupPath(vault, path) match {
+  def getReadStream(path:String, version:Int):Try[InputStream] = withVault { vault=>
+    lookupPath(vault, path, version) match {
       case None=>
         Failure(new RuntimeException(s"File $path does not exist"))
       case Some(oid)=>
@@ -246,8 +246,8 @@ class MatrixStoreDriver(override val storageRef: StorageEntry)(implicit val mat:
     * @param path [[String]] Absolute path to open
     * @return [[java.io.OutputStream]] subclass wrapped in a [[Try]]
     */
-  def getWriteStream(path:String):Try[OutputStream] = withVault { vault=>
-    lookupPath(vault, path) match {
+  def getWriteStream(path:String, version:Int):Try[OutputStream] = withVault { vault=>
+    lookupPath(vault, path, version) match {
       case None=>
         Failure(new RuntimeException(s"File $path does not exist"))
       case Some(oid)=>
@@ -263,7 +263,7 @@ class MatrixStoreDriver(override val storageRef: StorageEntry)(implicit val mat:
     * @param path [[String]] Absolute path to open
     * @return [[Map]] of [[Symbol]] -> [[String]] containing metadata about the given file.
     */
-  def getMetadata(path:String):Map[Symbol,String] = {
+  def getMetadata(path:String, version:Int):Map[Symbol,String] = {
     if(userInfo.isFailure) {
       logger.error(s"Can't look up $path on storage ${storageRef.id}: ", userInfo.failed.get)
       throw new RuntimeException("Could not access path")
@@ -271,7 +271,7 @@ class MatrixStoreDriver(override val storageRef: StorageEntry)(implicit val mat:
 
     val vault = MatrixStore.openVault(userInfo.get)
 
-    val resultFuture = findByFilename(vault, path).map({
+    val resultFuture = findByFilename(vault, path, version).map({
       case None=>
         Map('size->"-1")
       case Some(omEntry)=>
@@ -285,7 +285,7 @@ class MatrixStoreDriver(override val storageRef: StorageEntry)(implicit val mat:
     Await.result(resultFuture, 30.seconds)
   }
 
-  def lookupPath(vault:Vault, fileName:String)  = {
+  def lookupPath(vault:Vault, fileName:String, version:Int)  = {
     logger.debug(s"Lookup $fileName on ${vault.getId}")
     val searchTerm = SearchTerm.createSimpleTerm("MXFS_FILENAME", fileName) //FIXME: check the metadata field namee
     val iterator = vault.searchObjectsIterator(searchTerm, 1).asScala
@@ -306,8 +306,8 @@ class MatrixStoreDriver(override val storageRef: StorageEntry)(implicit val mat:
     * @param fileName file name to search for
     * @return a Future, containing either a sequence of zero or more results as String oids or an error
     */
-  def findByFilename(vault:Vault, fileName:String):Future[Option[ObjectMatrixEntry]] =
-    lookupPath(vault, fileName) match {
+  def findByFilename(vault:Vault, fileName:String, version:Int):Future[Option[ObjectMatrixEntry]] =
+    lookupPath(vault, fileName, version) match {
       case Some(oid)=>ObjectMatrixEntry(oid).getMetadata(vault, mat, global).map(entry=>Some(entry))
       case None=>Future(None)
     }
@@ -317,7 +317,7 @@ class MatrixStoreDriver(override val storageRef: StorageEntry)(implicit val mat:
     * @param path
     * @return
     */
-  def pathExists(path:String):Boolean =
+  def pathExists(path:String, version:Int):Boolean =
     withVault { vault=>
       logger.debug(s"Lookup $path on ${vault.getId}")
       val searchTerm = SearchTerm.createSimpleTerm("MXFS_FILENAME", path) //FIXME: check the metadata field namee
@@ -328,5 +328,7 @@ class MatrixStoreDriver(override val storageRef: StorageEntry)(implicit val mat:
         case Success(result)=>result
         case Failure(err)=>throw err
     }
+
+  def supportsVersions: Boolean = true
 
 }

@@ -96,7 +96,7 @@ case class FileEntry(id: Option[Int], filepath: String, storageId: Int, user:Str
 
     maybeStorageDriverFuture.flatMap({
       case Some(storagedriver)=>
-        this.getFullPath.map(fullpath=>Right(storagedriver.deleteFileAtPath(fullpath)))
+        this.getFullPath.map(fullpath=>Right(storagedriver.deleteFileAtPath(fullpath, version)))
       case None=>
         Future(Left("No storage driver configured for storage"))
     })
@@ -134,12 +134,12 @@ case class FileEntry(id: Option[Int], filepath: String, storageId: Int, user:Str
       case Some(bytes) => //the buffer is held in memory
         val logger = Logger(getClass)
         logger.debug("uploadContent: writing memory buffer")
-        storageDriver.writeDataToPath(outputPath.toString, bytes.toArray)
+        storageDriver.writeDataToPath(outputPath.toString, version, bytes.toArray)
       case None => //the buffer is on-disk
         val logger = Logger(getClass)
         logger.debug("uploadContent: writing disk buffer")
         val fileInputStream = new FileInputStream(buffer.asFile)
-        val result=storageDriver.writeDataToPath(outputPath.toString, fileInputStream)
+        val result=storageDriver.writeDataToPath(outputPath.toString, version, fileInputStream)
         fileInputStream.close()
         result
     }
@@ -208,7 +208,7 @@ case class FileEntry(id: Option[Int], filepath: String, storageId: Int, user:Str
     } yield (filePath,maybeStorage)
 
     preReqs.map(pathAndMaybeStorage=>{
-      pathAndMaybeStorage._2.map(_.validatePathExists(pathAndMaybeStorage._1))
+      pathAndMaybeStorage._2.map(_.validatePathExists(pathAndMaybeStorage._1, version))
     }).map({
       case Some(result)=>result
       case None=>Left(s"No storage could be found for ID $storageId on file $id")

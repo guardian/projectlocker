@@ -62,20 +62,20 @@ class MatrixStoreDriverSpec extends Specification with Mockito {
       val fakeFile = mock[MxsObject]
       fakeFile.newOutputStream() returns fakeOutputStream
       val fakeVault = mock[Vault]
-      val mockLookupPath = mock[Function2[Vault,String,Option[String]]]
-      mockLookupPath.apply(any, any) returns None
+      val mockLookupPath = mock[Function3[Vault,String,Int,Option[String]]]
+      mockLookupPath.apply(any, any,any) returns None
 
       fakeVault.createObject(any) returns fakeFile
 
       val toTest = new MatrixStoreDriver(fakeStorageRef) {
         override def withVault[A](blk: Vault => Try[A]): Try[A] = blk(fakeVault)
 
-        override def lookupPath(vault: Vault, fileName: String): Option[String] = mockLookupPath(vault, fileName)
+        override def lookupPath(vault: Vault, fileName: String, version:Int): Option[String] = mockLookupPath(vault, fileName, version)
       }
 
-      toTest.writeDataToPath("/some/path", sampleData)
+      toTest.writeDataToPath("/some/path", 123, sampleData)
 
-      there was one(mockLookupPath).apply(fakeVault,"/some/path")
+      there was one(mockLookupPath).apply(fakeVault,"/some/path",123)
       there was one(fakeVault).createObject(any)
       there was one(fakeOutputStream).write(sampleData)
     }
@@ -91,20 +91,20 @@ class MatrixStoreDriverSpec extends Specification with Mockito {
       val fakeFile = mock[MxsObject]
       fakeFile.newOutputStream() returns fakeOutputStream
       val fakeVault = mock[Vault]
-      val mockLookupPath = mock[Function2[Vault,String,Option[String]]]
-      mockLookupPath.apply(any, any) returns Some("fake-oid")
+      val mockLookupPath = mock[Function3[Vault,String,Int,Option[String]]]
+      mockLookupPath.apply(any, any,any) returns Some("fake-oid")
 
       fakeVault.getObject(any) returns fakeFile
 
       val toTest = new MatrixStoreDriver(fakeStorageRef) {
         override def withVault[A](blk: Vault => Try[A]): Try[A] = blk(fakeVault)
 
-        override def lookupPath(vault: Vault, fileName: String): Option[String] = mockLookupPath(vault, fileName)
+        override def lookupPath(vault: Vault, fileName: String, version:Int): Option[String] = mockLookupPath(vault, fileName, version)
       }
 
-      toTest.writeDataToPath("/some/path", sampleData)
+      toTest.writeDataToPath("/some/path", 123, sampleData)
 
-      there was one(mockLookupPath).apply(fakeVault,"/some/path")
+      there was one(mockLookupPath).apply(fakeVault,"/some/path", 123)
       there was one(fakeVault).getObject("fake-oid")
       there was one(fakeOutputStream).write(sampleData)
     }

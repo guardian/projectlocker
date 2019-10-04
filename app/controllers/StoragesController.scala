@@ -71,7 +71,7 @@ class StoragesController @Inject()
       case Some(rootpath) =>
         newEntry.getStorageDriver match {
           case Some(storageDriver) =>
-            if(storageDriver.pathExists(rootpath))
+            if(storageDriver.pathExists(rootpath, 0))
               Right(true)
             else
               Left(s"Path $rootpath does not exist")
