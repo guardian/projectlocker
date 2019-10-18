@@ -104,7 +104,7 @@ class MatrixStoreDriver(override val storageRef: StorageEntry)(implicit val mat:
   def writeDataToPath(path:String, version:Int, dataStream:InputStream):Try[Unit] = withVault { vault=>
     val mxsFile = lookupPath(vault, path, version) match {
       case None=>
-        val fileMeta = newFileMeta(path, -1)
+        val fileMeta = newFileMeta(path, version, -1)
         vault.createObject(fileMeta.toAttributes.toArray)
       case Some(oid)=>
         vault.getObject(oid)
@@ -113,7 +113,7 @@ class MatrixStoreDriver(override val storageRef: StorageEntry)(implicit val mat:
     val stream = mxsFile.newOutputStream()
     try {
       val copiedSize = copyStream(dataStream, stream, 10*1024*1024)
-      val updatedFileMeta = newFileMeta(path, copiedSize)
+      val updatedFileMeta = newFileMeta(path, version, copiedSize)
       val vw = mxsFile.getAttributeView
       vw.writeAllAttributes(updatedFileMeta.toAttributes.asJavaCollection)
       Success()
@@ -146,7 +146,7 @@ class MatrixStoreDriver(override val storageRef: StorageEntry)(implicit val mat:
     }
   }
 
-  def newFileMeta(path:String, length:Long) = {
+  def newFileMeta(path:String, version:Int, length:Long) = {
     val currentTime = ZonedDateTime.now()
 
     MxsMetadata(
@@ -173,7 +173,8 @@ class MatrixStoreDriver(override val storageRef: StorageEntry)(implicit val mat:
         "MXFS_COMPATIBLE"->1,
         "MXFS_CREATIONMONTH"->currentTime.getMonthValue,
         "MXFS_CREATIONYEAR"->currentTime.getYear,
-        "MXFS_CATEGORY"->4  //set type to "document"
+        "MXFS_CATEGORY"->4,  //set type to "document",
+        "PROJECTLOCKER_VERSION"->version
       )
     )
   }
@@ -187,7 +188,7 @@ class MatrixStoreDriver(override val storageRef: StorageEntry)(implicit val mat:
   def writeDataToPath(path:String, version:Int, data:Array[Byte]):Try[Unit] = withVault { vault=>
     val mxsFile = lookupPath(vault, path, version) match {
       case None=>
-        val fileMeta = newFileMeta(path, data.length)
+        val fileMeta = newFileMeta(path, version, data.length)
         vault.createObject(fileMeta.toAttributes.toArray)
       case Some(oid)=>
         vault.getObject(oid)
@@ -279,15 +280,64 @@ class MatrixStoreDriver(override val storageRef: StorageEntry)(implicit val mat:
         Map(
           'size->omEntry.fileAttribues.map(_.size).getOrElse(-1).toString,
           'lastModified->omEntry.fileAttribues.map(_.mtime).getOrElse(-1).toString,
+          'version->fileAttrKeysMap.getOrElse('PROJECTLOCKER_VERSION,-1).toString
         ) ++ fileAttrKeysMap.getOrElse(Map())
     })
 
     Await.result(resultFuture, 30.seconds)
   }
 
+  def versionsForFileWithMetadata(vault:Vault, fileName:String) = {
+    val metaFutures = versionsForFile(vault, fileName)
+      .map(oid=>
+        ObjectMatrixEntry(oid).getMetadata(vault,mat,global)
+        .map(entry=>Success(entry))
+        .recover({case err:Throwable=>Failure(err)})
+      )
+
+    Future.sequence(metaFutures).map(results=>{
+      val failures = results.collect({case Failure(err)=>err})
+      if(failures.nonEmpty){
+        logger.error(failures.map(_.toString).mkString("\n"))
+        Left("Could not look up versions, see preceeding log message for details")
+      } else {
+        Right(results.collect({case Success(entry)=>entry}))
+      }
+    })
+  }
+
+  /**
+    * returns ALL OIDs matching a given filename, i.e. if they have different version numbers
+    * @param vault vault to query
+    * @param fileName filename to look for
+    * @return
+    */
+  def versionsForFile(vault:Vault, fileName:String) = {
+    logger.debug(s"Lookup $fileName on ${vault.getId}")
+    val searchTerm = SearchTerm.createSimpleTerm("MXFS_FILENAME", fileName)
+    val iterator = vault.searchObjectsIterator(searchTerm, 1).asScala
+
+    var finalSeq: Seq[String] = Seq()
+    while (iterator.hasNext) { //the iterator contains the OID
+      finalSeq ++= Seq(iterator.next())
+    }
+
+    finalSeq
+  }
+
+  /**
+    * look up a given (unique) path on the storage.
+    * @param vault
+    * @param fileName
+    * @param version
+    * @return
+    */
   def lookupPath(vault:Vault, fileName:String, version:Int)  = {
     logger.debug(s"Lookup $fileName on ${vault.getId}")
-    val searchTerm = SearchTerm.createSimpleTerm("MXFS_FILENAME", fileName) //FIXME: check the metadata field namee
+    val searchTerm = SearchTerm.createANDTerm(Seq(
+      SearchTerm.createSimpleTerm("MXFS_FILENAME", fileName), //FIXME: check the metadata field name
+      SearchTerm.createSimpleTerm("PROJECTLOCKER_VERSION", version)
+    ).toArray)
     val iterator = vault.searchObjectsIterator(searchTerm, 1).asScala
 
     var finalSeq: Seq[String] = Seq()

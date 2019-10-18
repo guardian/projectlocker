@@ -111,16 +111,14 @@ class ProjectTypeRow(tag: Tag) extends Table[ProjectType](tag, "ProjectType") {
 }
 
 object ProjectType extends ((Option[Int],String,String,String,Option[String], Option[Int])=>ProjectType) {
-  def entryFor(entryId: Int)(implicit db:slick.jdbc.PostgresProfile#Backend#Database):Future[Try[ProjectType]] = {
+  def entryFor(entryId: Int)(implicit db:slick.jdbc.PostgresProfile#Backend#Database):Future[ProjectType] = {
     db.run(
-      TableQuery[ProjectTypeRow].filter(_.id===entryId).result.asTry
-    ).map({
-      case Failure(error)=>Failure(error)
-      case Success(projectsList)=>
+      TableQuery[ProjectTypeRow].filter(_.id===entryId).result
+    ).map(projectsList=>
         if(projectsList.length==1)
-          Success(projectsList.head)
+          projectsList.head
         else
-          Failure(new RecordNotFoundException(s"No project type found for $entryId"))
-    })
+          throw new RecordNotFoundException(s"No project type found for $entryId")
+    )
   }
 }

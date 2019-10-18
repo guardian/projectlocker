@@ -54,32 +54,29 @@ class CreateFileEntry @Inject() (dbConfigProvider:DatabaseConfigProvider) extend
     * @param db implicitly provided database instance
     * @return a Future, containing a Try, containing a saved FileEntry instance if successful
     */
-  def getDestFileFor(rq:ProjectRequestFull, recordTimestamp:Timestamp)(implicit db: slick.jdbc.PostgresProfile#Backend#Database): Future[Try[FileEntry]] =
-    ProjectType.entryFor(rq.projectTemplate.projectTypeId).flatMap({
-      case Success(projectType)=>
+  def getDestFileFor(rq:ProjectRequestFull, recordTimestamp:Timestamp)(implicit db: slick.jdbc.PostgresProfile#Backend#Database): Future[FileEntry] =
+    ProjectType.entryFor(rq.projectTemplate.projectTypeId).flatMap(projectType=>{
         FileEntry.entryFor(rq.filename, rq.destinationStorage.id.get).map({
-          case Success(filesList)=>
-            if(filesList.isEmpty) {
-              //no file entries exist already, create one and proceed
-              Success(FileEntry(None, makeFileName(rq.filename,projectType.fileExtension), rq.destinationStorage.id.get, "system", 1,
-                    recordTimestamp, recordTimestamp, recordTimestamp, hasContent = false, hasLink = false))
-              } else {
+          case Success(filesList) =>
+            if (filesList.isEmpty) {
+              //no file entries exist already, create one (at version 1) and proceed
+              FileEntry(None, makeFileName(rq.filename, projectType.fileExtension), rq.destinationStorage.id.get, "system", 1,
+                recordTimestamp, recordTimestamp, recordTimestamp, hasContent = false, hasLink = false)
+            } else {
               //a file entry does already exist, but may not have data on it
-              if(filesList.length>1)
-                Failure(new ProjectCreationError(s"Multiple files exist for ${rq.filename} on ${rq.destinationStorage.repr}"))
-              else if(filesList.head.hasContent)
-                Failure(new ProjectCreationError(s"File ${rq.filename} on ${rq.destinationStorage.repr} already has data"))
+              if (filesList.length > 1)
+                throw new ProjectCreationError(s"Multiple files exist for ${rq.filename} on ${rq.destinationStorage.repr}")
+              else if (filesList.head.hasContent)
+                throw new ProjectCreationError(s"File ${rq.filename} on ${rq.destinationStorage.repr} already has data")
               else
-                Success(filesList.head)
+                filesList.head
             }
-          case Failure(error)=>Failure(error)
+          case Failure(error) => throw error
         })
-      case Failure(error)=>Future(Failure(error))
     })
 
   def removeDestFileFor(rq: ProjectRequestFull)(implicit db: slick.jdbc.PostgresProfile#Backend#Database): Future[Try[Boolean]] =
-    ProjectType.entryFor(rq.projectTemplate.projectTypeId).flatMap({
-      case Success(projectType) =>
+    ProjectType.entryFor(rq.projectTemplate.projectTypeId).flatMap(projectType=>{
         FileEntry.entryFor(makeFileName(rq.filename, projectType.fileExtension), rq.destinationStorage.id.get).flatMap({
           case Success(filesList) =>
             filesList.headOption match {
@@ -91,14 +88,12 @@ class CreateFileEntry @Inject() (dbConfigProvider:DatabaseConfigProvider) extend
                 logger.info(s"Found file $file to delete")
                 file.deleteSelf.map({
                   case Left(error) => Failure(error)
-                  case Right(unit) => Success(true)
+                  case Right(_) => Success(true)
                 })
             }
           case Failure(err) =>
             Future(Failure(err))
         })
-      case Failure(error) =>
-        Future(Failure(error))
     })
 
   override def receiveCommand: Receive = {
@@ -107,18 +102,18 @@ class CreateFileEntry @Inject() (dbConfigProvider:DatabaseConfigProvider) extend
       val recordTimestamp = Timestamp.valueOf(entryRequest.createTime.getOrElse(LocalDateTime.now()))
       val projectCreateData = entryRequest.data
 
-      getDestFileFor(entryRequest.rq, recordTimestamp).map({
-        case Success(fileEntry)=>
-          logger.info(s"Creating file $fileEntry")
-          fileEntry.save.map({
-            case Success(savedFileEntry)=>
-              originalSender ! StepSucceded(projectCreateData.copy(destFileEntry = Some(savedFileEntry)))
-            case Failure(error)=>
-              MDC.put("fileEntry", fileEntry.toString)
-              logger.error("Failed to create file", error)
-              originalSender ! StepFailed(projectCreateData, error)
-          })
-        case Failure(error)=>
+      getDestFileFor(entryRequest.rq, recordTimestamp).map(fileEntry=> {
+        logger.info(s"Creating file $fileEntry")
+        fileEntry.save.map({
+          case Success(savedFileEntry) =>
+            originalSender ! StepSucceded(projectCreateData.copy(destFileEntry = Some(savedFileEntry)))
+          case Failure(error) =>
+            MDC.put("fileEntry", fileEntry.toString)
+            logger.error("Failed to create file", error)
+            originalSender ! StepFailed(projectCreateData, error)
+        })
+      }).recover({
+        case error:Throwable=>
           MDC.put("entryRequest", entryRequest.toString)
           logger.error("Could not create destination file record", error)
           originalSender ! StepFailed(projectCreateData, error)
@@ -129,7 +124,7 @@ class CreateFileEntry @Inject() (dbConfigProvider:DatabaseConfigProvider) extend
       val projectCreateData = rollbackRequest.data
 
       removeDestFileFor(rollbackRequest.rq).map({
-        case Success(deletedFileEntry)=>
+        case Success(_)=>
           originalSender ! StepSucceded(projectCreateData.copy(destFileEntry = None))
         case Failure(error)=>
           logger.error("Could not remove destination file record in rollback", error)

@@ -38,7 +38,7 @@ class RunXmlLintSpec extends Specification with BuildMyApp{
       )), 10 seconds)
 
       val pe = futureResults.head.asInstanceOf[Try[ProjectEntry]].get
-      val pt = futureResults(1).asInstanceOf[Try[ProjectType]].get
+      val pt = futureResults(1).asInstanceOf[ProjectType]
 
       val result = Await.result(s.postrun("/tmp/test_run_xmllint.prproj",pe,pt,dataCache,None,None),10 seconds)
       result must beSuccessfulTry
@@ -58,7 +58,7 @@ class RunXmlLintSpec extends Specification with BuildMyApp{
       )), 10 seconds)
 
       val pe = futureResults.head.asInstanceOf[Try[ProjectEntry]].get
-      val pt = futureResults(1).asInstanceOf[Try[ProjectType]].get
+      val pt = futureResults(1).asInstanceOf[ProjectType]
 
       val result = Await.result(s.postrun("/tmp/fdsjnfsnmbsfnNOTAFILE.prproj",pe,pt,dataCache,None,None),10 seconds)
       result must beFailedTry
@@ -79,7 +79,7 @@ class RunXmlLintSpec extends Specification with BuildMyApp{
       )), 10 seconds)
 
       val pe = futureResults.head.asInstanceOf[Try[ProjectEntry]].get
-      val pt = futureResults(1).asInstanceOf[Try[ProjectType]].get
+      val pt = futureResults(1).asInstanceOf[ProjectType]
 
       val result = Await.result(s.postrun("/tmp/test_run_xmllint_notgzip.prproj",pe,pt,dataCache,None,None),10 seconds)
       result must beFailedTry
