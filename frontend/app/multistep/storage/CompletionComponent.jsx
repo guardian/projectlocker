@@ -12,7 +12,9 @@ class StorageCompletionComponent extends CommonCompletionComponent {
         rootpath: PropTypes.string.required,
         selectedType: PropTypes.number.required,
         clientpath: PropTypes.string.required,
-        enableVersions: PropTypes.bool.isRequired
+        enableVersions: PropTypes.bool.isRequired,
+        nickname: PropTypes.string.isRequired,
+        nicknameChanged: PropTypes.string.isRequired
     };
 
     constructor(props){
@@ -39,7 +41,8 @@ class StorageCompletionComponent extends CommonCompletionComponent {
             user: this.props.loginDetails.username,
             password: this.props.loginDetails.password,
             device: this.props.loginDetails.device,
-            supportsVersions: this.props.enableVersions
+            supportsVersions: this.props.enableVersions,
+            nickname: this.props.nickname
         }
     }
 
@@ -49,7 +52,14 @@ class StorageCompletionComponent extends CommonCompletionComponent {
             <h3>Set up storage</h3>
             <p className="information">We will set up a new storage definition with the information below.</p>
             <p className="information">Press "Confirm" to go ahead, or press Previous if you need to amend any details.</p>
-            <SummaryComponent name={selectedStorage.name} loginDetails={this.props.loginDetails} subfolder={this.props.rootpath} clientpath={this.props.clientpath} enableVersions={this.props.enableVersions}/>
+            <SummaryComponent name={selectedStorage.name}
+                              loginDetails={this.props.loginDetails}
+                              subfolder={this.props.rootpath}
+                              clientpath={this.props.clientpath}
+                              enableVersions={this.props.enableVersions}
+                              nicknameChanged={this.props.nicknameChanged}
+                              nickname={this.props.nickname}
+            />
             <ErrorViewComponent error={this.state.error}/>
             <span style={{float: "right"}}><button onClick={this.confirmClicked}>Confirm</button></span>
         </div>)

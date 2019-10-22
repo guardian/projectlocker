@@ -10,8 +10,7 @@ class FileEntryView extends GenericEntryView {
 
     render(){
         return this.state.content ?
-         <span>{this.state.content.filepath} on <StorageEntryView entryId={this.state.content.storage}/></span> :
-            <span>loading...</span>
+         <span>{this.state.content.filepath} on <StorageEntryView entryId={this.state.content.storage}/></span> : <span>loading...</span>
     }
 }
 

@@ -23,13 +23,21 @@ class StorageSelector extends React.Component {
         return this.getSelectedStorageRecord().status
     }
 
+    displayName(storage) {
+        if (storage.nickname && storage.nickname !== "") {
+            return storage.nickname + " [" + storage.storageType + "]"
+        } else {
+            return storage.rootpath + " on " + storage.storageType
+        }
+    }
+
     render(){
         return <span>
             <select id="storageSelector" value={this.props.selectedStorage}
                     disabled={! this.props.enabled} style={{marginRight: "1em"}}
                     onChange={event=>this.props.selectionUpdated(parseInt(event.target.value))}>
             {
-                this.props.storageList.map(storage=><option key={storage.id} value={storage.id}>{storage.rootpath} on {storage.storageType}</option>)
+                this.props.storageList.map(storage=><option key={storage.id} value={storage.id}>{this.displayName(storage)}</option>)
             }
         </select>
         <StatusIndicator status={this.getSelectedStatus()} showLabel={this.props.showLabel}/>

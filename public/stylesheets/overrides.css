@@ -183,6 +183,12 @@ p.warning-text {
     overflow: hidden;
 }
 
+p.explanation {
+    font-style: italic;
+    font-size: 0.8em;
+    color: darkblue;
+}
+
 h4 {
     margin-bottom: 0;
     margin-top: 1em;
@@ -222,4 +228,12 @@ ul.no-gap {
     color: blue;
     margin-left: 0.5em;
     cursor: pointer;
+}
+
+.full-width {
+    width: 100%;
+}
+
+td.narrow {
+    width: 25%;
 }

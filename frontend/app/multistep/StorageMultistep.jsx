@@ -43,7 +43,8 @@ class StorageMultistep extends CommonMultistepRoot {
                     username: response.data.result.user,
                     password: response.data.result.password
                 },
-                enableVersions: response.data.result.supportsVersions
+                enableVersions: response.data.result.supportsVersions,
+                nickname: response.data.result.nickname
             })
         }).catch(error=>{
             console.error(error);
@@ -102,6 +103,8 @@ class StorageMultistep extends CommonMultistepRoot {
                                                        clientpath={this.state.clientpath}
                                                        currentEntry={this.state.currentEntry}
                                                        enableVersions={this.state.enableVersions}
+                                                       nickname={this.state.nickname}
+                                                       nicknameChanged={evt=>this.setState({nickname: evt.target.value})}
                 />
             }
         ];
