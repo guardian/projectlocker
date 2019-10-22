@@ -19,7 +19,6 @@ import scala.concurrent.duration._
 
 /**
   * TODO:
-  *  - implement versions in the protocol
   *  - implement no-write-lock in the protocol
   * @param storageRef [[StorageEntry]] instance that this driver instance is assocaited with
   * @param mat implicitly provided ActorMaterializer
@@ -192,8 +191,7 @@ class MatrixStoreDriver(override val storageRef: StorageEntry)(implicit val mat:
         "MXFS_MIMETYPE"->"application/octet-stream",
         "MXFS_DESCRIPTION"->s"PL_VERSION_STRING",
         "MXFS_PARENTOID"->"",
-        "MXFS_FILEEXT"->getFileExt(path).getOrElse(""),
-        "PL_VERSION_STRING"->version.toString
+        "MXFS_FILEEXT"->getFileExt(path).getOrElse("")
       ),
       boolValues = Map(
         "MXFS_INTRASH"->false,
@@ -366,10 +364,6 @@ class MatrixStoreDriver(override val storageRef: StorageEntry)(implicit val mat:
     */
   def lookupPath(vault:Vault, fileName:String, version:Int)  = {
     logger.debug(s"Lookup $fileName on OM vault ${vault.getId}")
-//    val searchTerm = SearchTerm.createANDTerm(Seq(
-//      SearchTerm.createSimpleTerm(new Attribute(Constants.CONTENT, s"""MXFS_FILENAME:"$fileName"""")),
-//      //SearchTerm.createSimpleTerm("PROJECTLOCKER_VERSION", version)
-//    ).toArray)
 
     val searchTerm = SearchTerm.createSimpleTerm(new Attribute(Constants.CONTENT, s"MXFS_FILENAME:$fileName"))
     //val searchTerm = SearchTerm.createSimpleTerm("PROJECTLOCKER_VERSION", version)
@@ -406,10 +400,6 @@ class MatrixStoreDriver(override val storageRef: StorageEntry)(implicit val mat:
       if(path==""){
         Success(true) //checking if blank path exists means check if the vault exists. If we get here, then it should do.
       } else {
-//        val searchTerm = SearchTerm.createSimpleTerm("MXFS_FILENAME", path) //FIXME: check the metadata field namee
-//        val iterator = vault.searchObjectsIterator(searchTerm, 1).asScala
-//
-//        Success(iterator.hasNext)
         Success(lookupPath(vault, path, version) match {
           case Some(oid)=>
             logger.info(s"Found $oid for $path at version $version")
