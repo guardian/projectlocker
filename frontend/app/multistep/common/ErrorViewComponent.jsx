@@ -45,11 +45,7 @@ class ErrorViewComponent extends React.Component {
         if (this.props.error.response) {
             // The request was made and the server responded with a status code
             // that falls out of the range of 2xx
-            if(this.props.error.response.data.hasOwnProperty("nextAvailableVersion") && this.props.newVersionComponent!==null){
-                return <p className="error-text">This object already exists. {this.props.newVersionComponent}</p>
-            } else {
-                return <p className="error-text">Server error {this.props.error.response.status}: {this.bestErrorString(this.props.error.response.data)}</p>
-            }
+            return <p className="error-text">Server error {this.props.error.response.status}: {this.bestErrorString(this.props.error.response.data)}</p>
         } else if (this.props.error.request) {
             // The request was made but no response was received
             // `error.request` is an instance of XMLHttpRequest in the browser and an instance of

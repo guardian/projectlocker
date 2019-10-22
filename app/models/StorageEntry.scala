@@ -28,6 +28,7 @@ trait StorageSerializer {
   /*https://www.playframework.com/documentation/2.5.x/ScalaJson*/
   implicit val storageWrites:Writes[StorageEntry] = (
     (JsPath \ "id").writeNullable[Int] and
+      (JsPath \ "nickname").writeNullable[String] and
       (JsPath \ "rootpath").writeNullable[String] and
       (JsPath \ "clientpath").writeNullable[String] and
       (JsPath \ "storageType").write[String] and
@@ -36,11 +37,13 @@ trait StorageSerializer {
       (JsPath \ "host").writeNullable[String] and
       (JsPath \ "port").writeNullable[Int] and
       (JsPath \ "device").writeNullable[String] and
+      (JsPath \ "supportsVersions").write[Boolean] and
       (JsPath \ "status").writeNullable[StorageStatus.Value]
     )(unlift(StorageEntry.unapply))
 
   implicit val storageReads:Reads[StorageEntry] = (
     (JsPath \ "id").readNullable[Int] and
+      (JsPath \ "nickname").readNullable[String] and
       (JsPath \ "rootpath").readNullable[String] and
       (JsPath \ "clientpath").readNullable[String] and
       (JsPath \ "storageType").read[String] and
@@ -49,13 +52,14 @@ trait StorageSerializer {
       (JsPath \ "host").readNullable[String] and
       (JsPath \ "port").readNullable[Int] and
       (JsPath \ "device").readNullable[String] and
+      (JsPath \ "supportsVersions").read[Boolean] and
       (JsPath \ "status").readNullable[StorageStatus.Value]
     )(StorageEntry.apply _)
 }
 
 
-case class StorageEntry(id: Option[Int], rootpath: Option[String], clientpath: Option[String], storageType: String,
-                        user:Option[String], password:Option[String], host:Option[String], port:Option[Int], device:Option[String], status:Option[StorageStatus.Value]) {
+case class StorageEntry(id: Option[Int], nickname:Option[String], rootpath: Option[String], clientpath: Option[String], storageType: String,
+                        user:Option[String], password:Option[String], host:Option[String], port:Option[Int], device:Option[String], supportsVersions: Boolean, status:Option[StorageStatus.Value]) {
 
   def getStorageDriver(implicit mat:Materializer):Option[StorageDriver] = {
     val logger: Logger = Logger(this.getClass)
@@ -101,6 +105,7 @@ class StorageEntryRow(tag:Tag) extends Table[StorageEntry](tag, "StorageEntry") 
   )
 
   def id = column[Int]("id",O.PrimaryKey, O.AutoInc)
+  def nickname = column[Option[String]]("s_nickname")
   def rootpath = column[Option[String]]("s_root_path")
   def clientpath = column[Option[String]]("s_client_path")
   def storageType = column[String]("s_storage_type")
@@ -110,8 +115,9 @@ class StorageEntryRow(tag:Tag) extends Table[StorageEntry](tag, "StorageEntry") 
   def port = column[Option[Int]]("i_port")
   def device = column[Option[String]]("s_device")
   def status = column[Option[StorageStatus.Value]]("e_status")
+  def supportsVersions = column[Boolean]("b_versions")
 
-  def * = (id.?,rootpath,clientpath,storageType,user,password,host,port,device, status) <> (StorageEntry.tupled, StorageEntry.unapply)
+  def * = (id.?,nickname, rootpath,clientpath,storageType,user,password,host,port,device, supportsVersions, status) <> (StorageEntry.tupled, StorageEntry.unapply)
 }
 
 

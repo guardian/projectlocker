@@ -9,7 +9,8 @@ class SummaryComponent extends React.Component {
         selectedType: PropTypes.number.isRequired,
         loginDetails: PropTypes.object.isRequired,
         rootpath: PropTypes.string.isRequired,
-        clientpath: PropTypes.string.isRequired
+        clientpath: PropTypes.string.isRequired,
+        enableVersions: PropTypes.bool
     };
 
     constructor(props){
@@ -17,7 +18,6 @@ class SummaryComponent extends React.Component {
     }
 
     render() {
-        const selectedStorage = this.props.selectedStorage;
         return <table>
             <tbody>
             <tr>
@@ -35,6 +35,10 @@ class SummaryComponent extends React.Component {
                         }
                     </ul>
                 </td>
+            </tr>
+            <tr>
+                <td>Versions enabled</td>
+                <td className={this.props.enableVersions ? "" : "value-not-present"}>{this.props.enableVersions ? "Yes" : "No"}</td>
             </tr>
             <tr>
                 <td>Subfolder</td>

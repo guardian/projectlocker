@@ -63,14 +63,28 @@ class Files @Inject() (configuration: Configuration, dbConfigProvider: DatabaseC
     /* only allow a record to be created if no files already exist with that path on that storage */
     FileEntry.allVersionsFor(entry.filepath,entry.storageId)(dbConfig.db).flatMap({
       case Success(fileList)=>
-        if(!fileList.exists(_.version==entry.version)){
-          val updatedEntry = entry.copy(user = uid)
-          dbConfig.db.run(
-            (TableQuery[FileEntryRow] returning TableQuery[FileEntryRow].map(_.id) += updatedEntry).asTry
-          )
-        } else {
-          Future(Failure(new AlreadyExistsException(s"A file already exists at ${entry.filepath} on storage ${entry.storageId}", fileList.headOption.map(_.version+1).getOrElse(1))))
-        }
+        entry.storage.flatMap({
+          case None=>
+            Future(Failure(new BadDataException("No storage was specified")))
+          case Some(storage)=>
+            if(storage.supportsVersions && !fileList.exists(_.version==entry.version)){ //versioning enabled and there is no file already existing with the given version
+              val updatedEntry = entry.copy(user = uid)
+              dbConfig.db.run(
+                (TableQuery[FileEntryRow] returning TableQuery[FileEntryRow].map(_.id) += updatedEntry).asTry
+              )
+            } else if(storage.supportsVersions) {                                       //versioning enabled and there is a file already existing with the given version
+              Future(Failure(new AlreadyExistsException(s"A file already exists at ${entry.filepath} on storage ${entry.storageId}", fileList.headOption.map(_.version+1).getOrElse(1))))
+            } else {                                                                    //versioning not enabled
+              if(fileList.isEmpty){   //no conflicting file
+                val updatedEntry = entry.copy(user = uid)
+                dbConfig.db.run(
+                  (TableQuery[FileEntryRow] returning TableQuery[FileEntryRow].map(_.id) += updatedEntry).asTry
+                )
+              } else {
+                Future(Failure(new AlreadyExistsException(s"A file already exists at ${entry.filepath} on storage ${entry.storageId} and versioning is not enabled",1)))
+              }
+            }
+        })
       case Failure(error)=>Future(Failure(error))
     })
 

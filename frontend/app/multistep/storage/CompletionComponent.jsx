@@ -11,7 +11,8 @@ class StorageCompletionComponent extends CommonCompletionComponent {
         loginDetails: PropTypes.object.required,
         rootpath: PropTypes.string.required,
         selectedType: PropTypes.number.required,
-        clientpath: PropTypes.string.required
+        clientpath: PropTypes.string.required,
+        enableVersions: PropTypes.bool.isRequired
     };
 
     constructor(props){
@@ -37,7 +38,8 @@ class StorageCompletionComponent extends CommonCompletionComponent {
             port: this.props.loginDetails.port ? parseInt(this.props.loginDetails.port) : null,
             user: this.props.loginDetails.username,
             password: this.props.loginDetails.password,
-            device: this.props.loginDetails.device
+            device: this.props.loginDetails.device,
+            supportsVersions: this.props.enableVersions
         }
     }
 
@@ -47,7 +49,7 @@ class StorageCompletionComponent extends CommonCompletionComponent {
             <h3>Set up storage</h3>
             <p className="information">We will set up a new storage definition with the information below.</p>
             <p className="information">Press "Confirm" to go ahead, or press Previous if you need to amend any details.</p>
-            <SummaryComponent name={selectedStorage.name} loginDetails={this.props.loginDetails} subfolder={this.props.rootpath} clientpath={this.props.clientpath} />
+            <SummaryComponent name={selectedStorage.name} loginDetails={this.props.loginDetails} subfolder={this.props.rootpath} clientpath={this.props.clientpath} enableVersions={this.props.enableVersions}/>
             <ErrorViewComponent error={this.state.error}/>
             <span style={{float: "right"}}><button onClick={this.confirmClicked}>Confirm</button></span>
         </div>)

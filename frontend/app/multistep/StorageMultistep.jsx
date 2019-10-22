@@ -17,7 +17,8 @@ class StorageMultistep extends CommonMultistepRoot {
             selectedType: 0,
             rootpath: "",
             clientpath: null,
-            loginDetails: {}
+            loginDetails: {},
+            enableVersions: false
         }
     }
 
@@ -38,10 +39,11 @@ class StorageMultistep extends CommonMultistepRoot {
                 loginDetails: {
                     hostname: response.data.result.host,
                     port: response.data.result.port ? parseInt(response.data.result.port) : null,
-                    device: response.data.device,
+                    device: response.data.result.device,
                     username: response.data.result.user,
                     password: response.data.result.password
-                }
+                },
+                enableVersions: response.data.result.supportsVersions
             })
         }).catch(error=>{
             console.error(error);
@@ -68,7 +70,10 @@ class StorageMultistep extends CommonMultistepRoot {
                 component: <StorageTypeComponent strgTypes={this.state.strgTypes}
                                                  selectedType={this.state.selectedType}
                                                  currentStorage={this.props.currentEntry}
-                                                 valueWasSet={(type)=>this.setState({selectedType: type})}/>
+                                                 versionsAllowed={this.state.enableVersions}
+                                                 valueWasSet={(type)=>this.setState({selectedType: type})}
+                                                 versionsAllowedChanged={newValue=>this.setState({enableVersions: newValue})}
+                />
             },
             {
                 name: 'Login details',
@@ -96,6 +101,7 @@ class StorageMultistep extends CommonMultistepRoot {
                                                        rootpath={this.state.rootpath}
                                                        clientpath={this.state.clientpath}
                                                        currentEntry={this.state.currentEntry}
+                                                       enableVersions={this.state.enableVersions}
                 />
             }
         ];

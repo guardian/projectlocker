@@ -1,4 +1,5 @@
 import React from 'react';
+import ReactDOM from 'react-dom';
 import PropTypes from 'prop-types';
 import axios from 'axios';
 import CommonMultistepComponent from '../common/CommonMultistepComponent.jsx';
@@ -29,7 +30,8 @@ class TemplateUploadComponent extends CommonMultistepComponent {
             uploading: false,
             useExisting: true,
             uploadFileVersion: 1,
-            uploadFileName: null
+            uploadFileName: null,
+            fileInputKey:0  //we use this to clear the file input component by forcing it to re-render when the value is changed
         };
 
         this.fileChange = this.fileChange.bind(this);
@@ -130,6 +132,11 @@ class TemplateUploadComponent extends CommonMultistepComponent {
         }
     }
 
+    storageSupportsVersions(){
+        const matchingStorageList = this.props.storages.filter((value,idx,arry)=>value===this.state.selectedStorage);
+        if(matchingStorageList.length===0) return false;
+        console.log("storageSupportsVersions: ", matchingStorageList[0].supportsVersions);
+    }
     render(){
         return <div>
             <h3>Template upload</h3>
@@ -158,16 +165,17 @@ class TemplateUploadComponent extends CommonMultistepComponent {
                 </tr>
                 <tr>
                     <td>File to upload</td>
-                    <td><input onChange={this.fileChange} type="file" id="template-upload-fileselector" ref={this.fileInput}/></td>
-                    <td><UploadingThrobber loading={this.state.uploading}/></td>
+                    <td><input onChange={this.fileChange} type="file" id="template-upload-fileselector" key={this.state.fileInputKey} ref={this.fileInput}/></td>
+                    <td><UploadingThrobber loading={this.state.uploading}/>{this.state.hasFiles? <p style={{color:"green"}}>File uploaded to version {this.state.uploadFileVersion}, please click "Next"</p> : <p/>}</td>
                 </tr>
                 </tbody>
             </table>
             <ErrorViewComponent error={this.state.error}/>
-            { this.state.uploadFileVersion===1 && ! this.state.hasFiles ? <p/> : <UploadNewVersionComponent
+            { (this.state.uploadFileVersion===1 || this.state.hasFiles) ? <p/> : <UploadNewVersionComponent
                 newVersionCb={()=>this.createFile().then(()=>this.doUpload())}
-                cancelCb={()=>this.fileInput.value=""}/>
+                cancelCb={()=>this.setState({fileInputKey: this.state.fileInputKey+1, uploadFileVersion: 1, error:null})}/>
             }
+
         </div>
     }
 }
