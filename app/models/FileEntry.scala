@@ -2,8 +2,11 @@ package models
 
 import java.io.FileInputStream
 import java.nio.file.Paths
+
 import slick.jdbc.PostgresProfile.api._
 import java.sql.Timestamp
+
+import akka.stream.Materializer
 import akka.stream.scaladsl.Source
 import drivers.StorageDriver
 import play.api.Logger
@@ -84,7 +87,7 @@ case class FileEntry(id: Option[Int], filepath: String, storageId: Int, user:Str
     * @param db implicitly provided [[slick.jdbc.PostgresProfile#Backend#Database]]
     * @return A future containing either a Right() containing a Boolean indicating whether the delete happened,  or a Left with an error string
     */
-  def deleteFromDisk(implicit db:slick.jdbc.PostgresProfile#Backend#Database):Future[Either[String,Boolean]] = {
+  def deleteFromDisk(implicit db:slick.jdbc.PostgresProfile#Backend#Database, mat:Materializer):Future[Either[String,Boolean]] = {
     /**/
     /*it either returns a Right(), with a boolean indicating whether the delete happened or not, or a Left() with an error string*/
     val maybeStorageDriverFuture = this.storage.map({
@@ -163,7 +166,7 @@ case class FileEntry(id: Option[Int], filepath: String, storageId: Int, user:Str
   }
 
   /* Asynchronously writes the given buffer to this file*/
-  def writeToFile(buffer: RawBuffer)(implicit db:slick.jdbc.PostgresProfile#Backend#Database):Future[Try[Unit]] = {
+  def writeToFile(buffer: RawBuffer)(implicit db:slick.jdbc.PostgresProfile#Backend#Database, mat:Materializer):Future[Try[Unit]] = {
     val storageResult = this.storage
 
     storageResult.map({
@@ -201,7 +204,7 @@ case class FileEntry(id: Option[Int], filepath: String, storageId: Int, user:Str
     * @return a Future, containing a Left with a string if there was an error, or a Right with a Boolean flag indicating if the
     *         pointed object exists on the storage
     */
-  def validatePathExists(implicit db:slick.jdbc.PostgresProfile#Backend#Database) = {
+  def validatePathExists(implicit db:slick.jdbc.PostgresProfile#Backend#Database, mat:Materializer) = {
     val preReqs = for {
       filePath <- getFullPath
       maybeStorage <- storage
@@ -242,9 +245,14 @@ object FileEntry extends ((Option[Int], String, Int, String, Int, Timestamp, Tim
     * @param db implicitly provided database object, instance of slick.jdbc.PostgresProfile#Backend#Database
     * @return a Future, containing a Try that contains a sequnce of zero or more FileEntry instances
     */
-  def entryFor(fileName: String, storageId: Int)(implicit db:slick.jdbc.PostgresProfile#Backend#Database):Future[Try[Seq[FileEntry]]] =
+  def entryFor(fileName: String, storageId: Int, version:Int)(implicit db:slick.jdbc.PostgresProfile#Backend#Database):Future[Try[Seq[FileEntry]]] =
     db.run(
-      TableQuery[FileEntryRow].filter(_.filepath===fileName).filter(_.storage===storageId).result.asTry
+      TableQuery[FileEntryRow].filter(_.filepath===fileName).filter(_.storage===storageId).filter(_.version===version).result.asTry
+    )
+
+  def allVersionsFor(fileName: String, storageId: Int)(implicit db:slick.jdbc.PostgresProfile#Backend#Database):Future[Try[Seq[FileEntry]]] =
+    db.run(
+      TableQuery[FileEntryRow].filter(_.filepath===fileName).filter(_.storage===storageId).sortBy(_.version.desc.nullsLast).result.asTry
     )
 }
 

@@ -38,6 +38,7 @@ class StorageMultistep extends CommonMultistepRoot {
                 loginDetails: {
                     hostname: response.data.result.host,
                     port: response.data.result.port ? parseInt(response.data.result.port) : null,
+                    device: response.data.device,
                     username: response.data.result.user,
                     password: response.data.result.password
                 }

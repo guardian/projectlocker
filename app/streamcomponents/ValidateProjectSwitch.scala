@@ -1,6 +1,6 @@
 package streamcomponents
 
-import akka.stream.{Attributes, Inlet, Outlet, UniformFanOutShape}
+import akka.stream.{Attributes, Inlet, Materializer, Outlet, UniformFanOutShape}
 import akka.stream.stage.{AbstractInHandler, AbstractOutHandler, GraphStage, GraphStageLogic}
 import com.google.inject.Inject
 import models.ProjectEntry
@@ -14,7 +14,7 @@ import scala.concurrent.Future
 /**
   * pushes the incoming ProjectEntry to "yes" if it exists in the location expected or "no" if it does not.
   */
-class ValidateProjectSwitch @Inject()(dbConfigProvider:DatabaseConfigProvider) extends GraphStage[UniformFanOutShape[ProjectEntry,ProjectEntry]]{
+class ValidateProjectSwitch @Inject()(dbConfigProvider:DatabaseConfigProvider)(implicit mat:Materializer) extends GraphStage[UniformFanOutShape[ProjectEntry,ProjectEntry]]{
   private val in:Inlet[ProjectEntry] = Inlet.create("ValidateProjectSwitch.in")
   private val yes:Outlet[ProjectEntry] = Outlet.create("ValidateProjectSwitch.yes")
   private val no:Outlet[ProjectEntry] = Outlet.create("ValidateProjectSwitch.no")

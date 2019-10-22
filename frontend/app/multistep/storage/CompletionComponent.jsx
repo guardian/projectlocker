@@ -36,7 +36,8 @@ class StorageCompletionComponent extends CommonCompletionComponent {
             host: this.props.loginDetails.hostname,
             port: this.props.loginDetails.port ? parseInt(this.props.loginDetails.port) : null,
             user: this.props.loginDetails.username,
-            password: this.props.loginDetails.password
+            password: this.props.loginDetails.password,
+            device: this.props.loginDetails.device
         }
     }
 

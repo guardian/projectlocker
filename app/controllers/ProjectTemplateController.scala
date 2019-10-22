@@ -1,5 +1,6 @@
 package controllers
 
+import akka.stream.Materializer
 import javax.inject.Inject
 import com.unboundid.ldap.sdk.LDAPConnectionPool
 import models._
@@ -18,6 +19,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 
 class ProjectTemplateController @Inject() (config: Configuration, dbConfigProvider: DatabaseConfigProvider,
                                            cacheImpl:SyncCacheApi)
+                                          (implicit mat:Materializer)
   extends GenericDatabaseObjectController[ProjectTemplate] with ProjectTemplateSerializer with StorageSerializer{
 
   implicit val cache:SyncCacheApi = cacheImpl

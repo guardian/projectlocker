@@ -2,12 +2,11 @@ package services
 
 import javax.inject.{Inject, Singleton}
 import akka.actor.{Actor, ActorRef, ActorSystem}
+import akka.stream.Materializer
 import models.{StorageEntry, StorageEntryHelper, StorageStatus}
 import play.api.{Configuration, Logger}
 import play.api.db.slick.DatabaseConfigProvider
 import slick.jdbc.PostgresProfile
-
-import scala.concurrent.duration._
 import scala.util.{Failure, Success}
 import scala.concurrent.ExecutionContext.Implicits.global
 
@@ -20,7 +19,7 @@ object StorageScanner {
 }
 
 @Singleton
-class StorageScanner @Inject() (dbConfigProvider:DatabaseConfigProvider, config:Configuration, actorSystem:ActorSystem) extends Actor {
+class StorageScanner @Inject() (dbConfigProvider:DatabaseConfigProvider, config:Configuration, actorSystem:ActorSystem)(implicit mat:Materializer) extends Actor {
   private val logger = Logger(getClass)
   import StorageScanner._
 

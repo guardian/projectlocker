@@ -56,7 +56,7 @@ class CreateFileEntry @Inject() (dbConfigProvider:DatabaseConfigProvider) extend
     */
   def getDestFileFor(rq:ProjectRequestFull, recordTimestamp:Timestamp)(implicit db: slick.jdbc.PostgresProfile#Backend#Database): Future[FileEntry] =
     ProjectType.entryFor(rq.projectTemplate.projectTypeId).flatMap(projectType=>{
-        FileEntry.entryFor(rq.filename, rq.destinationStorage.id.get).map({
+        FileEntry.entryFor(rq.filename, rq.destinationStorage.id.get, 1).map({
           case Success(filesList) =>
             if (filesList.isEmpty) {
               //no file entries exist already, create one (at version 1) and proceed
@@ -77,7 +77,7 @@ class CreateFileEntry @Inject() (dbConfigProvider:DatabaseConfigProvider) extend
 
   def removeDestFileFor(rq: ProjectRequestFull)(implicit db: slick.jdbc.PostgresProfile#Backend#Database): Future[Try[Boolean]] =
     ProjectType.entryFor(rq.projectTemplate.projectTypeId).flatMap(projectType=>{
-        FileEntry.entryFor(makeFileName(rq.filename, projectType.fileExtension), rq.destinationStorage.id.get).flatMap({
+        FileEntry.entryFor(makeFileName(rq.filename, projectType.fileExtension), rq.destinationStorage.id.get, 1).flatMap({
           case Success(filesList) =>
             filesList.headOption match {
               case None =>

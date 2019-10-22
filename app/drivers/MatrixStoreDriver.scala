@@ -6,7 +6,7 @@ import java.nio.file.attribute.FileTime
 import java.time.ZonedDateTime
 
 import akka.stream.Materializer
-import com.om.mxs.client.japi.{MatrixStore, MxsObject, SearchTerm, UserInfo, Vault}
+import com.om.mxs.client.japi.{Constants, MatrixStore, MxsObject, SearchTerm, UserInfo, Vault, Attribute}
 import drivers.objectmatrix.{MxsMetadata, ObjectMatrixEntry, UserInfoBuilder}
 import models.StorageEntry
 import org.slf4j.LoggerFactory
@@ -26,12 +26,29 @@ import scala.concurrent.duration._
   */
 class MatrixStoreDriver(override val storageRef: StorageEntry)(implicit val mat:Materializer) extends StorageDriver {
   private val logger = LoggerFactory.getLogger(getClass)
-  lazy val userInfo = UserInfoBuilder()
-    .withAddresses(storageRef.host.get)
-    .withVault(storageRef.rootpath.get)
-    .withUser(storageRef.user.get)
-    .withPassword(storageRef.password.get)
-    .getUserInfo
+  lazy val userInfo = {
+    if(storageRef.host.isEmpty){
+      Failure(new RuntimeException("Driver requires host field to be set"))
+    } else if(storageRef.device.isEmpty){
+      Failure(new RuntimeException("Driver requires device to be set"))
+    } else if(storageRef.user.isEmpty){
+      Failure(new RuntimeException("Driver requires user field to be set"))
+    } else if(storageRef.password.isEmpty){
+      Failure(new RuntimeException("Driver requires password field to be set"))
+    } else {
+      val deviceParts = storageRef.device.get.split("\\s*,\\s*")
+      if(deviceParts.length!=2){
+        Failure(new RuntimeException("Malformed device section, should be {cluster-id},{vault-id}"))
+      }
+      UserInfoBuilder()
+        .withAddresses(storageRef.host.get)
+        .withCluster(deviceParts.head)
+        .withVault(deviceParts(1))
+        .withUser(storageRef.user.get)
+        .withPassword(storageRef.password.get)
+        .getUserInfo
+    }
+  }
 
   /**
     * wrapper to perform an operation with a vault pointer and ensure that it is disposed when completed
@@ -72,7 +89,7 @@ class MatrixStoreDriver(override val storageRef: StorageEntry)(implicit val mat:
     * @param input InputStream to read from
     * @param output OutputStream to write to
     * @param bufferSize size of the temporary buffer to use.
-    * @return the number of bytes written as a Long. Raises exceptions on failure (assumed it's within a try/catch block)
+    * @return the number of bytes written as a Long. Closes the streams when it is done. Raises exceptions on failure (assumed it's within a try/catch block)
     */
   def copyStream(input:InputStream, output:OutputStream, bufferSize:Int) = {
     val buf=ByteBuffer.allocate(bufferSize)
@@ -88,12 +105,32 @@ class MatrixStoreDriver(override val storageRef: StorageEntry)(implicit val mat:
         output.write(buf.array(),0,bytesRead)
         buf.clear()
       } while (bytesRead > 0)
+      output.close()
+      input.close()
       totalRead
     } catch {
       case _:EOFException=>
         logger.debug(s"Stream copy reached EOF")
         totalRead
     }
+  }
+
+  def writeAttributesWithRetry(mxsFile: MxsObject, attribs:java.util.Collection[com.om.mxs.client.japi.Attribute], attempt:Int=1):Try[Unit] = try {
+    val vw = mxsFile.getAttributeView
+    vw.writeAllAttributes(attribs)
+    Success( () )
+  } catch {
+    case err:com.om.mxs.client.internal.TaggedIOException=>
+      logger.error(s"Could not write attributes for $mxsFile on attempt $attempt: ", err)
+      if(attempt>10){
+        logger.error("Could not write after 10 attempts, giving up")
+        Failure(err)
+      } else {
+        Thread.sleep(500 * attempt)
+        writeAttributesWithRetry(mxsFile, attribs, attempt+1)
+      }
+    case err:Throwable=>
+      Failure(err)
   }
 
   /**
@@ -114,9 +151,7 @@ class MatrixStoreDriver(override val storageRef: StorageEntry)(implicit val mat:
     try {
       val copiedSize = copyStream(dataStream, stream, 10*1024*1024)
       val updatedFileMeta = newFileMeta(path, version, copiedSize)
-      val vw = mxsFile.getAttributeView
-      vw.writeAllAttributes(updatedFileMeta.toAttributes.asJavaCollection)
-      Success()
+      writeAttributesWithRetry(mxsFile, updatedFileMeta.toAttributes.asJavaCollection)
     } catch {
       case err:Throwable=>
         logger.error(s"Could not copy file: ", err)
@@ -155,9 +190,10 @@ class MatrixStoreDriver(override val storageRef: StorageEntry)(implicit val mat:
         "MXFS_FILENAME"->path,
         "MXFS_PATH"->path.toString,
         "MXFS_MIMETYPE"->"application/octet-stream",
-        "MXFS_DESCRIPTION"->s"File $path",
+        "MXFS_DESCRIPTION"->s"PL_VERSION_STRING",
         "MXFS_PARENTOID"->"",
-        "MXFS_FILEEXT"->getFileExt(path).getOrElse("")
+        "MXFS_FILEEXT"->getFileExt(path).getOrElse(""),
+        "PL_VERSION_STRING"->version.toString
       ),
       boolValues = Map(
         "MXFS_INTRASH"->false,
@@ -188,9 +224,11 @@ class MatrixStoreDriver(override val storageRef: StorageEntry)(implicit val mat:
   def writeDataToPath(path:String, version:Int, data:Array[Byte]):Try[Unit] = withVault { vault=>
     val mxsFile = lookupPath(vault, path, version) match {
       case None=>
+        logger.debug(s"No path found for $path at version $version on ${vault.getId}")
         val fileMeta = newFileMeta(path, version, data.length)
         vault.createObject(fileMeta.toAttributes.toArray)
       case Some(oid)=>
+        logger.debug(s"Found entry $oid for path $path at version $version on ${vault.getId}")
         vault.getObject(oid)
     }
 
@@ -211,7 +249,7 @@ class MatrixStoreDriver(override val storageRef: StorageEntry)(implicit val mat:
   def deleteFileAtPath(path:String, version:Int):Boolean = withVault { vault=>
     lookupPath(vault, path, version) match {
       case None =>
-        logger.error(s"No file to delete at $path on $storageRef")
+        logger.error(s"No file to delete at $path with version $version on ${storageRef.repr}")
         Success(false)
       case Some(oid) =>
         withObject(vault, oid) { mxsObject =>
@@ -248,6 +286,7 @@ class MatrixStoreDriver(override val storageRef: StorageEntry)(implicit val mat:
     * @return [[java.io.OutputStream]] subclass wrapped in a [[Try]]
     */
   def getWriteStream(path:String, version:Int):Try[OutputStream] = withVault { vault=>
+    logger.info(s"Writing to file at path $path with version $version on ${storageRef.repr}")
     lookupPath(vault, path, version) match {
       case None=>
         Failure(new RuntimeException(s"File $path does not exist"))
@@ -315,14 +354,7 @@ class MatrixStoreDriver(override val storageRef: StorageEntry)(implicit val mat:
   def versionsForFile(vault:Vault, fileName:String) = {
     logger.debug(s"Lookup $fileName on ${vault.getId}")
     val searchTerm = SearchTerm.createSimpleTerm("MXFS_FILENAME", fileName)
-    val iterator = vault.searchObjectsIterator(searchTerm, 1).asScala
-
-    var finalSeq: Seq[String] = Seq()
-    while (iterator.hasNext) { //the iterator contains the OID
-      finalSeq ++= Seq(iterator.next())
-    }
-
-    finalSeq
+    vault.searchObjects(searchTerm, 1).asScala.toSeq
   }
 
   /**
@@ -333,19 +365,20 @@ class MatrixStoreDriver(override val storageRef: StorageEntry)(implicit val mat:
     * @return
     */
   def lookupPath(vault:Vault, fileName:String, version:Int)  = {
-    logger.debug(s"Lookup $fileName on ${vault.getId}")
-    val searchTerm = SearchTerm.createANDTerm(Seq(
-      SearchTerm.createSimpleTerm("MXFS_FILENAME", fileName), //FIXME: check the metadata field name
-      SearchTerm.createSimpleTerm("PROJECTLOCKER_VERSION", version)
-    ).toArray)
-    val iterator = vault.searchObjectsIterator(searchTerm, 1).asScala
+    logger.debug(s"Lookup $fileName on OM vault ${vault.getId}")
+//    val searchTerm = SearchTerm.createANDTerm(Seq(
+//      SearchTerm.createSimpleTerm(new Attribute(Constants.CONTENT, s"""MXFS_FILENAME:"$fileName"""")),
+//      //SearchTerm.createSimpleTerm("PROJECTLOCKER_VERSION", version)
+//    ).toArray)
 
-    var finalSeq: Seq[String] = Seq()
-    while (iterator.hasNext) { //the iterator contains the OID
-      finalSeq ++= Seq(iterator.next())
-    }
-    if(finalSeq.length>1) logger.warn(s"Found ${finalSeq.length} object matching $fileName, only using the first")
-    finalSeq.headOption
+    val searchTerm = SearchTerm.createSimpleTerm(new Attribute(Constants.CONTENT, s"MXFS_FILENAME:$fileName"))
+    //val searchTerm = SearchTerm.createSimpleTerm("PROJECTLOCKER_VERSION", version)
+    val results = vault.searchObjects(searchTerm, 1).asScala.toSeq
+
+    val versionedMap = results.map(oid=>(vault.getObject(oid).getAttributeView.readInt("PROJECTLOCKER_VERSION"),oid)).toMap
+    logger.debug(s"Available versions for $fileName: $versionedMap")
+
+    versionedMap.get(version)
   }
 
   /**
@@ -370,10 +403,22 @@ class MatrixStoreDriver(override val storageRef: StorageEntry)(implicit val mat:
   def pathExists(path:String, version:Int):Boolean =
     withVault { vault=>
       logger.debug(s"Lookup $path on ${vault.getId}")
-      val searchTerm = SearchTerm.createSimpleTerm("MXFS_FILENAME", path) //FIXME: check the metadata field namee
-      val iterator = vault.searchObjectsIterator(searchTerm, 1).asScala
-
-      Success(iterator.hasNext)
+      if(path==""){
+        Success(true) //checking if blank path exists means check if the vault exists. If we get here, then it should do.
+      } else {
+//        val searchTerm = SearchTerm.createSimpleTerm("MXFS_FILENAME", path) //FIXME: check the metadata field namee
+//        val iterator = vault.searchObjectsIterator(searchTerm, 1).asScala
+//
+//        Success(iterator.hasNext)
+        Success(lookupPath(vault, path, version) match {
+          case Some(oid)=>
+            logger.info(s"Found $oid for $path at version $version")
+            true
+          case None=>
+            logger.info(s"Found nothing for $path at version $version")
+            false
+        })
+      }
     } match {
         case Success(result)=>result
         case Failure(err)=>throw err

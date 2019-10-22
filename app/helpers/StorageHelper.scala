@@ -2,15 +2,18 @@ package helpers
 
 import java.io.{InputStream, OutputStream}
 
+import akka.stream.Materializer
 import drivers.StorageDriver
+import javax.inject.Inject
 import models.{FileEntry, StorageEntry}
 import play.api.Logger
 import org.slf4j.MDC
+
 import scala.concurrent.Future
 import scala.util.{Failure, Success, Try}
 import scala.concurrent.ExecutionContext.Implicits.global
 
-class StorageHelper {
+class StorageHelper @Inject() (implicit mat:Materializer) {
   val logger: Logger = Logger(this.getClass)
   /**
     * Internal method to copy from one stream to another, independent of the stream implementation.
@@ -162,6 +165,37 @@ class StorageHelper {
           case Failure(error)=>
             Left(Seq(error.toString))
         })
+    })
+  }
+
+  def findFile(targetFile: FileEntry)(implicit db:slick.jdbc.PostgresProfile#Backend#Database) = {
+    val futures = Future.sequence(Seq(targetFile.storage, targetFile.getFullPath))
+
+    futures.map(futureResults=>{
+      val maybeStorage = futureResults.head.asInstanceOf[Option[StorageEntry]]
+      val fullPath = futureResults(1).asInstanceOf[String]
+
+      val maybeStorageDriver = maybeStorage.flatMap(_.getStorageDriver)
+
+      maybeStorageDriver match {
+        case Some(storageDriver)=>
+          storageDriver.pathExists(targetFile.filepath, targetFile.version)
+        case None=>
+          throw new RuntimeException(s"No storage driver defined for ${maybeStorage.map(_.repr).getOrElse("unknown storage")}")
+      }
+    })
+  }
+
+  def onStorageMetadata(targetFile: FileEntry)(implicit db:slick.jdbc.PostgresProfile#Backend#Database) = {
+    targetFile.storage.map(maybeStorage=>{
+      val maybeStorageDriver = maybeStorage.flatMap(_.getStorageDriver)
+
+      maybeStorageDriver match {
+        case Some(storageDriver)=>
+          storageDriver.getMetadata(targetFile.filepath, targetFile.version)
+        case None=>
+          throw new RuntimeException(s"No storage driver defined for ${maybeStorage.map(_.repr).getOrElse("unknown storage")}")
+      }
     })
   }
 }

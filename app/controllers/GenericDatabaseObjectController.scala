@@ -180,7 +180,7 @@ trait GenericDatabaseObjectControllerWithFilter[M,F] extends InjectedController 
                   case e: BadDataException =>
                     Conflict(Json.obj("status" -> "error", "detail" -> e.toString))
                   case e: AlreadyExistsException =>
-                    Conflict(Json.obj("status" -> "error", "detail" -> e.toString))
+                    Conflict(Json.obj("status" -> "error", "detail" -> e.toString, "nextAvailableVersion"->e.getNextAvailableVersion))
                   case _ =>
                     handleConflictErrors(error, "object", isInsert = true)
                 }

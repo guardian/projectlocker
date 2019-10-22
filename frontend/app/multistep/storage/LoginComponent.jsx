@@ -12,6 +12,7 @@ class StorageLoginComponent extends React.Component {
         this.setState({
             hostname: this.props.loginDetails.hostname,
             port: this.props.loginDetails.port,
+            device: this.props.loginDetails.device,
             username: this.props.loginDetails.username,
             password: this.props.loginDetails.password
         })
@@ -23,6 +24,7 @@ class StorageLoginComponent extends React.Component {
         this.state = {
             hostname: "",
             port: "",
+            device: "",
             username: "",
             password: ""
         }
@@ -59,6 +61,10 @@ class StorageLoginComponent extends React.Component {
                             <tr>
                                 <td>Storage port (if applicable)</td>
                                 <td><input id="port_input" value={this.state.port} onChange={(event)=>this.setState({port: event.target.value})}/></td>
+                            </tr>
+                            <tr>
+                                <td>Device (if applicable)<br/>For ObjectMatrix storage, specify the "cluster ID" and "vault ID" separated by a comma</td>
+                                <td><input id="device_input" value={this.state.device} onChange={event=>this.setState({device: event.target.value})}/></td>
                             </tr>
                             <tr>
                                 <td>User name</td>

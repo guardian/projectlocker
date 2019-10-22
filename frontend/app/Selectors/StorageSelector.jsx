@@ -19,8 +19,6 @@ class StorageSelector extends React.Component {
     }
 
     getSelectedStatus(){
-        console.log(this.getSelectedStorageRecord());
-
         if(!this.getSelectedStorageRecord()) return "hidden";
         return this.getSelectedStorageRecord().status
     }

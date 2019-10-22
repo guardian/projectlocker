@@ -216,3 +216,10 @@ ul.no-gap {
     vertical-align: top;
     float: left;
 }
+
+
+.clickable-js-link {
+    color: blue;
+    margin-left: 0.5em;
+    cursor: pointer;
+}

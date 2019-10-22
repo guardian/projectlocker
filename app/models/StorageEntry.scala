@@ -4,6 +4,7 @@ import org.joda.time.DateTime
 import slick.jdbc.PostgresProfile.api._
 import java.sql.Timestamp
 
+import akka.stream.Materializer
 import play.api.libs.functional.syntax._
 import play.api.libs.json.{JsPath, Reads, Writes}
 
@@ -34,6 +35,7 @@ trait StorageSerializer {
       (JsPath \ "password").writeNullable[String] and
       (JsPath \ "host").writeNullable[String] and
       (JsPath \ "port").writeNullable[Int] and
+      (JsPath \ "device").writeNullable[String] and
       (JsPath \ "status").writeNullable[StorageStatus.Value]
     )(unlift(StorageEntry.unapply))
 
@@ -46,18 +48,21 @@ trait StorageSerializer {
       (JsPath \ "password").readNullable[String] and
       (JsPath \ "host").readNullable[String] and
       (JsPath \ "port").readNullable[Int] and
+      (JsPath \ "device").readNullable[String] and
       (JsPath \ "status").readNullable[StorageStatus.Value]
     )(StorageEntry.apply _)
 }
 
 
 case class StorageEntry(id: Option[Int], rootpath: Option[String], clientpath: Option[String], storageType: String,
-                        user:Option[String], password:Option[String], host:Option[String], port:Option[Int], status:Option[StorageStatus.Value]) {
+                        user:Option[String], password:Option[String], host:Option[String], port:Option[Int], device:Option[String], status:Option[StorageStatus.Value]) {
 
-  def getStorageDriver:Option[StorageDriver] = {
+  def getStorageDriver(implicit mat:Materializer):Option[StorageDriver] = {
     val logger: Logger = Logger(this.getClass)
-    if(storageType=="Local"){
+    if(storageType=="Local") {
       Some(new PathStorage(this))
+    } else if(storageType=="ObjectMatrix") {
+      Some(new MatrixStoreDriver(this))
     } else {
       logger.warn(s"No storage driver defined for $storageType")
       None
@@ -83,7 +88,7 @@ case class StorageEntry(id: Option[Int], rootpath: Option[String], clientpath: O
       })
   }
 
-  def validatePathExists(filePath:String, version:Int) = getStorageDriver.map(drv=>drv.pathExists(filePath, version)) match {
+  def validatePathExists(filePath:String, version:Int)(implicit mat:Materializer) = getStorageDriver.map(drv=>drv.pathExists(filePath, version)) match {
     case None=>Left(s"No storage driver exists for storage $id ($rootpath)!")
     case Some(result)=>Right(result)
   }
@@ -103,9 +108,10 @@ class StorageEntryRow(tag:Tag) extends Table[StorageEntry](tag, "StorageEntry") 
   def password = column[Option[String]]("s_password")
   def host = column[Option[String]]("s_host")
   def port = column[Option[Int]]("i_port")
+  def device = column[Option[String]]("s_device")
   def status = column[Option[StorageStatus.Value]]("e_status")
 
-  def * = (id.?,rootpath,clientpath,storageType,user,password,host,port,status) <> (StorageEntry.tupled, StorageEntry.unapply)
+  def * = (id.?,rootpath,clientpath,storageType,user,password,host,port,device, status) <> (StorageEntry.tupled, StorageEntry.unapply)
 }
 
 
