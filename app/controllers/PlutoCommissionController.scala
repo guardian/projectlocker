@@ -1,28 +1,38 @@
 package controllers
 
+import akka.actor.ActorSystem
+import akka.stream.Materializer
 import exceptions.{AlreadyExistsException, BadDataException}
 import javax.inject._
 import models._
 import play.api.cache.SyncCacheApi
 import play.api.db.slick.DatabaseConfigProvider
 import play.api.libs.json.{JsResult, JsValue, Json}
-import play.api.mvc.{EssentialAction, Request}
-import slick.jdbc.PostgresProfile
+import play.api.mvc.{EssentialAction, Request, ResponseHeader, Result}
+import slick.jdbc.{GetResult, JdbcProfile, PostgresProfile}
 import slick.jdbc.PostgresProfile.api._
 import slick.lifted.TableQuery
 
 import scala.concurrent.Future
 import scala.util.{Failure, Success, Try}
-
 import scala.concurrent.ExecutionContext.Implicits.global
+import akka.stream.alpakka.slick.scaladsl._
+import akka.stream.scaladsl._
+import akka.util.ByteString
+import play.api.http.HttpEntity
 
 @Singleton
-class PlutoCommissionController @Inject()(dbConfigProvider:DatabaseConfigProvider, cacheImpl:SyncCacheApi)
+class PlutoCommissionController @Inject()(dbConfigProvider:DatabaseConfigProvider, cacheImpl:SyncCacheApi)(implicit system:ActorSystem,mat:Materializer)
   extends GenericDatabaseObjectControllerWithFilter[PlutoCommission,PlutoCommissionFilterTerms]
     with PlutoCommissionSerializer with PlutoCommissionFilterTermsSerializer {
 
-    implicit val db = dbConfigProvider.get[PostgresProfile].db
+    private val databaseConfig = dbConfigProvider.get[PostgresProfile]
+    implicit val db = databaseConfig.db
     implicit val cache:SyncCacheApi = cacheImpl
+
+    //this is used by Alpakka for the streaming interface
+    implicit val session = SlickSession.forConfig("slick.dbs.default")    //connect to the default database
+    system.registerOnTermination(()=>session.close())
 
     override def selectall(startAt: Int, limit: Int): Future[Try[Seq[PlutoCommission]]] = db.run(
       TableQuery[PlutoCommissionRow].drop(startAt).take(limit).sortBy(_.title.asc).result.asTry
@@ -108,5 +118,14 @@ class PlutoCommissionController @Inject()(dbConfigProvider:DatabaseConfigProvide
 
     override def validateFilterParams(request: Request[JsValue]): JsResult[PlutoCommissionFilterTerms] = request.body.validate[PlutoCommissionFilterTerms]
 
+    def streamingSelectAll = IsAuthenticated {uid=>{request=>
+      val src = Slick.source(TableQuery[PlutoCommissionRow].sortBy(_.title.asc).result)
+        .map(entry=>Json.toJson(entry))
+        .map(json=>ByteString(Json.toBytes(json)).concat(ByteString("\n")))
 
+      Result(
+          header = ResponseHeader(200,Map.empty),
+          body = HttpEntity.Streamed(src,None,Some("application/x-ndjson"))
+      )
+    }}
   }

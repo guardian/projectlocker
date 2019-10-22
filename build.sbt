@@ -58,6 +58,7 @@ libraryDependencies ++= Seq(
   // https://mvnrepository.com/artifact/com.typesafe.play/play-slick
   "com.typesafe.play" %% "play-slick" % "4.0.2",
   "com.typesafe.play" %% "play-slick-evolutions" % "4.0.2",
+  "com.lightbend.akka" %% "akka-stream-alpakka-slick" % "1.1.2",
   "commons-io" % "commons-io" % "2.6",
   // https://mvnrepository.com/artifact/com.typesafe.play/play-json-joda
   "com.typesafe.play" %% "play-json-joda" % "2.7.4"

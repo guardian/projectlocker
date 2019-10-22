@@ -40,6 +40,9 @@ class PlutoWGCommissionScanner @Inject() (playConfig:Configuration, actorSystemI
 
   implicit val db = dbConfigProvider.get[PostgresProfile].db
 
+  /* these are declared as variables here to make testing easier.
+  mocks are injected in the test by overriding these definitions
+   */
   protected val ownRef = self
 
   protected def getHttp:HttpExt = Http()
