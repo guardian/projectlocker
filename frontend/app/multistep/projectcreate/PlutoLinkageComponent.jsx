@@ -22,7 +22,7 @@ class PlutoLinkageComponent extends CommonMultistepComponent {
         }
     }
 
-    componentWillMount(){
+    UNSAFE_componentWillMount(){
         this.setState({plutoCommissionRef: this.props.currentPlutoCommission, workingGroupRef: this.props.currentWorkingGroup})
     }
 
