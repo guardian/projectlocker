@@ -138,21 +138,13 @@ class PlutoCommissionController @Inject()(dbConfigProvider:DatabaseConfigProvide
             filterTerms => {
                 val src = Slick.source(
                     filterTerms.addFilterTerms{ TableQuery[PlutoCommissionRow] }.sortBy(_.title.asc.nullsLast).result
-                )
-                  .map(entry=>Json.toJson(entry))
-                    .map(json=>ByteString(Json.toBytes(json)).concat(ByteString("\n")))
+                ).map(entry=>Json.toJson(entry))
+                  .map(json=>ByteString(Json.toBytes(json)).concat(ByteString("\n")))
 
                 Future(Result(
                     header = ResponseHeader(200,Map.empty),
                     body = HttpEntity.Streamed(src,None,Some("application/x-ndjson"))
                 ))
-//                this.selectFiltered(startAt, limit-1, filterTerms).map({
-//                    case Success(result)=>Ok(Json.obj("status" -> "ok","result"->this.jstranslate(result)))
-//                    case Failure(error)=>
-//                        logger.error(error.toString)
-//                        InternalServerError(Json.obj("status"->"error", "detail"->error.toString))
-//                }
-//                )
             }
         )
     }}

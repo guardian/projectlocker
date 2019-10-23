@@ -77,7 +77,7 @@ object LDAP {
         )
         .getSearchEntries
       getDN(searchEntries)
-    }    
+    }
     userDN
   }
 

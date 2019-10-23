@@ -29,6 +29,14 @@ class CommissionSelector extends React.Component {
         this.loadData();
     }
 
+    /**
+     * this method reads the next item from the NDJSON stream, adds it to the state and then recurses (from a callback)
+     * to get the next one.
+     * when the stream is complete, we clear the flags and stop "recursing"
+     * it is not a "true" recursion, of course, because it just schedules callback functions to take place
+     * when data is available.
+     * @param reader an ndjsonStream.Reader instance that yields us javascript objects
+     */
     iterateStream(reader) {
         reader.read().then(({done, value}) => {
             if (done) {
@@ -37,10 +45,10 @@ class CommissionSelector extends React.Component {
                 return;
             }
 
-            this.setState({
-                commissionList: this.state.commissionList.concat(value),
-                selectedCommissionId: this.state.selectedCommissionId ? this.state.selectedCommissionId : value.id
-            }, () => this.iterateStream(reader))
+            this.setState(state => ({...state,
+                commissionList: state.commissionList.concat(value),
+                selectedCommissionId: state.selectedCommissionId ? state.selectedCommissionId : value.id
+            }), () => this.iterateStream(reader))
         });
     }
 
@@ -52,49 +60,29 @@ class CommissionSelector extends React.Component {
                 match: "W_EXACT"
             };
             fetch("/api/pluto/commission/liststreamed", {
-                method: "PUT",
-                body: JSON.stringify(searchDoc),
-                headers: {
-                    "Content-Type": "application/json"
-                }
-            })
-                .then(response => ndjsonStream(response.body))
+                    method: "PUT",
+                    body: JSON.stringify(searchDoc),
+                    headers: {
+                        "Content-Type": "application/json"
+                    }
+                })
+                .then(response =>{
+                    console.log("got response, converting to stream");
+                    console.log(response);
+                    //console.log(Object.getPrototypeOf(response.body));
+                    return ndjsonStream(response.body)
+                })
                 .then(commissionStream => {
                     //see https://davidwalsh.name/streaming-data-fetch-ndjson
                     //also https://developer.mozilla.org/en-US/docs/Web/API/ReadableStream
-
-                    // let read;
-                    //
-                    // commissionStream.getReader().read().then(read = result => {
-                    //     if (result.done) {
-                    //         console.log("Completed stream, terminating download");
-                    //         this.setState({loading: false, error: null});
-                    //         return;
-                    //     }
-                    //
-                    //     console.log("Streamed in ", result.value);
-                    //     this.setState({
-                    //         commissionList: this.state.commissionList.concat(result.value),
-                    //         selectedCommissionId: this.state.selectedCommissionId ? this.state.selectedCommissionId : result.value.id
-                    //     }, ()=>commissionStream.getReader().read().then(read)) //recurse through the stream
-                    // })
-
+                    console.log("got response, retrieving reader");
                     const reader = commissionStream.getReader();
-                    this.iterateStream(reader);
-
+                    this.iterateStream(reader); //"recursively" read the stream until there is no data left
                 }).catch(error => {
-                this.setState({loading: false, error: error})
-            })
+                    console.error(error);
+                    this.setState({loading: false, error: error})
+                })
         })
-            // axios.put("/api/pluto/commission/liststreamed", searchDoc).then(response=>{
-            //     this.setState({loading: false,
-            //         error: null,
-            //         commissionList: response.data.result,
-            //         selectedCommissionId:  response.data.result.length ? response.data.result[0].id : null
-            //     },()=>{
-            //         this.props.valueWasSet(this.state.selectedCommissionId);
-            //     })
-            //}).catch(error=>this.setState({loading: false, error: error}));
     }
 
     componentDidUpdate(prevProps, prevState){
@@ -103,18 +91,16 @@ class CommissionSelector extends React.Component {
     }
 
     render(){
-        if(this.state.loading)
-            return <img src="/assets/images/uploading.svg" style={{display: this.props.loading ? "inline" : "none",height: "20px" }}/>;
-        else if(this.state.error)
+        if(this.state.error)
             return <ErrorViewComponent error={this.state.error}/>;
         else
-            return <select id="commission-selector"
+            return <span><select id="commission-selector"
                            onChange={event=>this.props.valueWasSet(parseInt(event.target.value))}
                            defaultValue={this.props.selectedCommissionId}>
                 {
                     this.state.commissionList.map(comm=><option key={comm.id} value={comm.id}>{comm.title}</option>)
                 }
-                </select>;
+            </select><img src="/assets/images/uploading.svg" style={{display: this.props.loading ? "inline" : "none",height: "20px" }}/></span>;
     }
 }
 

@@ -16,6 +16,7 @@
       "json"
     ],
     "verbose": true,
+    "automock": false,
     "moduleNameMapper": {
       "\\.(css|less)$": "identity-obj-proxy"
     },
@@ -48,8 +49,10 @@
     "moxios": "^0.4.0",
     "object.entries": "^1.0.4",
     "react-test-renderer": "^16.8.6",
+    "readable-stream": "^3.4.0",
     "sinon": "^2.3.7",
     "snyk": "^1.192.3",
+    "web-streams-polyfill": "^2.0.5",
     "webpack-cli": "^3.2.3"
   },
   "dependencies": {
