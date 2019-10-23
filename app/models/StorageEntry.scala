@@ -1,5 +1,7 @@
 package models
 
+import java.nio.file.Paths
+
 import org.joda.time.DateTime
 import slick.jdbc.PostgresProfile.api._
 import java.sql.Timestamp
@@ -90,6 +92,17 @@ case class StorageEntry(id: Option[Int], nickname:Option[String], rootpath: Opti
         case Success(rowsAffected)=>Success(this)
         case Failure(error)=>Failure(error)
       })
+  }
+
+  /**
+    * helper method that prepends the storage's root path to the given relative path
+    * if there is no root path then the partial path is returned unchanged
+    * @param partialPath path to make absolute
+    * @return a String of the final path
+    */
+  def fullPathFor(partialPath:String) = rootpath match {
+    case None=>partialPath
+    case Some(storageRoot)=>Paths.get(storageRoot, partialPath).toString
   }
 
   def validatePathExists(filePath:String, version:Int)(implicit mat:Materializer) = getStorageDriver.map(drv=>drv.pathExists(filePath, version)) match {

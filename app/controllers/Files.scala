@@ -61,8 +61,7 @@ class Files @Inject() (configuration: Configuration, dbConfigProvider: DatabaseC
 
   override def insert(entry: FileEntry,uid:String):Future[Try[Int]] = {
     /* only allow a record to be created if no files already exist with that path on that storage */
-    FileEntry.allVersionsFor(entry.filepath,entry.storageId)(dbConfig.db).flatMap({
-      case Success(fileList)=>
+    FileEntry.allVersionsFor(entry.filepath,entry.storageId)(dbConfig.db).flatMap(fileList=>{
         entry.storage.flatMap({
           case None=>
             Future(Failure(new BadDataException("No storage was specified")))
@@ -85,7 +84,9 @@ class Files @Inject() (configuration: Configuration, dbConfigProvider: DatabaseC
               }
             }
         })
-      case Failure(error)=>Future(Failure(error))
+    }).recover({
+      case err:Throwable=>
+        Failure(err)
     })
 
   }

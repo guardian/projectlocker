@@ -61,7 +61,7 @@ class CreateFileEntry @Inject() (dbConfigProvider:DatabaseConfigProvider) extend
             if (filesList.isEmpty) {
               //no file entries exist already, create one (at version 1) and proceed
               FileEntry(None, makeFileName(rq.filename, projectType.fileExtension), rq.destinationStorage.id.get, "system", 1,
-                recordTimestamp, recordTimestamp, recordTimestamp, hasContent = false, hasLink = false)
+                recordTimestamp, recordTimestamp, recordTimestamp, hasContent = false, hasLink = false, mirrorParent = None)
             } else {
               //a file entry does already exist, but may not have data on it
               if (filesList.length > 1)
@@ -104,10 +104,10 @@ class CreateFileEntry @Inject() (dbConfigProvider:DatabaseConfigProvider) extend
 
       getDestFileFor(entryRequest.rq, recordTimestamp).flatMap(fileEntry=> {
         logger.info(s"Creating file $fileEntry")
-        fileEntry.save.map({
-          case Success(savedFileEntry) =>
+        fileEntry.save.map(savedFileEntry=>
             originalSender ! StepSucceded(projectCreateData.copy(destFileEntry = Some(savedFileEntry)))
-          case Failure(error) =>
+        ).recover({
+          case error:Throwable=>
             MDC.put("fileEntry", fileEntry.toString)
             logger.error("Failed to create file", error)
             originalSender ! StepFailed(projectCreateData, error)
