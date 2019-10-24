@@ -1,11 +1,12 @@
 package services.storagemirror.streamcomponents
 
+import java.io.InputStream
+
 import akka.stream.{Attributes, FlowShape, Inlet, Materializer, Outlet}
 import akka.stream.stage.{AbstractInHandler, AbstractOutHandler, GraphStage, GraphStageLogic}
 import models.StorageEntry
 import org.slf4j.LoggerFactory
 import org.apache.commons.io.IOUtils
-
 import scala.util.{Failure, Success, Try}
 
 /**
@@ -23,6 +24,14 @@ class CopyFileContent(sourceStorage:StorageEntry, destStorage:StorageEntry)(impl
   private val maybeDestStorageDriver = destStorage.getStorageDriver
 
   override def shape: FlowShape[ReplicaJob, ReplicaJob] = FlowShape.of(in,out)
+
+  /**
+    * performs the actual stream copy. Factored out here to make testing simpler.
+    * @param sourceStream InputStream to copy from
+    * @param destStream OutputStream to copy to
+    * @return the number of bytes copied, as a Long (can handle >2Gb)
+    */
+  protected def doCopy(sourceStream:InputStream, destStream:java.io.OutputStream):Try[Long] = Try { IOUtils.copyLarge(sourceStream, destStream) }
 
   override def createLogic(inheritedAttributes: Attributes): GraphStageLogic = new GraphStageLogic(shape) {
     private val logger = LoggerFactory.getLogger(getClass)
@@ -53,9 +62,9 @@ class CopyFileContent(sourceStorage:StorageEntry, destStorage:StorageEntry)(impl
           destStream <- destStorageDriver.getWriteStream(destStorage.fullPathFor(incomingJob.destEntry.filepath), incomingJob.destEntry.version)
         } yield (sourceStream, destStream)
 
-        val outputresult = maybeStreams.flatMap(streams=>Try {
+        val outputresult = maybeStreams.flatMap(streams=>{
           logger.info(s"Starting copy for $incomingJob")
-          IOUtils.copyLarge(streams._1, streams._2)
+          doCopy(streams._1, streams._2)
         })
 
         outputresult match {

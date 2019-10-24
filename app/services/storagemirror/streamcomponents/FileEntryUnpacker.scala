@@ -33,6 +33,7 @@ class FileEntryUnpacker extends GraphStage[FlowShape[ReplicaJob, FileEntry]]{
       override def onPull(): Unit = {
         if(outputQueue.nonEmpty){
           push(out, outputQueue.head)
+          outputQueue = outputQueue.tail
         } else {
           pull(in)
         }

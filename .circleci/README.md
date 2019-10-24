@@ -1,6 +1,6 @@
 ## Build/Test environment setup
 
-This project uses CircleCI 2.0 to build.
+This project uses TeamCity (but was ported from circleci) to build.
 This directory contains the build configuration (`config.yml`) which references
 a customised Centos Docker image containing the right tools to build the project.
 
