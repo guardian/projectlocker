@@ -64,8 +64,10 @@ libraryDependencies ++= Seq(
   "commons-codec" % "commons-codec" % "1.12",
 )
 // https://mvnrepository.com/artifact/com.typesafe.slick/slick
-libraryDependencies += "com.typesafe.slick" %% "slick" % "3.3.2"
-
+libraryDependencies ++= Seq(
+  "com.lightbend.akka" %% "akka-stream-alpakka-slick" % "1.1.2",
+  "com.typesafe.slick" %% "slick" % "3.3.2"
+)
 
 //authentication
 libraryDependencies += "com.unboundid" % "unboundid-ldapsdk" % "4.0.5"

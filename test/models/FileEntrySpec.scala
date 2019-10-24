@@ -42,7 +42,7 @@ class FileEntrySpec extends Specification with utils.BuildMyApp {
       protected implicit val db = dbConfigProvider.get[JdbcProfile].db
 
       val ts = Timestamp.valueOf(LocalDateTime.now())
-      val testFileEntryBefore = FileEntry(None,"notexistingtestfile",1,"test-user",1,ts,ts,ts,false,false)
+      val testFileEntryBefore = FileEntry(None,"notexistingtestfile",1,"test-user",1,ts,ts,ts,false,false,mirrorParent=None,lostAt=None)
 
       val resultFuture = testFileEntryBefore.updateFileHasContent
       val finalResult = Await.result(resultFuture, 10.seconds)
@@ -59,13 +59,13 @@ class FileEntrySpec extends Specification with utils.BuildMyApp {
       protected implicit val db = dbConfigProvider.get[JdbcProfile].db
 
       val ts = Timestamp.valueOf(LocalDateTime.now())
-      val testFileEntry = FileEntry(None,"/path/to/nonexisting",1,"test-user",1,ts,ts,ts,false,false)
+      val testFileEntry = FileEntry(None,"/path/to/nonexisting",1,"test-user",1,ts,ts,ts,false,false,mirrorParent=None,lostAt=None)
 
       val result = Await.result(testFileEntry.save, 10.seconds)
-      result must beSuccessfulTry
-      result.get.id must beSome //ensure that the ID has been set
 
-      val testEntryRead = Await.result(FileEntry.entryFor(result.get.id.get,db),10.seconds)
+      result.id must beSome //ensure that the ID has been set
+
+      val testEntryRead = Await.result(FileEntry.entryFor(result.id.get,db),10.seconds)
       testEntryRead must beSome
       testEntryRead.get.filepath mustEqual "/path/to/nonexisting"
       testEntryRead.get.storageId mustEqual 1
@@ -88,7 +88,6 @@ class FileEntrySpec extends Specification with utils.BuildMyApp {
       val fileEntryUpdated = testFileEntry.get.copy(user="test-user", mtime = ts)
 
       val updateResult = Await.result(fileEntryUpdated.save,10.seconds)
-      updateResult must beSuccessfulTry
 
       val testEntryRead = Await.result(FileEntry.entryFor(4,db),10.seconds)
 

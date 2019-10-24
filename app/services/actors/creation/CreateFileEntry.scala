@@ -61,7 +61,7 @@ class CreateFileEntry @Inject() (dbConfigProvider:DatabaseConfigProvider) extend
             if (filesList.isEmpty) {
               //no file entries exist already, create one (at version 1) and proceed
               FileEntry(None, makeFileName(rq.filename, projectType.fileExtension), rq.destinationStorage.id.get, "system", 1,
-                recordTimestamp, recordTimestamp, recordTimestamp, hasContent = false, hasLink = false, mirrorParent = None)
+                recordTimestamp, recordTimestamp, recordTimestamp, hasContent = false, hasLink = false, mirrorParent = None, lostAt = None)
             } else {
               //a file entry does already exist, but may not have data on it
               if (filesList.length > 1)

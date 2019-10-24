@@ -43,10 +43,10 @@ class CopySourceFileSpec extends Specification with BuildMyApp with Mockito {
       fileEntryDest.get.length mustEqual 1
       fileEntryDest.get.head.hasContent must beFalse
 
-      val ac = system.actorOf(Props(new CopySourceFile(dbConfigProvider){
-        override protected val storageHelper = mock[StorageHelper]
-        storageHelper.copyFile(any[FileEntry],any[FileEntry])(any) returns Future(Right(fileEntryDest.get.head.copy(hasContent = true)))
-      }))
+      val mockedStorageHelper = mock[StorageHelper]
+      mockedStorageHelper.copyFile(any[FileEntry],any[FileEntry])(any) returns Future(Right(fileEntryDest.get.head.copy(hasContent = true)))
+
+      val ac = system.actorOf(Props(new CopySourceFile(dbConfigProvider, mockedStorageHelper)))
 
       val maybeRq = Await.result(ProjectRequest("testprojectfile",1,"Test project entry", 1, "test-user", None, None, false, false, false).hydrate, 10 seconds)
       maybeRq must beSome
@@ -75,10 +75,9 @@ class CopySourceFileSpec extends Specification with BuildMyApp with Mockito {
       fileEntryDest.get.length mustEqual 1
       fileEntryDest.get.head.hasContent must beFalse
 
-      val ac = system.actorOf(Props(new CopySourceFile(dbConfigProvider){
-        override protected val storageHelper = mock[StorageHelper]
-        storageHelper.copyFile(any[FileEntry],any[FileEntry])(any) returns Future(Left(Seq("Something went KABOOM!")))
-      }))
+      val mockedStorageHelper = mock[StorageHelper]
+      mockedStorageHelper.copyFile(any[FileEntry],any[FileEntry])(any) returns Future(Left(Seq("Something went KABOOM!")))
+      val ac = system.actorOf(Props(new CopySourceFile(dbConfigProvider, mockedStorageHelper)))
 
       val maybeRq = Await.result(ProjectRequest("testprojectfile",1,"Test project entry", 1, "test-user", None, None, false, false, false).hydrate, 10 seconds)
       maybeRq must beSome
@@ -113,9 +112,7 @@ class CopySourceFileSpec extends Specification with BuildMyApp with Mockito {
       val mockedStorageHelper = mock[StorageHelper]
       mockedStorageHelper.deleteFile(any[FileEntry])(any) returns Future(Right(fileEntryDest.get.head.copy(hasContent = false)))
 
-      val ac = system.actorOf(Props(new CopySourceFile(dbConfigProvider){
-        override protected val storageHelper = mockedStorageHelper
-      }))
+      val ac = system.actorOf(Props(new CopySourceFile(dbConfigProvider, mockedStorageHelper)))
 
       val maybeRq = Await.result(ProjectRequest("testprojectfile",1,"Test project entry", 1, "test-user", None, None, false, false, false).hydrate, 10 seconds)
       maybeRq must beSome

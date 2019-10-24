@@ -33,7 +33,7 @@ import scala.concurrent.{Await, Future}
   * @param hasLink - boolean flag representing whether this entitiy is linked to anything (i.e. a project) yet.
   */
 case class FileEntry(id: Option[Int], filepath: String, storageId: Int, user:String, version:Int,
-                     ctime: Timestamp, mtime: Timestamp, atime: Timestamp, hasContent:Boolean, hasLink:Boolean, mirrorParent:Option[Int]) {
+                     ctime: Timestamp, mtime: Timestamp, atime: Timestamp, hasContent:Boolean, hasLink:Boolean, mirrorParent:Option[Int], lostAt:Option[Timestamp]) {
 
   /**
     *  writes this model into the database, inserting if id is None and returning a fresh object with id set. If an id
@@ -216,7 +216,7 @@ case class FileEntry(id: Option[Int], filepath: String, storageId: Int, user:Str
 /**
   * Companion object for the [[FileEntry]] case class
   */
-object FileEntry extends ((Option[Int], String, Int, String, Int, Timestamp, Timestamp, Timestamp, Boolean, Boolean, Option[Int])=>FileEntry) {
+object FileEntry extends ((Option[Int], String, Int, String, Int, Timestamp, Timestamp, Timestamp, Boolean, Boolean, Option[Int], Option[Timestamp])=>FileEntry) {
   /**
     * Get a [[FileEntry]] instance for the given database ID
     * @param entryId database ID to look up
@@ -244,6 +244,11 @@ object FileEntry extends ((Option[Int], String, Int, String, Int, Timestamp, Tim
       TableQuery[FileEntryRow].filter(_.filepath===fileName).filter(_.storage===storageId).filter(_.version===version).result.asTry
     )
 
+  def entryFor(fileName: String, version:Int)(implicit db:slick.jdbc.PostgresProfile#Backend#Database):Future[Try[Seq[FileEntry]]] =
+    db.run(
+      TableQuery[FileEntryRow].filter(_.filepath===fileName).filter(_.version===version).result.asTry
+    )
+
   def allVersionsFor(fileName: String, storageId: Int)(implicit db:slick.jdbc.PostgresProfile#Backend#Database):Future[Seq[FileEntry]] =
     db.run(
       TableQuery[FileEntryRow].filter(_.filepath===fileName).filter(_.storage===storageId).sortBy(_.version.desc.nullsLast).result
@@ -268,10 +273,11 @@ class FileEntryRow(tag:Tag) extends Table[FileEntry](tag, "FileEntry") {
   def hasLink = column[Boolean]("b_has_link")
 
   def mirrorParent = column[Option[Int]]("k_mirror_parent")
+  def lostAt = column[Option[Timestamp]]("t_lost_time")
 
   def storageFk = foreignKey("fk_storage",storage,TableQuery[StorageEntryRow])(_.id)
   def mirrorParentFk = foreignKey("fk_mirror_parent", mirrorParent, TableQuery[FileEntryRow])(_.id)
-  def * = (id.?,filepath,storage,user,version,ctime,mtime,atime, hasContent, hasLink, mirrorParent) <> (FileEntry.tupled, FileEntry.unapply)
+  def * = (id.?,filepath,storage,user,version,ctime,mtime,atime, hasContent, hasLink, mirrorParent, lostAt) <> (FileEntry.tupled, FileEntry.unapply)
 }
 
 
@@ -292,7 +298,8 @@ trait FileEntrySerializer extends TimestampSerialization {
       (JsPath \ "atime").write[Timestamp] and
       (JsPath \ "hasContent").write[Boolean] and
       (JsPath \ "hasLink").write[Boolean] and
-      (JsPath \ "mirrorParent").writeNullable[Int]
+      (JsPath \ "mirrorParent").writeNullable[Int] and
+      (JsPath \ "lostAt").writeNullable[Timestamp]
     )(unlift(FileEntry.unapply))
 
   implicit val fileReads: Reads[FileEntry] = (
@@ -306,6 +313,7 @@ trait FileEntrySerializer extends TimestampSerialization {
       (JsPath \ "atime").read[Timestamp] and
       (JsPath \ "hasContent").read[Boolean] and
       (JsPath \ "hasLink").read[Boolean] and
-      (JsPath \ "mirrorParent").readNullable[Int]
+      (JsPath \ "mirrorParent").readNullable[Int] and
+      (JsPath \ "lostAt").readNullable[Timestamp]
     )(FileEntry.apply _)
 }

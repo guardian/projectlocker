@@ -7,7 +7,11 @@ import akka.stream.stage.{AbstractInHandler, AbstractOutHandler, GraphStage, Gra
 import models.{FileEntry, StorageEntry}
 import org.slf4j.LoggerFactory
 
-
+/**
+  * pushes the given file to "yes" if the filesystem mtime is later than the database mtime (i.e. the replica must be updated)
+  * @param storageRef [[StorageEntry]]
+  * @param mat
+  */
 class FileMtimeSwitch (storageRef:StorageEntry)(implicit mat:Materializer) extends GraphStage[UniformFanOutShape[FileEntry, FileEntry]]{
   private final val in:Inlet[FileEntry] = Inlet.create("FileMtimeSwitch.in")
   private val yes:Outlet[FileEntry] = Outlet.create("FileMtimeSwitch.yes")

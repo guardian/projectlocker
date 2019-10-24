@@ -4,6 +4,7 @@ import java.io._
 import java.sql.Timestamp
 import java.time.LocalDateTime
 
+import akka.stream.{ActorMaterializer, Materializer}
 import drivers.{PathStorage, StorageDriver}
 import models.{FileEntry, StorageEntry}
 import org.apache.commons.io.input.NullInputStream
@@ -22,10 +23,13 @@ import play.api.test.WithApplication
 import org.apache.commons.io.FilenameUtils
 
 class StorageHelperSpec extends Specification with Mockito with utils.BuildMyApp {
+
   "StorageHelper.copyStream" should {
     "reliably copy one stream to another, returning the number of bytes copied" in {
       val testFileNameSrc = "/tmp/storageHelperSpecTest-src-1" // shouldn't have spaces!
       val testFileNameDest = "/tmp/storageHelperSpecTest-dst-1"
+
+      implicit val mat:Materializer = mock[Materializer]
 
       /* create a test file */
       Seq("/bin/dd","if=/dev/urandom",s"of=$testFileNameSrc","bs=1k","count=600").!
@@ -71,19 +75,19 @@ class StorageHelperSpec extends Specification with Mockito with utils.BuildMyApp
 
         val ts = Timestamp.valueOf(LocalDateTime.now())
 
-        val testSourceEntry = FileEntry(None, FilenameUtils.getBaseName(testFileNameSrc), 1, "testuser", 1, ts, ts, ts, hasContent = true, hasLink = false)
-        val testDestEntry = FileEntry(None, FilenameUtils.getBaseName(testFileNameDest), 1, "testuser", 1, ts, ts, ts, hasContent = false, hasLink = false)
+        val testSourceEntry = FileEntry(None, FilenameUtils.getBaseName(testFileNameSrc), 1, "testuser", 1, ts, ts, ts, hasContent = true, hasLink = false, mirrorParent=None, lostAt=None)
+        val testDestEntry = FileEntry(None, FilenameUtils.getBaseName(testFileNameDest), 1, "testuser", 1, ts, ts, ts, hasContent = false, hasLink = false, mirrorParent=None, lostAt=None)
 
         val realStorageHelper = new StorageHelper
 
         val savedResults = Await.result(
-          Future.sequence(Seq(testSourceEntry.save, testDestEntry.save)).map(results => Try(results.map(_.get)))
+          Future.sequence(Seq(testSourceEntry.save, testDestEntry.save))
           , 10.seconds)
 
-        savedResults must beSuccessfulTry
 
-        val savedSource = savedResults.get.head
-        val savedDest = savedResults.get(1)
+        val savedSource = savedResults.head
+        val savedDest = savedResults(1)
+
         val result = Await.result(realStorageHelper.copyFile(savedSource, savedDest), 10.seconds)
         result must beRight(savedDest.copy(hasContent = true))
       } finally { // ensure that test files get deleted. if you don't use try/finally, then if either of these fails the whole test does
@@ -113,25 +117,24 @@ class StorageHelperSpec extends Specification with Mockito with utils.BuildMyApp
         Seq("/bin/dd", "if=/dev/urandom", s"of=$testFileNameSrc", "bs=1k", "count=600").!
         val ts = Timestamp.valueOf(LocalDateTime.now())
 
-        val testSourceEntry = new FileEntry(Some(1234), FilenameUtils.getBaseName(testFileNameSrc), 1, "testuser", 1, ts, ts, ts, hasContent = true, hasLink = false){
+        val testSourceEntry = new FileEntry(Some(1234), FilenameUtils.getBaseName(testFileNameSrc), 1, "testuser", 1, ts, ts, ts, hasContent = true, hasLink = false, mirrorParent=None,lostAt=None){
           override def storage(implicit db: JdbcBackend#DatabaseDef):Future[Option[StorageEntry]] = {
             println("testSourceEntry.storage")
             Future(Some(mockedStorage))
           }
         }
 
-        val testDestEntry = FileEntry(None, FilenameUtils.getBaseName(testFileNameDest), 1, "testuser", 1, ts, ts, ts, hasContent = false, hasLink = false)
+        val testDestEntry = FileEntry(None, FilenameUtils.getBaseName(testFileNameDest), 1, "testuser", 1, ts, ts, ts, hasContent = false, hasLink = false, mirrorParent=None,lostAt=None)
 
         val realStorageHelper = new StorageHelper
 
         val savedResults = Await.result(
-          Future.sequence(Seq(testDestEntry.save)).map(results => Try(results.map(_.get)))
+          Future.sequence(Seq(testDestEntry.save))
           , 10.seconds)
 
-        savedResults must beSuccessfulTry
 
         val savedSource = testSourceEntry
-        val savedDest = savedResults.get.head
+        val savedDest = savedResults.head
         println(savedSource)
         println(savedDest)
         val result = Await.result(realStorageHelper.copyFile(savedSource, savedDest), 10.seconds)
@@ -155,19 +158,17 @@ class StorageHelperSpec extends Specification with Mockito with utils.BuildMyApp
         Seq("/bin/dd", "if=/dev/urandom", s"of=$testFileNameSrc", "bs=1k", "count=600").!
         val ts = Timestamp.valueOf(LocalDateTime.now())
 
-        val testSourceEntry = FileEntry(None, FilenameUtils.getBaseName(testFileNameSrc), 2, "testuser", 1, ts, ts, ts, hasContent = true, hasLink = false)
-        val testDestEntry = FileEntry(None, FilenameUtils.getBaseName(testFileNameSrc), 1, "testuser", 1, ts, ts, ts, hasContent = false, hasLink = false)
+        val testSourceEntry = FileEntry(None, FilenameUtils.getBaseName(testFileNameSrc), 2, "testuser", 1, ts, ts, ts, hasContent = true, hasLink = false, mirrorParent = None, lostAt=None)
+        val testDestEntry = FileEntry(None, FilenameUtils.getBaseName(testFileNameSrc), 1, "testuser", 1, ts, ts, ts, hasContent = false, hasLink = false, mirrorParent = None, lostAt=None)
 
         val realStorageHelper = new StorageHelper
 
         val savedResults = Await.result(
-          Future.sequence(Seq(testSourceEntry.save, testDestEntry.save)).map(results => Try(results.map(_.get)))
+          Future.sequence(Seq(testSourceEntry.save, testDestEntry.save))
           , 10.seconds)
 
-        savedResults must beSuccessfulTry
-
-        val savedSource = savedResults.get.head
-        val savedDest = savedResults.get(1)
+        val savedSource = savedResults.head
+        val savedDest = savedResults(1)
         val result = Await.result(realStorageHelper.copyFile(savedSource, savedDest), 10.seconds)
         result mustEqual Left(List("Either source or destination was missing a storage or a storage driver"))
       } finally {
@@ -187,19 +188,17 @@ class StorageHelperSpec extends Specification with Mockito with utils.BuildMyApp
         Seq("/bin/dd", "if=/dev/urandom", s"of=$testFileNameSrc", "bs=1k", "count=600").!
         val ts = Timestamp.valueOf(LocalDateTime.now())
 
-        val testSourceEntry = FileEntry(None, FilenameUtils.getBaseName(testFileNameSrc), 1, "testuser", 1, ts, ts, ts, hasContent = true, hasLink = false)
-        val testDestEntry = FileEntry(None, FilenameUtils.getBaseName(testFileNameDest), 2, "testuser", 1, ts, ts, ts, hasContent = false, hasLink = false)
+        val testSourceEntry = FileEntry(None, FilenameUtils.getBaseName(testFileNameSrc), 1, "testuser", 1, ts, ts, ts, hasContent = true, hasLink = false, mirrorParent = None, lostAt=None)
+        val testDestEntry = FileEntry(None, FilenameUtils.getBaseName(testFileNameDest), 2, "testuser", 1, ts, ts, ts, hasContent = false, hasLink = false, mirrorParent = None, lostAt=None)
 
         val realStorageHelper = new StorageHelper
 
         val savedResults = Await.result(
-          Future.sequence(Seq(testSourceEntry.save, testDestEntry.save)).map(results => Try(results.map(_.get)))
+          Future.sequence(Seq(testSourceEntry.save, testDestEntry.save))
           , 10.seconds)
 
-        savedResults must beSuccessfulTry
-
-        val savedSource = savedResults.get.head
-        val savedDest = savedResults.get(1)
+        val savedSource = savedResults.head
+        val savedDest = savedResults(1)
         val result = Await.result(realStorageHelper.copyFile(savedSource, savedDest), 10.seconds)
         result mustEqual Left(List("Either source or destination was missing a storage or a storage driver"))
       } finally {
@@ -213,6 +212,7 @@ class StorageHelperSpec extends Specification with Mockito with utils.BuildMyApp
   "StorageHelper.doByteCopy" should {
     "return an error if getting the source stream failed" in {
       val mockStorageDriver = mock[PathStorage]
+      implicit val mat:Materializer = mock[Materializer]
 
       val sourceStreamTry = Failure(new RuntimeException("Kaboom!"))
       val destStreamTry = Success(mock[FileOutputStream])
@@ -239,6 +239,8 @@ class StorageHelperSpec extends Specification with Mockito with utils.BuildMyApp
       val sourceStreamTry = Success(mock[FileInputStream])
       val destStreamTry = Failure(new RuntimeException("Kaboom!"))
 
+      implicit val mat:Materializer = mock[Materializer]
+
       val h = new StorageHelper {
         /**
           * helper to call through to protected method
@@ -263,6 +265,8 @@ class StorageHelperSpec extends Specification with Mockito with utils.BuildMyApp
 
       val sourceStreamTry = Success(mock[FileInputStream])
       val destStreamTry = Success(mock[FileOutputStream])
+
+      implicit val mat:Materializer = mock[Materializer]
 
       val h = new StorageHelper {
         /**
