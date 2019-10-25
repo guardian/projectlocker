@@ -25,6 +25,8 @@ class CreateReplicaCopy (destStorage: StorageEntry)(implicit db:slick.jdbc.Postg
     case Some(actualOverride)=>sourceEntry.copy(id=destStorage.id, mirrorParent=sourceEntry.id, version=actualOverride)
   }
 
+  protected def findExistingSingle(filePath:String, destStorageId:Int, version:Int) = FileEntry.entryFor(filePath, destStorageId, version)
+
   override def createLogic(inheritedAttributes: Attributes): GraphStageLogic = new GraphStageLogic(shape) {
     private val logger = LoggerFactory.getLogger(getClass)
 
@@ -36,14 +38,13 @@ class CreateReplicaCopy (destStorage: StorageEntry)(implicit db:slick.jdbc.Postg
         val sourceEntry = grab(in)
 
         /*get our destination entry.  This could be obtained one of three ways:
-          1. Nothing exists. If so create a new one at the same version as the souce (createNewFileEntry above)
+          1. Nothing exists. If so create a new one at the same version as the source (createNewFileEntry above)
           2. We have an existing file at the destination, and versioning is NOT enabled. If so, overwrite it.
           3. We have an existing file at the destination, and versioning IS enabled. If so, we create a new one with a version one more than the highest version number
           already present on the source.
         */
         val destEntryFut = if(destStorage.supportsVersions){
           //create a new file version
-          //TODO: consider tidying up protocol by removing redundant Try in these methods
           FileEntry.allVersionsFor(sourceEntry.filepath, destStorage.id.get).map(entrySeq=>
             if(entrySeq.isEmpty){
               createNewFileEntry(sourceEntry)
@@ -52,7 +53,7 @@ class CreateReplicaCopy (destStorage: StorageEntry)(implicit db:slick.jdbc.Postg
             })
         } else {
           //overwrite the existing version
-          FileEntry.entryFor(sourceEntry.filepath, destStorage.id.get, sourceEntry.version).map({
+          findExistingSingle(sourceEntry.filepath, destStorage.id.get, sourceEntry.version).map({
             case Failure(err)=>
               logger.error(s"Could look up pre-existing file for $sourceEntry on storage ${destStorage.id}: ", err)
               failedCb.invoke(err)
