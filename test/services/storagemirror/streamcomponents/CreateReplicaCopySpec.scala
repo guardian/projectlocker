@@ -3,8 +3,8 @@ package services.storagemirror.streamcomponents
 import java.sql.Timestamp
 import java.time.Instant
 
-import akka.stream.{ActorMaterializer, FlowShape, Materializer}
-import akka.stream.scaladsl.{GraphDSL, Keep, Sink, Source}
+import akka.stream.{ActorMaterializer, ClosedShape, FlowShape, Materializer}
+import akka.stream.scaladsl.{GraphDSL, Keep, RunnableGraph, Sink, Source}
 import models.{FileEntry, StorageEntry}
 import org.specs2.mock.Mockito
 import org.specs2.mutable.Specification
@@ -41,35 +41,125 @@ class CreateReplicaCopySpec extends Specification with Mockito {
       val mockCreateNewFileEntry = mock[(FileEntry,Option[Int])=>FileEntry]
       mockCreateNewFileEntry.apply(any,any) returns mockedDestFile
 
-      val elemToTest = GraphDSL.create() { implicit builder=>
-        val el = builder.add(new CreateReplicaCopy(destStorageMock){
-          override def createNewFileEntry(sourceEntry: FileEntry, versionOverride: Option[Int]): FileEntry = mockCreateNewFileEntry(sourceEntry, versionOverride)
+      val sourceFileEntry = makeFileEntry()
 
+      val sinkFact = Sink.fold[Seq[ReplicaJob],ReplicaJob](Seq())((acc,elem)=>{
+        println(s"Got $elem to add to $acc")
+        acc:+elem
+      })
+
+      val graph = GraphDSL.create(sinkFact) { implicit builder=> sink=>
+        import akka.stream.scaladsl.GraphDSL.Implicits._
+
+        val src = builder.add(Source.single(sourceFileEntry).log("CreateReplicaCopySpec"))
+
+        val toTest =  builder.add(new CreateReplicaCopy(destStorageMock){
+          override def createNewFileEntry(sourceEntry: FileEntry, versionOverride: Option[Int]): FileEntry = mockCreateNewFileEntry(sourceEntry, versionOverride)
           override protected def findExistingSingle(filePath: String, destStorageId: Int, version: Int): Future[Try[Seq[FileEntry]]] = Future(Success(Seq()))
+          override protected def findAllVersions(filePath: String, storageId: Int): Future[Seq[FileEntry]] = Future.failed(new RuntimeException("This should not be called"))
         })
-        FlowShape(el.in,el.out)
+
+        src ~> toTest ~> sink
+        ClosedShape
       }
 
-      val sourceFileEntry = makeFileEntry()
-      val graph = Source.single(sourceFileEntry)
-        .via(elemToTest)
-        .toMat(Sink.fold[Seq[ReplicaJob],ReplicaJob](Seq())((acc,elem)=>acc:+elem))(Keep.right)
-
-      val result = Await.result(graph.run, 10 seconds)
-
-      //result.length mustEqual 1
+      val result = Await.result(RunnableGraph.fromGraph(graph).run, 10 seconds)
 
       there was one(mockCreateNewFileEntry).apply(sourceFileEntry, None)
       there was one(mockedDestFile).save
       result.head mustEqual ReplicaJob(sourceFileEntry, mockedSavedDestFile, None)
+      result.length mustEqual 1
     }
 
-//    "use the existing file entry if one exists and versioning is not enabled on the destination storage" in {
-//
-//    }
-//
-//    "create a new file entry with an updated version field if one exists and versioning is enabled" in {
-//
-//    }
+    "use the existing file entry if one exists and versioning is not enabled on the destination storage" in new AkkaTestkitSpecs2Support {
+      implicit val mat:Materializer = ActorMaterializer.create(system)
+      val destStorageMock = mock[StorageEntry]
+      destStorageMock.supportsVersions returns false
+      destStorageMock.id returns Some(1)
+
+      implicit val dbMock = mock[slick.jdbc.PostgresProfile#Backend#Database]
+      val mockedSavedDestFile = mock[FileEntry]
+      val mockedDestFile = mock[FileEntry]
+      mockedDestFile.save returns Future(mockedSavedDestFile)
+
+      val mockCreateNewFileEntry = mock[(FileEntry,Option[Int])=>FileEntry]
+//      mockCreateNewFileEntry.apply(any,any) returns mockedDestFile
+
+      val sourceFileEntry = makeFileEntry()
+
+      val sinkFact = Sink.fold[Seq[ReplicaJob],ReplicaJob](Seq())((acc,elem)=>{
+        println(s"Got $elem to add to $acc")
+        acc:+elem
+      })
+
+      val graph = GraphDSL.create(sinkFact) { implicit builder=> sink=>
+        import akka.stream.scaladsl.GraphDSL.Implicits._
+
+        val src = builder.add(Source.single(sourceFileEntry).log("CreateReplicaCopySpec"))
+
+        val toTest =  builder.add(new CreateReplicaCopy(destStorageMock){
+          override def createNewFileEntry(sourceEntry: FileEntry, versionOverride: Option[Int]): FileEntry = mockCreateNewFileEntry(sourceEntry, versionOverride)
+          override protected def findExistingSingle(filePath: String, destStorageId: Int, version: Int): Future[Try[Seq[FileEntry]]] = Future(Success(Seq(mockedDestFile)))
+          override protected def findAllVersions(filePath: String, storageId: Int): Future[Seq[FileEntry]] = Future.failed(new RuntimeException("This should not be called"))
+        })
+
+        src ~> toTest ~> sink
+        ClosedShape
+      }
+
+      val result = Await.result(RunnableGraph.fromGraph(graph).run, 10 seconds)
+
+      there was no(mockCreateNewFileEntry).apply(any, any)
+      there was one(mockedDestFile).save
+      result.head mustEqual ReplicaJob(sourceFileEntry, mockedSavedDestFile, None)
+      result.length mustEqual 1
+    }
+
+    "create a new file entry with an updated version field if one exists and versioning is enabled" in new AkkaTestkitSpecs2Support {
+      implicit val mat:Materializer = ActorMaterializer.create(system)
+      val destStorageMock = mock[StorageEntry]
+      destStorageMock.supportsVersions returns true
+      destStorageMock.id returns Some(1)
+
+      implicit val dbMock = mock[slick.jdbc.PostgresProfile#Backend#Database]
+      val mockedSavedDestFile = mock[FileEntry]
+      val mockedExistingFile = mock[FileEntry]
+      mockedExistingFile.version returns 10
+
+      val mockedDestFile = mock[FileEntry]
+      mockedDestFile.save returns Future(mockedSavedDestFile)
+
+      val mockCreateNewFileEntry = mock[(FileEntry,Option[Int])=>FileEntry]
+      mockCreateNewFileEntry.apply(any,any) returns mockedDestFile
+
+      val sourceFileEntry = makeFileEntry()
+
+      val sinkFact = Sink.fold[Seq[ReplicaJob],ReplicaJob](Seq())((acc,elem)=>{
+        println(s"Got $elem to add to $acc")
+        acc:+elem
+      })
+
+      val graph = GraphDSL.create(sinkFact) { implicit builder=> sink=>
+        import akka.stream.scaladsl.GraphDSL.Implicits._
+
+        val src = builder.add(Source.single(sourceFileEntry).log("CreateReplicaCopySpec"))
+
+        val toTest =  builder.add(new CreateReplicaCopy(destStorageMock){
+          override def createNewFileEntry(sourceEntry: FileEntry, versionOverride: Option[Int]): FileEntry = mockCreateNewFileEntry(sourceEntry, versionOverride)
+          override protected def findExistingSingle(filePath: String, destStorageId: Int, version: Int): Future[Try[Seq[FileEntry]]] = Future(Success(Seq(mockedExistingFile)))
+          override protected def findAllVersions(filePath: String, storageId: Int): Future[Seq[FileEntry]] = Future(Seq(mockedExistingFile))
+        })
+
+        src ~> toTest ~> sink
+        ClosedShape
+      }
+
+      val result = Await.result(RunnableGraph.fromGraph(graph).run, 10 seconds)
+
+      there was one(mockCreateNewFileEntry).apply(sourceFileEntry, Some(11))
+      there was one(mockedDestFile).save
+      result.head mustEqual ReplicaJob(sourceFileEntry, mockedSavedDestFile, None)
+      result.length mustEqual 1
+    }
   }
 }

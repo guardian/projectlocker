@@ -42,12 +42,11 @@ class FileExistsSwitch (storageRef:StorageEntry) (implicit mat:Materializer) ext
       }
     })
 
-    setHandler(yes, new AbstractOutHandler {
+    val pullHandler = new AbstractOutHandler {
       override def onPull(): Unit = if(!hasBeenPulled(in)) pull(in)
-    })
+    }
 
-    setHandler(no, new AbstractOutHandler {
-      override def onPull(): Unit = if(!hasBeenPulled(in)) pull(in)
-    })
+    setHandler(yes, pullHandler)
+    setHandler(no, pullHandler)
   }
 }

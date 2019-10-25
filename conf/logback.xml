@@ -21,6 +21,8 @@
         </filter>
     </appender>-->
 
+    <logger name="CreateReplicaCopySpec" level="DEBUG"/>
+    <logger name="services.storagemirror.streamcomponents" level="DEBUG"/>
     <logger name="play" level="INFO" />
     <logger name="application" level="ERROR" />
     <logger name="services.PostrunActionScanner" level="INFO"/>
