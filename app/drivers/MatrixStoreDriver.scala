@@ -189,7 +189,7 @@ class MatrixStoreDriver(override val storageRef: StorageEntry)(implicit val mat:
         "MXFS_FILENAME"->path,
         "MXFS_PATH"->path.toString,
         "MXFS_MIMETYPE"->"application/octet-stream",
-        "MXFS_DESCRIPTION"->s"PL_VERSION_STRING",
+        "MXFS_DESCRIPTION"->s"Projectlocker project $path",
         "MXFS_PARENTOID"->"",
         "MXFS_FILEEXT"->getFileExt(path).getOrElse("")
       ),
@@ -301,14 +301,7 @@ class MatrixStoreDriver(override val storageRef: StorageEntry)(implicit val mat:
     * @param path [[String]] Absolute path to open
     * @return [[Map]] of [[Symbol]] -> [[String]] containing metadata about the given file.
     */
-  def getMetadata(path:String, version:Int):Map[Symbol,String] = {
-    if(userInfo.isFailure) {
-      logger.error(s"Can't look up $path on storage ${storageRef.id}: ", userInfo.failed.get)
-      throw new RuntimeException("Could not access path")
-    }
-
-    val vault = MatrixStore.openVault(userInfo.get)
-
+  def getMetadata(path:String, version:Int):Map[Symbol,String] = withVault { vault=>
     val resultFuture = findByFilename(vault, path, version).map({
       case None=>
         Map('size->"-1")
@@ -321,7 +314,13 @@ class MatrixStoreDriver(override val storageRef: StorageEntry)(implicit val mat:
         ) ++ fileAttrKeysMap.getOrElse(Map())
     })
 
-    Await.result(resultFuture, 30.seconds)
+    //FIXME for future - update protocol to support a Future being returned
+    Try { Await.result(resultFuture, 30.seconds) }
+  } match {
+    case Success(map)=>map
+    case Failure(err)=>
+      logger.error(s"Could not get metadata for $path at version $version: ", err)
+      Map()
   }
 
   def versionsForFileWithMetadata(vault:Vault, fileName:String) = {
@@ -336,7 +335,7 @@ class MatrixStoreDriver(override val storageRef: StorageEntry)(implicit val mat:
       val failures = results.collect({case Failure(err)=>err})
       if(failures.nonEmpty){
         logger.error(failures.map(_.toString).mkString("\n"))
-        Left("Could not look up versions, see preceeding log message for details")
+        Left("Could not look up versions, see preceding log message for details")
       } else {
         Right(results.collect({case Success(entry)=>entry}))
       }
