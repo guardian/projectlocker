@@ -45,7 +45,7 @@ class CopySourceFile  @Inject() (dbConfigProvider:DatabaseConfigProvider, storag
         MDC.put("originalSender", originalSender.toString())
 
         logger.debug("persisted copy request event to journal, now performing")
-
+        
         rq.destinationStorage.getStorageDriver match {
           case None=>
             logger.error(s"No storage driver was configured for ${rq.destinationStorage}")

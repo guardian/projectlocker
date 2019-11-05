@@ -68,6 +68,10 @@ class ProjectCreationActor @Inject() (system:ActorSystem, app:Application) exten
       case other:Any=>
         logger.error(s"got unexpected message: ${other.getClass}")
         Future(Left(StepFailed(data, new RuntimeException("got unexpected message"))))
+    }).recover({
+      case err:Throwable=>
+        logger.error(s"Actor ask failed for ${actorSequence.head.path.toString}: ", err)
+        Left(StepFailed(data, err))
     })
   }
 

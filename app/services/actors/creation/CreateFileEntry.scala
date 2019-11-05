@@ -102,7 +102,7 @@ class CreateFileEntry @Inject() (dbConfigProvider:DatabaseConfigProvider) extend
       val recordTimestamp = Timestamp.valueOf(entryRequest.createTime.getOrElse(LocalDateTime.now()))
       val projectCreateData = entryRequest.data
 
-      getDestFileFor(entryRequest.rq, recordTimestamp).map(fileEntry=> {
+      getDestFileFor(entryRequest.rq, recordTimestamp).flatMap(fileEntry=> {
         logger.info(s"Creating file $fileEntry")
         fileEntry.save.map({
           case Success(savedFileEntry) =>
