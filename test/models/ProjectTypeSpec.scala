@@ -21,9 +21,8 @@ class ProjectTypeSpec extends Specification with BuildMyApp {
       protected implicit val db = dbConfigProvider.get[PostgresProfile].db
 
       val pt = Await.result(ProjectType.entryFor(1),10.seconds)
-      pt must beSuccessfulTry
 
-      val result = Await.result(pt.get.postrunActions,10.seconds)
+      val result = Await.result(pt.postrunActions,10.seconds)
       result must beSuccessfulTry
 
       result.get.length mustEqual 3

@@ -2,9 +2,12 @@ package models
 
 import java.io.FileInputStream
 import java.nio.file.Paths
+
 import slick.jdbc.PostgresProfile.api._
 import java.sql.Timestamp
 
+import akka.stream.Materializer
+import akka.stream.scaladsl.Source
 import drivers.StorageDriver
 import play.api.Logger
 import play.api.libs.functional.syntax._
@@ -29,7 +32,7 @@ import scala.concurrent.{Await, Future}
   * @param hasContent - boolean flag representing whether this entity has any data in it yet
   * @param hasLink - boolean flag representing whether this entitiy is linked to anything (i.e. a project) yet.
   */
-case class FileEntry(id: Option[Int], filepath: String, storageId: Int, user:String,version:Int,
+case class FileEntry(id: Option[Int], filepath: String, storageId: Int, user:String, version:Int,
                      ctime: Timestamp, mtime: Timestamp, atime: Timestamp, hasContent:Boolean, hasLink:Boolean) {
 
   /**
@@ -84,7 +87,7 @@ case class FileEntry(id: Option[Int], filepath: String, storageId: Int, user:Str
     * @param db implicitly provided [[slick.jdbc.PostgresProfile#Backend#Database]]
     * @return A future containing either a Right() containing a Boolean indicating whether the delete happened,  or a Left with an error string
     */
-  def deleteFromDisk(implicit db:slick.jdbc.PostgresProfile#Backend#Database):Future[Either[String,Boolean]] = {
+  def deleteFromDisk(implicit db:slick.jdbc.PostgresProfile#Backend#Database, mat:Materializer):Future[Either[String,Boolean]] = {
     /**/
     /*it either returns a Right(), with a boolean indicating whether the delete happened or not, or a Left() with an error string*/
     val maybeStorageDriverFuture = this.storage.map({
@@ -96,7 +99,7 @@ case class FileEntry(id: Option[Int], filepath: String, storageId: Int, user:Str
 
     maybeStorageDriverFuture.flatMap({
       case Some(storagedriver)=>
-        this.getFullPath.map(fullpath=>Right(storagedriver.deleteFileAtPath(fullpath)))
+        this.getFullPath.map(fullpath=>Right(storagedriver.deleteFileAtPath(fullpath, version)))
       case None=>
         Future(Left("No storage driver configured for storage"))
     })
@@ -115,7 +118,7 @@ case class FileEntry(id: Option[Int], filepath: String, storageId: Int, user:Str
         db.run(
           TableQuery[FileEntryRow].filter(_.id===databaseId).delete.asTry
         ).map({
-          case Success(rowsAffected)=>Right(Unit)
+          case Success(_)=>Right(Unit)
           case Failure(error)=>Left(error)
         })
       case None=>
@@ -134,12 +137,12 @@ case class FileEntry(id: Option[Int], filepath: String, storageId: Int, user:Str
       case Some(bytes) => //the buffer is held in memory
         val logger = Logger(getClass)
         logger.debug("uploadContent: writing memory buffer")
-        storageDriver.writeDataToPath(outputPath.toString, bytes.toArray)
+        storageDriver.writeDataToPath(outputPath.toString, version, bytes.toArray)
       case None => //the buffer is on-disk
         val logger = Logger(getClass)
         logger.debug("uploadContent: writing disk buffer")
         val fileInputStream = new FileInputStream(buffer.asFile)
-        val result=storageDriver.writeDataToPath(outputPath.toString, fileInputStream)
+        val result=storageDriver.writeDataToPath(outputPath.toString, version, fileInputStream)
         fileInputStream.close()
         result
     }
@@ -163,7 +166,7 @@ case class FileEntry(id: Option[Int], filepath: String, storageId: Int, user:Str
   }
 
   /* Asynchronously writes the given buffer to this file*/
-  def writeToFile(buffer: RawBuffer)(implicit db:slick.jdbc.PostgresProfile#Backend#Database):Future[Try[Unit]] = {
+  def writeToFile(buffer: RawBuffer)(implicit db:slick.jdbc.PostgresProfile#Backend#Database, mat:Materializer):Future[Try[Unit]] = {
     val storageResult = this.storage
 
     storageResult.map({
@@ -201,14 +204,14 @@ case class FileEntry(id: Option[Int], filepath: String, storageId: Int, user:Str
     * @return a Future, containing a Left with a string if there was an error, or a Right with a Boolean flag indicating if the
     *         pointed object exists on the storage
     */
-  def validatePathExists(implicit db:slick.jdbc.PostgresProfile#Backend#Database) = {
+  def validatePathExists(implicit db:slick.jdbc.PostgresProfile#Backend#Database, mat:Materializer) = {
     val preReqs = for {
       filePath <- getFullPath
       maybeStorage <- storage
     } yield (filePath,maybeStorage)
 
     preReqs.map(pathAndMaybeStorage=>{
-      pathAndMaybeStorage._2.map(_.validatePathExists(pathAndMaybeStorage._1))
+      pathAndMaybeStorage._2.map(_.validatePathExists(pathAndMaybeStorage._1, version))
     }).map({
       case Some(result)=>result
       case None=>Left(s"No storage could be found for ID $storageId on file $id")
@@ -242,9 +245,14 @@ object FileEntry extends ((Option[Int], String, Int, String, Int, Timestamp, Tim
     * @param db implicitly provided database object, instance of slick.jdbc.PostgresProfile#Backend#Database
     * @return a Future, containing a Try that contains a sequnce of zero or more FileEntry instances
     */
-  def entryFor(fileName: String, storageId: Int)(implicit db:slick.jdbc.PostgresProfile#Backend#Database):Future[Try[Seq[FileEntry]]] =
+  def entryFor(fileName: String, storageId: Int, version:Int)(implicit db:slick.jdbc.PostgresProfile#Backend#Database):Future[Try[Seq[FileEntry]]] =
     db.run(
-      TableQuery[FileEntryRow].filter(_.filepath===fileName).filter(_.storage===storageId).result.asTry
+      TableQuery[FileEntryRow].filter(_.filepath===fileName).filter(_.storage===storageId).filter(_.version===version).result.asTry
+    )
+
+  def allVersionsFor(fileName: String, storageId: Int)(implicit db:slick.jdbc.PostgresProfile#Backend#Database):Future[Try[Seq[FileEntry]]] =
+    db.run(
+      TableQuery[FileEntryRow].filter(_.filepath===fileName).filter(_.storage===storageId).sortBy(_.version.desc.nullsLast).result.asTry
     )
 }
 

@@ -3,7 +3,8 @@ import PropTypes from 'prop-types';
 
 class ErrorViewComponent extends React.Component {
     static propTypes = {
-        error: PropTypes.object.isRequired
+        error: PropTypes.object.isRequired,
+        newVersionComponent: PropTypes.object
     };
 
     /* expects axios error response in props.error */
@@ -21,6 +22,8 @@ class ErrorViewComponent extends React.Component {
         }
 
     }
+
+
     dictToList(dictObject){
         return <ul>
             {Object.keys(dictObject).map(key=>

@@ -6,16 +6,18 @@ trait StorageTypeSerializer {
   implicit val storageTypeWrites:Writes[StorageType] = (
     (JsPath \ "name").write[String] and
       (JsPath \ "needsLogin").write[Boolean] and
-      (JsPath \ "hasSubFolders").write[Boolean]
+      (JsPath \ "hasSubFolders").write[Boolean] and
+      (JsPath \ "canVersion").write[Boolean]
     )(unlift(StorageType.unapply))
 
   implicit val storageTypeReads:Reads[StorageType] = (
     (JsPath \ "name").read[String] and
       (JsPath \ "needsLogin").read[Boolean] and
-      (JsPath \ "hasSubFolders").read[Boolean]
+      (JsPath \ "hasSubFolders").read[Boolean] and
+      (JsPath \ "canVersion").read[Boolean]
   )(StorageType.apply _)
 }
 
-case class StorageType(name:String, needsLogin: Boolean, hasSubfolders: Boolean) {
+case class StorageType(name:String, needsLogin: Boolean, hasSubfolders: Boolean, canVersion: Boolean) {
 
 }

@@ -91,6 +91,10 @@ class TypeSelectorComponent extends CommonMultistepComponent {
         )
 
     }
+
+    updateParent(){
+        this.props.valueWasSet(this.state);
+    }
 }
 
 export default TypeSelectorComponent;

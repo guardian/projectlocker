@@ -38,7 +38,7 @@ class UpdatePremiereScratchpathsSpec extends Specification with BuildMyApp {
       )), 10 seconds)
 
       val pe = futureResults.head.asInstanceOf[Try[ProjectEntry]].get
-      val pt = futureResults(1).asInstanceOf[Try[ProjectType]].get
+      val pt = futureResults(1).asInstanceOf[ProjectType]
 
       val result = Await.result(s.postrun("/tmp/blank_premiere_2017.prproj",pe,pt,dataCache,None,None),10 seconds)
       result must beSuccessfulTry

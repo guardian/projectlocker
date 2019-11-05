@@ -9,7 +9,10 @@ class SummaryComponent extends React.Component {
         selectedType: PropTypes.number.isRequired,
         loginDetails: PropTypes.object.isRequired,
         rootpath: PropTypes.string.isRequired,
-        clientpath: PropTypes.string.isRequired
+        clientpath: PropTypes.string.isRequired,
+        enableVersions: PropTypes.bool,
+        nickname: PropTypes.string,
+        nicknameChanged: PropTypes.func.isRequired
     };
 
     constructor(props){
@@ -17,7 +20,6 @@ class SummaryComponent extends React.Component {
     }
 
     render() {
-        const selectedStorage = this.props.selectedStorage;
         return <table>
             <tbody>
             <tr>
@@ -37,12 +39,20 @@ class SummaryComponent extends React.Component {
                 </td>
             </tr>
             <tr>
+                <td>Versions enabled</td>
+                <td className={this.props.enableVersions ? "" : "value-not-present"}>{this.props.enableVersions ? "Yes" : "No"}</td>
+            </tr>
+            <tr>
                 <td>Subfolder</td>
                 <td className={this.props.subfolder ? "" : "value-not-present"} id="storageSubfolder">{this.props.subfolder ? this.props.subfolder : "(none)"}</td>
             </tr>
             <tr>
                 <td>Client path</td>
                 <td className={this.props.clientpath ? "" : "value-not-present"} id="storageClientPath">{this.props.clientpath ? this.props.clientpath : "(none)"}</td>
+            </tr>
+            <tr>
+                <td>Nickname</td>
+                <td><input type="text" value={this.props.nickname} onChange={this.props.nicknameChanged}/></td>
             </tr>
             </tbody>
         </table>;

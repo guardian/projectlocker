@@ -1,9 +1,11 @@
 package services.actors.creation
 
 import java.util.UUID
+
 import javax.inject.Inject
 import org.slf4j.MDC
 import akka.actor.Props
+import akka.stream.Materializer
 import exceptions.PostrunActionError
 import helpers.StorageHelper
 import models.ProjectEntry
@@ -27,14 +29,12 @@ object CopySourceFile {
   * On rollback, deletes the file given by [[services.actors.creation.GenericCreationActor.ProjectCreateTransientData.destFileEntry]]
   * and updates it to have no content again
   */
-class CopySourceFile  @Inject() (dbConfigProvider:DatabaseConfigProvider) extends GenericCreationActor {
+class CopySourceFile  @Inject() (dbConfigProvider:DatabaseConfigProvider, storageHelper:StorageHelper)(implicit mat:Materializer) extends GenericCreationActor {
   override val persistenceId = "creation-get-storage-actor"
 
   import CopySourceFile._
   import GenericCreationActor._
   private implicit val db=dbConfigProvider.get[JdbcProfile].db
-
-  protected val storageHelper = new StorageHelper
 
   override def receiveCommand: Receive = {
     case copyRequest:NewProjectRequest=>
@@ -45,7 +45,7 @@ class CopySourceFile  @Inject() (dbConfigProvider:DatabaseConfigProvider) extend
         MDC.put("originalSender", originalSender.toString())
 
         logger.debug("persisted copy request event to journal, now performing")
-
+        
         rq.destinationStorage.getStorageDriver match {
           case None=>
             logger.error(s"No storage driver was configured for ${rq.destinationStorage}")

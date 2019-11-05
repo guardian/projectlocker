@@ -62,7 +62,7 @@ class CreateFileEntrySpec extends Specification with BuildMyApp {
       val ex=new RuntimeException("My hovercraft is full of eels")
       val ac = system.actorOf(Props(new CreateFileEntry(dbConfigProvider) {
         override def getDestFileFor(rq: ProjectRequestFull, recordTimestamp: Timestamp)
-                                   (implicit db: JdbcBackend#DatabaseDef): Future[Try[FileEntry]] = Future(Failure(ex))
+                                   (implicit db: JdbcBackend#DatabaseDef): Future[FileEntry] = Future.failed(ex)
       }))
 
       val initialData = ProjectCreateTransientData(None, None, None)

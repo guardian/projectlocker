@@ -2,15 +2,18 @@ package helpers
 
 import java.io.{InputStream, OutputStream}
 
+import akka.stream.Materializer
 import drivers.StorageDriver
+import javax.inject.Inject
 import models.{FileEntry, StorageEntry}
 import play.api.Logger
 import org.slf4j.MDC
+
 import scala.concurrent.Future
 import scala.util.{Failure, Success, Try}
 import scala.concurrent.ExecutionContext.Implicits.global
 
-class StorageHelper {
+class StorageHelper @Inject() (implicit mat:Materializer) {
   val logger: Logger = Logger(this.getClass)
   /**
     * Internal method to copy from one stream to another, independent of the stream implementation.
@@ -33,7 +36,7 @@ class StorageHelper {
   }
 
   final protected def doByteCopy(sourceStorageDriver:StorageDriver, sourceStreamTry:Try[InputStream], destStreamTry:Try[OutputStream],
-                                 sourceFullPath:String, destFullPath: String)  = {
+                                 sourceFullPath:String, sourceVersion:Int, destFullPath: String)  = {
     if(sourceStreamTry.isFailure || destStreamTry.isFailure){
       Left(Seq(sourceStreamTry.failed.getOrElse("").toString, destStreamTry.failed.getOrElse("").toString))
     } else {
@@ -46,7 +49,7 @@ class StorageHelper {
         if(bytesCopied==0)
           Left(Seq(s"could not copy $sourceFullPath to $destFullPath - empty file"))
         else
-          Right(Tuple2(bytesCopied,sourceStorageDriver.getMetadata(sourceFullPath)))
+          Right(Tuple2(bytesCopied,sourceStorageDriver.getMetadata(sourceFullPath, sourceVersion)))
       } catch {
         case ex:Throwable=>
           Left(Seq(ex.toString))
@@ -70,7 +73,7 @@ class StorageHelper {
           storageEntry.getStorageDriver match {
             case Some(storageDriver) =>
               MDC.put("storageDriver", storageDriver.toString)
-              storageDriver.deleteFileAtPath(fullPath) match {
+              storageDriver.deleteFileAtPath(fullPath, targetFile.version) match {
                 case true=>
                   val updatedFileEntry = targetFile.copy(hasContent = false)
                   updatedFileEntry.save
@@ -132,10 +135,10 @@ class StorageHelper {
 
           logger.info(s"Copying from $sourceFullPath on $sourceStorageDriver to $destFullPath on $destStorageDriver")
 
-          val sourceStreamTry = sourceStorageDriver.getReadStream(sourceFullPath)
-          val destStreamTry = destStorageDriver.getWriteStream(destFullPath)
+          val sourceStreamTry = sourceStorageDriver.getReadStream(sourceFullPath, sourceFile.version)
+          val destStreamTry = destStorageDriver.getWriteStream(destFullPath, destFile.version)
 
-          doByteCopy(sourceStorageDriver,sourceStreamTry,destStreamTry,sourceFullPath,destFullPath)
+          doByteCopy(sourceStorageDriver,sourceStreamTry,destStreamTry,sourceFullPath, sourceFile.version, destFullPath)
       }
     })
 
@@ -162,6 +165,37 @@ class StorageHelper {
           case Failure(error)=>
             Left(Seq(error.toString))
         })
+    })
+  }
+
+  def findFile(targetFile: FileEntry)(implicit db:slick.jdbc.PostgresProfile#Backend#Database) = {
+    val futures = Future.sequence(Seq(targetFile.storage, targetFile.getFullPath))
+
+    futures.map(futureResults=>{
+      val maybeStorage = futureResults.head.asInstanceOf[Option[StorageEntry]]
+      val fullPath = futureResults(1).asInstanceOf[String]
+
+      val maybeStorageDriver = maybeStorage.flatMap(_.getStorageDriver)
+
+      maybeStorageDriver match {
+        case Some(storageDriver)=>
+          storageDriver.pathExists(targetFile.filepath, targetFile.version)
+        case None=>
+          throw new RuntimeException(s"No storage driver defined for ${maybeStorage.map(_.repr).getOrElse("unknown storage")}")
+      }
+    })
+  }
+
+  def onStorageMetadata(targetFile: FileEntry)(implicit db:slick.jdbc.PostgresProfile#Backend#Database) = {
+    targetFile.storage.map(maybeStorage=>{
+      val maybeStorageDriver = maybeStorage.flatMap(_.getStorageDriver)
+
+      maybeStorageDriver match {
+        case Some(storageDriver)=>
+          storageDriver.getMetadata(targetFile.filepath, targetFile.version)
+        case None=>
+          throw new RuntimeException(s"No storage driver defined for ${maybeStorage.map(_.repr).getOrElse("unknown storage")}")
+      }
     })
   }
 }

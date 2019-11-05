@@ -1,7 +1,7 @@
 package controllers
 
+import akka.stream.Materializer
 import javax.inject.Inject
-
 import exceptions.{AlreadyExistsException, BadDataException}
 import helpers.StorageHelper
 import play.api.{Configuration, Logger}
@@ -21,13 +21,13 @@ import scala.concurrent.{CanAwait, Future}
 import scala.util.{Failure, Success, Try}
 
 
-class Files @Inject() (configuration: Configuration, dbConfigProvider: DatabaseConfigProvider, cacheImpl:SyncCacheApi)
+class Files @Inject() (configuration: Configuration, dbConfigProvider: DatabaseConfigProvider, cacheImpl:SyncCacheApi, storageHelper:StorageHelper)
+                      (implicit mat:Materializer)
   extends GenericDatabaseObjectControllerWithFilter[FileEntry,FileEntryFilterTerms]
     with FileEntrySerializer with FileEntryFilterTermsSerializer
     with ProjectEntrySerializer with ProjectTemplateSerializer {
 
   implicit val cache:SyncCacheApi = cacheImpl
-  val storageHelper = new StorageHelper
 
   val dbConfig = dbConfigProvider.get[PostgresProfile]
   implicit val db = dbConfig.db
@@ -61,16 +61,30 @@ class Files @Inject() (configuration: Configuration, dbConfigProvider: DatabaseC
 
   override def insert(entry: FileEntry,uid:String):Future[Try[Int]] = {
     /* only allow a record to be created if no files already exist with that path on that storage */
-    FileEntry.entryFor(entry.filepath,entry.storageId)(dbConfig.db).flatMap({
+    FileEntry.allVersionsFor(entry.filepath,entry.storageId)(dbConfig.db).flatMap({
       case Success(fileList)=>
-        if(fileList.isEmpty){
-          val updatedEntry = entry.copy(user = uid)
-          dbConfig.db.run(
-            (TableQuery[FileEntryRow] returning TableQuery[FileEntryRow].map(_.id) += updatedEntry).asTry
-          )
-        } else {
-          Future(Failure(new AlreadyExistsException(s"A file already exists at ${entry.filepath} on storage ${entry.storageId}")))
-        }
+        entry.storage.flatMap({
+          case None=>
+            Future(Failure(new BadDataException("No storage was specified")))
+          case Some(storage)=>
+            if(storage.supportsVersions && !fileList.exists(_.version==entry.version)){ //versioning enabled and there is no file already existing with the given version
+              val updatedEntry = entry.copy(user = uid)
+              dbConfig.db.run(
+                (TableQuery[FileEntryRow] returning TableQuery[FileEntryRow].map(_.id) += updatedEntry).asTry
+              )
+            } else if(storage.supportsVersions) {                                       //versioning enabled and there is a file already existing with the given version
+              Future(Failure(new AlreadyExistsException(s"A file already exists at ${entry.filepath} on storage ${entry.storageId}", fileList.headOption.map(_.version+1).getOrElse(1))))
+            } else {                                                                    //versioning not enabled
+              if(fileList.isEmpty){   //no conflicting file
+                val updatedEntry = entry.copy(user = uid)
+                dbConfig.db.run(
+                  (TableQuery[FileEntryRow] returning TableQuery[FileEntryRow].map(_.id) += updatedEntry).asTry
+                )
+              } else {
+                Future(Failure(new AlreadyExistsException(s"A file already exists at ${entry.filepath} on storage ${entry.storageId} and versioning is not enabled",1)))
+              }
+            }
+        })
       case Failure(error)=>Future(Failure(error))
     })
 
@@ -185,6 +199,32 @@ class Files @Inject() (configuration: Configuration, dbConfigProvider: DatabaseC
       case Failure(error)=>
         logger.error("Could not look up distinct file owners: ", error)
         InternalServerError(Json.obj("status"->"error","detail"->error.toString))
+    })
+  }}
+
+  def checkOnDisk(fileId:Int) = IsAuthenticatedAsync {uid=>{request=>
+    selectid(fileId).flatMap({
+      case Success(rows)=>
+        if(rows.isEmpty){
+          Future(NotFound(Json.obj("status"->"notfound")))
+        } else {
+          storageHelper.findFile(rows.head).map(result=>Ok(Json.obj("status"->"ok","found"->result)))
+        }
+      case Failure(err)=>
+        Future(InternalServerError(Json.obj("status"->"error", "detail"->err.getMessage)))
+    })
+  }}
+
+  def fileMetadata(fileId:Int) = IsAuthenticatedAsync {uid=>{request=>
+    selectid(fileId).flatMap({
+      case Success(rows)=>
+        if(rows.isEmpty){
+          Future(NotFound(Json.obj("status"->"notfound")))
+        } else {
+          storageHelper.onStorageMetadata(rows.head).map(result=>Ok(Json.obj("status"->"ok","metadata"->result.map(tpl=>tpl._1.toString->tpl._2))))
+        }
+      case Failure(err)=>
+        Future(InternalServerError(Json.obj("status"->"error", "detail"->err.getMessage)))
     })
   }}
 }

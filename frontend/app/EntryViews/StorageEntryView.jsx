@@ -8,7 +8,12 @@ class StorageEntryView extends GenericEntryView {
     }
 
     render(){
-        return <span>{this.state.content.storageType}: {this.state.content.rootpath}</span>
+        if(this.state.content.nickname){
+            return <span>{this.state.content.nickname} [{this.state.content.storageType}]</span>
+        } else {
+            const info = this.state.content.rootpath ? this.state.content.rootpath : this.state.content.device;
+        return <span>{this.state.content.storageType}: {info}</span>
+    }
     }
 }
 
