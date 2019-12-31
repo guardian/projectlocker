@@ -32,7 +32,7 @@ class ProjectEntryController @Inject() (@Named("project-creation-actor") project
                                         dbConfigProvider: DatabaseConfigProvider,
                                         cacheImpl:SyncCacheApi)
   extends GenericDatabaseObjectControllerWithFilter[ProjectEntry,ProjectEntryFilterTerms]
-    with ProjectEntrySerializer with ProjectEntryFilterTermsSerializer with ProjectRequestSerializer
+    with ProjectEntrySerializer with ProjectEntryAdvancedFilterTermsSerializer with ProjectRequestSerializer
     with ProjectRequestPlutoSerializer with UpdateTitleRequestSerializer with FileEntrySerializer
     with PlutoConflictReplySerializer with Security
 {
@@ -348,4 +348,25 @@ class ProjectEntryController @Inject() (@Named("project-creation-actor") project
         InternalServerError(Json.obj("status"->"error", "detail"->err.toString))
     })
   }}
+
+  def advancedSearch(startAt:Int,limit:Int) = IsAuthenticatedAsync(parse.json) { uid=> request=>
+    request.body.validate[ProjectEntryAdvancedFilterTerms] fold(
+      errors=>
+        Future(BadRequest(Json.obj("status"->"error", "detail"->JsError.toJson(errors)))),
+      filterTerms=>{
+        val queryFut = dbConfig.db.run(
+          filterTerms.addFilterTerms {
+            TableQuery[ProjectEntryRow]
+          }.sortBy(_._1.created.desc).drop(startAt).take(limit).map(_._1).result)
+
+          queryFut
+            .map(results=>Ok(Json.obj("status" -> "ok","result"->this.jstranslate(results))))
+          .recover({
+            case err:Throwable=>
+              logger.error(s"Could not perform advanced search for $filterTerms: ", err)
+              InternalServerError(Json.obj("status"->"error","detail"->err.toString))
+          })
+      }
+    )
+  }
 }
