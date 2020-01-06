@@ -2,8 +2,8 @@ package controllers
 
 import java.io.FileInputStream
 import java.util.Properties
-import javax.inject.{Inject, Singleton}
 
+import javax.inject.{Inject, Singleton}
 import play.api._
 import play.api.mvc._
 import auth.{LDAP, Security, User}
@@ -11,6 +11,7 @@ import com.unboundid.ldap.sdk.LDAPConnectionPool
 import helpers.DatabaseHelper
 import models.{LoginRequest, LoginRequestSerializer}
 import play.api.cache.SyncCacheApi
+import play.api.http.HttpEntity
 import play.api.libs.json._
 
 import scala.collection.JavaConverters._
@@ -85,6 +86,21 @@ class Application @Inject() (cc:ControllerComponents, p:PlayBodyParsers, config:
     )
   }
 
+  /**
+    * respond to CORS options requests for login from vaultdoor
+    * see https://developer.mozilla.org/en-US/docs/Glossary/Preflight_request
+    * @return
+    */
+  def authenticateOptions = Action {
+    val returnHeaders = Map(
+      "Access-Control-Allow-Methods" -> "POST, OPTIONS",
+      "Access-Control-Allow-Origin" -> "*"  //FIXME: only for testing. replace with a whitelist in the config
+    )
+    Result(
+      ResponseHeader(204, returnHeaders),
+      HttpEntity.NoEntity
+    )
+  }
   /**
     * Action that allows the frontend to test if the current session is valid
     * @return If the session is not valid, a 403 response

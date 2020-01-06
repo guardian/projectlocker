@@ -47,7 +47,7 @@ GET     /api/project/:id/files              @controllers.ProjectEntryController.
 PUT     /api/project/:id/title              @controllers.ProjectEntryController.updateTitle(id: Int)
 PUT     /api/project/:id/vsid               @controllers.ProjectEntryController.updateVsid(id: Int)
 PUT     /api/project/by-vsid/:vsid/title    @controllers.ProjectEntryController.updateTitleByVsid(vsid:String)
-GET     /api/project/:id                   @controllers.ProjectEntryController.getitem(id: Int)
+GET     /api/project/:id                    @controllers.ProjectEntryController.getitem(id: Int)
 #PUT     /api/project/:id                   @controllers.ProjectEntryController.update(id: Int)
 #DELETE  /api/project/:id                   @controllers.ProjectEntryController.delete(id: Int)
 POST     /api/project/validate              @controllers.ProjectEntryController.performFullValidation
@@ -90,6 +90,7 @@ PUT     /api/pluto/commission/list         @controllers.PlutoCommissionControlle
 GET     /api/pluto/rescan                   @controllers.PlutoWorkingGroupController.rescan
 
 POST    /api/login                         @controllers.Application.authenticate
+OPTIONS /api/login                         @controllers.Application.authenticateOptions
 POST    /api/logout                        @controllers.Application.logout
 GET     /api/isLoggedIn                    @controllers.Application.isLoggedIn
 GET     /api/isAdmin                       @controllers.Application.checkIsAdmin
