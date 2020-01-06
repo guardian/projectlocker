@@ -75,7 +75,7 @@ class Application @Inject() (cc:ControllerComponents, p:PlayBodyParsers, config:
               case Success(Some(user)) =>
                 Ok(Json.obj("status" -> "ok", "detail" -> "Logged in", "uid" -> user.uid, "isAdmin"->checkRole(user.uid, adminRoles)))
                   .withSession("uid" -> user.uid)
-                  .withHeaders("Access-Control-Allow-Origin"->"*")
+                  .withHeaders("Access-Control-Allow-Origin"->"*","Access-Control-Allow-Credentials"->"true")
               case Success(None) =>
                 logger.warn(s"Failed login from ${loginRequest.username} with password ${loginRequest.password} from host ${request.host}")
                 Forbidden(Json.obj("status" -> "error", "detail" -> "forbidden"))
