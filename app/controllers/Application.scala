@@ -95,6 +95,7 @@ class Application @Inject() (cc:ControllerComponents, p:PlayBodyParsers, config:
     val returnHeaders = Map(
       "Access-Control-Allow-Methods" -> "POST, OPTIONS",
       "Access-Control-Allow-Origin" -> "*"  //FIXME: only for testing. replace with a whitelist in the config
+      "Access-Control-Allow-Headers" -> "content-type"
     )
     Result(
       ResponseHeader(204, returnHeaders),
