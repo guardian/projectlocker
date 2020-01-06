@@ -1,23 +1,25 @@
 package controllers
 
 import exceptions.{AlreadyExistsException, BadDataException}
+import helpers.AllowCORSFunctions
 import javax.inject._
 import models._
+import play.api.Configuration
 import play.api.cache.SyncCacheApi
 import play.api.db.slick.DatabaseConfigProvider
+import play.api.http.HttpEntity
 import play.api.libs.json.{JsResult, JsValue, Json}
-import play.api.mvc.{EssentialAction, Request}
+import play.api.mvc.{EssentialAction, Request, ResponseHeader, Result}
 import slick.jdbc.PostgresProfile
 import slick.jdbc.PostgresProfile.api._
 import slick.lifted.TableQuery
 
 import scala.concurrent.Future
 import scala.util.{Failure, Success, Try}
-
 import scala.concurrent.ExecutionContext.Implicits.global
 
 @Singleton
-class PlutoCommissionController @Inject()(dbConfigProvider:DatabaseConfigProvider, cacheImpl:SyncCacheApi)
+class PlutoCommissionController @Inject()(dbConfigProvider:DatabaseConfigProvider, cacheImpl:SyncCacheApi, config:Configuration)
   extends GenericDatabaseObjectControllerWithFilter[PlutoCommission,PlutoCommissionFilterTerms]
     with PlutoCommissionSerializer with PlutoCommissionFilterTermsSerializer {
 
@@ -108,5 +110,27 @@ class PlutoCommissionController @Inject()(dbConfigProvider:DatabaseConfigProvide
 
     override def validateFilterParams(request: Request[JsValue]): JsResult[PlutoCommissionFilterTerms] = request.body.validate[PlutoCommissionFilterTerms]
 
+    /**
+      * respond to CORS options requests for login from vaultdoor
+      * see https://developer.mozilla.org/en-US/docs/Glossary/Preflight_request
+      * @return
+      */
+    def listOptions = Action { request=>
+        AllowCORSFunctions.checkCorsOrigins(config, request) match {
+            case Right(allowedOrigin) =>
+                val returnHeaders = Map(
+                    "Access-Control-Allow-Methods" -> "PUT, OPTIONS",
+                    "Access-Control-Allow-Origin" -> allowedOrigin,
+                    "Access-Control-Allow-Headers" -> "content-type",
+                )
+                Result(
+                    ResponseHeader(204, returnHeaders),
+                    HttpEntity.NoEntity
+                )
+            case Left(other) =>
+                logger.warn(s"Invalid CORS preflight request for authentication: $other")
+                Forbidden("")
+        }
+    }
 
   }
