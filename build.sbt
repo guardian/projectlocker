@@ -27,12 +27,13 @@ lazy val `projectlocker` = (project in file("."))
       dockerAlias := docker.DockerAlias(None,sys.props.get("docker.username"),"projectlocker",Some(sys.props.getOrElse("build.number","DEV"))),
       dockerCommands ++= Seq(
         Cmd("USER", "root"),
-        Cmd("RUN", "apt-get","-y", "update", "&&", "apt-get", "-y", "install", "sudo", "perl"),
-        Cmd("RUN", "mkdir -p /etc/projectlocker && mv /opt/docker/postrun/postrun_settings.py /etc/projectlocker && ln -s /etc/projectlocker/postrun_settings.py /opt/docker/postrun/postrun_settings.py"),
+//        Cmd("RUN", "apt-get","-y", "update", "&&", "apt-get", "-y", "install", "sudo", "perl", "iputils-ping"),
+//        Cmd("RUN", "mkdir -p /etc/projectlocker && mv /opt/docker/postrun/postrun_settings.py /etc/projectlocker && ln -s /etc/projectlocker/postrun_settings.py /opt/docker/postrun/postrun_settings.py"),
         Cmd("RUN", "mv", "/opt/docker/conf/docker-application.conf", "/opt/docker/conf/application.conf"),
         Cmd("RUN", "mkdir", "-p", "/opt/docker/target/persistence", "&&", "chown","daemon", "/opt/docker/target/persistence"),
-        Cmd("RUN", "ls", "-lhd", "/opt/docker/target/persistence"),
-        Cmd("USER", "daemon"),
+//        Cmd("RUN", "ls", "-lhd", "/opt/docker/target/persistence"),
+        //Cmd("RUN", "chown -R daemon /opt/docker"),
+        //Cmd("USER", "demiourgos728"),
       )
     )
 
@@ -47,7 +48,6 @@ libraryDependencies += evolutions
 testOptions in Test ++= Seq( Tests.Argument("junitxml", "junit.outdir", sys.env.getOrElse("SBT_JUNIT_OUTPUT","/tmp")), Tests.Argument("console") )
 
 PlayKeys.devSettings := Seq("play.akka.dev-mode.akka.http.server.request-timeout"->"120 seconds")
-
 
 unmanagedResourceDirectories in Test +=  (baseDirectory ( _ /"target/web/public/test" )).value
 

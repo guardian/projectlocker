@@ -88,22 +88,40 @@ class Application @Inject() (cc:ControllerComponents, p:PlayBodyParsers, config:
     )
   }
 
+  def checkCorsOrigins(request:Request[AnyContent]) = {
+    logger.debug(s"checkCorsOrigins: current origin is ${request.headers.get("Origin")}")
+    if(!request.headers.hasHeader("Origin")) Left("CORS not applicable")
+    config.getOptional[Seq[String]]("external.allowedFrontendDomains") match {
+      case Some(allowedDomainsList)=>
+        logger.debug(s"checkCorsOrigins: allowed urls are $allowedDomainsList")
+        if(allowedDomainsList.contains(request.headers("Origin"))) Right(request.headers("Origin")) else Left(s"${request.headers("Origin")} is not an allowed domain")
+      case None=>Left("No allowed origins configured")
+    }
+  }
+
   /**
     * respond to CORS options requests for login from vaultdoor
     * see https://developer.mozilla.org/en-US/docs/Glossary/Preflight_request
     * @return
     */
-  def authenticateOptions = Action {
-    val returnHeaders = Map(
-      "Access-Control-Allow-Methods" -> "POST, OPTIONS",
-      "Access-Control-Allow-Origin" -> "*",  //FIXME: only for testing. replace with a whitelist in the config
-      "Access-Control-Allow-Headers" -> "content-type",
-    )
-    Result(
-      ResponseHeader(204, returnHeaders),
-      HttpEntity.NoEntity
-    )
+  def authenticateOptions = Action { request=>
+    checkCorsOrigins(request) match {
+      case Right(allowedOrigin) =>
+        val returnHeaders = Map(
+          "Access-Control-Allow-Methods" -> "POST, OPTIONS",
+          "Access-Control-Allow-Origin" -> allowedOrigin,
+          "Access-Control-Allow-Headers" -> "content-type",
+        )
+        Result(
+          ResponseHeader(204, returnHeaders),
+          HttpEntity.NoEntity
+        )
+      case Left(other) =>
+        logger.warn(s"Invalid CORS preflight request for authentication: $other")
+        Forbidden("")
+    }
   }
+
   /**
     * Action that allows the frontend to test if the current session is valid
     * @return If the session is not valid, a 403 response
@@ -116,7 +134,22 @@ class Application @Inject() (cc:ControllerComponents, p:PlayBodyParsers, config:
       case _=>checkRole(uid, adminRoles)
     }
 
-    Ok(Json.obj("status"->"ok","uid"->uid, "isAdmin"->isAdmin))
+    val corsOrigin = if(request.headers.hasHeader("Origin")){
+      checkCorsOrigins(request)
+    } else {
+      Left("")
+    }
+
+    val result = Ok(Json.obj("status"->"ok","uid"->uid, "isAdmin"->isAdmin))
+
+    corsOrigin.map(org=>"Access-Control-Allow-Origin"->org) match {
+      case Right(updated)=>
+        logger.debug(s"Adding headers: $updated")
+        result.withHeaders(updated, "Access-Control-Allow-Credentials"->"true")
+      case Left(err)=>
+        logger.debug(s"Could not get cors data: $err")
+        result.withHeaders("something"->"somethingelse")
+    }
   }}
 
   /**
