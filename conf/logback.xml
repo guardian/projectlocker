@@ -60,7 +60,7 @@
     <logger name="services.actors.creation" level="INFO"/>
     <logger name="services.ValidateProject" level="DEBUG"/>
     <logger name="streamcomponents.ProjectSearchSource" level="DEBUG"/>
-    <logger name="helpers.AllowCORSFilter" level="DEBUG"/>
+    <logger name="helpers.AllowCORSFilter" level="WARN"/>
 
     <root level="INFO">
         <appender-ref ref="STDOUT" />

@@ -38,6 +38,7 @@ GET     /api/project                        @controllers.ProjectEntryController.
 GET     /api/project/list                   @controllers.ProjectEntryController.list(startAt:Int ?=0,length:Int ?=100)
 PUT     /api/project/list                   @controllers.ProjectEntryController.listFiltered(startAt:Int ?=0,length:Int ?=100)
 PUT     /api/project/advancedsearch         @controllers.ProjectEntryController.advancedSearch(startAt:Int ?=0,length:Int ?=100)
+OPTIONS /api/project/advancedsearch         @controllers.ProjectEntryController.searchOptions
 GET     /api/project/distinctowners         @controllers.ProjectEntryController.distinctOwners
 
 PUT     /api/project                        @controllers.ProjectEntryController.create

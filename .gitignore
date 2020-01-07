@@ -20,3 +20,4 @@ bundle.js
 /postrun/lib/python/
 *$py.class
 /postrun/references/
+/scripts/envfile-for-ldap.env

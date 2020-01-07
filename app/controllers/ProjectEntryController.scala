@@ -6,10 +6,12 @@ import akka.pattern.ask
 import auth.Security
 import com.unboundid.ldap.sdk.LDAPConnectionPool
 import exceptions.{BadDataException, ProjectCreationError, RecordNotFoundException}
+import helpers.AllowCORSFunctions
 import models._
 import play.api.cache.SyncCacheApi
 import play.api.{Configuration, Logger}
 import play.api.db.slick.DatabaseConfigProvider
+import play.api.http.HttpEntity
 import play.api.libs.json.{JsError, JsResult, JsValue, Json}
 import play.api.mvc._
 import play.mvc.Http.Response
@@ -368,5 +370,28 @@ class ProjectEntryController @Inject() (@Named("project-creation-actor") project
           })
       }
     )
+  }
+
+  /**
+    * respond to CORS options requests for login from vaultdoor
+    * see https://developer.mozilla.org/en-US/docs/Glossary/Preflight_request
+    * @return
+    */
+  def searchOptions = Action { request=>
+    AllowCORSFunctions.checkCorsOrigins(config, request) match {
+      case Right(allowedOrigin) =>
+        val returnHeaders = Map(
+          "Access-Control-Allow-Methods" -> "PUT, OPTIONS",
+          "Access-Control-Allow-Origin" -> allowedOrigin,
+          "Access-Control-Allow-Headers" -> "content-type",
+        )
+        Result(
+          ResponseHeader(204, returnHeaders),
+          HttpEntity.NoEntity
+        )
+      case Left(other) =>
+        logger.warn(s"Invalid CORS preflight request for authentication: $other")
+        Forbidden("")
+    }
   }
 }

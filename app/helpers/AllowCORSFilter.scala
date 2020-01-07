@@ -4,13 +4,15 @@ import akka.stream.Materializer
 import javax.inject.Inject
 import org.slf4j.LoggerFactory
 import play.api.Configuration
-import play.api.mvc.{AnyContent, Filter, Request, RequestHeader, Result}
+import play.api.mvc.{Filter, RequestHeader, Result}
 
 import scala.concurrent.{ExecutionContext, Future}
 
 object AllowCORSFunctions {
   private val logger = LoggerFactory.getLogger(getClass)
-  def checkCorsOrigins(config:Configuration, request:RequestHeader) = {
+  def checkCorsOrigins(config:Configuration, request:RequestHeader):Either[String,String] = {
+    if(!request.headers.hasHeader("Origin")) return Left("No origin header present, CORS not required")
+
     logger.debug(s"checkCorsOrigins: current origin is ${request.headers.get("Origin")}")
     if(!request.headers.hasHeader("Origin")) Left("CORS not applicable")
     config.getOptional[Seq[String]]("external.allowedFrontendDomains") match {
