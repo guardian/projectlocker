@@ -6,10 +6,12 @@ import akka.pattern.ask
 import auth.Security
 import com.unboundid.ldap.sdk.LDAPConnectionPool
 import exceptions.{BadDataException, ProjectCreationError, RecordNotFoundException}
+import helpers.AllowCORSFunctions
 import models._
 import play.api.cache.SyncCacheApi
 import play.api.{Configuration, Logger}
 import play.api.db.slick.DatabaseConfigProvider
+import play.api.http.HttpEntity
 import play.api.libs.json.{JsError, JsResult, JsValue, Json}
 import play.api.mvc._
 import play.mvc.Http.Response
@@ -32,7 +34,7 @@ class ProjectEntryController @Inject() (@Named("project-creation-actor") project
                                         dbConfigProvider: DatabaseConfigProvider,
                                         cacheImpl:SyncCacheApi)
   extends GenericDatabaseObjectControllerWithFilter[ProjectEntry,ProjectEntryFilterTerms]
-    with ProjectEntrySerializer with ProjectEntryFilterTermsSerializer with ProjectRequestSerializer
+    with ProjectEntrySerializer with ProjectEntryAdvancedFilterTermsSerializer with ProjectRequestSerializer
     with ProjectRequestPlutoSerializer with UpdateTitleRequestSerializer with FileEntrySerializer
     with PlutoConflictReplySerializer with Security
 {
@@ -348,4 +350,48 @@ class ProjectEntryController @Inject() (@Named("project-creation-actor") project
         InternalServerError(Json.obj("status"->"error", "detail"->err.toString))
     })
   }}
+
+  def advancedSearch(startAt:Int,limit:Int) = IsAuthenticatedAsync(parse.json) { uid=> request=>
+    request.body.validate[ProjectEntryAdvancedFilterTerms] fold(
+      errors=>
+        Future(BadRequest(Json.obj("status"->"error", "detail"->JsError.toJson(errors)))),
+      filterTerms=>{
+        val queryFut = dbConfig.db.run(
+          filterTerms.addFilterTerms {
+            TableQuery[ProjectEntryRow]
+          }.sortBy(_._1.created.desc).drop(startAt).take(limit).map(_._1).result)
+
+          queryFut
+            .map(results=>Ok(Json.obj("status" -> "ok","result"->this.jstranslate(results))))
+          .recover({
+            case err:Throwable=>
+              logger.error(s"Could not perform advanced search for $filterTerms: ", err)
+              InternalServerError(Json.obj("status"->"error","detail"->err.toString))
+          })
+      }
+    )
+  }
+
+  /**
+    * respond to CORS options requests for login from vaultdoor
+    * see https://developer.mozilla.org/en-US/docs/Glossary/Preflight_request
+    * @return
+    */
+  def searchOptions = Action { request=>
+    AllowCORSFunctions.checkCorsOrigins(config, request) match {
+      case Right(allowedOrigin) =>
+        val returnHeaders = Map(
+          "Access-Control-Allow-Methods" -> "PUT, OPTIONS",
+          "Access-Control-Allow-Origin" -> allowedOrigin,
+          "Access-Control-Allow-Headers" -> "content-type",
+        )
+        Result(
+          ResponseHeader(204, returnHeaders),
+          HttpEntity.NoEntity
+        )
+      case Left(other) =>
+        logger.warn(s"Invalid CORS preflight request for authentication: $other")
+        Forbidden("")
+    }
+  }
 }

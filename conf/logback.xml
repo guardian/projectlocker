@@ -41,7 +41,7 @@
     <logger name="drivers.MatrixStoreDriver" level="INFO"/>
     <logger name="controllers.StorageControllerSpec" level="WARN"/>
     <logger name="auth.Security" level="WARN"/>
-    <logger name="controllers.Application" level="INFO"/>
+    <logger name="controllers.Application" level="WARN"/>
     <logger name="controllers.System" level="INFO"/>
     <logger name="auth.LDAP" level="INFO"/>
     <logger name="services.actors.MessageProcessorActor" level="WARN"/>
@@ -60,6 +60,7 @@
     <logger name="services.actors.creation" level="INFO"/>
     <logger name="services.ValidateProject" level="DEBUG"/>
     <logger name="streamcomponents.ProjectSearchSource" level="DEBUG"/>
+    <logger name="helpers.AllowCORSFilter" level="WARN"/>
 
     <root level="INFO">
         <appender-ref ref="STDOUT" />
