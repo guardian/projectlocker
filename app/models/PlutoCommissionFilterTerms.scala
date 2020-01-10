@@ -5,6 +5,19 @@ import play.api.libs.json.{JsValue, _}
 import slick.lifted.Query
 import slick.jdbc.PostgresProfile.api._
 
+//https://github.com/d6y/slick-ilike-example/blob/master/src/main/scala/main.scala
+object ILike {
+  implicit class IlikeOps(s: Rep[String]) {
+    def ilike(p: Rep[String]): Rep[Boolean] = {
+      val expr = SimpleExpression.binary[String,String,Boolean] { (s, p, qb) =>
+        qb.expr(s)
+        qb.sqlBuilder += " ILIKE "
+        qb.expr(p)
+      }
+      expr.apply(s,p)
+    }
+  }
+}
 
 case class PlutoCommissionFilterTerms(title:Option[String],
                                       status:Option[String],
@@ -22,9 +35,10 @@ extends GeneralFilterEntryTerms[PlutoCommissionRow, PlutoCommission] {
     * @return slick query with the relevant filter terms added
     */
   override def addFilterTerms(f: =>Query[PlutoCommissionRow, PlutoCommission, Seq]):Query[PlutoCommissionRow, PlutoCommission, Seq] = {
+    import ILike._
     var action = f
 
-    if(title.isDefined) action = action.filter(_.title like makeWildcard(title.get))
+    if(title.isDefined) action = action.filter(_.title ilike makeWildcard(title.get))
     if(siteId.isDefined) action = action.filter(_.siteId ===siteId.get)
     if(status.isDefined) action = action.filter(_.status like makeWildcard(status.get))
     if(collectionId.isDefined) action = action.filter(_.collectionId===collectionId.get)

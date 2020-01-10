@@ -18,12 +18,11 @@ class CommissionSelector extends React.Component {
         this.state = {
             commissionList: [],
             loading: false,
-            error: null
-        }
-    }
+            error: null,
+            refreshCounter:0
+        };
 
-    componentWillMount(){
-        this.loadData();
+        this.makeSearchDoc = this.makeSearchDoc.bind(this);
     }
 
     loadData(){
@@ -42,12 +41,17 @@ class CommissionSelector extends React.Component {
     }
 
     componentDidUpdate(prevProps, prevState){
-        if(prevProps.workingGroupId!==this.props.workingGroupId || prevProps.showStatus!==this.props.showStatus)
-            this.loadData();
+        if(prevProps.workingGroupId!==this.props.workingGroupId || prevProps.showStatus!==this.props.showStatus) this.setState({refreshCounter: this.state.refreshCounter+1})
     }
 
-    convertContent(contentList){
-        return contentList.map(comm=>{return {name: comm.title, value: comm.id}})
+    static convertContent(contentList){
+        console.log("received", contentList);
+
+        return contentList.result.map(comm=>{return {name: comm.title, value: comm.id}})
+    }
+
+    makeSearchDoc(enteredText){
+        return {title: enteredText, workingGroupId: this.props.workingGroupId, status: this.props.showStatus, match: "W_CONTAINS" };
     }
 
     render(){
@@ -57,7 +61,10 @@ class CommissionSelector extends React.Component {
             return <FilterableList onChange={newValue=>this.props.valueWasSet(parseInt(newValue))}
                                    value={this.props.selectedCommissionId}
                                    size={10}
-                                   unfilteredContent={this.convertContent(this.state.commissionList)}
+                                   unfilteredContentFetchUrl="/api/pluto/commission/list?length=150"
+                                   unfilteredContentConverter={CommissionSelector.convertContent}
+                                   makeSearchDoc={this.makeSearchDoc}
+                                   triggerRefresh={this.state.refreshCounter}
                                    />
     }
 }

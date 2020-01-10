@@ -75,9 +75,11 @@ class FilterableList extends React.Component {
     }
 
     async fetchFromServer(searchParam){
-        const getUrl = this.props.unfilteredContentFetchUrl + "?" + this.props.fetchUrlFilterQuery + "=" + searchParam;
+        console.log("fetchFromServer");
+        const getUrl = this.props.fetchUrlFilterQuery ? this.props.unfilteredContentFetchUrl + "?" + this.props.fetchUrlFilterQuery + "=" + searchParam : this.props.unfilteredContentFetchUrl;
         const credentialsValue = this.props.allowCredentials ? "include" : "omit";
 
+        console.log(getUrl, credentialsValue);
         const result = await (this.props.makeSearchDoc ? fetch(this.props.unfilteredContentFetchUrl ,{method: "PUT", headers: {"Content-Type": "application/json"}, body: JSON.stringify(this.props.makeSearchDoc(searchParam)), credentials: credentialsValue}) : fetch(getUrl));
         const content = await result.json();
 
@@ -92,6 +94,7 @@ class FilterableList extends React.Component {
     }
 
     async filterStatic(searchParam){
+        console.log("filterStatic");
         const searchParamLwr = searchParam.toLowerCase();
         if(searchParam===""){
             return new Promise((resolve,reject)=>this.setState({filteredStaticContent: this.props.unfilteredContent}, ()=>resolve()));
@@ -113,11 +116,13 @@ class FilterableList extends React.Component {
             })
         }
         if(prevProps.triggerRefresh !== this.props.triggerRefresh){
+            console.log("triggerRefresh");
             const completionPromise = this.props.unfilteredContentFetchUrl ? this.fetchFromServer(this.state.currentSearch) : this.filterStatic(this.state.currentSearch);
 
             completionPromise.then(()=> {
                 if (this.props.onFiltered) this.props.onFiltered(this.state.currentSearch);
             }).catch(err=>{
+                console.error(err);
                 this.setState({loading: false, lastError: err})
             })
         }
