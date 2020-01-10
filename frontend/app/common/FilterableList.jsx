@@ -150,7 +150,8 @@ class FilterableList extends React.Component {
                 <li className="filterable-list-entry">
                     <select className="filterable-list-selector" size={this.props.size}
                             value={this.props.value}
-                            onChange={evt=>this.props.onChange(evt.target.value)}>
+                            onClick={evt=>this.props.onChange(evt.target.value)}
+                    >
                         {
                             listContent.map((entry,ix)=>{
                                 return <option key={ix} value={entry.value}>{entry.name}</option>
