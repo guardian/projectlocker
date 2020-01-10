@@ -1,107 +1,53 @@
 import React from 'react';
 import {shallow,mount} from 'enzyme';
-import ErrorViewComponent from '../../../app/multistep/common/CommissionSelector.jsx';
 import sinon from 'sinon';
-import assert from 'assert';
-import moxios from 'moxios';
 import CommissionSelector from "../../../app/multistep/common/CommissionSelector";
 
 describe("CommissionSelector", ()=>{
-    beforeEach(()=>moxios.install());
-    afterEach(()=>moxios.uninstall());
+    it("should prepare content correctly", ()=>{
+        const result = CommissionSelector.convertContent({result: [{
+            id: 1234,
+                title: "Some commission",
+                created: "2019-05-06T03:04:05"
+            }]});
 
-    it("should load data from the server on mount and present a list of options", (done)=>{
-        const valueSetSpy = sinon.spy();
-        const rendered = shallow(<CommissionSelector workingGroupId={4}
-                                                     selectedCommissionId={2}
-                                                     showStatus="In production"
-                                                     valueWasSet={valueSetSpy}/>);
-
-        return moxios.wait(()=>{
-            const req = moxios.requests.mostRecent();
-            try{
-                expect(req.config.url).toEqual("/api/pluto/commission/list?length=150");
-                expect(req.config.data).toEqual(JSON.stringify({workingGroupId: 4, status:"In production", match:"W_EXACT"}))
-            } catch(err) {
-                done.fail(err);
-            }
-            req.respondWith({
-                status: 200,
-                response: {result:[
-                    {id: 1, collectionId: 1234, siteId: "VX", title:"Keith"},
-                    {id: 2, collectionId: 2345, siteId: "VX", title:"Jen"},
-                    {id: 3, collectionId: 3456, siteId: "VX", title:"Sarah"}
-                ],status:"ok"}
-            }).then(()=>{
-                rendered.update();
-                const selectorBox = rendered.find('FilterableList');
-                expect(selectorBox.props().unfilteredContent).toEqual([
-                    { name: "Keith", value: 1},
-                    { name: "Jen", value: 2},
-                    { name: "Sarah", value: 3}
-                ]);
-
-                expect(selectorBox.props().value).toEqual(2);
-                done();
-            }).catch(err=>done.fail(err));
-        })
+        expect(result).toEqual([{
+            name: "Some commission", value: 1234
+        }])
     });
 
-    it("should present an error if download fails", (done)=>{
-        const valueSetSpy = sinon.spy();
-        const rendered = shallow(<CommissionSelector workingGroupId={4}
-                                                   selectedCommissionId={2}
-                                                   showStatus="In production"
-                                                   valueWasSet={valueSetSpy}/>);
+    it("should make a searchdoc", ()=>{
+        const valueChangedSpy = sinon.spy();
+        const rendered = shallow(<CommissionSelector workingGroupId={1} selectedCommissionId={2} showStatus="In production" valueWasSet={valueChangedSpy}/>);
 
-        return moxios.wait(()=>{
-            const req = moxios.requests.mostRecent();
-            try{
-                expect(rendered.instance().state.error).toBeFalsy();
-                expect(req.config.url).toEqual("/api/pluto/commission/list?length=150");
-                expect(req.config.data).toEqual(JSON.stringify({workingGroupId: 4, status:"In production", match:"W_EXACT"}))
-            } catch(err) {
-                done.fail(err);
-            }
-            req.respondWith({
-                status: 500,
-                response: {detail:"hanungah",status:"error"}
-            }).then(()=>{
-                expect(rendered.instance().state.error).toBeTruthy();
-                done();
-            }).catch(err=>done.fail(err));
-        })
+        const result = rendered.instance().makeSearchDoc("sometext");
+        expect(result).toEqual({
+            title: "sometext",
+            workingGroupId: 1,
+            status: "In production",
+            match: "W_CONTAINS"
+        });
     });
 
-    it("should notify the callback when the value changes", (done)=>{
-        const valueSetSpy = sinon.spy();
-        const rendered = shallow(<CommissionSelector workingGroupId={4}
-                                                   selectedCommissionId={2}
-                                                   showStatus="In production"
-                                                   valueWasSet={valueSetSpy}/>);
+    it("should increment the refresh counter if the working group id changes", ()=>{
+        const valueChangedSpy = sinon.spy();
+        const rendered = shallow(<CommissionSelector workingGroupId={1} selectedCommissionId={2} showStatus="In production" valueWasSet={valueChangedSpy}/>);
 
-        return moxios.wait(()=>{
-            const req = moxios.requests.mostRecent();
-            try{
-                expect(req.config.url).toEqual("/api/pluto/commission/list?length=150");
-                expect(req.config.data).toEqual(JSON.stringify({workingGroupId: 4, status:"In production", match:"W_EXACT"}))
-            } catch(err) {
-                done.fail(err);
-            }
-            req.respondWith({
-                status: 200,
-                response: {result:[
-                    {id: 1, collectionId: 1234, siteId: "VX", title:"Keith"},
-                    {id: 2, collectionId: 2345, siteId: "VX", title:"Jen"},
-                    {id: 3, collectionId: 3456, siteId: "VX", title:"Sarah"}
-                ],status:"ok"}
-            }).then(()=>{
-                rendered.update();
-                const selectorBox = rendered.find('FilterableList');
-                selectorBox.props().onChange("3");
-                assert(valueSetSpy.calledWith(3));
-                done();
-            }).catch(err=>done.fail(err));
-        })
+        expect(rendered.find("FilterableList").props().triggerRefresh).toEqual(0);
+        rendered.setProps({workingGroupId: 3});
+        rendered.update();
+        expect(rendered.find("FilterableList").props().triggerRefresh).toEqual(1);
+    });
+
+    it("should call its own callback when FilterableList signals an update", ()=>{
+        const valueChangedSpy = sinon.spy();
+        const rendered = shallow(<CommissionSelector workingGroupId={1} selectedCommissionId={2} showStatus="In production" valueWasSet={valueChangedSpy}/>);
+
+        const list = rendered.find("FilterableList");
+        list.props().onChange("10");
+
+        const calls = valueChangedSpy.getCalls();
+        expect(calls.length).toEqual(1);
+        expect(valueChangedSpy.args[0]).toEqual([10])
     })
 });
