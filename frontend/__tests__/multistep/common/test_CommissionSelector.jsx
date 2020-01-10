@@ -12,12 +12,10 @@ describe("CommissionSelector", ()=>{
 
     it("should load data from the server on mount and present a list of options", (done)=>{
         const valueSetSpy = sinon.spy();
-        const rendered = mount(<CommissionSelector workingGroupId={4}
+        const rendered = shallow(<CommissionSelector workingGroupId={4}
                                                      selectedCommissionId={2}
                                                      showStatus="In production"
                                                      valueWasSet={valueSetSpy}/>);
-
-        expect(rendered.find('img').props().src).toEqual("/assets/images/uploading.svg");
 
         return moxios.wait(()=>{
             const req = moxios.requests.mostRecent();
@@ -36,16 +34,14 @@ describe("CommissionSelector", ()=>{
                 ],status:"ok"}
             }).then(()=>{
                 rendered.update();
-                const selectorBox = rendered.find('#commission-selector');
-                expect(selectorBox.children().length).toEqual(3);
-                expect(selectorBox.childAt(0).props().value).toEqual(1);
-                expect(selectorBox.childAt(0).text()).toEqual("Keith");
-                expect(selectorBox.childAt(1).props().value).toEqual(2);
-                expect(selectorBox.childAt(1).text()).toEqual("Jen");
-                expect(selectorBox.childAt(2).props().value).toEqual(3);
-                expect(selectorBox.childAt(2).text()).toEqual("Sarah");
+                const selectorBox = rendered.find('FilterableList');
+                expect(selectorBox.props().unfilteredContent).toEqual([
+                    { name: "Keith", value: 1},
+                    { name: "Jen", value: 2},
+                    { name: "Sarah", value: 3}
+                ]);
 
-                expect(selectorBox.props().defaultValue).toEqual(2);
+                expect(selectorBox.props().value).toEqual(2);
                 done();
             }).catch(err=>done.fail(err));
         })
@@ -53,7 +49,7 @@ describe("CommissionSelector", ()=>{
 
     it("should present an error if download fails", (done)=>{
         const valueSetSpy = sinon.spy();
-        const rendered = mount(<CommissionSelector workingGroupId={4}
+        const rendered = shallow(<CommissionSelector workingGroupId={4}
                                                    selectedCommissionId={2}
                                                    showStatus="In production"
                                                    valueWasSet={valueSetSpy}/>);
@@ -79,12 +75,10 @@ describe("CommissionSelector", ()=>{
 
     it("should notify the callback when the value changes", (done)=>{
         const valueSetSpy = sinon.spy();
-        const rendered = mount(<CommissionSelector workingGroupId={4}
+        const rendered = shallow(<CommissionSelector workingGroupId={4}
                                                    selectedCommissionId={2}
                                                    showStatus="In production"
                                                    valueWasSet={valueSetSpy}/>);
-
-        expect(rendered.find('img').props().src).toEqual("/assets/images/uploading.svg");
 
         return moxios.wait(()=>{
             const req = moxios.requests.mostRecent();
@@ -103,9 +97,8 @@ describe("CommissionSelector", ()=>{
                 ],status:"ok"}
             }).then(()=>{
                 rendered.update();
-                const selectorBox = rendered.find('#commission-selector');
-                expect(selectorBox.children().length).toEqual(3);
-                selectorBox.simulate('change', {target: {value: 3}});
+                const selectorBox = rendered.find('FilterableList');
+                selectorBox.props().onChange("3");
                 assert(valueSetSpy.calledWith(3));
                 done();
             }).catch(err=>done.fail(err));

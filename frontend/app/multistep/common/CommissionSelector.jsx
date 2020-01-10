@@ -2,6 +2,7 @@ import React from 'react';
 import axios from 'axios';
 import PropTypes from 'prop-types';
 import ErrorViewComponent from "./ErrorViewComponent.jsx";
+import FilterableList from "../../common/FilterableList.jsx";
 
 class CommissionSelector extends React.Component {
     static propTypes = {
@@ -45,19 +46,19 @@ class CommissionSelector extends React.Component {
             this.loadData();
     }
 
+    convertContent(contentList){
+        return contentList.map(comm=>{return {name: comm.title, value: comm.id}})
+    }
+
     render(){
-        if(this.state.loading)
-            return <img src="/assets/images/uploading.svg" style={{display: this.props.loading ? "inline" : "none",height: "20px" }}/>;
-        else if(this.state.error)
+        if(this.state.error)
             return <ErrorViewComponent error={this.state.error}/>;
         else
-            return <select id="commission-selector"
-                           onChange={event=>this.props.valueWasSet(parseInt(event.target.value))}
-                           defaultValue={this.props.selectedCommissionId}>
-                {
-                    this.state.commissionList.map(comm=><option key={comm.id} value={comm.id}>{comm.title}</option>)
-                }
-                </select>;
+            return <FilterableList onChange={newValue=>this.props.valueWasSet(parseInt(newValue))}
+                                   value={this.props.selectedCommissionId}
+                                   size={10}
+                                   unfilteredContent={this.convertContent(this.state.commissionList)}
+                                   />
     }
 }
 

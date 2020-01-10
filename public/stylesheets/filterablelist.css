@@ -1,0 +1,27 @@
+ul.no-decorations {
+    list-style: none;
+    margin-bottom: 0;
+    padding-bottom: 0;
+}
+
+select.filterable-list-selector {
+    height: 100%;
+    min-width: 100%;
+    max-width: 100%;
+}
+
+div.filterable-list-holder {
+    display: flex;
+}
+
+li.filterable-list-entry {
+    display: flex;
+    align-items: baseline;
+}
+.inline-icon {
+    margin-right: 0.4em;
+}
+
+input.filterable-list-search {
+    flex-grow: 1
+}
