@@ -41,6 +41,7 @@ class CommissionSelector extends React.Component {
                                    unfilteredContentConverter={CommissionSelector.convertContent}
                                    makeSearchDoc={this.makeSearchDoc}
                                    triggerRefresh={this.state.refreshCounter}
+                                   allowCredentials={true}
                                    />
     }
 }
