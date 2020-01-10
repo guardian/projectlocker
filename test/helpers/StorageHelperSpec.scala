@@ -4,6 +4,7 @@ import java.io._
 import java.sql.Timestamp
 import java.time.LocalDateTime
 
+import akka.stream.Materializer
 import drivers.{PathStorage, StorageDriver}
 import models.{FileEntry, StorageEntry}
 import org.apache.commons.io.input.NullInputStream
@@ -40,6 +41,7 @@ class StorageHelperSpec extends Specification with Mockito with utils.BuildMyApp
 
       val destStream = new FileOutputStream(destFile)
 
+      implicit val mat:Materializer = mock[Materializer]
       val h = new StorageHelper
       val result = h.copyStream(sourceStream,destStream)
 
@@ -216,7 +218,7 @@ class StorageHelperSpec extends Specification with Mockito with utils.BuildMyApp
 
       val sourceStreamTry = Failure(new RuntimeException("Kaboom!"))
       val destStreamTry = Success(mock[FileOutputStream])
-
+      implicit val mat:Materializer = mock[Materializer]
       val h = new StorageHelper {
         def testDoByteCopy(sourceStorageDriver:StorageDriver,
                            sourceStreamTry:Try[InputStream], destStreamTry:Try[OutputStream],
@@ -238,7 +240,7 @@ class StorageHelperSpec extends Specification with Mockito with utils.BuildMyApp
 
       val sourceStreamTry = Success(mock[FileInputStream])
       val destStreamTry = Failure(new RuntimeException("Kaboom!"))
-
+      implicit val mat:Materializer = mock[Materializer]
       val h = new StorageHelper {
         /**
           * helper to call through to protected method
@@ -264,6 +266,7 @@ class StorageHelperSpec extends Specification with Mockito with utils.BuildMyApp
       val sourceStreamTry = Success(mock[FileInputStream])
       val destStreamTry = Success(mock[FileOutputStream])
 
+      implicit val mat:Materializer = mock[Materializer]
       val h = new StorageHelper {
         /**
           * stub implementation to throw exception
