@@ -1,5 +1,6 @@
 import React from 'react';
 import PropTypes from 'prop-types';
+import FilterableList from "../../common/FilterableList.jsx";
 
 class WorkingGroupSelector extends React.Component {
     static propTypes = {
@@ -8,16 +9,19 @@ class WorkingGroupSelector extends React.Component {
         currentValue: PropTypes.string.isRequired
     };
 
+    convertContentList(rawContentList) {
+        return rawContentList
+            .filter(entry=>!entry.hasOwnProperty("hide"))
+            .map(entry=>{return {name: entry.name, value: entry.id}})
+    }
 
     render(){
-        return <select id="working-group-list"
-                            onChange={event=>this.props.valueWasSet(parseInt(event.target.value))}
-                            defaultValue={this.props.currentValue}>
-                {this.props.workingGroupList
-                    .filter(wg=>!wg.hasOwnProperty("hide"))
-                    .map(wg=><option key={wg.id} value={wg.id}>{wg.name}</option>)
-                }
-            </select>;
+        return <FilterableList onChange={newValue=>this.props.valueWasSet(parseInt(newValue))}
+                               value={this.props.currentValue}
+                               size={10}
+                               unfilteredContent={this.convertContentList(this.props.workingGroupList)}
+
+        />
     }
 }
 

@@ -36,11 +36,15 @@ import NotLoggedIn from './NotLoggedIn.jsx';
 
 import axios from 'axios';
 
+import { library } from '@fortawesome/fontawesome-svg-core'
+import { faSearch } from '@fortawesome/free-solid-svg-icons'
+
 window.React = require('react');
 
 import Raven from 'raven-js';
 import ProjectValidationView from "./ProjectValidationView.jsx";
 
+library.add(faSearch);
 
 class App extends React.Component {
     constructor(props){

@@ -29,7 +29,7 @@ class PlutoLinkageComponent extends CommonMultistepComponent {
     render(){
         return <div>
             <h3>Select Commission</h3>
-            <p>We need to know what piece of work this project file relates to.  Please select the relevant working group and commission</p>
+            <p>We need to know which piece of work this project file relates to.  Please select the relevant working group and commission</p>
             <table>
                 <tbody>
                 <tr>
@@ -37,14 +37,11 @@ class PlutoLinkageComponent extends CommonMultistepComponent {
                     <td><WorkingGroupSelector valueWasSet={value=>this.setState({workingGroupRef: value})}
                                           workingGroupList={this.props.workingGroupList}
                                           currentValue={this.state.workingGroupRef}/></td>
-                </tr>
-                <tr>
                     <td>Commission</td>
                     <td><CommissionSelector workingGroupId={this.state.workingGroupRef}
                                             selectedCommissionId={this.state.plutoCommissionRef}
                                             showStatus={this.state.showStatus}
                                             valueWasSet={value=>this.setState({plutoCommissionRef: value})}/>
-                        <br />
                         <input id="only-show-production" type="radio" name="commission" checked={this.state.showStatus==="In production"} onChange={event=>this.setState({showStatus: "In production"})}/>
                         <label className="commission_buttons" htmlFor="only-show-production" style={{display: "inline", marginLeft: "0.4em"}}>In Production</label>
                         <input id="only-show-new" type="radio" name="commission" checked={this.state.showStatus==="New"} onChange={event=>this.setState({showStatus: "New"})}/>
