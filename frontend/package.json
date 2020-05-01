@@ -7,7 +7,9 @@
     "test": "jest",
     "build": "webpack -d",
     "compile": "webpack -p",
-    "dev": "webpack -d --watch"
+    "dev": "webpack -d --watch",
+    "snyk-protect": "snyk protect",
+    "prepare": "yarn run snyk-protect"
   },
   "jest": {
     "moduleFileExtensions": [
@@ -48,7 +50,6 @@
     "object.entries": "^1.1.1",
     "react-test-renderer": "^16.12.0",
     "sinon": "^8.0.4",
-    "snyk": "^1.277.3",
     "terser-webpack-plugin": "^1.4.3"
   },
   "dependencies": {
@@ -82,6 +83,8 @@
     "style-loader": "^0.23.1",
     "yarn": "^1.21.1",
     "webpack": "^4.41.5",
-    "webpack-cli": "^3.3.10"
-  }
+    "webpack-cli": "^3.3.10",
+    "snyk": "^1.316.1"
+  },
+  "snyk": true
 }
