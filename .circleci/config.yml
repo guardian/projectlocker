@@ -133,6 +133,9 @@ jobs:
           key: dep-{{ .Branch }}-jython-{{ epoch }}
           paths:
             - ~/jython
+      #create a test group so that changing group ownership of project files in postruns will work
+      - run: groupadd -g 1234 test_group
+      - run: usermod -aG test_group ubuntu
       - run: PYTHONPATH=postrun/scripts ~/jython/bin/nosetests -w postrun/tests --with-xunit --xunit-file=$JYTHON_JUNIT_OUTPUT
       - store_test_results:
           path: /tmp/circleci-test-results

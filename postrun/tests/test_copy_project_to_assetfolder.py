@@ -28,9 +28,10 @@ class TestCopyProjectToAssetFolder(unittest2.TestCase):
         self.assertFalse(os.path.exists(copiedpath))
 
         try:
-            postrun(destprojectfile, projectFileExtension=".prproj", dataCache={
-                'created_asset_folder': '/tmp/fake_assets'
-            })
+            with self.assertRaises(OSError): #unfortunately have to expect a permission denied error when changing group in testing environment
+                postrun(destprojectfile, projectFileExtension=".prproj", dataCache={
+                    'created_asset_folder': '/tmp/fake_assets'
+                })
             self.assertTrue(os.path.exists(copiedpath))
         finally:
             os.unlink(copiedpath)
