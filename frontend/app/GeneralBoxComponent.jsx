@@ -143,7 +143,7 @@ class GeneralBoxComponent extends React.Component {
             }, ()=>{
                 this.gotDataCallback(response, ()=> {
                     if (response.data.result.length > 0)
-                        if(this.pageSize*this.state.currentPage>=GeneralListComponent.ITEM_LIMIT)
+                        if(this.pageSize*this.state.currentPage>=GeneralBoxComponent.ITEM_LIMIT)
                             this.setState({maximumItemsLoaded: true});
                         else
                             this.getNextPage()
