@@ -1,7 +1,5 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import ProjectBoxMiddleComponentDiv from "./ProjectBoxMiddleComponentDiv.jsx";
-import ProjectBoxRightComponent from "./ProjectBoxRightComponent.jsx";
 
 class ProjectEntryBox extends React.Component {
     static propTypes = {
@@ -36,12 +34,6 @@ class ProjectEntryBox extends React.Component {
                 <div className="project_box_button clickable"><img width="60" src="/assets/images/folder.png"/></div>
                 <div className="project_box_button clickable"><img width="60" src="/assets/images/premiere_pro.png"/></div>
             </div>
-            {/*<ProjectBoxMiddleComponentDiv id={this.props.projectId}*/}
-            {/*                              type={this.props.projectTypeId}*/}
-            {/*                              title={this.props.projectTitle}*/}
-            {/*                              user={this.props.projectOwner}*/}
-            {/*                              size={this.props.interfaceSize} />*/}
-            {/*<ProjectBoxRightComponent size={this.props.interfaceSize} />*/}
         </div>
     }
 }
