@@ -7,11 +7,6 @@ import CommissionEntryView from './EntryViews/CommissionEntryView.jsx';
 import PropTypes from 'prop-types';
 import axios from 'axios';
 
-import ProjectBoxLeftComponent from './ProjectBoxLeftComponent.jsx'
-import ProjectBoxMiddleComponent from './ProjectBoxMiddleComponent.jsx'
-import ProjectBoxRightComponent from './ProjectBoxRightComponent.jsx'
-
-
 class ProjectEntryBoxes extends GeneralBoxComponent {
     static propTypes = {
         location: PropTypes.object.isRequired

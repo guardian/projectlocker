@@ -7,7 +7,6 @@ import PropTypes from 'prop-types';
 
 class ProjectBoxMiddleComponentDiv extends React.Component {
     static propTypes = {
-        location: PropTypes.object.isRequired
     };
 
     constructor(props){

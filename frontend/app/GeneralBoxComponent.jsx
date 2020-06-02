@@ -194,17 +194,21 @@ class GeneralBoxComponent extends React.Component {
     }
 
     getProjects(){
-        var i;
-        var code_to_return = [];
-        for (i = 0; i < this.state.data.length; i++) {
-            if (this.state.interfaceSize == 0) {
-                code_to_return[i] = <div className="project_box_div_version_small"><ProjectBoxLeftComponent size={this.state.interfaceSize} /><ProjectBoxMiddleComponentDiv id={this.state.data[i]['id']} type={this.state.data[i]['projectTypeId']} title={this.state.data[i]['title']} user={this.state.data[i]['user']} size={this.state.interfaceSize} /><ProjectBoxRightComponent size={this.state.interfaceSize} /></div>;
-            } else {
-                code_to_return[i] = <div className="project_box_div_version"><ProjectBoxLeftComponent size={this.state.interfaceSize} /><ProjectBoxMiddleComponentDiv id={this.state.data[i]['id']} type={this.state.data[i]['projectTypeId']} title={this.state.data[i]['title']} user={this.state.data[i]['user']} size={this.state.interfaceSize} /><ProjectBoxRightComponent size={this.state.interfaceSize} /></div>;
-            }
-        }
-
-        return code_to_return
+        // var i;
+        // var code_to_return = [];
+        // for (i = 0; i < this.state.data.length; i++) {
+        //     if (this.state.interfaceSize == 0) {
+        //         code_to_return[i] = <div className="project_box_div_version_small"><ProjectBoxLeftComponent size={this.state.interfaceSize} /><ProjectBoxMiddleComponentDiv id={this.state.data[i]['id']} type={this.state.data[i]['projectTypeId']} title={this.state.data[i]['title']} user={this.state.data[i]['user']} size={this.state.interfaceSize} /><ProjectBoxRightComponent size={this.state.interfaceSize} /></div>;
+        //     } else {
+        //         code_to_return[i] = <div className="project_box_div_version"><ProjectBoxLeftComponent size={this.state.interfaceSize} /><ProjectBoxMiddleComponentDiv id={this.state.data[i]['id']} type={this.state.data[i]['projectTypeId']} title={this.state.data[i]['title']} user={this.state.data[i]['user']} size={this.state.interfaceSize} /><ProjectBoxRightComponent size={this.state.interfaceSize} /></div>;
+        //     }
+        // }
+        //
+        // return code_to_return
+        return this.state.data.map((entry,idx)=><div key={idx} className={this.state.interfaceSize===0 ? "project_box_div_version" : "project_box_div_version_small"}>
+            <ProjectBoxMiddleComponentDiv id={entry.id} type={entry.projectTypeId} title={entry.title} user={entry.user} size={this.state.interfaceSize} />
+            <ProjectBoxRightComponent size={this.state.interfaceSize} />
+        </div>)
     }
 
     changeSize(){
