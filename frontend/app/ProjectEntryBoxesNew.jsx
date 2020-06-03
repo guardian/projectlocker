@@ -26,6 +26,7 @@ class ProjectEntryBoxes extends React.Component {
             data: []
         }
         this.filterDidUpdate = this.filterDidUpdate.bind(this);
+        this.newElementCallback = this.newElementCallback.bind(this);
     }
 
     changeSize() {
@@ -115,6 +116,10 @@ class ProjectEntryBoxes extends React.Component {
             return <p style={{margin: 0}}/>
     }
 
+    newElementCallback(event) {
+        this.props.history.push("/project/new");
+    }
+
     render() {
         console.log(this.state.data);
         return <div>
@@ -129,9 +134,9 @@ class ProjectEntryBoxes extends React.Component {
 
             <div className="projects_container">{
                 this.state.data.map((entry,idx)=> {
-                    return <ProjectEntryBox key={idx} interfaceSize={this.state.interfaceSize} projectId={entry.id}
+                    return <ProjectEntryBox rowKey={idx} interfaceSize={this.state.interfaceSize} projectId={entry.id}
                                      projectTypeId={entry.projectTypeId} projectTitle={entry.title}
-                                     projectOwner={entry.user}/>
+                                     projectOwner={entry.user} workingGroupId={entry.workingGroupId} commissionId={entry.commissionId}/>
                 })
             }</div>
         </div>

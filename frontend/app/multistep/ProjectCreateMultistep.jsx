@@ -110,6 +110,13 @@ class ProjectCreateMultistep extends React.Component {
     render(){
         const steps = [
             {
+                name: "Working Group & Commission",
+                component: <PlutoLinkageComponent valueWasSet={this.plutoDataUpdated}
+                                                  workingGroupList={this.state.wgList}
+                                                  currentWorkingGroup={this.state.selectedWorkingGroup }
+                />
+            },
+            {
                 name: "Select project template",
                 component: <TemplateComponent templatesList={this.state.projectTemplates}
                                               selectedTemplate={this.state.selectedProjectTemplate}
@@ -120,13 +127,6 @@ class ProjectCreateMultistep extends React.Component {
                 component: <NameComponent projectName={this.state.projectName}
                                           fileName={this.state.fileName}
                                           selectionUpdated={this.nameSelectionUpdated}/>
-            },
-            {
-                name: "Working Group & Commission",
-                component: <PlutoLinkageComponent valueWasSet={this.plutoDataUpdated}
-                                                  workingGroupList={this.state.wgList}
-                                                  currentWorkingGroup={this.state.selectedWorkingGroup }
-                />
             },
             {
                 name: "Media Rules",
