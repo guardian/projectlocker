@@ -44,6 +44,7 @@ window.React = require('react');
 import Raven from 'raven-js';
 import ProjectValidationView from "./ProjectValidationView.jsx";
 import CommissionsList from "./CommissionsList.jsx";
+import CommissionCreateMultistep from "./multistep/CommissionCreateMultistep.jsx";
 
 library.add(faSearch);
 
@@ -161,6 +162,7 @@ class App extends React.Component {
                         <Route path="/project/:itemid/delete" component={ProjectDeleteComponent}/>
                         <Route path="/project/:itemid" component={TitleEditComponent}/>
                         <Route path="/project/" component={ProjectEntryList}/>
+                        <Route path="/commission/new" component={CommissionCreateMultistep}/>
                         <Route path="/commission/" component={CommissionsList}/>
                         <Route path="/validate/project" component={ProjectValidationView}/>
                         <Route path="/postrun/:itemid/delete" component={PostrunDeleteComponent}/>
