@@ -84,9 +84,11 @@ DELETE  /api/default/:key               @controllers.DefaultsController.deleteFo
 
 GET     /api/pluto/workinggroup            @controllers.PlutoWorkingGroupController.list(startAt:Int ?=0,length:Int ?=100)
 GET     /api/pluto/workinggroup/:id        @controllers.PlutoWorkingGroupController.getitem(id:Int)
+POST    /api/pluto/workinggroup            @controllers.PlutoWorkingGroupController.create
 
 GET     /api/pluto/commission/:id          @controllers.PlutoCommissionController.getitem(id:Int)
-POST    /api/pluto/commission              @controllers.PlutoCommissionController.create
+POST    /api/pluto/commission              @controllers.PlutoCommissionController.createPluto
+POST    /api/prexit/commission             @controllers.PlutoCommissionController.create
 PUT     /api/pluto/commission/list         @controllers.PlutoCommissionController.listFiltered(startAt:Int ?=0, length:Int ?=100)
 OPTIONS /api/pluto/commission/list          @controllers.PlutoCommissionController.listOptions
 
