@@ -6,7 +6,8 @@ class SummaryComponent extends React.Component {
     static propTypes = {
         commissionName: PropTypes.string.isRequired,
         wgList: PropTypes.array.isRequired,
-        selectedWorkingGroupId: PropTypes.number.isRequired
+        selectedWorkingGroupId: PropTypes.number.isRequired,
+        createTime: PropTypes.string.isRequired,
     };
 
     constructor(props){
@@ -23,6 +24,10 @@ class SummaryComponent extends React.Component {
             <tr>
                 <td>Working group</td>
                 <td id="working-group"><WorkingGroupEntryView entryId={this.props.selectedWorkingGroupId}/></td>
+            </tr>
+            <tr>
+                <td>Creation time</td>
+                <td id="create-time">{this.props.createTime}</td>
             </tr>
             </tbody>
         </table>;
