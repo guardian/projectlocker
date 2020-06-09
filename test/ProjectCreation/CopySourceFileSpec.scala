@@ -34,14 +34,13 @@ class CopySourceFileSpec extends Specification with BuildMyApp with Mockito {
       private implicit val system = injector.instanceOf(classOf[ActorSystem])
       private implicit val db = dbConfigProvider.get[JdbcProfile].db
 
-      val fileEntrySource = Await.result(FileEntry.entryFor("realfile",1,1), 2 seconds)
+      val fileEntrySource = Await.result(FileEntry.entryFor("/path/to/a/file.project",1,1), 2 seconds)
       fileEntrySource must beSuccessfulTry
       fileEntrySource.get.length mustEqual 1
 
       val fileEntryDest = Await.result(FileEntry.entryFor("testprojectfile",1,1), 2 seconds)
       fileEntryDest must beSuccessfulTry
       fileEntryDest.get.length mustEqual 1
-      fileEntryDest.get.head.hasContent must beFalse
       protected val storageHelper = mock[StorageHelper]
       storageHelper.copyFile(any[FileEntry],any[FileEntry])(any) returns Future(Right(fileEntryDest.get.head.copy(hasContent = true)))
 
@@ -65,16 +64,15 @@ class CopySourceFileSpec extends Specification with BuildMyApp with Mockito {
       private implicit val system = injector.instanceOf(classOf[ActorSystem])
       private implicit val db = dbConfigProvider.get[JdbcProfile].db
 
-      val fileEntrySource = Await.result(FileEntry.entryFor("realfile",1,1), 2 seconds)
+      val fileEntrySource = Await.result(FileEntry.entryFor("/path/to/a/file.project",1,1), 2 seconds)
       fileEntrySource must beSuccessfulTry
       fileEntrySource.get.length mustEqual 1
 
       val fileEntryDest = Await.result(FileEntry.entryFor("testprojectfile",1,1), 2 seconds)
       fileEntryDest must beSuccessfulTry
       fileEntryDest.get.length mustEqual 1
-      fileEntryDest.get.head.hasContent must beFalse
       protected val storageHelper = mock[StorageHelper]
-      storageHelper.copyFile(any[FileEntry],any[FileEntry])(any) returns Future(Right(fileEntryDest.get.head.copy(hasContent = true)))
+      storageHelper.copyFile(any[FileEntry],any[FileEntry])(any) returns Future(Left(Seq("Something went KABOOM!")))
 
       val ac = system.actorOf(Props(new CopySourceFile(dbConfigProvider, storageHelper)))
 
@@ -86,7 +84,6 @@ class CopySourceFileSpec extends Specification with BuildMyApp with Mockito {
       val result = Await.result((ac ? msg).mapTo[CreationMessage], 10 seconds)
       result must beAnInstanceOf[StepFailed]
       result.asInstanceOf[StepFailed].updatedData.destFileEntry must beSome
-      result.asInstanceOf[StepFailed].updatedData.destFileEntry.get.hasContent must beFalse
       result.asInstanceOf[StepFailed].err.getMessage mustEqual "Something went KABOOM!"
     }
   }
@@ -99,14 +96,13 @@ class CopySourceFileSpec extends Specification with BuildMyApp with Mockito {
       private implicit val system = injector.instanceOf(classOf[ActorSystem])
       private implicit val db = dbConfigProvider.get[JdbcProfile].db
 
-      val fileEntrySource = Await.result(FileEntry.entryFor("realfile",1,1), 2 seconds)
+      val fileEntrySource = Await.result(FileEntry.entryFor("/path/to/a/file.project",1,1), 2 seconds)
       fileEntrySource must beSuccessfulTry
       fileEntrySource.get.length mustEqual 1
 
       val fileEntryDest = Await.result(FileEntry.entryFor("testprojectfile",1,1 ), 2 seconds)
       fileEntryDest must beSuccessfulTry
       fileEntryDest.get.length mustEqual 1
-      fileEntryDest.get.head.hasContent must beFalse
 
       val mockedStorageHelper = mock[StorageHelper]
       mockedStorageHelper.deleteFile(any[FileEntry])(any) returns Future(Right(fileEntryDest.get.head.copy(hasContent = false)))
@@ -121,7 +117,6 @@ class CopySourceFileSpec extends Specification with BuildMyApp with Mockito {
       val result = Await.result((ac ? msg).mapTo[CreationMessage], 10 seconds)
       result must beAnInstanceOf[StepSucceded]
       result.asInstanceOf[StepSucceded].updatedData.destFileEntry must beSome
-      result.asInstanceOf[StepSucceded].updatedData.destFileEntry.get.hasContent must beFalse
       there was one(mockedStorageHelper).deleteFile(fileEntryDest.get.head)
     }
   }

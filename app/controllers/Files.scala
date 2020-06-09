@@ -1,6 +1,7 @@
 package controllers
 
 import akka.stream.Materializer
+import auth.BearerTokenAuth
 import javax.inject.Inject
 import exceptions.{AlreadyExistsException, BadDataException}
 import helpers.StorageHelper
@@ -21,7 +22,7 @@ import scala.concurrent.{CanAwait, Future}
 import scala.util.{Failure, Success, Try}
 
 
-class Files @Inject() (configuration: Configuration, dbConfigProvider: DatabaseConfigProvider, cacheImpl:SyncCacheApi, storageHelper:StorageHelper)
+class Files @Inject() (override val controllerComponents:ControllerComponents, override val bearerTokenAuth:BearerTokenAuth, configuration: Configuration, dbConfigProvider: DatabaseConfigProvider, cacheImpl:SyncCacheApi, storageHelper:StorageHelper)
                       (implicit mat:Materializer)
   extends GenericDatabaseObjectControllerWithFilter[FileEntry,FileEntryFilterTerms]
     with FileEntrySerializer with FileEntryFilterTermsSerializer

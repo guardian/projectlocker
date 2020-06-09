@@ -90,7 +90,7 @@ class FileControllerSpec extends GenericControllerSpec with BeforeAll with After
       status(response) must equalTo(CONFLICT)
 
       (jsondata \ "status").as[String] mustEqual "error"
-      (jsondata \ "detail").as[String] mustEqual "exceptions.AlreadyExistsException: A file already exists at /path/to/a/video.mxf on storage 2"
+      (jsondata \ "detail").as[String] mustEqual "exceptions.AlreadyExistsException: A file already exists at /path/to/a/video.mxf on storage 2 and versioning is not enabled"
     }
   }
 
@@ -165,7 +165,9 @@ class FileControllerSpec extends GenericControllerSpec with BeforeAll with After
       projectList.head.user mustEqual "you"
       projectList.head.created mustEqual Timestamp.valueOf("2016-12-11 12:21:11.021")
 
-      (responseBody \ "templates").as[List[ProjectTemplate]].contains(ProjectTemplate(Some(3),"Some random test template",2,2, None, Some(false))) must beTrue
+      println(responseBody.toString())
+      println((responseBody \ "templates").as[List[ProjectTemplate]])
+      (responseBody \ "templates").as[List[ProjectTemplate]].contains(ProjectTemplate(Some(3),"Some random test template",2,2, None, None)) must beTrue
     }
   }
 }

@@ -5,11 +5,12 @@ import models.{PlutoWorkingGroup, PlutoWorkingGroupRow, PlutoWorkingGroupSeriali
 import play.api.cache.SyncCacheApi
 import play.api.db.slick.DatabaseConfigProvider
 import play.api.libs.json.{JsResult, JsValue, Json}
-import play.api.mvc.Request
+import play.api.mvc.{ControllerComponents, Request}
 import slick.jdbc.PostgresProfile
 import slick.lifted.TableQuery
 import slick.jdbc.PostgresProfile.api._
 import akka.pattern.ask
+import auth.BearerTokenAuth
 import services.PlutoWGCommissionScanner
 
 import scala.concurrent.Future
@@ -18,7 +19,8 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
 
 @Singleton
-class PlutoWorkingGroupController @Inject() (dbConfigProvider:DatabaseConfigProvider, cacheImpl:SyncCacheApi, @Named("pluto-wg-commission-scanner") scanner:ActorRef)
+class PlutoWorkingGroupController @Inject() (override val controllerComponents:ControllerComponents, override val bearerTokenAuth:BearerTokenAuth,
+                                             dbConfigProvider:DatabaseConfigProvider, cacheImpl:SyncCacheApi, @Named("pluto-wg-commission-scanner") scanner:ActorRef)
   extends GenericDatabaseObjectController[PlutoWorkingGroup] with PlutoWorkingGroupSerializer {
 
   implicit val timeout:akka.util.Timeout = 55 seconds

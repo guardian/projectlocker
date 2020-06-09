@@ -29,7 +29,7 @@ trait GenericDatabaseObjectController[M] extends GenericDatabaseObjectController
   * @tparam M - type of the case class which represents the objects that ultimately get returned by Slick
   * @tparam F - type of the case class which represents supported search filter terms (the provided json is marshalled to this)
   */
-trait GenericDatabaseObjectControllerWithFilter[M,F] extends InjectedController with Security {
+trait GenericDatabaseObjectControllerWithFilter[M,F] extends BaseController with Security {
   /**
     * Implement this method in your subclass to validate that the incoming record (passed in request) does indeed match
     * your case class.

@@ -40,7 +40,7 @@ class StorageControllerSpec extends GenericControllerSpec with BeforeAfterAll {
 
   override val testGetId: Int = 1
   override val testGetDocument: String = """{"storageType": "Local", "user": "me"}"""
-  override val testCreateDocument: String =  """{"storageType": "Local", "user": "tests", "rootpath":"/tmp/teststorage"}"""
+  override val testCreateDocument: String =  """{"storageType": "Local", "user": "tests", "rootpath":"/tmp/teststorage", "supportsVersions": false}"""
   override val testDeleteId: Int = 4
   override val testConflictId: Int = 2
   override val minimumNewRecordId: Int = 3

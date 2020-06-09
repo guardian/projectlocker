@@ -6,7 +6,7 @@ import java.util.Properties
 import javax.inject.{Inject, Singleton}
 import play.api._
 import play.api.mvc._
-import auth.{LDAP, Security, User}
+import auth.{BearerTokenAuth, LDAP, Security, User}
 import com.unboundid.ldap.sdk.LDAPConnectionPool
 import helpers.DatabaseHelper
 import models.{LoginRequest, LoginRequestSerializer}
@@ -20,7 +20,7 @@ import scala.util.{Failure, Success, Try}
 import scala.concurrent.ExecutionContext.Implicits.global
 
 @Singleton
-class Application @Inject() (cc:ControllerComponents, p:PlayBodyParsers, config:Configuration, cacheImpl:SyncCacheApi, dbHelper:DatabaseHelper)
+class Application @Inject() (val cc:ControllerComponents, override val bearerTokenAuth:BearerTokenAuth, p:PlayBodyParsers, config:Configuration, cacheImpl:SyncCacheApi, dbHelper:DatabaseHelper)
   extends AbstractController(cc) with Security with LoginRequestSerializer {
 
   implicit val cache:SyncCacheApi = cacheImpl
