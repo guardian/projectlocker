@@ -175,7 +175,6 @@ trait Security extends BaseController {
       logger.warn(s"Admin request rejected for $uid to ${request.uri}")
       Future(Forbidden(Json.obj("status"->"forbidden","detail"->"You need admin rights to perform this action")))
     }
-    //HasRoleAsync[A](Conf.adminGroups.asScala.toList)(b)(f)
   }
 
   def IsAdminAsync(f: => String => Request[AnyContent] => Future[Result]) = IsAuthenticatedAsync { uid=> request=>
@@ -185,18 +184,6 @@ trait Security extends BaseController {
       logger.warn(s"Admin request rejected for $uid to ${request.uri}")
       Future(Forbidden(Json.obj("status"->"forbidden","detail"->"You need admin rights to perform this action")))
     }
-    //HasRoleAsync[AnyContent](Conf.adminGroups.asScala.toList)(parse.anyContent)(f)
   }
 
-  def HasRoleUpload(requiredRoles: List[String])
-                   (b: BodyParser[MultipartFormData[TemporaryFile]] = parse.multipartFormData)
-                   (f: => String => Request[MultipartFormData[TemporaryFile]] => Result) = IsAuthenticated(b) {
-    uid => 
-      request => 
-        LDAP.getUserRoles(uid) match {
-          case Some(userRoles) if requiredRoles.intersect(userRoles).nonEmpty => f(uid)(request)
-          case _ => 
-            Results.Forbidden
-        }
-  }
 }
