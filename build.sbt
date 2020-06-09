@@ -22,7 +22,7 @@ lazy val `projectlocker` = (project in file("."))
       dockerRepository := Some("andyg42"),
       packageName in Docker := "andyg42/projectlocker",
       packageName := "projectlocker",
-      dockerBaseImage := "openjdk:8-jdk-slim",
+      dockerBaseImage := "openjdk:11-jre-slim-buster",
       dockerPermissionStrategy := DockerPermissionStrategy.Run,
       dockerAlias := docker.DockerAlias(None,sys.props.get("docker.username"),"projectlocker",Some(sys.props.getOrElse("build.number","DEV"))),
       dockerCommands ++= Seq(
@@ -37,7 +37,7 @@ lazy val `projectlocker` = (project in file("."))
 
 javaOptions in Test += "-Duser.timezone=UTC"
 
-scalaVersion := "2.12.2"
+scalaVersion := "2.13.2"
 
 libraryDependencies ++= Seq( jdbc, ehcache , ws   , specs2 % Test, guice )
 
@@ -75,39 +75,42 @@ libraryDependencies ++= Seq(
 libraryDependencies += "org.python" % "jython" % "2.7.1b2"
 
 // upgrade jackson-databind to remove Deserialization of Untrusted Data vuln
-libraryDependencies += "com.fasterxml.jackson.core" % "jackson-databind" % "2.8.11.1"
+libraryDependencies += "com.fasterxml.jackson.core" % "jackson-databind" % "2.10.4"
 
 // upgrade guava to remove Deserialization of Untruseted Data vuln
 // https://mvnrepository.com/artifact/com.google.guava/guava
 libraryDependencies += "com.google.guava" % "guava" % "25.1-jre"
 
-val akkaManagementVersion = "0.18.0"
+val akkaManagementVersion = "1.0.8"
+val akkaVersion = "2.6.6"
 //messaging persistence and clustering
 libraryDependencies ++= Seq(
   "com.lightbend.akka.management" %% "akka-management" % akkaManagementVersion,
   "com.lightbend.akka.management" %% "akka-management-cluster-bootstrap" % akkaManagementVersion,
   "com.lightbend.akka.discovery" %% "akka-discovery-kubernetes-api" % akkaManagementVersion,
-  "com.lightbend.akka.discovery" %% "akka-discovery-dns" % akkaManagementVersion,
-  "com.lightbend.akka.discovery" %% "akka-discovery-config" % akkaManagementVersion,
-  "com.typesafe.akka" %% "akka-persistence" % "2.5.23",
-  "com.typesafe.akka" %% "akka-cluster" % "2.5.23",
-  "com.typesafe.akka" %% "akka-cluster-metrics" % "2.5.23",
-  "com.typesafe.akka" %% "akka-cluster-tools" % "2.5.23",
+  "com.typesafe.akka" %% "akka-persistence" % akkaVersion,
+  "com.typesafe.akka" %% "akka-cluster" % akkaVersion,
+  "com.typesafe.akka" %% "akka-cluster-metrics" % akkaVersion,
+  "com.typesafe.akka" %% "akka-cluster-tools" % akkaVersion,
+  "com.typesafe.akka" %% "akka-cluster-typed" % akkaVersion,
+  "com.typesafe.akka" %% "akka-discovery" % akkaVersion,
+  "com.typesafe.akka" %% "akka-actor-typed" % akkaVersion,
+  "com.typesafe.akka" %% "akka-slf4j" % akkaVersion,
+  "com.typesafe.akka" %% "akka-serialization-jackson" % akkaVersion,
   "org.iq80.leveldb"            % "leveldb"          % "0.7",
   "org.fusesource.leveldbjni"   % "leveldbjni-all"   % "1.8",
-  "com.typesafe.akka" %% "akka-testkit" % "2.5.23" % Test
+  "com.typesafe.akka" %% "akka-testkit" % akkaVersion % Test
 )
 
-//explicit akka upgrades for security
+//explicit akka upgrades for version fixes
+val akkaHttpVersion = "10.1.12"
 libraryDependencies ++= Seq(
-  "com.typesafe.akka" %% "akka-http" % "10.1.8",
-  "com.typesafe.akka" %% "akka-http-core" % "10.1.8",
-  "com.typesafe.akka" %% "akka-parsing" % "10.1.8",
-  "com.typesafe.akka" %% "akka-http-spray-json" % "10.1.8"
+  "com.typesafe.akka" %% "akka-http" % akkaHttpVersion,
+  "com.typesafe.akka" %% "akka-http-spray-json" % akkaHttpVersion,
 )
 
 //Sentry
-libraryDependencies += "io.sentry" % "sentry-logback" % "1.7.2"
+libraryDependencies += "io.sentry" % "sentry-logback" % "1.7.30"
 
 //Reflections library for scanning classpath
 libraryDependencies += "org.reflections" % "reflections" % "0.9.11"

@@ -10,7 +10,6 @@ import models.{FileEntry, StorageEntry}
 import org.apache.commons.io.input.NullInputStream
 import org.specs2.mock.Mockito
 import org.specs2.mutable.Specification
-import play.api.Logger
 import play.api.db.slick.DatabaseConfigProvider
 import slick.jdbc.{JdbcBackend, JdbcProfile}
 
@@ -21,8 +20,11 @@ import scala.sys.process._
 import scala.util.{Failure, Success, Try}
 import play.api.test.WithApplication
 import org.apache.commons.io.FilenameUtils
+import org.slf4j.LoggerFactory
 
 class StorageHelperSpec extends Specification with Mockito with utils.BuildMyApp {
+  private val logger = LoggerFactory.getLogger(getClass)
+
   "StorageHelper.copyStream" should {
     "reliably copy one stream to another, returning the number of bytes copied" in {
       val testFileNameSrc = "/tmp/storageHelperSpecTest-src-1" // shouldn't have spaces!
@@ -67,7 +69,7 @@ class StorageHelperSpec extends Specification with Mockito with utils.BuildMyApp
       val testFileNameDest = "/tmp/storageHelperSpecTest-dst-2" // shouldn't have spaces!
       try {
         // create a test file
-        Logger.debug( Seq("/bin/dd", "if=/dev/urandom", s"of=$testFileNameSrc", "bs=1k", "count=600").toString())
+        logger.debug( Seq("/bin/dd", "if=/dev/urandom", s"of=$testFileNameSrc", "bs=1k", "count=600").toString())
         Seq("/bin/dd", "if=/dev/urandom", s"of=$testFileNameSrc", "bs=1k", "count=600").!
         Seq("/bin/ls", "-lh", testFileNameSrc).!
 

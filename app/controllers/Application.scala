@@ -56,7 +56,7 @@ class Application @Inject() (val cc:ControllerComponents, override val bearerTok
     *         If an error occurs, a 500 response with a basic error message directing the user to go to the logs
     */
   def authenticate = Action(p.json) { request=>
-    val adminRoles = config.getStringList("ldap.admin-groups").map(_.asScala).getOrElse(List("Administrator"))
+    val adminRoles = config.getOptional[Seq[String]]("ldap.admin-groups").getOrElse(List("Administrator"))
 
     logger.info(s"Admin roles are: $adminRoles")
     LDAP.connectionPool.fold(
@@ -127,7 +127,7 @@ class Application @Inject() (val cc:ControllerComponents, override val bearerTok
     *         If the session is valid, a 200 response with the currently logged in userid in a json object
     */
   def isLoggedIn = IsAuthenticated { uid=> { request=>
-    val adminRoles = config.getStringList("ldap.admin-groups").map(_.asScala).getOrElse(List("Administrator"))
+    val adminRoles = config.getOptional[Seq[String]]("ldap.admin-groups").getOrElse(List("Administrator"))
     val isAdmin = config.get[String]("ldap.ldapProtocol") match {
       case "none"=>true
       case _=>checkRole(uid, adminRoles)

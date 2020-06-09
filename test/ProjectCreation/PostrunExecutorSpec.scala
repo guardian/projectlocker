@@ -260,7 +260,8 @@ class PostrunExecutorSpec extends Specification with BuildMyApp with Mockito {
       val testMessageProcessor = TestProbe()
 
       val mockedFileEntry = mock[FileEntry]
-      mockedFileEntry.getFullPath(any) answers { db=> throw new RuntimeException("Whoops!")}
+      //mockedFileEntry.getFullPath(any[slick.jdbc.PostgresProfile#Backend#Database]) answers { implicit db: slick.jdbc.PostgresProfile#Backend#Database=>Future.failed[String](new RuntimeException("Whoops!"))}
+      mockedFileEntry.getFullPath(any) throws new RuntimeException("Whoops!")
       mockedFileEntry.hasContent returns true
       mockedFileEntry.id returns Some(1)  //this must be a valid fileID otherwise primary-key association fails
 

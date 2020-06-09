@@ -15,7 +15,6 @@ import slick.jdbc.PostgresProfile.api._
 import scala.concurrent.ExecutionContext.Implicits.global
 import models._
 import play.api.cache.SyncCacheApi
-import play.mvc.Http.Response
 import slick.lifted.TableQuery
 
 import scala.concurrent.{CanAwait, Future}

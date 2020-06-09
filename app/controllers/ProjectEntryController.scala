@@ -4,8 +4,7 @@ import javax.inject.{Inject, Named, Singleton}
 import akka.actor.ActorRef
 import akka.pattern.ask
 import auth.{BearerTokenAuth, Security}
-import com.unboundid.ldap.sdk.LDAPConnectionPool
-import exceptions.{BadDataException, ProjectCreationError, RecordNotFoundException}
+import exceptions.RecordNotFoundException
 import helpers.AllowCORSFunctions
 import models._
 import play.api.cache.SyncCacheApi
@@ -14,18 +13,17 @@ import play.api.db.slick.DatabaseConfigProvider
 import play.api.http.HttpEntity
 import play.api.libs.json.{JsError, JsResult, JsValue, Json}
 import play.api.mvc._
-import play.mvc.Http.Response
 import services.ValidateProject
 import services.actors.creation.{CreationMessage, GenericCreationActor}
 import services.actors.creation.GenericCreationActor.{NewProjectRequest, ProjectCreateTransientData}
 import slick.jdbc.PostgresProfile
 import slick.lifted.TableQuery
 import slick.jdbc.PostgresProfile.api._
-
 import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.util.{Failure, Success, Try}
 import scala.concurrent.duration._
+import scala.language.postfixOps
 
 @Singleton
 class ProjectEntryController @Inject() (@Named("project-creation-actor") projectCreationActor:ActorRef,
