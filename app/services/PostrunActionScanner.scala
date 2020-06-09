@@ -45,9 +45,9 @@ class PostrunActionScanner @Inject() (dbConfigProvider: DatabaseConfigProvider, 
           logger.debug(s"Successfully precompiled $runnable")
         case Failure(error) => error match {
           case e: PrecompileException =>
-            logger.error(s"Could not precompile ${e.toString}", error)
+            if(!sys.env.contains("CI")) logger.error(s"Could not precompile ${e.toString}", error)  //don't show the error if we are testing
           case _ =>
-            logger.error("Could not precompile: ", error)
+            if(!sys.env.contains("CI")) logger.error("Could not precompile: ", error)
         }
       })
     }).recover({

@@ -19,7 +19,7 @@ only implementing https to the loadbalancer)
 ## Authentication Setup
 
 Projectlocker is intended to run against an ldap-based authentication system, such as Active Directory. This is configured
-in `application.conf`.
+in `application.conf` but it can be turned off during development.
 
 ### ldaps
 
@@ -78,10 +78,13 @@ Development
 
 ### Prerequisites
 
-- You need a working postgres installation.  On Linux this is normally as simple as `apt-get install postgresql` or `yum install postgresql`.  On Mac it's best to install Homebrew, then you can run `brew install postgresql`
+- You need a working postgres installation. You could install postgres using a package manager, or you can quickly run a Dockerised version by
+running the `setup_docker_postgres.sh` script in `scripts`.
 - You need an installation of node.js to build the frontend.  It's easiest to first install the Node Version Manager, nvm, and then use this to install node: `nvm install 8.1.3`
 - You need a version 1.8+ JDK.  On  Linux this is normally as simple as `apt-get install openjdk-8-jdk` or the yum equivalent
-- You need to set up the test database before the tests will work: `sudo -u postgres ./scripts/create_dev_db.sh` (**Note**: if installing through homebrew, postgres runs as the current user so the `sudo -u postgres` part is not required)
+- If you are not using the postgres docker image, you will need to set up the test database before the tests will work:
+ `sudo -u postgres ./scripts/create_dev_db.sh` (**Note**: if installing through homebrew, postgres runs as the current 
+ user so the `sudo -u postgres` part is not required)
 
 ### Backend
 
@@ -98,8 +101,18 @@ Development
 - Tests can be run via `npm test`
 - To just build the frontend, you can run `npm run compile` from the frontend directory
 - To develop the frontend, you should run `npm run dev` from the frontend directory.  This doesn't terminate, it asks Webpack to stay running and check the source files for modifications and automatically rebuild for you
-- **Note** - react-multistep is not properly webpack compliant and needs to be transpiled seperately.  This is automatically done when you run `npm run compile` or `npm run dev`, by running the `frontend/scripts/fix-multistep` script.  If you see errors relating to multistep, then try deleting `frontend/node_modules/react-multistep`, reinstalling with `yarn install` and running this script manually
 
+### Running the backend tests
+
+The backend tests can be run with sbt, but since they depend on having a test database (`projectlocker-test`) in a specific state to start
+and on the akka cluster configuration being suitable, they can be a pain to get working.  If you are having trouble getting `sbt test` to pass,
+make sure of the following:
+- set `ldap.ldapProtocol` to `"ldaps"` in the config (this will fix errors around "expected "testuser", got "noldap")
+- set `akka.remote.netty.tcp.port` to `0` in order to bind to a random available port (this will fix guice provisioning errors,
+ but can stop the app running properly in dev mode)
+- run the database with `scripts/setup_docker_postgres.sh`.  This will automatically set up projectlocker_test for you.
+- reset the state of the database before each test run. The simplest way to do this is to use `scripts/setup_docker_postgres.sh`
+and use CTRL-C to exit the database and re-run it to set up the environment again before each run
 
 ### Signing requests for server->server interactions
 

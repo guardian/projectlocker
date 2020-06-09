@@ -29,7 +29,13 @@ class BearerTokenAuth @Inject() (config:Configuration) {
   //see https://stackoverflow.com/questions/475074/regex-to-parse-or-validate-base64-data
   //it is not the best option but is the simplest that will work here
   private val authXtractor = "^Bearer\\s+([a-zA-Z0-9+/._-]*={0,3})$".r
-  private val (signingKey, verifier) = loadInKey()
+  private val maybeVerifier = loadInKey() match {
+    case Failure(err)=>
+      if(!sys.env.contains("CI")) logger.warn(s"No token validation cert in config so bearer token auth will not work. Error was ${err.getMessage}")
+      None
+    case Success(jwk)=>
+      Some(new RSASSAVerifier(jwk.toRSAKey))
+  }
 
   def isAdminClaimName() = {
     config.get[String]("auth.adminClaim")
@@ -46,11 +52,9 @@ class BearerTokenAuth @Inject() (config:Configuration) {
 
   //this fails if it can't load, deliberately; it is called at init so should block the server from
   //initialising. This is desired fail-fast behaviour
-  def loadInKey() = {
+  def loadInKey() = Try {
     val pemCertData = config.get[String]("auth.tokenSigningCert")
-    val jwk = JWK.parseFromPEMEncodedX509Cert(pemCertData)
-    val verifier = new RSASSAVerifier(jwk.toRSAKey)
-    (jwk, verifier)
+    JWK.parseFromPEMEncodedX509Cert(pemCertData)
   }
 
   /**
@@ -63,13 +67,17 @@ class BearerTokenAuth @Inject() (config:Configuration) {
   def validateToken(token:String) = {
     logger.debug(s"validating token $token")
     Try { SignedJWT.parse(token) }.flatMap(signedJWT=>
-      if(signedJWT.verify(verifier)) {
-        logger.debug("verified JWT")
-        Success(signedJWT.getJWTClaimsSet)
-      } else {
-        Failure(new RuntimeException("Failed to validate JWT)"))
-      }
-    )
+      maybeVerifier match {
+        case Some(verifier) =>
+          if (signedJWT.verify(verifier)) {
+            logger.debug("verified JWT")
+            Success(signedJWT.getJWTClaimsSet)
+          } else {
+            Failure(new RuntimeException("Failed to validate JWT"))
+          }
+        case None =>
+          Failure(new RuntimeException("No signing cert configured"))
+      })
   }
 
   def checkExpiry(claims:JWTClaimsSet) = {
