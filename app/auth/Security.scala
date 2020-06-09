@@ -144,7 +144,8 @@ trait Security extends BaseController {
           false
       }
     case _=>
-      LdapHasRole(Conf.adminGroups.asScala.toList, uid)
+      //if we are running in dev mode without authentication then we have to allow admin actionss
+      Conf.ldapProtocol=="none" || LdapHasRole(Conf.adminGroups.asScala.toList, uid)
   }
 
   /**
