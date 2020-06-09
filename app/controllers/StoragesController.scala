@@ -2,13 +2,14 @@ package controllers
 
 import akka.actor.ActorSystem
 import akka.stream.Materializer
+import auth.BearerTokenAuth
 import javax.inject.{Inject, Singleton}
 import models.{ProjectEntryRow, StorageEntry, StorageEntryRow, StorageSerializer, StorageType, StorageTypeSerializer}
 import play.api.Configuration
 import play.api.cache.SyncCacheApi
 import play.api.db.slick.DatabaseConfigProvider
 import play.api.libs.json._
-import play.api.mvc.{Action, BodyParsers, Request}
+import play.api.mvc.{Action, BodyParsers, ControllerComponents, Request}
 import slick.basic.DatabaseConfig
 import slick.jdbc.PostgresProfile
 import slick.lifted.TableQuery
@@ -20,7 +21,8 @@ import scala.concurrent.ExecutionContext.Implicits.global
 
 @Singleton
 class StoragesController @Inject()
-    (configuration: Configuration, dbConfigProvider: DatabaseConfigProvider, cacheImpl:SyncCacheApi)
+    (override val controllerComponents:ControllerComponents, override val bearerTokenAuth:BearerTokenAuth,
+     configuration: Configuration, dbConfigProvider: DatabaseConfigProvider, cacheImpl:SyncCacheApi)
     (implicit mat:Materializer, system:ActorSystem)
     extends GenericDatabaseObjectController[StorageEntry] with StorageSerializer with StorageTypeSerializer {
 

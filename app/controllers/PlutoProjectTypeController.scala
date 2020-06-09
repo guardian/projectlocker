@@ -1,12 +1,12 @@
 package controllers
 
+import auth.BearerTokenAuth
 import javax.inject._
-
 import models._
 import play.api.cache.SyncCacheApi
 import play.api.db.slick.DatabaseConfigProvider
 import play.api.libs.json.{JsResult, JsValue, Json}
-import play.api.mvc.Request
+import play.api.mvc.{ControllerComponents, Request}
 import slick.jdbc.PostgresProfile
 import slick.jdbc.PostgresProfile.api._
 import slick.lifted.TableQuery
@@ -16,7 +16,8 @@ import scala.util.{Failure, Success, Try}
 import scala.concurrent.ExecutionContext.Implicits.global
 
 @Singleton
-class PlutoProjectTypeController @Inject()(dbConfigProvider:DatabaseConfigProvider, cacheImpl:SyncCacheApi)
+class PlutoProjectTypeController @Inject()(override val controllerComponents:ControllerComponents, override val bearerTokenAuth:BearerTokenAuth,
+                                           dbConfigProvider:DatabaseConfigProvider, cacheImpl:SyncCacheApi)
   extends GenericDatabaseObjectController[PlutoProjectType] with PlutoProjectTypeSerializer {
 
   implicit val db=dbConfigProvider.get[PostgresProfile].db

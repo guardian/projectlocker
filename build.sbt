@@ -66,7 +66,10 @@ libraryDependencies += "com.typesafe.slick" %% "slick" % "3.3.2"
 
 
 //authentication
-libraryDependencies += "com.unboundid" % "unboundid-ldapsdk" % "4.0.5"
+libraryDependencies ++= Seq(
+  "com.unboundid" % "unboundid-ldapsdk" % "4.0.5",
+  "com.nimbusds" % "nimbus-jose-jwt" % "8.17",
+)
 
 // https://mvnrepository.com/artifact/org.python/jython
 libraryDependencies += "org.python" % "jython" % "2.7.1b2"

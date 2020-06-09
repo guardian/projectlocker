@@ -1,16 +1,15 @@
 package controllers
 
 import javax.inject.{Inject, Singleton}
-
 import akka.http.scaladsl.Http
-import auth.Security
+import auth.{BearerTokenAuth, Security}
 import exceptions.AlreadyExistsException
 import models._
 import play.api.Configuration
 import play.api.cache.SyncCacheApi
 import play.api.db.slick.DatabaseConfigProvider
 import play.api.libs.json.{JsValue, Json}
-import play.api.mvc.Request
+import play.api.mvc.{ControllerComponents, Request}
 import slick.jdbc.PostgresProfile
 import slick.lifted.TableQuery
 import slick.jdbc.PostgresProfile.api._
@@ -22,7 +21,8 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.io.Source
 
 @Singleton
-class PostrunActionController  @Inject() (config: Configuration, dbConfigProvider: DatabaseConfigProvider,
+class PostrunActionController  @Inject() (override val controllerComponents:ControllerComponents, override val bearerTokenAuth:BearerTokenAuth,
+                                          config: Configuration, dbConfigProvider: DatabaseConfigProvider,
                                           cacheImpl:SyncCacheApi)
   extends GenericDatabaseObjectController[PostrunAction] with PostrunActionSerializer with PostrunDependencySerializer with Security {
 

@@ -3,7 +3,7 @@ package controllers
 import javax.inject.{Inject, Named, Singleton}
 import akka.actor.ActorRef
 import akka.pattern.ask
-import auth.Security
+import auth.{BearerTokenAuth, Security}
 import com.unboundid.ldap.sdk.LDAPConnectionPool
 import exceptions.{BadDataException, ProjectCreationError, RecordNotFoundException}
 import helpers.AllowCORSFunctions
@@ -30,9 +30,10 @@ import scala.concurrent.duration._
 @Singleton
 class ProjectEntryController @Inject() (@Named("project-creation-actor") projectCreationActor:ActorRef,
                                        @Named("validate-project-actor") validateProjectActor:ActorRef,
-                                        cc:ControllerComponents, config: Configuration,
+                                        config: Configuration,
                                         dbConfigProvider: DatabaseConfigProvider,
-                                        cacheImpl:SyncCacheApi)
+                                        cacheImpl:SyncCacheApi,
+                                        override val controllerComponents:ControllerComponents, override val bearerTokenAuth:BearerTokenAuth)
   extends GenericDatabaseObjectControllerWithFilter[ProjectEntry,ProjectEntryFilterTerms]
     with ProjectEntrySerializer with ProjectEntryAdvancedFilterTermsSerializer with ProjectRequestSerializer
     with ProjectRequestPlutoSerializer with UpdateTitleRequestSerializer with FileEntrySerializer

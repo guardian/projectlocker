@@ -1,5 +1,6 @@
 package controllers
 
+import auth.BearerTokenAuth
 import exceptions.{AlreadyExistsException, BadDataException}
 import helpers.AllowCORSFunctions
 import javax.inject._
@@ -9,7 +10,7 @@ import play.api.cache.SyncCacheApi
 import play.api.db.slick.DatabaseConfigProvider
 import play.api.http.HttpEntity
 import play.api.libs.json.{JsResult, JsValue, Json}
-import play.api.mvc.{EssentialAction, Request, ResponseHeader, Result}
+import play.api.mvc.{ControllerComponents, EssentialAction, Request, ResponseHeader, Result}
 import slick.jdbc.PostgresProfile
 import slick.jdbc.PostgresProfile.api._
 import slick.lifted.TableQuery
@@ -19,7 +20,8 @@ import scala.util.{Failure, Success, Try}
 import scala.concurrent.ExecutionContext.Implicits.global
 
 @Singleton
-class PlutoCommissionController @Inject()(dbConfigProvider:DatabaseConfigProvider, cacheImpl:SyncCacheApi, config:Configuration)
+class PlutoCommissionController @Inject()(override val controllerComponents:ControllerComponents, override val bearerTokenAuth:BearerTokenAuth,
+                                          dbConfigProvider:DatabaseConfigProvider, cacheImpl:SyncCacheApi, config:Configuration)
   extends GenericDatabaseObjectControllerWithFilter[PlutoCommission,PlutoCommissionFilterTerms]
     with PlutoCommissionSerializer with PlutoCommissionFilterTermsSerializer {
 

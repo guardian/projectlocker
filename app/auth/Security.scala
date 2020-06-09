@@ -18,19 +18,24 @@
 
 package auth
 
+import com.nimbusds.jwt.JWTClaimsSet
 import play.api.mvc._
 import play.api.libs.Files.TemporaryFile
+
 import scala.collection.JavaConverters._
 import play.api.{ConfigLoader, Configuration, Logger}
 import play.api.cache.SyncCacheApi
 import play.api.libs.json._
+import play.api.libs.typedmap.TypedKey
 
 import scala.concurrent.Future
-
 import scala.concurrent.ExecutionContext.Implicits.global
+import scala.util.Success
 
-trait Security {
+trait Security extends BaseController {
   implicit val cache:SyncCacheApi
+  val bearerTokenAuth:BearerTokenAuth //this needs to be injected from the user
+
   val logger: Logger = Logger(this.getClass)
 
   /**
@@ -61,12 +66,21 @@ trait Security {
     HMAC.calculateHmac(header, Conf.sharedSecret).flatMap(calculatedSig=>{if(calculatedSig==authparts(1)) Some(authparts(0)) else None})
   }
 
+  object AuthType extends Enumeration {
+    val AuthHmac, AuthJWT, AuthSession = Value
+  }
+  final val AuthTypeKey = TypedKey[AuthType.Value]("auth_type")
+
   //if this returns something, then we are logged in
-  private def username(request:RequestHeader) = request.headers.get("X-Hmac-Authorization") match {
-    case Some(auth)=>
+  private def username(request:RequestHeader) = Seq("X-Hmac-Authorization","Authorization").map(request.headers.get) match {
+    case Seq(Some(auth),_)=>
       logger.debug("got Auth header, doing hmac auth")
-      hmacUsername(request,auth)
-    case None=>
+      val updatedRequest = request.addAttr(AuthTypeKey, AuthType.AuthHmac)
+      hmacUsername(updatedRequest,auth)
+    case Seq(None, Some(bearer))=>
+      logger.debug("got Authorization header, doing bearer auth with 'subject' field as uid")
+      bearerTokenAuth(request).map(_.getSubject).toOption
+    case Seq(None,None)=>
       logger.debug("no Auth header, doing session auth")
       ldapUsername(request)
   }
@@ -87,7 +101,7 @@ trait Security {
     uid=> Action.async(b)(request => f(uid)(request))
   }
 
-  def IsAuthenticated(b: BodyParser[MultipartFormData[TemporaryFile]] = BodyParsers.parse.multipartFormData)(f: => String => Request[MultipartFormData[TemporaryFile]] => Result) = {
+  def IsAuthenticated(b: BodyParser[MultipartFormData[TemporaryFile]] = parse.multipartFormData)(f: => String => Request[MultipartFormData[TemporaryFile]] => Result) = {
     Security.Authenticated(username, onUnauthorized) { uid => Action(b)(request => f(uid)(request)) }
   }
 
@@ -107,52 +121,75 @@ trait Security {
     }
   }
 
-  def HasRole(requiredRoles: List[String])(f: => String => Request[AnyContent] => Result) = IsAuthenticated {
-    uid => 
-      request => 
-        LDAP.getUserRoles(uid) match {
-          case Some(userRoles) if requiredRoles.intersect(userRoles).nonEmpty => f(uid)(request)
-          case _ =>
-            if(sys.env.contains("CI"))  //allow admin functions when under test
-              f(uid)(request)
-            else
-              Results.Forbidden
-        }
+  private def LdapHasRole(requiredRoles: List[String], uid:String) = {
+      LDAP.getUserRoles(uid) match {
+        case Some(userRoles) if requiredRoles.intersect(userRoles).nonEmpty => true
+        case _ =>
+          sys.env.contains("CI")  //allow admin functions when under test
+      }
   }
 
-  def HasRoleAsync(requiredRoles: List[String])(f: => String => Request[AnyContent] => Future[Result]) = IsAuthenticatedAsync {
-    uid =>
-      request =>
-        LDAP.getUserRoles(uid) match {
-          case Some(userRoles) if requiredRoles.intersect(userRoles).nonEmpty => f(uid)(request)
-          case _ =>
-            if(sys.env.contains("CI") || Conf.ldapProtocol=="none")  //allow admin functions when under test
-              f(uid)(request)
-            else
-              Future(Results.Forbidden)
-        }
+  private def checkAdmin[A](uid:String, request:Request[A]) = Seq("X-Hmac-Authorization","Authorization").map(request.headers.get) match {
+    case Seq(Some(hmac),_)=>
+      false //server-server never requires admin
+    case Seq(None,Some(bearer))=>
+      //FIXME: seems a bit rubbish to validate the token twice, once for login and once for admin
+      bearerTokenAuth.validateToken(bearer).toOption.flatMap(jwtClaims=>
+        Option(jwtClaims.getStringClaim(bearerTokenAuth.isAdminClaimName()))
+      ) match {
+        case Some(stringValue)=>
+          val downcased = stringValue.toLowerCase()
+          downcased == "true" || downcased == "yes"
+        case None=>
+          false
+      }
+    case _=>
+      LdapHasRole(Conf.adminGroups.asScala.toList, uid)
   }
 
-  def HasRoleAsync[A](requiredRoles: List[String])(b: BodyParser[A])(f: => String => Request[A] => Future[Result]) = IsAuthenticatedAsync[A](b) {
-    uid =>
-      request =>
-        LDAP.getUserRoles(uid) match {
-          case Some(userRoles) if requiredRoles.intersect(userRoles).nonEmpty => f(uid)(request)
-          case _ =>
-            if(sys.env.contains("CI") || Conf.ldapProtocol=="none")  //allow admin functions when under test
-              f(uid)(request)
-            else
-              Future(Results.Forbidden)
-        }
+  /**
+    * determine if the given user is an admin.  This implies an IsAuthenticated check.
+    * if the X-Hmac-Authorization header is present, then the request is server-server and the user is not an admin
+    * if the Authoriztion header is present, then the request is a bearer token. The user is considered an admin
+    * if a string claim with the name given by the config key auth.adminClaim is present and has a value of either "true" or "yes"
+    * if neither is present, then the request is a session-auth request and a check is made to the remote LDAP server for
+    * group membership
+    * @param f the action function
+    * @return the result of the action function or Forbidden
+    */
+  def IsAdmin(f: => String => Request[AnyContent] => Result) = IsAuthenticated { uid=> request=>
+    if(checkAdmin(uid, request)){
+      f(uid)(request)
+    } else {
+      logger.warn(s"Admin request rejected for $uid to ${request.uri}")
+      Forbidden(Json.obj("status"->"forbidden","detail"->"You need admin rights to perform this action"))
+    }
+
   }
 
-  def IsAdmin(f: => String => Request[AnyContent] => Result) = HasRole(Conf.adminGroups.asScala.toList)(f)
+  def IsAdminAsync[A](b: BodyParser[A])(f: => String => Request[A] => Future[Result]) = IsAuthenticatedAsync(b) { uid=> request=>
+    if(checkAdmin(uid,request)) {
+      f(uid)(request)
+    } else {
+      logger.warn(s"Admin request rejected for $uid to ${request.uri}")
+      Future(Forbidden(Json.obj("status"->"forbidden","detail"->"You need admin rights to perform this action")))
+    }
+    //HasRoleAsync[A](Conf.adminGroups.asScala.toList)(b)(f)
+  }
 
-  def IsAdminAsync[A](b: BodyParser[A])(f: => String => Request[A] => Future[Result]) = HasRoleAsync[A](Conf.adminGroups.asScala.toList)(b)(f)
+  def IsAdminAsync(f: => String => Request[AnyContent] => Future[Result]) = IsAuthenticatedAsync { uid=> request=>
+    if(checkAdmin(uid,request)) {
+      f(uid)(request)
+    } else {
+      logger.warn(s"Admin request rejected for $uid to ${request.uri}")
+      Future(Forbidden(Json.obj("status"->"forbidden","detail"->"You need admin rights to perform this action")))
+    }
+    //HasRoleAsync[AnyContent](Conf.adminGroups.asScala.toList)(parse.anyContent)(f)
+  }
 
-  def IsAdminAsync(f: => String => Request[AnyContent] => Future[Result]) = HasRoleAsync[AnyContent](Conf.adminGroups.asScala.toList)(BodyParsers.parse.anyContent)(f)
-
-  def HasRoleUpload(requiredRoles: List[String])(b: BodyParser[MultipartFormData[TemporaryFile]] = BodyParsers.parse.multipartFormData)(f: => String => Request[MultipartFormData[TemporaryFile]] => Result) = IsAuthenticated(b) {
+  def HasRoleUpload(requiredRoles: List[String])
+                   (b: BodyParser[MultipartFormData[TemporaryFile]] = parse.multipartFormData)
+                   (f: => String => Request[MultipartFormData[TemporaryFile]] => Result) = IsAuthenticated(b) {
     uid => 
       request => 
         LDAP.getUserRoles(uid) match {
@@ -161,12 +198,4 @@ trait Security {
             Results.Forbidden
         }
   }
-
-  def GetRole(uid: String) : Option[List[String]] = {
-    uid match {
-      case "sv-ela-t" => Some(List("admin","user"))
-      case _ => None
-    }
-  }
-
 }
