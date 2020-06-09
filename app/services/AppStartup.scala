@@ -3,19 +3,17 @@ package services
 import akka.actor.{ActorSystem, PoisonPill, Props}
 import akka.cluster.Cluster
 import akka.cluster.singleton.{ClusterSingletonManager, ClusterSingletonManagerSettings}
-import akka.management.AkkaManagement
 import akka.management.cluster.bootstrap.ClusterBootstrap
-import akka.stream.ActorMaterializer
+import akka.management.scaladsl.AkkaManagement
+import akka.stream.{ActorMaterializer, Materializer}
 import javax.inject.{Inject, Singleton}
 import play.api.Logger
 import play.api.Configuration
 import play.api.inject.Injector
 
 @Singleton
-class AppStartup @Inject()(config:Configuration, injector:Injector)(implicit system:ActorSystem){
+class AppStartup @Inject()(config:Configuration, injector:Injector)(implicit system:ActorSystem, mat:Materializer){
   private val logger = Logger(getClass)
-
-  implicit val materializer = ActorMaterializer()
   implicit val executionContext = system.dispatcher
 
   def initialise() = {

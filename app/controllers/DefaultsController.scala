@@ -1,8 +1,7 @@
 package controllers
 
 import javax.inject._
-
-import auth.Security
+import auth.{BearerTokenAuth, Security}
 import models.{Defaults, DefaultsSerializer}
 import play.api.{Configuration, Logger}
 import play.api.cache.SyncCacheApi
@@ -13,11 +12,11 @@ import slick.jdbc.PostgresProfile
 
 import scala.util.{Failure, Success}
 import scala.concurrent.Future
-
 import scala.concurrent.ExecutionContext.Implicits.global
 
 @Singleton
-class DefaultsController @Inject() (cc:ControllerComponents, configuration: Configuration,
+class DefaultsController @Inject() (cc:ControllerComponents, override val bearerTokenAuth:BearerTokenAuth,
+                                    configuration: Configuration,
                                     dbConfigProvider: DatabaseConfigProvider, cacheImpl:SyncCacheApi)
   extends AbstractController(cc) with Security with DefaultsSerializer {
   override val logger = Logger(getClass)

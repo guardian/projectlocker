@@ -6,7 +6,7 @@ import java.util.Properties
 import javax.inject.{Inject, Singleton}
 import play.api._
 import play.api.mvc._
-import auth.{LDAP, Security, User}
+import auth.{BearerTokenAuth, LDAP, Security, User}
 import com.unboundid.ldap.sdk.LDAPConnectionPool
 import helpers.DatabaseHelper
 import models.{LoginRequest, LoginRequestSerializer}
@@ -20,7 +20,7 @@ import scala.util.{Failure, Success, Try}
 import scala.concurrent.ExecutionContext.Implicits.global
 
 @Singleton
-class Application @Inject() (cc:ControllerComponents, p:PlayBodyParsers, config:Configuration, cacheImpl:SyncCacheApi, dbHelper:DatabaseHelper)
+class Application @Inject() (val cc:ControllerComponents, override val bearerTokenAuth:BearerTokenAuth, p:PlayBodyParsers, config:Configuration, cacheImpl:SyncCacheApi, dbHelper:DatabaseHelper)
   extends AbstractController(cc) with Security with LoginRequestSerializer {
 
   implicit val cache:SyncCacheApi = cacheImpl
@@ -56,7 +56,7 @@ class Application @Inject() (cc:ControllerComponents, p:PlayBodyParsers, config:
     *         If an error occurs, a 500 response with a basic error message directing the user to go to the logs
     */
   def authenticate = Action(p.json) { request=>
-    val adminRoles = config.getStringList("ldap.admin-groups").map(_.asScala).getOrElse(List("Administrator"))
+    val adminRoles = config.getOptional[Seq[String]]("ldap.admin-groups").getOrElse(List("Administrator"))
 
     logger.info(s"Admin roles are: $adminRoles")
     LDAP.connectionPool.fold(
@@ -127,7 +127,7 @@ class Application @Inject() (cc:ControllerComponents, p:PlayBodyParsers, config:
     *         If the session is valid, a 200 response with the currently logged in userid in a json object
     */
   def isLoggedIn = IsAuthenticated { uid=> { request=>
-    val adminRoles = config.getStringList("ldap.admin-groups").map(_.asScala).getOrElse(List("Administrator"))
+    val adminRoles = config.getOptional[Seq[String]]("ldap.admin-groups").getOrElse(List("Administrator"))
     val isAdmin = config.get[String]("ldap.ldapProtocol") match {
       case "none"=>true
       case _=>checkRole(uid, adminRoles)

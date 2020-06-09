@@ -3,12 +3,9 @@ package services
 import javax.inject.Inject
 
 import akka.actor.ActorSystem
-import helpers.DirectoryScanner
 import play.api.Logger
-
-import scala.util.{Failure, Success}
 import scala.concurrent.duration._
-
+import scala.language.postfixOps
 import scala.concurrent.ExecutionContext.Implicits.global
 /**
   * presents a warning in the log if CI mode is set

@@ -152,7 +152,7 @@ class StorageHelper @Inject() (implicit mat:Materializer) {
         if(bytesCopied!=fileSize){
           Left(Seq(s"Copied file byte size $bytesCopied did not match source file $fileSize"))
         } else {
-          Right(Unit)
+          Right( () )
         }
     })
 

@@ -1,6 +1,7 @@
 package controllers
 
 import akka.stream.Materializer
+import auth.BearerTokenAuth
 import javax.inject.Inject
 import com.unboundid.ldap.sdk.LDAPConnectionPool
 import models._
@@ -17,7 +18,8 @@ import scala.concurrent.Future
 import scala.util.{Failure, Success}
 import scala.concurrent.ExecutionContext.Implicits.global
 
-class ProjectTemplateController @Inject() (config: Configuration, dbConfigProvider: DatabaseConfigProvider,
+class ProjectTemplateController @Inject() (override val controllerComponents:ControllerComponents, override val bearerTokenAuth:BearerTokenAuth,
+                                           config: Configuration, dbConfigProvider: DatabaseConfigProvider,
                                            cacheImpl:SyncCacheApi)
                                           (implicit mat:Materializer)
   extends GenericDatabaseObjectController[ProjectTemplate] with ProjectTemplateSerializer with StorageSerializer{

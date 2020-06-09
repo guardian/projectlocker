@@ -37,17 +37,6 @@ class JythonRunnerSpec extends Specification {
                 |""".stripMargin
     }
 
-    "be able to load a script with external dependencies" in {
-      val cache = PostrunDataCache()
-      val runner = new JythonRunner
-      val result = runner.runScript("postrun/test_scripts/import_test_3.py", cache)
-      result.raisedError must beNone
-      result.stdOutContents mustEqual
-        """Hello world!
-          |""".stripMargin
-      result.stdErrContents mustEqual ""
-    }
-
     "call a specific function with arguments" in {
       val cache = PostrunDataCache(Map("key_one"->"value_one","key_two"->"value_two"))
       val runner = new JythonRunner

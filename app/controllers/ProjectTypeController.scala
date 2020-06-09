@@ -1,14 +1,14 @@
 package controllers
 
+import auth.BearerTokenAuth
 import javax.inject.Inject
-
 import com.unboundid.ldap.sdk.LDAPConnectionPool
 import models._
 import play.api.Configuration
 import play.api.cache.SyncCacheApi
 import play.api.db.slick.DatabaseConfigProvider
 import play.api.libs.json.{JsValue, Json}
-import play.api.mvc.{Request, Result}
+import play.api.mvc.{ControllerComponents, Request, Result}
 import slick.jdbc.PostgresProfile
 import slick.lifted.TableQuery
 import slick.jdbc.PostgresProfile.api._
@@ -20,7 +20,8 @@ import scala.concurrent.Future
 /**
   * Created by localhome on 17/01/2017.
   */
-class ProjectTypeController @Inject() (config: Configuration, dbConfigProvider: DatabaseConfigProvider,
+class ProjectTypeController @Inject() (override val controllerComponents:ControllerComponents, override val bearerTokenAuth:BearerTokenAuth,
+                                       config: Configuration, dbConfigProvider: DatabaseConfigProvider,
                                        cacheImpl:SyncCacheApi)
   extends GenericDatabaseObjectController[ProjectType] with ProjectTypeSerializer{
   val dbConfig = dbConfigProvider.get[PostgresProfile]

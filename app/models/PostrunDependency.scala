@@ -42,7 +42,7 @@ object PostrunDependencyGraph {
     * @return
     */
   def loadAllById(implicit db:slick.jdbc.PostgresProfile#Backend#Database):Future[Map[Int,Seq[Int]]] = loadAll map { data=>
-    data.mapValues(_.map(_.dependsOn))
+    data.view.mapValues(_.map(_.dependsOn)).toMap
   }
 }
 
