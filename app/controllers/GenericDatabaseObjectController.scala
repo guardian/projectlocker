@@ -163,34 +163,38 @@ trait GenericDatabaseObjectControllerWithFilter[M,F] extends InjectedController 
     */
   def shouldCreateEntry(newEntry:M):Either[String,Boolean] = Right(true)
 
-  def create = IsAdminAsync(parse.json) {uid=>{request =>
-    this.validate(request).fold(
-      errors => {
-        logger.error(s"errors parsing content: $errors")
-        Future(BadRequest(Json.obj("status"->"error","detail"->JsError.toJson(errors))))
-      },
-      newEntry => {
-        shouldCreateEntry(newEntry) match {
-          case Right(_)=>
-            this.insert(newEntry, uid).map({
-              case Success(result) => Ok(Json.obj("status" -> "ok", "detail" -> "added", "id" -> result.asInstanceOf[Int]))
-              case Failure(error) =>
-                logger.error(error.toString)
-                error match {
-                  case e: BadDataException =>
-                    Conflict(Json.obj("status" -> "error", "detail" -> e.toString))
-                  case e: AlreadyExistsException =>
-                    Conflict(Json.obj("status" -> "error", "detail" -> e.toString, "nextAvailableVersion"->e.getNextAvailableVersion))
-                  case _ =>
-                    handleConflictErrors(error, "object", isInsert = true)
-                }
-            })
-          case Left(errDetail)=>
-            Future(Conflict(Json.obj("status"->"error", "detail"->errDetail)))
-        }
+  def innerCreate(uid:String, request:Request[JsValue]) = this.validate(request).fold(
+    errors => {
+      logger.error(s"errors parsing content: $errors")
+      Future(BadRequest(Json.obj("status"->"error","detail"->JsError.toJson(errors))))
+    },
+    newEntry => {
+      shouldCreateEntry(newEntry) match {
+        case Right(_)=>
+          this.insert(newEntry, uid).map({
+            case Success(result) => Ok(Json.obj("status" -> "ok", "detail" -> "added", "id" -> result.asInstanceOf[Int]))
+            case Failure(error) =>
+              logger.error(error.toString)
+              error match {
+                case e: BadDataException =>
+                  Conflict(Json.obj("status" -> "error", "detail" -> e.toString))
+                case e: AlreadyExistsException =>
+                  Conflict(Json.obj("status" -> "error", "detail" -> e.toString, "nextAvailableVersion"->e.getNextAvailableVersion))
+                case _ =>
+                  handleConflictErrors(error, "object", isInsert = true)
+              }
+          })
+        case Left(errDetail)=>
+          Future(Conflict(Json.obj("status"->"error", "detail"->errDetail)))
       }
-    )
+    }
+  )
+
+  def create = IsAdminAsync(parse.json) {uid=>{request =>
+    innerCreate(uid, request)
   }}
+
+  def regularUserCreate = IsAuthenticatedAsync(parse.json) {uid=>{request=> innerCreate(uid, request)}}
 
   def getitem(requestedId: Int) = IsAuthenticatedAsync {uid=>{request=>
     selectid(requestedId).map({
