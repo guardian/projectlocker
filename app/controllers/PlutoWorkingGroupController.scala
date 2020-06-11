@@ -34,7 +34,9 @@ class PlutoWorkingGroupController @Inject() (dbConfigProvider:DatabaseConfigProv
     TableQuery[PlutoWorkingGroupRow].filter(_.id===requestedId).sortBy(_.name.asc.nullsLast).result.asTry
   )
 
-  override def insert(entry: PlutoWorkingGroup, uid: String): Future[Try[Int]] = throw new RuntimeException("This is not supported")
+  override def insert(entry: PlutoWorkingGroup, uid: String): Future[Try[Int]] = db.run(
+    (TableQuery[PlutoWorkingGroupRow] returning TableQuery[PlutoWorkingGroupRow].map(_.id) += entry).asTry
+  )
 
   override def deleteid(requestedId: Int):Future[Try[Int]] = throw new RuntimeException("This is not supported")
 

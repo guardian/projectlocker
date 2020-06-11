@@ -43,6 +43,8 @@ window.React = require('react');
 
 import Raven from 'raven-js';
 import ProjectValidationView from "./ProjectValidationView.jsx";
+import CommissionsList from "./CommissionsList.jsx";
+import CommissionCreateMultistep from "./multistep/CommissionCreateMultistep.jsx";
 
 library.add(faSearch);
 
@@ -115,6 +117,7 @@ class App extends React.Component {
                 <li style={{display: this.state.isAdmin ? "inherit" : "none"}}><Link to="/storage/">Storages...</Link></li>
                 <li style={{display: this.state.isAdmin ? "inherit" : "none"}}><Link to="/type/">Project Types...</Link></li>
                 <li style={{display: this.state.isAdmin ? "inherit" : "none"}}><Link to="/template/">Project Templates...</Link></li>
+                <li><Link to="/commission/">Commissions...</Link></li>
                 <li><Link to={this.state.isAdmin ? "/project/" : "/project/?mine"}>Projects...</Link></li>
                 <li style={{display: this.state.isAdmin ? "inherit" : "none"}}><Link to="/validate/project">Validate projectfiles...</Link></li>
                 <li style={{display: this.state.isAdmin ? "inherit" : "none"}}><Link to="/postrun/">Postrun Actions...</Link></li>
@@ -159,6 +162,8 @@ class App extends React.Component {
                         <Route path="/project/:itemid/delete" component={ProjectDeleteComponent}/>
                         <Route path="/project/:itemid" component={TitleEditComponent}/>
                         <Route path="/project/" component={ProjectEntryList}/>
+                        <Route path="/commission/new" component={CommissionCreateMultistep}/>
+                        <Route path="/commission/" component={CommissionsList}/>
                         <Route path="/validate/project" component={ProjectValidationView}/>
                         <Route path="/postrun/:itemid/delete" component={PostrunDeleteComponent}/>
                         <Route path="/postrun/:itemid" component={PostrunMultistep}/>
